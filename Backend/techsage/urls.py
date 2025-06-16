@@ -9,8 +9,8 @@ urlpatterns = [
     path('blogs/', ListBlogs.as_view()),
 ]
 
-from users.views import register_form
+# from users.views import register_form
 
-urlpatterns = [
-    path('', register_form),  # test this at /
-]
+# urlpatterns = [
+#     path('', register_form),  # test this at /
+# ]
