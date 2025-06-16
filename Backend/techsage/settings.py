@@ -25,6 +25,7 @@ connect(
 # Application definition
 
 INSTALLED_APPS = [
+    'django.contrib.contenttypes',
     'rest_framework',
     'users',
     'blogs',
@@ -76,6 +77,18 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+# Disable Django's authentication and contenttypes apps' migrations
+MIGRATION_MODULES = {
+    'auth': None,
+    'contenttypes': None,
+}
+
+# For DRF authentication (since we're not using Django's auth)
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [],
+    'UNAUTHENTICATED_USER': None,
+}
 
 
 LANGUAGE_CODE = 'en-us'
