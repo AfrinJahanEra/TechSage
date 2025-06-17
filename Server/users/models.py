@@ -8,7 +8,7 @@ class User(me.Document):
     email = me.EmailField(required=True, unique=True)
     password = me.StringField(required=True)
     is_reviewer = me.BooleanField(default=False)
-    created_at = me.DateTimeField(default=datetime.datetime.utcnow)
+    created_at = me.DateTimeField(default=datetime.datetime.now)
 
     def to_json(self):
         return {
