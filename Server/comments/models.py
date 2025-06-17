@@ -10,6 +10,9 @@ class Comment(me.Document):
     parent = me.ReferenceField('self', null=True, default=None)
     created_at = me.DateTimeField(default=datetime.datetime.utcnow)
 
+    likes = me.ListField(me.ReferenceField(User))
+    dislikes = me.ListField(me.ReferenceField(User))
+
     def to_json(self):
         return {
             "id": str(self.id),
@@ -17,5 +20,7 @@ class Comment(me.Document):
             "author": self.author.username,
             "content": self.content,
             "parent": str(self.parent.id) if self.parent else None,
-            "created_at": self.created_at.isoformat()
+            "created_at": self.created_at.isoformat(),
+            "likes": len(self.likes),
+            "dislikes": len(self.dislikes)
         }
