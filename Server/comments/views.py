@@ -27,3 +27,43 @@ class GetComments(View):
     def get(self, request, blog_id):
         comments = Comment.objects(blog=blog_id).order_by('created_at')
         return JsonResponse([c.to_json() for c in comments], safe=False)
+
+@method_decorator(csrf_exempt, name='dispatch')
+class LikeComment(View):
+    def post(self, request, comment_id):
+        data = json.loads(request.body)
+        user = User.objects(id=data['user_id']).first()
+        comment = Comment.objects(id=comment_id).first()
+
+        if not comment or not user:
+            return JsonResponse({'error': 'Invalid comment or user'}, status=400)
+
+        if user not in comment.likes:
+            comment.likes.append(user)
+            if user in comment.dislikes:
+                comment.dislikes.remove(user)
+        else:
+            comment.likes.remove(user)
+
+        comment.save()
+        return JsonResponse(comment.to_json())
+
+@method_decorator(csrf_exempt, name='dispatch')
+class DislikeComment(View):
+    def post(self, request, comment_id):
+        data = json.loads(request.body)
+        user = User.objects(id=data['user_id']).first()
+        comment = Comment.objects(id=comment_id).first()
+
+        if not comment or not user:
+            return JsonResponse({'error': 'Invalid comment or user'}, status=400)
+
+        if user not in comment.dislikes:
+            comment.dislikes.append(user)
+            if user in comment.likes:
+                comment.likes.remove(user)
+        else:
+            comment.dislikes.remove(user)
+
+        comment.save()
+        return JsonResponse(comment.to_json())
