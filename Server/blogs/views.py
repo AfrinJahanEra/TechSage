@@ -4,6 +4,9 @@ from rest_framework import status
 from .models import Blog
 from users.models import User
 
+from datetime import datetime
+# ... other imports ...
+
 class CreateBlog(APIView):
     def post(self, request):
         data = request.data
@@ -16,13 +19,14 @@ class CreateBlog(APIView):
             blog = Blog(
                 title=data['title'],
                 content=data['content'],
-                author=author
+                author=author,
+                created_at=datetime.utcnow()  # Explicitly set here
             )
-            blog.save()  # This should automatically set created_at
+            blog.save()
             return Response({
                 "message": "Blog created successfully",
                 "id": str(blog.id),
-                "created_at": blog.created_at.isoformat() if blog.created_at else None
+                "created_at": blog.created_at.isoformat()
             }, status=201)
         except Exception as e:
             return Response({"error": str(e)}, status=400)
