@@ -44,3 +44,23 @@ project-root/
 ├── docker-compose.yml        # If using Docker
 └── requirements.txt         # Top-level Python requirements (optional)
 ```
+
+# Use WebSocket in Frontend
+Connect from frontend using JavaScript like:
+```
+const socket = new WebSocket("ws://127.0.0.1:8000/ws/comments/BLOG_ID/");
+
+socket.onmessage = function (event) {
+    const data = JSON.parse(event.data);
+    console.log("New comment received", data);
+    // Append to comment thread dynamically
+};
+
+function sendComment(content, author_id, parent_id=null) {
+    socket.send(JSON.stringify({
+        content: content,
+        author_id: author_id,
+        parent_id: parent_id
+    }));
+}
+```
