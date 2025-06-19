@@ -14,5 +14,4 @@ urlpatterns = [
     path('create-blog/', CreateBlog.as_view()),
     path('blogs/', ListBlogs.as_view()),
     path('comments/', include('comments.urls')),
-    path("comments/", include("comments.urls")),
 ]
