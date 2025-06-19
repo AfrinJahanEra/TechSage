@@ -6,6 +6,7 @@ from blogs.models import Blog
 
 class CommentConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        print("WebSocket connection incoming...")
         self.blog_id = self.scope['url_route']['kwargs']['blog_id']
         self.room_group_name = f"comments_{self.blog_id}"
 

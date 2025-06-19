@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WebSocket Test</title>
+</head>
+<body>
+  <h2>Real-Time Comment Test</h2>
+
+  <input type="text" id="author" placeholder="Author ID" value="6852c4fd41b0aa0a9c4f752a"><br><br>
+  <input type="text" id="content" placeholder="Write your comment"><br><br>
+  <button onclick="sendComment()">Send</button>
+
+  <h3>Live Comments:</h3>
+  <div id="stream"></div>
+
+    <script>
+    const socket = new WebSocket("ws://localhost:8000/ws/comments/6852c5c541b0aa0a9c4f752b/");
+
+
+    socket.onopen = () => {
+        console.log("Connected to WebSocket");
+    };
+
+    socket.onerror = (e) => {
+        console.error("WebSocket error:", e);
+    };
+
+    socket.onclose = (e) => {
+        console.warn("WebSocket closed:", e);
+    };
+
+    socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        const p = document.createElement("p");
+        p.innerText = `${data.author}: ${data.content}`;
+        document.getElementById("stream").prepend(p);
+    };
+
+    function sendComment() {
+        const content = document.getElementById("content").value;
+        const author_id = document.getElementById("author").value;
+
+        if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ author_id, content }));
+        } else {
+        alert("WebSocket is not connected yet!");
+        }
+
+        document.getElementById("content").value = "";
+    }
+    </script>
+
+</body>
+</html>
