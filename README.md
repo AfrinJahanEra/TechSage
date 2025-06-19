@@ -64,3 +64,9 @@ function sendComment(content, author_id, parent_id=null) {
     }));
 }
 ```
+
+how to run the websocket part
+
+```
+daphne techsage.asgi:application
+```
