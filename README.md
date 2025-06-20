@@ -50,3 +50,11 @@ how to run the websocket part
 ```
 daphne techsage.asgi:application
 ```
+
+To install python dependencies
+```
+pip install -r requirements.txt
+```
+
+Download Redis from `https://github.com/tporadowski/redis/releases` (use the latest zip version)
+then run `redis-server.exe`
