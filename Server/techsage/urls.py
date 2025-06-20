@@ -1,6 +1,6 @@
 from django.urls import path,include
-from users.views import RegisterUser, LoginUser
-from blogs.views import CreateBlog, ListBlogs, UpdateBlog, GetBlogVersions, RevertBlogVersion
+from users.views import *
+from blogs.views import *
 
 from django.http import FileResponse
 import os
