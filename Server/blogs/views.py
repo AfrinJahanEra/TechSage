@@ -31,7 +31,8 @@ class CreateBlog(APIView):
 
 class ListBlogs(APIView):
     def get(self, request):
-        blogs = Blog.objects.all()
+        blogs = Blog.objects(is_deleted=False)
+        # blogs = Blog.objects.all()
         blogs_list = []
         for blog in blogs:
             blog_data = {
@@ -146,3 +147,35 @@ class RevertBlogVersion(APIView):
                 
         except Blog.DoesNotExist:
             return Response({"error": "Blog not found"}, status=404)
+        
+# blogs/views.py
+class DeleteBlog(APIView):
+    def delete(self, request, blog_id):
+        try:
+            blog = Blog.objects.get(id=blog_id)
+            username = request.data.get('username')
+            
+            if not username:
+                return Response({"error": "username required"}, status=400)
+                
+            # Verify ownership (add your ownership logic)
+            if str(blog.author.username) != username:
+                return Response({"error": "You can only delete your own blogs"}, status=403)
+            
+            # Soft delete (recommended)
+            blog.soft_delete(username)
+            
+            return Response({
+                "message": "Blog marked as deleted",
+                "deleted_at": blog.deleted_at.isoformat()
+            })
+            
+        except Blog.DoesNotExist:
+            return Response({"error": "Blog not found"}, status=404)
+
+class ModeratorDeleteBlog(APIView):
+    def delete(self, request, blog_id):
+        """Permanent deletion (admin only)"""
+        blog = Blog.objects.get(id=blog_id)
+        blog.hard_delete()
+        return Response({"message": "Blog permanently deleted"})
