@@ -17,4 +17,6 @@ urlpatterns = [
     path('update-blog/<str:blog_id>/', UpdateBlog.as_view()),
     path('blog-versions/<str:blog_id>/', GetBlogVersions.as_view()),
     path('revert-blog/<str:blog_id>/<int:version_number>/', RevertBlogVersion.as_view()),
+    path('delete-blog/<str:blog_id>/', DeleteBlog.as_view()),
+    path('mod/delete-blog/<str:blog_id>/', ModeratorDeleteBlog.as_view()),
 ]
