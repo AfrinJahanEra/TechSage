@@ -15,6 +15,7 @@ class Blog(Document):
     created_at = fields.DateTimeField(default=datetime.utcnow)
     versions = fields.ListField(fields.EmbeddedDocumentField(BlogVersion))
     current_version = fields.IntField(default=1)
+    is_deleted = fields.BooleanField(default=False)
     
     meta = {
         'collection': 'blogs',
@@ -49,3 +50,17 @@ class Blog(Document):
             return True
         except IndexError:
             return False
+        
+    deleted_at = fields.DateTimeField()
+    deleted_by = fields.StringField()
+
+    def soft_delete(self, username):
+        """Marks blog as deleted without losing data"""
+        self.is_deleted = True
+        self.deleted_at = datetime.utcnow()
+        self.deleted_by = username
+        self.save()
+
+    def hard_delete(self):
+        """Permanently removes blog (use cautiously)"""
+        self.delete()
