@@ -1,7 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&display=swap');
-@import "tailwindcss/base";
-@import "tailwindcss/components";
-@import "tailwindcss/utilities";
+@import "tailwindcss";
 
 body {
   font-family: 'Inter', sans-serif;
@@ -96,36 +93,9 @@ body {
 :root {
   --primary-color: #1abc9c;
   --primary-dark: #16a085;
-  --color-primary-50: #e8f8f5;
-  --color-primary-100: #d1f2eb;
-  --color-primary-200: #a3e4d7;
-  --color-primary-300: #76d7c4;
-  --color-primary-400: #48c9b0;
-  --color-primary-500: #1abc9c;
-  --color-primary-600: #17a589;
-  --color-primary-700: #148f77;
-  --color-primary-800: #117864;
-  --color-primary-900: #0e6251;
 }
 
 .dark {
   --primary-color: #4fd1c5;
   --primary-dark: #38b2ac;
-}
-
-/* Add these classes to your CSS to use the dynamic colors */
-.bg-primary-500 {
-  background-color: var(--color-primary-500);
-}
-
-.text-primary-500 {
-  color: var(--color-primary-500);
-}
-
-.border-primary-500 {
-  border-color: var(--color-primary-500);
-}
-
-.hover\:bg-primary-600:hover {
-  background-color: var(--color-primary-600);
 }
