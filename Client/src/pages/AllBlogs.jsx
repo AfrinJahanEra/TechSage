@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import SearchForm from '../components/SearchForm';
 
 const AllBlogs = () => {
   const navigate = useNavigate();
