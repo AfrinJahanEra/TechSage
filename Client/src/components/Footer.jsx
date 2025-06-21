@@ -2,10 +2,10 @@ import { Link } from 'react-router-dom';
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-900 text-white pt-16 px-10">
-      <div className="container mx-auto px-10 md:px-10">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
-          <div className="space-y-10">
+    <footer className="bg-gray-900 text-white pt-16 px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
+          <div className="space-y-4">
             <h3 className="text-teal-400 text-xl font-bold pb-2 border-b border-teal-400">TechSage</h3>
             <p className="text-gray-300">
               TechSage is a student-powered platform where knowledge meets creativity. Dive into curated
@@ -38,9 +38,9 @@ const Footer = () => {
           <div className="space-y-3">
             <h3 className="text-teal-400 text-xl font-bold pb-2 border-b border-teal-400">Categories</h3>
             <Link to="#" className="block text-gray-300 hover:text-teal-400 transition-colors">Physics</Link>
-            <Link to="#" className="block text-gray-300 hover:text-teal-400 transition-colors">Operations</Link>
-            <Link to="#" className="block text-gray-300 hover:text-teal-400 transition-colors">Scholarships</Link>
-            <Link to="#" className="block text-gray-300 hover:text-teal-400 transition-colors">Social Impact</Link>
+            <Link to="#" className="block text-gray-300 hover:text-teal-400 transition-colors">Mathematics</Link>
+            <Link to="#" className="block text-gray-300 hover:text-teal-400 transition-colors">Biology</Link>
+            <Link to="#" className="block text-gray-300 hover:text-teal-400 transition-colors">Computer Science</Link>
           </div>
 
           <div className="space-y-3">
@@ -53,7 +53,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-gray-800 pt-6 pb-6 text-center text-gray-500 text-sm">
-          <p>&copy; 2025 TechSage. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} TechSage. All rights reserved.</p>
         </div>
       </div>
     </footer>

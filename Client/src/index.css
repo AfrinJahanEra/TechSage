@@ -1,8 +1,10 @@
-/* src/index.css */
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&display=swap');
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
 body {
-  font-family: Georgia, 'Times New Roman', Times, serif;
+  font-family: 'Inter', sans-serif;
   color: #333;
   line-height: 1.6;
   background-color: #ffffff;
@@ -22,7 +24,7 @@ body {
 }
 
 .prose blockquote {
-  border-left: 3px solid var(--primary-color);
+  border-left: 4px solid var(--primary-color);
   padding-left: 1.25rem;
   margin: 1.5rem 0;
   font-style: italic;
