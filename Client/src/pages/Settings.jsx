@@ -147,7 +147,7 @@ const Settings = () => {
       <Navbar activePage="settings" />
       
       {/* Dashboard Layout */}
-      <div className="flex flex-col md:flex-row min-h-[calc(100vh-80px)]">
+      <div className="flex flex-col md:flex-row min-h-[calc(100vh-80px)] py-20">
         {/* Sidebar */}
         <div className="w-full md:w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
           <ul className="py-4">

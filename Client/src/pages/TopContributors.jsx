@@ -110,7 +110,7 @@ const TopContributors = () => {
     <div className="min-h-screen bg-white">
       <Navbar activePage="top-contributors" />
       
-      <main className="container mx-auto px-4 py-8 pt-28">
+      <main className="container mx-auto px-20 py-8 pt-28">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Content */}
           <article className="flex-1">
@@ -187,8 +187,8 @@ const TopContributors = () => {
 
           {/* Sidebar */}
           <div className="lg:w-80 space-y-8">
-            <SearchForm />
             <Sidebar />
+            <SearchForm/>
           </div>
         </div>
       </main>

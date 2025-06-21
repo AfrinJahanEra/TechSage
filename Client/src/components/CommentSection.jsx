@@ -1,9 +1,12 @@
-import { useState } from 'react';
+// src/components/CommentSection.jsx
+import { useState, useContext } from 'react';
+import { AuthContext } from '../context/AuthContext.jsx';
 
 const CommentSection = () => {
   const [comment, setComment] = useState('');
   const [replyTo, setReplyTo] = useState(null);
   const [replyContent, setReplyContent] = useState('');
+  const { user } = useContext(AuthContext);
   const [comments, setComments] = useState([
     {
       id: 1,
@@ -44,12 +47,16 @@ const CommentSection = () => {
 
   const handleCommentSubmit = (e) => {
     e.preventDefault();
+    if (!user) {
+      alert('Please login to comment');
+      return;
+    }
     if (!comment.trim()) return;
     
     const newComment = {
       id: Date.now(),
-      author: 'Current User',
-      avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
+      author: user.name,
+      avatar: user.avatar || 'https://randomuser.me/api/portraits/women/44.jpg',
       date: 'Just now',
       content: comment,
       likes: 0,
@@ -62,12 +69,16 @@ const CommentSection = () => {
 
   const handleReplySubmit = (commentId, e) => {
     e.preventDefault();
+    if (!user) {
+      alert('Please login to reply');
+      return;
+    }
     if (!replyContent.trim()) return;
     
     const newReply = {
       id: Date.now(),
-      author: 'Current User',
-      avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
+      author: user.name,
+      avatar: user.avatar || 'https://randomuser.me/api/portraits/women/44.jpg',
       date: 'Just now',
       content: replyContent,
       likes: 0
@@ -84,6 +95,11 @@ const CommentSection = () => {
   };
 
   const handleLike = (commentId, isReply = false, replyId = null) => {
+    if (!user) {
+      alert('Please login to like comments');
+      return;
+    }
+
     if (isReply) {
       setComments(comments.map(c => 
         c.id === commentId 
@@ -107,6 +123,11 @@ const CommentSection = () => {
   };
 
   const handleDeleteComment = (commentId, isReply = false, replyId = null) => {
+    if (!user) {
+      alert('Please login to delete comments');
+      return;
+    }
+    
     if (confirm('Are you sure you want to delete this comment?')) {
       if (isReply) {
         setComments(comments.map(c => 
@@ -135,12 +156,14 @@ const CommentSection = () => {
         <textarea
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          placeholder="Contribute to the academic discussion..."
+          placeholder={user ? "Contribute to the academic discussion..." : "Please login to comment"}
           className="w-full p-4 border border-gray-300 rounded-lg mb-4 min-h-32 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+          disabled={!user}
         ></textarea>
         <button 
           type="submit" 
-          className="bg-teal-500 text-white px-6 py-2 rounded-lg hover:bg-teal-600 transition-colors"
+          className="bg-teal-500 text-white px-6 py-2 rounded-lg hover:bg-teal-600 transition-colors disabled:opacity-50"
+          disabled={!user}
         >
           Post Comment
         </button>
@@ -156,12 +179,14 @@ const CommentSection = () => {
                 <div className="flex items-center gap-4">
                   <h4 className="font-semibold">{comment.author}</h4>
                   <span className="text-gray-500 text-sm">{comment.date}</span>
-                  <button 
-                    onClick={() => handleDeleteComment(comment.id)}
-                    className="text-red-500 text-sm hover:text-red-700 ml-auto"
-                  >
-                    <i className="fas fa-trash"></i>
-                  </button>
+                  {user && (
+                    <button 
+                      onClick={() => handleDeleteComment(comment.id)}
+                      className="text-red-500 text-sm hover:text-red-700 ml-auto"
+                    >
+                      <i className="fas fa-trash"></i>
+                    </button>
+                  )}
                 </div>
                 <p className="mt-1">{comment.content}</p>
               </div>
@@ -176,7 +201,13 @@ const CommentSection = () => {
                 <span>Like ({comment.likes})</span>
               </button>
               <button 
-                onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
+                onClick={() => {
+                  if (!user) {
+                    alert('Please login to reply');
+                    return;
+                  }
+                  setReplyTo(replyTo === comment.id ? null : comment.id);
+                }}
                 className="flex items-center gap-1 text-gray-500 hover:text-gray-700 text-sm"
               >
                 <i className="fas fa-reply"></i>
@@ -222,6 +253,14 @@ const CommentSection = () => {
                         <div className="flex items-center gap-3">
                           <h4 className="font-semibold text-sm">{reply.author}</h4>
                           <span className="text-gray-500 text-xs">{reply.date}</span>
+                          {user && (
+                            <button 
+                              onClick={() => handleDeleteComment(comment.id, true, reply.id)}
+                              className="text-red-500 text-xs hover:text-red-700 ml-auto"
+                            >
+                              <i className="fas fa-trash"></i>
+                            </button>
+                          )}
                         </div>
                         <p className="mt-1 text-sm">{reply.content}</p>
                       </div>

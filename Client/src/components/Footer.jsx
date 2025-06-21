@@ -2,10 +2,10 @@ import { Link } from 'react-router-dom';
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-900 text-white pt-16">
-      <div className="container mx-auto px-4 md:px-6">
+    <footer className="bg-gray-900 text-white pt-16 px-10">
+      <div className="container mx-auto px-10 md:px-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
-          <div className="space-y-4">
+          <div className="space-y-10">
             <h3 className="text-teal-400 text-xl font-bold pb-2 border-b border-teal-400">TechSage</h3>
             <p className="text-gray-300">
               TechSage is a student-powered platform where knowledge meets creativity. Dive into curated

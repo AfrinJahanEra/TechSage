@@ -1,5 +1,7 @@
-import { useState } from 'react';
+// src/components/BlogActions.jsx
+import { useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const BlogActions = ({ upvotes, downvotes, onReport }) => {
   const [votes, setVotes] = useState({
@@ -8,8 +10,14 @@ const BlogActions = ({ upvotes, downvotes, onReport }) => {
     userVote: null // null, 'up', or 'down'
   });
   const [showShareOptions, setShowShareOptions] = useState(false);
+  const { user } = useAuth(); 
 
   const handleVote = (type) => {
+    if (!user) {
+      alert('Please login to vote');
+      return;
+    }
+
     if (type === 'up') {
       if (votes.userVote === 'up') {
         setVotes(prev => ({
@@ -67,7 +75,7 @@ const BlogActions = ({ upvotes, downvotes, onReport }) => {
         <div className="flex space-x-4">
           <button 
             onClick={() => handleVote('up')}
-            className={`flex items-center space-x-2 px-4 py-2 border rounded-full ${votes.userVote === 'up' ? 'border-green-500 text-green-500' : 'border-gray-300 hover:border-green-400 hover:text-green-500'} transition-colors`}
+            className={`flex items-center space-x-2 px-20 py-2 border rounded-full ${votes.userVote === 'up' ? 'border-green-500 text-green-500' : 'border-gray-300 hover:border-green-400 hover:text-green-500'} transition-colors`}
           >
             <i className="fas fa-arrow-up"></i>
             <span>{votes.up}</span>
@@ -116,7 +124,13 @@ const BlogActions = ({ upvotes, downvotes, onReport }) => {
           </Link>
           
           <button 
-            onClick={onReport}
+            onClick={() => {
+              if (!user) {
+                alert('Please login to report content');
+                return;
+              }
+              onReport();
+            }}
             className="flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
           >
             <i className="fas fa-flag"></i>
@@ -126,16 +140,18 @@ const BlogActions = ({ upvotes, downvotes, onReport }) => {
       </div>
 
       {/* Moderator Actions (only visible to moderators) */}
-      <div className="flex space-x-4 mt-6 pt-6 border-t border-gray-200">
-        <button className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
-          <i className="fas fa-search"></i>
-          <span>Check Plagiarism</span>
-        </button>
-        <button className="flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors">
-          <i className="fas fa-trash"></i>
-          <span>Delete Blog</span>
-        </button>
-      </div>
+      {(user?.role === 'moderator' || user?.role === 'admin') && (
+        <div className="flex space-x-4 mt-6 pt-6 border-t border-gray-200">
+          <button className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+            <i className="fas fa-search"></i>
+            <span>Check Plagiarism</span>
+          </button>
+          <button className="flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors">
+            <i className="fas fa-trash"></i>
+            <span>Delete Blog</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };

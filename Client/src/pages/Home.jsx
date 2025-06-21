@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar.jsx';
 import Footer from '../components/Footer.jsx';
 import Sidebar from '../components/Sidebar.jsx';
+import SearchForm from '../components/SearchForm.jsx';
 
 const Home = () => {
   const [fadeInElements, setFadeInElements] = useState([]);
@@ -57,7 +58,7 @@ const Home = () => {
     <div className="min-h-screen bg-white">
       <Navbar activePage="home" />
       
-      <main className="container mx-auto px-4 py-8 pt-28">
+      <main className="container mx-auto px-20 py-10 pt-28">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Content */}
           <article className="flex-1">
@@ -107,15 +108,16 @@ const Home = () => {
           </article>
 
           {/* Sidebar */}
-          <div className="lg:w-80">
+          <div className="lg:w-80 space-y-8">
             <Sidebar />
+            <SearchForm/>
           </div>
         </div>
       </main>
 
       {/* Featured Research Section */}
       <section className="bg-gray-50 py-16">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-20">
           <h2 className="text-3xl font-bold mb-4 relative pb-4 fade-in">
             Featured Research
             <span className="absolute bottom-0 left-0 w-16 h-1 bg-teal-500"></span>

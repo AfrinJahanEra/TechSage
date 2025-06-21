@@ -124,12 +124,7 @@ const Sidebar = ({ type = 'default' }) => {
 
       {type !== 'inside-blog' && (
         <div className="space-y-8">
-          <button
-            onClick={() => setShowJobs(!showJobs)}
-            className="w-full bg-teal-500 text-white py-2 px-4 rounded-md font-semibold hover:bg-teal-600 transition-colors"
-          >
-            {showJobs ? 'View All Articles' : 'View Career Opportunities'}
-          </button>
+ 
 
           {showJobs ? (
             <div className="space-y-4">

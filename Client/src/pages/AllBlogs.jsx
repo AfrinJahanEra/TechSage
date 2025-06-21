@@ -198,7 +198,7 @@ const AllBlogs = () => {
     <div className="min-h-screen bg-white">
       <Navbar activePage="all-blogs" />
       
-      <main className="container mx-auto px-4 py-8 pt-28">
+      <main className="container mx-auto px-20 py-20 pt-28">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Content */}
           <div className="flex-1">
@@ -474,21 +474,9 @@ const AllBlogs = () => {
             </div>
 
             {/* Search Users */}
-            <div className="bg-white p-4 rounded-lg">
-              <h3 className="text-lg font-semibold text-teal-600 mb-4 border-b border-gray-200 pb-2">
-                Search Users
-              </h3>
-              <div className="relative">
-                <input
-                  type="text"
-                  className="w-full pl-3 pr-8 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                  placeholder="Search by name or expertise..."
-                />
-                <button className="absolute right-2 top-1/2 transform -translate-y-1/2 text-teal-500">
-                  <i className="fas fa-search"></i>
-                </button>
-              </div>
-            </div>
+            <div className="lg:w-80 space-y-8">
+            <SearchForm/>
+          </div>
           </div>
         </div>
       </main>
