@@ -40,11 +40,21 @@ const LoginForm = () => {
           name: 'Demo User',
           email: formData.email,
           university: 'Demo University',
-          role: 'user',
+          role: formData.email.includes('admin') ? 'admin' : 
+                formData.email.includes('moderator') ? 'moderator' : 'user',
           avatar: `https://ui-avatars.com/api/?name=Demo+User&background=1abc9c&color=fff`
         };
         login(userData);
-        navigate('/home');
+        
+        // Redirect based on role
+        if (userData.role === 'admin') {
+          navigate('/admin');
+        } else if (userData.role === 'moderator') {
+          navigate('/moderator');
+        } else {
+          navigate('/home');
+        }
+        
         setLoading(false);
       }, 1000);
     }

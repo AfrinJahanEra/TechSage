@@ -13,6 +13,10 @@ import { AuthProvider } from './context/AuthContext.jsx';
 import PrivateRoute from './components/PrivateRoute.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 import Dashboard from './pages/Dashboard.jsx';
+import CreateBlogs from './pages/CreateBlogs.jsx'
+import Admin from './pages/Admin.jsx';
+import ModeratorDashboard from './pages/Moderator.jsx';
+
 
 function AppRoutes() {
   const { firstVisit } = useAuth();
@@ -27,8 +31,11 @@ function AppRoutes() {
       <Route path="/other-dashboard" element={<OtherDashboard />} />
       <Route path="/signup" element={<SignupForm />} />
       <Route path="/login" element={<LoginForm />} />
+      <Route path="/new-blog" element={<CreateBlogs />} />
       <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
       <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+      <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />
+      <Route path="/moderator" element={<PrivateRoute><ModeratorDashboard /></PrivateRoute>} />
       <Route path="*" element={<Navigate to="/home" />} />
     </Routes>
   );

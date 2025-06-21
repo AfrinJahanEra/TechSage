@@ -80,26 +80,35 @@ const SignupForm = () => {
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (validate() && otpVerified) {
-      setLoading(true);
-      // In a real app, you would send data to your backend
-      setTimeout(() => {
-        const userData = {
-          id: Math.random().toString(36).substring(7),
-          name: formData.name,
-          email: formData.email,
-          university: formData.university,
-          role: formData.role,
-          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=1abc9c&color=fff`
-        };
-        login(userData);
+const handleSubmit = (e) => {
+  e.preventDefault();
+  if (validate() && otpVerified) {
+    setLoading(true);
+    // In a real app, you would send data to your backend
+    setTimeout(() => {
+      const userData = {
+        id: Math.random().toString(36).substring(7),
+        name: formData.name,
+        email: formData.email,
+        university: formData.university,
+        role: formData.role,
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=1abc9c&color=fff`
+      };
+      login(userData);
+      
+      // Redirect based on role
+      if (formData.role === 'admin') {
+        navigate('/admin');
+      } else if (formData.role === 'moderator') {
+        navigate('/moderator');
+      } else {
         navigate('/home');
-        setLoading(false);
-      }, 1500);
-    }
-  };
+      }
+      
+      setLoading(false);
+    }, 1500);
+  }
+};
 
   const handleGoogleSignup = () => {
     // In a real app, implement Google OAuth
