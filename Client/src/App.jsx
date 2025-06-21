@@ -12,7 +12,7 @@ import LoginForm from './components/auth/LoginForm.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import PrivateRoute from './components/PrivateRoute.jsx';
 import { useAuth } from './context/AuthContext.jsx';
-import Dashboard from './components/Dashboard.jsx';
+import Dashboard from './pages/Dashboard.jsx';
 
 function AppRoutes() {
   const { firstVisit } = useAuth();

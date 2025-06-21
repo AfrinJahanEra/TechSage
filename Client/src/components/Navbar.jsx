@@ -29,12 +29,12 @@ const Navbar = ({ activePage }) => {
 
   return (
     <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'h-16 shadow-md' : 'h-20 shadow-lg'} bg-teal-500`}>
-      <div className="container mx-auto px-4 md:px-20 h-full flex justify-between items-center">
+      <div className="container space-x-auto mx-auto px-auto md:px-20 h-full flex justify-between items-center">
         <Link to={user ? "/home" : "/"} className="text-white font-bold text-2xl md:text-3xl font-orbitron tracking-wider">
           <span className="text-white">Tech</span>Sage
         </Link>
 
-        <div className="hidden md:flex items-center space-x-8">
+        <div className="hidden md:flex items-center space-x-10">
           <Link to="/home" className={`text-white text-lg font-medium hover:underline ${activePage === 'home' ? 'font-bold' : ''}`}>
             Home
           </Link>

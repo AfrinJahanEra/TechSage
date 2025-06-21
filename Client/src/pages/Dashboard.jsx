@@ -3,7 +3,7 @@ import { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Chart } from 'chart.js/auto';
-import Footer from './Footer.jsx';
+import Footer from '../components/Footer.jsx';
 import Navbar from '../components/Navbar.jsx'
 
 const Dashboard = () => {
