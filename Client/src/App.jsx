@@ -1,6 +1,6 @@
 // src/App.jsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import CreateBlogPage from './components/createblogcomponent/CreateBlogPage';
+import CreateBlogPage from './components/CreateBlogComponents/CreateBlogPage';
 import Home from './pages/Home.jsx';
 import InsideBlog from './pages/InsideBlog.jsx';
 import TopContributors from './pages/TopContributors.jsx';
