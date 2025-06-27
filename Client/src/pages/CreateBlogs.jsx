@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { FiUpload, FiX, FiCheck, FiPlus } from 'react-icons/fi';
+import { FiUpload, FiX, FiPlus, FiCheck } from 'react-icons/fi';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
+import BlogEditorToolbar from './BlogEditorToolbar';
 
 const CreateBlogPage = () => {
   // State management
@@ -150,8 +151,8 @@ const CreateBlogPage = () => {
                         key={cat}
                         type="button"
                         className={`px-4 py-3 rounded-lg border text-sm font-medium flex items-center justify-center ${categories.includes(cat)
-                            ? 'bg-teal-500 text-white border-teal-500'
-                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                          ? 'bg-teal-500 text-white border-teal-500'
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                           }`}
                         onClick={() => toggleCategory(cat)}
                       >
@@ -168,29 +169,8 @@ const CreateBlogPage = () => {
                 <div className="mb-8">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Blog Content</label>
 
-                  {/* Editor Toolbar */}
-                  <div className="flex items-center gap-2 mb-3 p-2 bg-gray-50 rounded-lg border border-gray-200">
-                    {/* Formatting buttons */}
-                    <button type="button" className="p-1.5 rounded hover:bg-gray-100 text-gray-700 font-bold">B</button>
-                    <button type="button" className="p-1.5 rounded hover:bg-gray-100 text-gray-700 italic">I</button>
-                    <button type="button" className="p-1.5 rounded hover:bg-gray-100 text-gray-700 underline">U</button>
-
-                    {/* Divider */}
-                    <div className="h-6 w-px bg-gray-300 mx-1"></div>
-
-                    {/* Lists */}
-                    <button type="button" className="p-1.5 rounded hover:bg-gray-100 text-gray-700">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M8 6H20M8 12H20M8 18H20M4 6H4.01M4 12H4.01M4 18H4.01" strokeWidth="2" />
-                      </svg>
-                    </button>
-
-                    {/* Divider */}
-                    <div className="h-6 w-px bg-gray-300 mx-1"></div>
-
-                    {/* LaTeX */}
-                    <button type="button" className="p-1.5 rounded hover:bg-gray-100 text-gray-700 font-bold">E</button>
-                  </div>
+                  {/* Replace the old toolbar with the new component */}
+                  <BlogEditorToolbar editorRef={editorRef} />
 
                   {/* Editor Content */}
                   <div
