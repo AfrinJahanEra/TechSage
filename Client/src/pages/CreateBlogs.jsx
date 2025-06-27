@@ -1,651 +1,311 @@
-import React, { useState, useRef, useEffect } from 'react';
-import Footer from '../components/Footer.jsx';
-import Navbar from '../components/Navbar.jsx';
+import React, { useState, useRef } from 'react';
+import { FiUpload, FiX, FiCheck, FiPlus } from 'react-icons/fi';
+import Footer from '../components/Footer';
+import Navbar from '../components/Navbar';
 
-const NewBlog = () => {
-  // State for form fields
-  const [blogTitle, setBlogTitle] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+const CreateBlogPage = () => {
+  // State management
+  const [title, setTitle] = useState('');
+  const [categories, setCategories] = useState([]); // Now stores multiple categories
   const [thumbnail, setThumbnail] = useState(null);
-  const [thumbnailPreview, setThumbnailPreview] = useState('');
-  const [editorContent, setEditorContent] = useState('');
-  const [navMenuActive, setNavMenuActive] = useState(false);
-  const [navbarScrolled, setNavbarScrolled] = useState(false);
-  
+  const [content, setContent] = useState('<p>Start writing your blog post here...</p>');
+  const [collaborators, setCollaborators] = useState([
+    { id: 1, name: 'Ramisa Anan', email: 'ramisa@example.com', role: 'Editor' },
+    { id: 2, name: 'Ridika Naznin', email: 'ridika@example.com', role: 'Professor' }
+  ]);
+  const [newCollaborator, setNewCollaborator] = useState('');
+
+  // Available categories
+  const availableCategories = [
+    'Software', 'Math', 'Electronics', 'AI', 'Cybersecurity', 'Web Development'
+  ];
+
+  // Toggle category selection
+  const toggleCategory = (category) => {
+    setCategories(prev =>
+      prev.includes(category)
+        ? prev.filter(c => c !== category) // Remove if already selected
+        : [...prev, category] // Add if not selected
+    );
+  };
+
   // Refs
-  const thumbnailInputRef = useRef(null);
   const editorRef = useRef(null);
-  
-  // Categories
-  const categories = [
-    { id: 'software', name: 'Software' },
-    { id: 'math', name: 'Math' },
-    { id: 'electronics', name: 'Electronics' },
-    { id: 'ai', name: 'AI' },
-    { id: 'cybersecurity', name: 'Cybersecurity' },
-    { id: 'webdev', name: 'Web Development' }
-  ];
+  const fileInputRef = useRef(null);
 
-  // Collaborators data
-  const collaborators = [
-    {
-      name: 'Ramisa Anan Sharley',
-      role: 'Editor',
-      avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
-    },
-    {
-      name: 'Ridika Naznin',
-      role: 'Reviewer',
-      avatar: 'https://randomuser.me/api/portraits/women/65.jpg'
-    },
-    {
-      name: 'Afrin Jahan Era',
-      role: 'Contributor',
-      avatar: 'https://randomuser.me/api/portraits/men/75.jpg'
-    }
-  ];
 
-  // Version history data
-  const versions = [
-    {
-      name: 'Current Version',
-      date: 'Just now',
-      author: 'You',
-      avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-      active: true
-    },
-    {
-      name: 'Updated content',
-      date: '2 hours ago',
-      author: 'Ridika Naznin',
-      avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-      active: false
-    },
-    {
-      name: 'Initial draft',
-      date: 'Yesterday',
-      author: 'You',
-      avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-      active: false
-    },
-    {
-      name: 'Outline created',
-      date: '3 days ago',
-      author: 'You',
-      avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-      active: false
-    }
-  ];
 
-  // Handle scroll effect for navbar
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 50) {
-        setNavbarScrolled(true);
-      } else {
-        setNavbarScrolled(false);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // Handle thumbnail upload
-  const handleThumbnailUpload = (e) => {
+  // Handle image upload
+  const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setThumbnail(file);
       const reader = new FileReader();
       reader.onload = (event) => {
-        setThumbnailPreview(event.target.result);
+        setThumbnail(event.target.result);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  // Handle drag and drop for thumbnail
-  const handleDragOver = (e) => {
+  // Handle collaborator addition
+  const addCollaborator = (e) => {
     e.preventDefault();
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    if (e.dataTransfer.files.length) {
-      const file = e.dataTransfer.files[0];
-      setThumbnail(file);
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setThumbnailPreview(event.target.result);
-      };
-      reader.readAsDataURL(file);
+    if (!newCollaborator.includes('@')) {
+      alert('Please enter a valid email');
+      return;
     }
-  };
-
-  // Handle category selection
-  const handleCategorySelect = (categoryId) => {
-    setSelectedCategory(categoryId);
-  };
-
-  // Handle editor commands
-  const handleEditorCommand = (command) => {
-    if (command === 'createLink') {
-      const url = prompt('Enter the URL:');
-      if (url) document.execCommand(command, false, url);
-    } else if (command === 'insertImage') {
-      const url = prompt('Enter the image URL:');
-      if (url) document.execCommand(command, false, url);
-    } else if (command === 'insertCode') {
-      insertCodeBlock();
-    } else if (command === 'insertLatex') {
-      insertLatex();
-    } else {
-      document.execCommand(command, false, null);
-    }
-    editorRef.current.focus();
-  };
-
-  // Insert code block
-  const insertCodeBlock = () => {
-    const selection = window.getSelection();
-    if (selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      const codeBlock = document.createElement('pre');
-      codeBlock.className = 'bg-gray-100 p-2 rounded overflow-x-auto';
-      codeBlock.innerHTML = '<code>// Your code here</code>';
-
-      range.deleteContents();
-      range.insertNode(codeBlock);
-
-      // Place cursor inside the code block
-      const newRange = document.createRange();
-      newRange.selectNodeContents(codeBlock.querySelector('code'));
-      newRange.collapse(false);
-      selection.removeAllRanges();
-      selection.addRange(newRange);
-    }
-  };
-
-  // Insert LaTeX block
-  const insertLatex = () => {
-    const latexBlock = document.createElement('div');
-    latexBlock.className = 'bg-gray-100 p-2 rounded font-mono';
-    latexBlock.innerHTML = '\\[ Your LaTeX equation here \\]';
-
-    const selection = window.getSelection();
-    if (selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      range.deleteContents();
-      range.insertNode(latexBlock);
-
-      // Place cursor inside the LaTeX block
-      const newRange = document.createRange();
-      newRange.selectNodeContents(latexBlock);
-      newRange.collapse(false);
-      selection.removeAllRanges();
-      selection.addRange(newRange);
-    }
-  };
-
-  // Handle version selection
-  const handleVersionSelect = (index) => {
-    const updatedVersions = versions.map((version, i) => ({
-      ...version,
-      active: i === index
-    }));
-    alert('Loading version: ' + versions[index].name);
+    setCollaborators([...collaborators, {
+      id: Date.now(),
+      name: newCollaborator.split('@')[0],
+      email: newCollaborator,
+      role: 'Contributor'
+    }]);
+    setNewCollaborator('');
   };
 
   // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    if (!blogTitle) {
-      alert('Please enter a blog title');
-      return;
-    }
-
-    if (!selectedCategory) {
-      alert('Please select a category');
-      return;
-    }
-
-    if (!thumbnail) {
-      alert('Please upload a thumbnail image');
-      return;
-    }
-
-    if (!editorContent || editorContent === '<br>' || editorContent === '<div><br></div>') {
-      alert('Please write some content for your blog');
-      return;
-    }
-
-    // In a real application, you would send this data to a server
-    alert('Blog published successfully!');
     console.log({
-      blogTitle,
-      selectedCategory,
-      editorContent,
-      thumbnail
+      title,
+      category,
+      content,
+      thumbnail,
+      collaborators
     });
-
-    // Reset form
-    setBlogTitle('');
-    setSelectedCategory('');
-    setThumbnail(null);
-    setThumbnailPreview('');
-    setEditorContent('');
-  };
-
-  // Handle save as draft
-  const handleSaveDraft = () => {
-    if (!blogTitle && !editorContent) {
-      alert('Please add some content before saving as draft');
-      return;
-    }
-
-    // In a real app, you would save to local storage or send to server
-    alert('Draft saved successfully!');
-    console.log('Draft saved:', { blogTitle, selectedCategory, editorContent });
-  };
-
-  // Handle discard changes
-  const handleDiscardChanges = () => {
-    if (confirm('Are you sure you want to discard all changes?')) {
-      setBlogTitle('');
-      setSelectedCategory('');
-      setThumbnail(null);
-      setThumbnailPreview('');
-      setEditorContent('');
-    }
+    alert('Blog published successfully!');
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
-      {/* Navbar */}
-      <Navbar/>
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
 
-      {/* Main Content */}
-      <div className="flex flex-col lg:flex-row mt-20 flex-1 px-20">
-        {/* Main Content Area */}
-        <main className="flex-1 p-6 lg:p-10 order-1 lg:order-1">
-          <div className="bg-white rounded-lg p-6 lg:p-10">
-            <h1 className="text-3xl font-bold mb-8">Create New Blog</h1>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          {/* Page Header */}
+          <div className="px-8 py-6 border-b border-gray-200">
+            <h1 className="text-2xl font-bold text-gray-800">Create New Blog</h1>
+          </div>
 
-            <form onSubmit={handleSubmit}>
-              {/* Blog Title */}
-              <div className="mb-8">
-                <label htmlFor="blogTitle" className="block text-xl font-semibold mb-3">Blog Title</label>
-                <input
-                  type="text"
-                  id="blogTitle"
-                  className="w-full px-4 py-3 border border-gray-300 rounded focus:border-teal-500 focus:outline-none"
-                  placeholder="Enter your blog title"
-                  value={blogTitle}
-                  onChange={(e) => setBlogTitle(e.target.value)}
-                />
-              </div>
+          <div className="md:flex">
+            {/* Main Content */}
+            <div className="md:w-2/3 p-8">
+              <form onSubmit={handleSubmit}>
+                {/* Blog Title */}
+                <div className="mb-8">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Blog Title</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    placeholder="Enter your blog title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                  />
+                </div>
 
-              {/* Thumbnail Upload */}
-              <div className="mb-8">
-                <label className="block text-xl font-semibold mb-3">Thumbnail Image</label>
-                {!thumbnailPreview ? (
+                {/* Thumbnail Upload */}
+                <div className="mb-8">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Thumbnail Image</label>
                   <div
-                    className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-teal-500 hover:bg-teal-50 transition-all"
-                    onClick={() => thumbnailInputRef.current.click()}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
+                    className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-teal-500 transition-colors"
+                    onClick={() => fileInputRef.current.click()}
                   >
-                    <i className="fas fa-cloud-upload-alt text-teal-500 text-4xl mb-4"></i>
-                    <p className="text-gray-400 mb-1">Click to upload or drag and drop</p>
-                    <small className="text-gray-400">Recommended size: 1200x630px</small>
+                    {thumbnail ? (
+                      <div className="relative">
+                        <img src={thumbnail} alt="Preview" className="max-h-60 mx-auto rounded-md" />
+                        <button
+                          type="button"
+                          className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setThumbnail(null);
+                          }}
+                        >
+                          <FiX size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <FiUpload className="mx-auto h-12 w-12 text-gray-400 mb-3" />
+                        <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
+                        <p className="text-xs text-gray-500 mt-1">Recommended size: 1000×585px</p>
+                      </>
+                    )}
                     <input
                       type="file"
-                      id="thumbnailInput"
-                      ref={thumbnailInputRef}
-                      accept="image/*"
+                      ref={fileInputRef}
                       className="hidden"
-                      onChange={handleThumbnailUpload}
+                      accept="image/*"
+                      onChange={handleImageUpload}
                     />
                   </div>
-                ) : (
-                  <div className="mt-4">
-                    <img
-                      src={thumbnailPreview}
-                      alt="Preview"
-                      className="max-w-xs max-h-xs rounded"
-                    />
+                </div>
+
+                {/* Category Selection */}
+                <div className="mb-8">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {availableCategories.map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        className={`px-4 py-3 rounded-lg border text-sm font-medium flex items-center justify-center ${categories.includes(cat)
+                            ? 'bg-teal-500 text-white border-teal-500'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                          }`}
+                        onClick={() => toggleCategory(cat)}
+                      >
+                        {cat}
+                        {categories.includes(cat) && (
+                          <FiCheck className="ml-2" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Blog Content Editor */}
+                <div className="mb-8">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Blog Content</label>
+
+                  {/* Editor Toolbar */}
+                  <div className="flex items-center gap-2 mb-3 p-2 bg-gray-50 rounded-lg border border-gray-200">
+                    {/* Formatting buttons */}
+                    <button type="button" className="p-1.5 rounded hover:bg-gray-100 text-gray-700 font-bold">B</button>
+                    <button type="button" className="p-1.5 rounded hover:bg-gray-100 text-gray-700 italic">I</button>
+                    <button type="button" className="p-1.5 rounded hover:bg-gray-100 text-gray-700 underline">U</button>
+
+                    {/* Divider */}
+                    <div className="h-6 w-px bg-gray-300 mx-1"></div>
+
+                    {/* Lists */}
+                    <button type="button" className="p-1.5 rounded hover:bg-gray-100 text-gray-700">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M8 6H20M8 12H20M8 18H20M4 6H4.01M4 12H4.01M4 18H4.01" strokeWidth="2" />
+                      </svg>
+                    </button>
+
+                    {/* Divider */}
+                    <div className="h-6 w-px bg-gray-300 mx-1"></div>
+
+                    {/* LaTeX */}
+                    <button type="button" className="p-1.5 rounded hover:bg-gray-100 text-gray-700 font-bold">E</button>
+                  </div>
+
+                  {/* Editor Content */}
+                  <div
+                    ref={editorRef}
+                    className="min-h-[300px] border border-gray-300 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    contentEditable
+                    dangerouslySetInnerHTML={{ __html: content }}
+                    onInput={(e) => setContent(e.target.innerHTML)}
+                  />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-between items-center mt-8">
+                  <div className="text-sm text-gray-500">
+                    <p><span className="font-medium">Status:</span> Draft</p>
+                    <p><span className="font-medium">Last Saved:</span> Just now</p>
+                  </div>
+                  <div className="space-x-3">
                     <button
                       type="button"
-                      className="mt-2 text-red-500 text-sm"
+                      className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
                       onClick={() => {
-                        setThumbnail(null);
-                        setThumbnailPreview('');
+                        if (confirm('Discard all changes?')) {
+                          setTitle('');
+                          setCategory('');
+                          setThumbnail(null);
+                          setContent('<p>Start writing your blog post here...</p>');
+                        }
                       }}
                     >
-                      Remove image
+                      Discard
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-6 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600"
+                    >
+                      Publish Blog
                     </button>
                   </div>
-                )}
-              </div>
+                </div>
+              </form>
+            </div>
 
-              {/* Category Selection */}
+            {/* Sidebar */}
+            <div className="md:w-1/3 border-l border-gray-200 p-8 bg-gray-50">
+              {/* Collaborators Section */}
               <div className="mb-8">
-                <label className="block text-xl font-semibold mb-3">Category</label>
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {categories.map((category) => (
-                    <div
-                      key={category.id}
-                      className={`px-4 py-2 bg-gray-100 rounded-full cursor-pointer transition-all ${selectedCategory === category.id ? 'bg-teal-500 text-white' : 'hover:bg-teal-500 hover:text-white'}`}
-                      onClick={() => handleCategorySelect(category.id)}
-                    >
-                      {category.name}
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Collaborators</h3>
+                <div className="space-y-3">
+                  {collaborators.map((person) => (
+                    <div key={person.id} className="flex justify-between items-center bg-white p-3 rounded-lg">
+                      <div className="flex items-center">
+                        <div className="h-10 w-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-medium mr-3">
+                          {person.name.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{person.name}</p>
+                          <p className="text-xs text-gray-500">{person.role}</p>
+                        </div>
+                      </div>
+                      <button
+                        className="text-gray-400 hover:text-red-500"
+                        onClick={() => setCollaborators(collaborators.filter(c => c.id !== person.id))}
+                      >
+                        <FiX />
+                      </button>
                     </div>
                   ))}
                 </div>
-                <input type="hidden" id="selectedCategory" value={selectedCategory} />
-              </div>
-
-              {/* Blog Content Editor */}
-              <div className="mb-8">
-                <label className="block text-xl font-semibold mb-3">Blog Content</label>
-                
-                {/* Editor Toolbar */}
-                <div className="flex flex-wrap gap-1 mb-3 p-2 bg-gray-100 rounded">
-                  {/* Formatting buttons */}
-                  <button
-                    type="button"
-                    className="w-9 h-9 bg-white rounded flex items-center justify-center hover:bg-teal-500 hover:text-white transition-all"
-                    onClick={() => handleEditorCommand('bold')}
-                    title="Bold"
-                  >
-                    <i className="fas fa-bold"></i>
-                  </button>
-                  <button
-                    type="button"
-                    className="w-9 h-9 bg-white rounded flex items-center justify-center hover:bg-teal-500 hover:text-white transition-all"
-                    onClick={() => handleEditorCommand('italic')}
-                    title="Italic"
-                  >
-                    <i className="fas fa-italic"></i>
-                  </button>
-                  <button
-                    type="button"
-                    className="w-9 h-9 bg-white rounded flex items-center justify-center hover:bg-teal-500 hover:text-white transition-all"
-                    onClick={() => handleEditorCommand('underline')}
-                    title="Underline"
-                  >
-                    <i className="fas fa-underline"></i>
-                  </button>
-
-                  <div className="w-px h-9 bg-gray-300 mx-1"></div>
-
-                  {/* List buttons */}
-                  <button
-                    type="button"
-                    className="w-9 h-9 bg-white rounded flex items-center justify-center hover:bg-teal-500 hover:text-white transition-all"
-                    onClick={() => handleEditorCommand('insertUnorderedList')}
-                    title="Bullet List"
-                  >
-                    <i className="fas fa-list-ul"></i>
-                  </button>
-                  <button
-                    type="button"
-                    className="w-9 h-9 bg-white rounded flex items-center justify-center hover:bg-teal-500 hover:text-white transition-all"
-                    onClick={() => handleEditorCommand('insertOrderedList')}
-                    title="Numbered List"
-                  >
-                    <i className="fas fa-list-ol"></i>
-                  </button>
-
-                  <div className="w-px h-9 bg-gray-300 mx-1"></div>
-
-                  {/* Alignment buttons */}
-                  <button
-                    type="button"
-                    className="w-9 h-9 bg-white rounded flex items-center justify-center hover:bg-teal-500 hover:text-white transition-all"
-                    onClick={() => handleEditorCommand('justifyLeft')}
-                    title="Align Left"
-                  >
-                    <i className="fas fa-align-left"></i>
-                  </button>
-                  <button
-                    type="button"
-                    className="w-9 h-9 bg-white rounded flex items-center justify-center hover:bg-teal-500 hover:text-white transition-all"
-                    onClick={() => handleEditorCommand('justifyCenter')}
-                    title="Center"
-                  >
-                    <i className="fas fa-align-center"></i>
-                  </button>
-                  <button
-                    type="button"
-                    className="w-9 h-9 bg-white rounded flex items-center justify-center hover:bg-teal-500 hover:text-white transition-all"
-                    onClick={() => handleEditorCommand('justifyRight')}
-                    title="Align Right"
-                  >
-                    <i className="fas fa-align-right"></i>
-                  </button>
-                  <button
-                    type="button"
-                    className="w-9 h-9 bg-white rounded flex items-center justify-center hover:bg-teal-500 hover:text-white transition-all"
-                    onClick={() => handleEditorCommand('justifyFull')}
-                    title="Justify"
-                  >
-                    <i className="fas fa-align-justify"></i>
-                  </button>
-
-                  <div className="w-px h-9 bg-gray-300 mx-1"></div>
-
-                  {/* Media buttons */}
-                  <button
-                    type="button"
-                    className="w-9 h-9 bg-white rounded flex items-center justify-center hover:bg-teal-500 hover:text-white transition-all"
-                    onClick={() => handleEditorCommand('createLink')}
-                    title="Insert Link"
-                  >
-                    <i className="fas fa-link"></i>
-                  </button>
-                  <button
-                    type="button"
-                    className="w-9 h-9 bg-white rounded flex items-center justify-center hover:bg-teal-500 hover:text-white transition-all"
-                    onClick={() => handleEditorCommand('insertImage')}
-                    title="Insert Image"
-                  >
-                    <i className="fas fa-image"></i>
-                  </button>
-
-                  <div className="w-px h-9 bg-gray-300 mx-1"></div>
-
-                  {/* Special content buttons */}
-                  <button
-                    type="button"
-                    className="w-9 h-9 bg-white rounded flex items-center justify-center hover:bg-teal-500 hover:text-white transition-all"
-                    onClick={() => handleEditorCommand('insertCode')}
-                    title="Insert Code"
-                  >
-                    <i className="fas fa-code"></i>
-                  </button>
-                  <button
-                    type="button"
-                    className="w-9 h-9 bg-white rounded flex items-center justify-center hover:bg-teal-500 hover:text-white transition-all"
-                    onClick={() => handleEditorCommand('insertLatex')}
-                    title="Insert LaTeX"
-                  >
-                    <i className="fas fa-square-root-alt"></i>
-                  </button>
-
-                  <div className="w-px h-9 bg-gray-300 mx-1"></div>
-
-                  {/* Undo/Redo buttons */}
-                  <button
-                    type="button"
-                    className="w-9 h-9 bg-white rounded flex items-center justify-center hover:bg-teal-500 hover:text-white transition-all"
-                    onClick={() => handleEditorCommand('undo')}
-                    title="Undo"
-                  >
-                    <i className="fas fa-undo"></i>
-                  </button>
-                  <button
-                    type="button"
-                    className="w-9 h-9 bg-white rounded flex items-center justify-center hover:bg-teal-500 hover:text-white transition-all"
-                    onClick={() => handleEditorCommand('redo')}
-                    title="Redo"
-                  >
-                    <i className="fas fa-redo"></i>
-                  </button>
-                </div>
-
-                {/* Editor Content */}
-                <div
-                  ref={editorRef}
-                  className="min-h-[300px] border border-gray-300 rounded p-4 focus:border-teal-500 focus:outline-none"
-                  contentEditable
-                  placeholder="Write your blog content here..."
-                  onInput={(e) => setEditorContent(e.target.innerHTML)}
-                  dangerouslySetInnerHTML={{ __html: editorContent }}
-                ></div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 mt-8">
-                <button
-                  type="submit"
-                  className="bg-teal-500 text-white px-6 py-3 rounded font-semibold hover:bg-teal-600 transition-all"
-                >
-                  Publish Blog
-                </button>
-                <button
-                  type="button"
-                  className="bg-yellow-500 text-white px-6 py-3 rounded font-semibold hover:bg-yellow-600 transition-all"
-                  onClick={handleSaveDraft}
-                >
-                  Save as Draft
-                </button>
-                <button
-                  type="button"
-                  className="bg-red-500 text-white px-6 py-3 rounded font-semibold hover:bg-red-600 transition-all"
-                  onClick={handleDiscardChanges}
-                >
-                  Discard
-                </button>
-              </div>
-            </form>
-          </div>
-        </main>
-
-        {/* Sidebar */}
-        <aside className="w-full lg:w-[450px] bg-gray-50 p-6 border-t lg:border-t-0 lg:border-l border-gray-200 order-2 lg:order-2 lg:sticky lg:top-20 lg:h-[calc(100vh-5rem)] lg:overflow-y-auto">
-          <div className="mb-8 pb-4 border-b border-gray-200">
-            <h3 className="text-xl font-semibold">Blog Details</h3>
-          </div>
-
-          {/* Collaborators Section */}
-          <div className="mb-8">
-            <h4 className="text-lg font-semibold mb-4 flex items-center">
-              <i className="fas fa-users mr-2"></i>
-              Collaborators
-            </h4>
-            <div className="space-y-3">
-              {collaborators.map((collaborator, index) => (
-                <a
-                  key={index}
-                  href="OtherDashboard.html"
-                  className="flex items-center p-3 bg-white rounded shadow-sm hover:bg-teal-50 transition-all"
-                >
-                  <img
-                    src={collaborator.avatar}
-                    alt="Collaborator"
-                    className="w-10 h-10 rounded-full border-2 border-gray-200 mr-3"
+                <form onSubmit={addCollaborator} className="mt-4 flex">
+                  <input
+                    type="email"
+                    value={newCollaborator}
+                    onChange={(e) => setNewCollaborator(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="Add collaborator by email"
                   />
-                  <div>
-                    <div className="font-medium">{collaborator.name}</div>
-                    <div className="text-sm text-gray-500">{collaborator.role}</div>
-                  </div>
-                </a>
-              ))}
-            </div>
-            <div className="flex mt-4">
-              <input
-                type="email"
-                placeholder="Add collaborator by email"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-l focus:border-teal-500 focus:outline-none"
-              />
-              <button
-                type="button"
-                className="bg-teal-500 text-white px-4 rounded-r hover:bg-teal-600 transition-all"
-                onClick={() => alert('Invitation sent')}
-              >
-                <i className="fas fa-plus"></i>
-              </button>
-            </div>
-          </div>
+                  <button
+                    type="submit"
+                    className="px-3 py-2 bg-teal-500 text-white rounded-r-lg hover:bg-teal-600"
+                  >
+                    <FiPlus />
+                  </button>
+                </form>
+              </div>
 
-          {/* Version Control Section */}
-          <div className="mb-8">
-            <h4 className="text-lg font-semibold mb-4 flex items-center">
-              <i className="fas fa-history mr-2"></i>
-              Version History
-            </h4>
-            <div className="max-h-72 overflow-y-auto bg-white rounded shadow-sm p-2">
-              {versions.map((version, index) => (
-                <div
-                  key={index}
-                  className={`p-3 rounded mb-2 cursor-pointer transition-all ${version.active ? 'border-l-4 border-teal-500 bg-teal-50' : 'hover:bg-gray-100'}`}
-                  onClick={() => handleVersionSelect(index)}
-                >
-                  <div className="font-medium">{version.name}</div>
-                  <div className="text-sm text-gray-500">{version.date}</div>
-                  <div className="flex items-center text-sm text-teal-500 mt-1">
-                    <img
-                      src={version.avatar}
-                      className="w-5 h-5 rounded-full mr-1"
-                      alt="Author"
-                    />
-                    {version.author}
+              {/* Version History */}
+              <div className="bg-white p-6 rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Version History</h3>
+                <div className="space-y-3">
+                  <div className="border-b border-gray-200 pb-3">
+                    <p className="font-medium">Current Version</p>
+                    <p className="text-sm text-gray-500">Just now • You</p>
+                  </div>
+                  <div className="border-b border-gray-200 pb-3">
+                    <p className="font-medium">Updated content</p>
+                    <p className="text-sm text-gray-500">2 hours ago • Ridika Nazrin</p>
+                  </div>
+                  <div>
+                    <p className="font-medium">Initial draft</p>
+                    <p className="text-sm text-gray-500">3 days ago • You</p>
                   </div>
                 </div>
-              ))}
-            </div>
-            <button
-              className="w-full bg-teal-500 text-white py-2 rounded mt-4 flex items-center justify-center hover:bg-teal-600 transition-all"
-              onClick={() => alert('Compare versions')}
-            >
-              <i className="fas fa-code-branch mr-2"></i>
-              Compare Versions
-            </button>
-          </div>
-
-          {/* Blog Status Section */}
-          <div className="bg-white rounded shadow-sm p-5">
-            <h4 className="text-lg font-semibold mb-4 flex items-center">
-              <i className="fas fa-info-circle mr-2"></i>
-              Blog Status
-            </h4>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Status:</span>
-                <span className="font-medium text-yellow-500">Draft</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Last Saved:</span>
-                <span className="font-medium">Just now</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Created:</span>
-                <span className="font-medium">3 days ago</span>
+                <button className="mt-4 text-sm text-teal-500 hover:underline w-full text-center">
+                  Compare Versions
+                </button>
               </div>
             </div>
           </div>
-        </aside>
+        </div>
       </div>
-      <Footer/>
+
+      <Footer />
     </div>
   );
 };
 
-export default NewBlog;
+export default CreateBlogPage;
