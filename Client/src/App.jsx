@@ -33,9 +33,9 @@ function AppRoutes() {
       <Route path="/signup" element={<SignupForm />} />
       <Route path="/login" element={<LoginForm />} />
       {/* Updated blog creation routes */}
-      <Route path="/create-blog" element={<PrivateRoute><CreateBlogPage /></PrivateRoute>} />
+      <Route path="/create-blog" element={<CreateBlogPage />} />
 
-      {/*<Route path="/new-blog" element={<CreateBlogs />} />*/}
+      
       <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
       <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
       <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />
