@@ -1,31 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  FiBold,
-  FiItalic,
-  FiUnderline,
-  FiList,
-  FiAlignLeft,
-  FiAlignCenter,
-  FiAlignRight,
-  FiAlignJustify,
-  FiLink,
-  FiImage,
-  FiCode,
-  FiRotateCcw,
-  FiRotateCw
+  FiBold, FiItalic, FiUnderline, FiList, FiAlignLeft, FiAlignCenter, FiAlignRight,
+  FiAlignJustify, FiLink, FiImage, FiCode, FiRotateCcw, FiRotateCw
 } from 'react-icons/fi';
 import { MdFormatListNumbered } from 'react-icons/md';
 import { PiMathOperationsFill } from 'react-icons/pi';
 
 const BlogEditorToolbar = ({ editorRef }) => {
-  const [activeFormat, setActiveFormat] = useState(null);
   const [tooltip, setTooltip] = useState('');
   const [hoveredIcon, setHoveredIcon] = useState(null);
+  const [activeFormats, setActiveFormats] = useState([]);
 
   const formatText = (command, value = null) => {
     document.execCommand(command, false, value);
     editorRef.current.focus();
-    setActiveFormat(command);
   };
 
   const insertImage = () => {
@@ -70,22 +58,33 @@ const BlogEditorToolbar = ({ editorRef }) => {
     { icon: <FiRotateCw />, command: 'redo', name: 'Redo', action: () => formatText('redo') },
   ];
 
+  // Check formatting status
+  const handleSelectionChange = () => {
+    const active = [];
+    ['bold', 'italic', 'underline', 'insertUnorderedList', 'insertOrderedList',
+      'justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull'].forEach(cmd => {
+        if (document.queryCommandState(cmd)) active.push(cmd);
+      });
+    setActiveFormats(active);
+  };
+
+  useEffect(() => {
+    document.addEventListener('selectionchange', handleSelectionChange);
+    return () => document.removeEventListener('selectionchange', handleSelectionChange);
+  }, []);
+
   return (
     <div className="flex items-center gap-1 mb-3 p-2 bg-gray-50 rounded-lg border border-gray-200">
       {buttons.map((button) => (
         <div key={button.command} className="relative">
           <button
             type="button"
-            className={`
-              p-2 rounded-md
-              bg-white
-              border border-gray-200
-              shadow-sm
-              transition-colors duration-200
-              font-bold
-              ${activeFormat === button.command ? 'bg-teal-500 text-white' : 'text-gray-800'}
-              hover:bg-teal-500 hover:text-white
-            `}
+            className={`p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold
+    ${activeFormats.includes(button.command)
+                ? 'bg-teal-500 text-white border-teal-500'
+                : 'bg-white text-gray-800 border-gray-200 hover:bg-teal-500 hover:text-white hover:border-teal-500'
+              }
+  `}
             onClick={button.action}
             onMouseEnter={() => {
               setTooltip(button.name);
