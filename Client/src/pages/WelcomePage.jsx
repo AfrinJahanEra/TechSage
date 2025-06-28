@@ -10,46 +10,65 @@ const WelcomePage = () => {
   }, []);
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-teal-50 to-blue-50 flex flex-col items-center justify-center transition-opacity duration-1000 ${fadeIn ? 'opacity-100' : 'opacity-0'}`}>
-      <div className="max-w-4xl mx-auto px-6 py-12 text-center">
-        <h1 className="text-5xl md:text-6xl font-bold text-teal-800 mb-6 font-orbitron">
-          Welcome to <span className="text-teal-600">AcademicSage</span>
-        </h1>
-        <p className="text-xl md:text-2xl text-gray-700 mb-10 leading-relaxed">
-          A platform where students and researchers collaborate, share knowledge, and advance academic discovery together.
-        </p>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-          <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-            <div className="text-teal-500 text-4xl mb-4">
-              <i className="fas fa-book-open"></i>
+    <div className={`min-h-screen flex flex-col items-center justify-center transition-opacity duration-1000 ${fadeIn ? 'opacity-100' : 'opacity-0'}`}>
+      {/* Background with university image overlay */}
+      <div className="fixed inset-0 z-0">
+        <div className="absolute inset-0 bg-gray-900/50"></div>
+        <img 
+          src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" 
+          alt="University campus"
+          className="w-full h-full object-cover"
+        />
+      </div>
+
+      {/* Main content */}
+      <div className="relative z-10 w-full max-w-4xl mx-auto px-6 py-12 text-center">
+        {/* Logo/header area */}
+        <div className="mb-16">
+          <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
+            Welcome to <span className="text-[#4fd1c5]">TechSage</span>
+          </h1>
+          <div className="w-24 h-1 bg-[#4fd1c5] mx-auto my-6"></div>
+          <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto leading-relaxed">
+            The premier platform for academic collaboration, where students and researchers connect to advance knowledge.
+          </p>
+        </div>
+
+        {/* Feature highlights without cards */}
+        <div className="mb-16 grid grid-cols-1 md:grid-cols-3 gap-12 text-white">
+          <div className="space-y-4">
+            <div className="text-[#4fd1c5] text-4xl mb-3">
+              <i className="fas fa-microscope"></i>
             </div>
-            <h3 className="text-xl font-semibold mb-2">Explore Research</h3>
-            <p className="text-gray-600">Discover thousands of academic blogs across all disciplines</p>
+            <h3 className="text-xl font-semibold">Cutting-edge Research</h3>
+            <p className="text-white/80">Access the latest academic discoveries across all disciplines</p>
           </div>
-          
-          <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-            <div className="text-teal-500 text-4xl mb-4">
-              <i className="fas fa-users"></i>
+
+          <div className="space-y-4">
+            <div className="text-[#4fd1c5] text-4xl mb-3">
+              <i className="fas fa-user-graduate"></i>
             </div>
-            <h3 className="text-xl font-semibold mb-2">Join Discussions</h3>
-            <p className="text-gray-600">Engage with researchers and students in academic discussions</p>
+            <h3 className="text-xl font-semibold">Global Network</h3>
+            <p className="text-white/80">Connect with students and researchers worldwide</p>
           </div>
-          
-          <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-            <div className="text-teal-500 text-4xl mb-4">
-              <i className="fas fa-pen-fancy"></i>
+
+          <div className="space-y-4">
+            <div className="text-[#4fd1c5] text-4xl mb-3">
+              <i className="fas fa-chalkboard-teacher"></i>
             </div>
-            <h3 className="text-xl font-semibold mb-2">Share Your Work</h3>
-            <p className="text-gray-600">Publish your research and get feedback from the community</p>
+            <h3 className="text-xl font-semibold">Knowledge Sharing</h3>
+            <p className="text-white/80">Publish your work and receive expert feedback</p>
           </div>
         </div>
+
+        {/* Student collaboration image */}
         
+        {/* CTA button */}
         <Link 
           to="/home" 
-          className="inline-block bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-8 rounded-full text-lg transition-colors shadow-lg"
+          className="inline-block bg-[#4fd1c5] hover:bg-[#38b2ac] text-gray-900 font-bold py-3 px-10 rounded-full text-lg transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
         >
-          Explore Now
+          Begin Your Journey
         </Link>
       </div>
     </div>
