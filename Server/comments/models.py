@@ -9,18 +9,28 @@ class Comment(me.Document):
     content = me.StringField(required=True)
     parent = me.ReferenceField('self', null=True, default=None)
     created_at = me.DateTimeField(default=datetime.datetime.utcnow)
-
+    updated_at = me.DateTimeField(default=datetime.datetime.utcnow)
     likes = me.ListField(me.ReferenceField(User))
     dislikes = me.ListField(me.ReferenceField(User))
+    is_deleted = me.BooleanField(default=False)
+
+    meta = {
+        'ordering': ['-created_at']
+    }
 
     def to_json(self):
         return {
             "id": str(self.id),
             "blog": str(self.blog.id),
-            "author": self.author.username,
+            "author": {
+                "username": self.author.username,
+                "avatar_url": self.author.avatar_url if hasattr(self.author, 'avatar_url') else None
+            },
             "content": self.content,
             "parent": str(self.parent.id) if self.parent else None,
             "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
             "likes": len(self.likes),
-            "dislikes": len(self.dislikes)
+            "dislikes": len(self.dislikes),
+            "is_deleted": self.is_deleted
         }
