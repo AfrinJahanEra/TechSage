@@ -93,22 +93,22 @@ const CreateBlogPage = () => {
   // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!title.trim()) {
       alert('Please enter a blog title');
       return;
     }
-    
+
     if (!categories.length) {
       alert('Please select at least one category');
       return;
     }
-    
+
     if (!thumbnail) {
       alert('Please upload a thumbnail image');
       return;
     }
-    
+
     if (content === '<p>Start writing your blog post here...</p>' || !content.trim()) {
       alert('Please write some content for your blog');
       return;
@@ -162,10 +162,10 @@ const CreateBlogPage = () => {
                 >
                   {thumbnail ? (
                     <div className="relative">
-                      <img 
-                        src={thumbnail} 
-                        alt="Preview" 
-                        className="max-h-60 mx-auto rounded-md object-cover" 
+                      <img
+                        src={thumbnail}
+                        alt="Preview"
+                        className="max-h-60 mx-auto rounded-md object-cover"
                       />
                       <button
                         type="button"
@@ -204,21 +204,19 @@ const CreateBlogPage = () => {
                     <button
                       key={cat}
                       type="button"
-                      className={`px-4 py-2 rounded-full border text-sm font-medium flex items-center transition-colors ${
-                        categories.includes(cat)
+                      className={`px-4 py-2 rounded-full border text-sm font-medium flex items-center transition-colors duration-200 ${categories.includes(cat)
                           ? 'bg-teal-500 text-white border-teal-500'
-                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                      }`}
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-teal-500 hover:text-white hover:border-teal-500'
+                        }`}
                       onClick={() => toggleCategory(cat)}
                     >
                       {cat}
-                      {categories.includes(cat) && (
-                        <FiCheck className="ml-2" size={14} />
-                      )}
                     </button>
                   ))}
                 </div>
               </div>
+
+
 
               {/* Blog Content Editor */}
               <div className="mb-8">
@@ -322,9 +320,9 @@ const CreateBlogPage = () => {
               {collaborators.map((person) => (
                 <div key={person.id} className="flex justify-between items-center bg-white p-3 rounded-lg shadow-xs hover:shadow-sm transition-shadow">
                   <div className="flex items-center">
-                    <img 
-                      src={person.avatar} 
-                      alt={person.name} 
+                    <img
+                      src={person.avatar}
+                      alt={person.name}
                       className="h-10 w-10 rounded-full object-cover mr-3"
                     />
                     <div>
@@ -366,13 +364,12 @@ const CreateBlogPage = () => {
             </h3>
             <div className="space-y-3">
               {versions.map((version) => (
-                <div 
+                <div
                   key={version.id}
-                  className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                    version.active 
+                  className={`p-3 rounded-lg cursor-pointer transition-colors ${version.active
                       ? 'bg-teal-50 border-l-4 border-teal-500'
                       : 'hover:bg-gray-50'
-                  }`}
+                    }`}
                   onClick={() => selectVersion(version.id)}
                 >
                   <p className="font-medium text-gray-800">{version.name}</p>
@@ -380,7 +377,7 @@ const CreateBlogPage = () => {
                 </div>
               ))}
             </div>
-            <button 
+            <button
               className="mt-4 text-sm text-teal-500 hover:text-teal-600 hover:underline w-full text-center transition-colors"
               onClick={() => {
                 const activeVersions = versions.filter(v => v.active);
