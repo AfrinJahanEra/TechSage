@@ -126,6 +126,43 @@ const CreateBlogPage = () => {
     alert('Blog published successfully!');
   };
 
+  useEffect(() => {
+    // Show placeholder on mount
+    if (editorRef.current) {
+      editorRef.current.innerHTML = `<p class="text-gray-400">Start writing your blog post here...</p>`;
+      editorRef.current.classList.add('text-gray-400');
+      editorRef.current.classList.remove('text-gray-800');
+    }
+  }, []);
+
+  const handleFocus = () => {
+    const isPlaceholder = editorRef.current.textContent.trim() === 'Start writing your blog post here...';
+    if (isPlaceholder) {
+      editorRef.current.innerHTML = '';
+      editorRef.current.classList.remove('text-gray-400');
+      editorRef.current.classList.add('text-gray-800');
+    }
+  };
+
+  const handleBlur = () => {
+    if (editorRef.current.textContent.trim() === '') {
+      editorRef.current.innerHTML = `<p class="text-gray-400">Start writing your blog post here...</p>`;
+      editorRef.current.classList.add('text-gray-400');
+      editorRef.current.classList.remove('text-gray-800');
+    }
+  };
+
+  const handleInput = () => {
+    const text = editorRef.current.textContent.trim();
+    setContent(editorRef.current.innerHTML);
+
+    // Ensure gray class is removed if real input begins
+    if (text !== '' && text !== 'Start writing your blog post here...') {
+      editorRef.current.classList.remove('text-gray-400');
+      editorRef.current.classList.add('text-gray-800');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
@@ -205,8 +242,8 @@ const CreateBlogPage = () => {
                       key={cat}
                       type="button"
                       className={`px-4 py-2 rounded-full border text-sm font-medium flex items-center transition-colors duration-200 ${categories.includes(cat)
-                          ? 'bg-teal-500 text-white border-teal-500'
-                          : 'bg-white text-gray-700 border-gray-300 hover:bg-teal-500 hover:text-white hover:border-teal-500'
+                        ? 'bg-teal-500 text-white border-teal-500'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-teal-500 hover:text-white hover:border-teal-500'
                         }`}
                       onClick={() => toggleCategory(cat)}
                     >
@@ -224,37 +261,16 @@ const CreateBlogPage = () => {
 
                 <BlogEditorToolbar editorRef={editorRef} />
 
-                {/* Editor Content */}
                 <div
                   ref={editorRef}
-                  className="min-h-[300px] border border-gray-300 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-teal-500 text-gray-400 prose max-w-none"
                   contentEditable
-                  onFocus={(e) => {
-                    if (e.currentTarget.textContent === "Start writing your blog post here...") {
-                      e.currentTarget.textContent = "";
-                      e.currentTarget.classList.remove("text-gray-400");
-                      e.currentTarget.classList.add("text-gray-800");
-                    }
-                  }}
-                  onBlur={(e) => {
-                    if (e.currentTarget.textContent === "") {
-                      e.currentTarget.textContent = "Start writing your blog post here...";
-                      e.currentTarget.classList.add("text-gray-400");
-                      e.currentTarget.classList.remove("text-gray-800");
-                    }
-                  }}
-                  dangerouslySetInnerHTML={{
-                    __html: content === '<p>Start writing your blog post here...</p>' ?
-                      '<p class="text-gray-400">Start writing your blog post here...</p>' : content
-                  }}
-                  onInput={(e) => {
-                    setContent(e.currentTarget.innerHTML);
-                    if (e.currentTarget.textContent !== "" && e.currentTarget.textContent !== "Start writing your blog post here...") {
-                      e.currentTarget.classList.remove("text-gray-400");
-                      e.currentTarget.classList.add("text-gray-800");
-                    }
-                  }}
+                  dir="ltr"
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                  onInput={handleInput}
+                  className="min-h-[300px] border border-gray-300 rounded-lg p-4 prose max-w-none focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
+
               </div>
 
               {/* Action Buttons */}
@@ -367,8 +383,8 @@ const CreateBlogPage = () => {
                 <div
                   key={version.id}
                   className={`p-3 rounded-lg cursor-pointer transition-colors ${version.active
-                      ? 'bg-teal-50 border-l-4 border-teal-500'
-                      : 'hover:bg-gray-50'
+                    ? 'bg-teal-50 border-l-4 border-teal-500'
+                    : 'hover:bg-gray-50'
                     }`}
                   onClick={() => selectVersion(version.id)}
                 >
