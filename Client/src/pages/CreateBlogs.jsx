@@ -77,6 +77,8 @@ const CreateBlogPage = () => {
     alert('Blog published successfully!');
   };
 
+
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -94,7 +96,7 @@ const CreateBlogPage = () => {
               <form onSubmit={handleSubmit}>
                 {/* Blog Title */}
                 <div className="mb-8">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Blog Title</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Blog Title</label>
                   <input
                     type="text"
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
@@ -106,7 +108,7 @@ const CreateBlogPage = () => {
 
                 {/* Thumbnail Upload */}
                 <div className="mb-8">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Thumbnail Image</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Thumbnail Image</label>
                   <div
                     className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-teal-500 transition-colors"
                     onClick={() => fileInputRef.current.click()}
@@ -144,7 +146,7 @@ const CreateBlogPage = () => {
 
                 {/* Category Selection */}
                 <div className="mb-8">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Category</label>
                   <div className="grid grid-cols-3 gap-3">
                     {availableCategories.map((cat) => (
                       <button
@@ -167,7 +169,7 @@ const CreateBlogPage = () => {
 
                 {/* Blog Content Editor */}
                 <div className="mb-8">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Blog Content</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Blog Content</label>
 
                   {/* Replace the old toolbar with the new component */}
                   <BlogEditorToolbar editorRef={editorRef} />
@@ -175,11 +177,35 @@ const CreateBlogPage = () => {
                   {/* Editor Content */}
                   <div
                     ref={editorRef}
-                    className="min-h-[300px] border border-gray-300 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="min-h-[300px] border border-gray-300 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-teal-500 text-gray-400"
                     contentEditable
-                    dangerouslySetInnerHTML={{ __html: content }}
-                    onInput={(e) => setContent(e.target.innerHTML)}
+                    onFocus={(e) => {
+                      if (e.currentTarget.textContent === "Start writing your blog post here...") {
+                        e.currentTarget.textContent = "";
+                        e.currentTarget.classList.remove("text-gray-400");
+                        e.currentTarget.classList.add("text-gray-800");
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (e.currentTarget.textContent === "") {
+                        e.currentTarget.textContent = "Start writing your blog post here...";
+                        e.currentTarget.classList.add("text-gray-400");
+                        e.currentTarget.classList.remove("text-gray-800");
+                      }
+                    }}
+                    dangerouslySetInnerHTML={{
+                      __html: content === '<p>Start writing your blog post here...</p>' ?
+                        '<p class="text-gray-400">Start writing your blog post here...</p>' : content
+                    }}
+                    onInput={(e) => {
+                      setContent(e.currentTarget.innerHTML);
+                      if (e.currentTarget.textContent !== "" && e.currentTarget.textContent !== "Start writing your blog post here...") {
+                        e.currentTarget.classList.remove("text-gray-400");
+                        e.currentTarget.classList.add("text-gray-800");
+                      }
+                    }}
                   />
+
                 </div>
 
                 {/* Action Buttons */}
