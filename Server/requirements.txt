@@ -12,3 +12,12 @@ dnspython==2.4.2
 
 # CORS (if frontend is hosted separately)
 django-cors-headers==4.3.1
+
+# Cloudinary
+cloudinary==1.41.0
+
+# Environment variables
+python-dotenv==1.0.1
+
+# REST framework
+djangorestframework==3.14.0

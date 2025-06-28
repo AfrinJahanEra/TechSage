@@ -9,5 +9,7 @@ django.setup()
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
-    "websocket": URLRouter(comments.routing.websocket_urlpatterns),
+    "websocket": URLRouter(
+        comments.routing.websocket_urlpatterns
+    ),
 })

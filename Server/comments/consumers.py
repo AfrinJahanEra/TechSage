@@ -6,7 +6,6 @@ from blogs.models import Blog
 
 class CommentConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        print("WebSocket connection incoming...")
         self.blog_id = self.scope['url_route']['kwargs']['blog_id']
         self.room_group_name = f"comments_{self.blog_id}"
 
@@ -24,25 +23,86 @@ class CommentConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         data = json.loads(text_data)
-        author_id = data['author_id']
-        content = data['content']
-        parent_id = data.get('parent_id')
+        action = data.get('action')
+        
+        if action == 'new_comment':
+            await self.handle_new_comment(data)
+        elif action == 'like_comment':
+            await self.handle_like_comment(data)
+        elif action == 'delete_comment':
+            await self.handle_delete_comment(data)
 
-        author = User.objects(id=author_id).first()
+    async def handle_new_comment(self, data):
+        author = User.objects(username=data['author']).first()
         blog = Blog.objects(id=self.blog_id).first()
-        parent = Comment.objects(id=parent_id).first() if parent_id else None
+        parent = Comment.objects(id=data.get('parent_id')).first() if data.get('parent_id') else None
 
-        comment = Comment(blog=blog, author=author, content=content, parent=parent)
+        if not author or not blog:
+            return
+
+        comment = Comment(
+            blog=blog,
+            author=author,
+            content=data['content'],
+            parent=parent
+        )
         comment.save()
 
-        response = comment.to_json()
         await self.channel_layer.group_send(
             self.room_group_name,
             {
                 'type': 'send_comment',
-                'message': json.dumps(response)
+                'action': 'new_comment',
+                'comment': comment.to_json()
+            }
+        )
+
+    async def handle_like_comment(self, data):
+        comment = Comment.objects(id=data['comment_id']).first()
+        user = User.objects(username=data['username']).first()
+
+        if not comment or not user:
+            return
+
+        if user not in comment.likes:
+            comment.likes.append(user)
+            if user in comment.dislikes:
+                comment.dislikes.remove(user)
+        else:
+            comment.likes.remove(user)
+
+        comment.save()
+
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'send_comment',
+                'action': 'update_comment',
+                'comment': comment.to_json()
+            }
+        )
+
+    async def handle_delete_comment(self, data):
+        comment = Comment.objects(id=data['comment_id']).first()
+        user = User.objects(username=data['username']).first()
+
+        if not comment or not user:
+            return
+
+        if comment.author.username != user.username and user.role != 'admin':
+            return
+
+        comment.is_deleted = True
+        comment.save()
+
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'send_comment',
+                'action': 'delete_comment',
+                'comment_id': str(comment.id)
             }
         )
 
     async def send_comment(self, event):
-        await self.send(text_data=event['message'])
+        await self.send(text_data=json.dumps(event))
