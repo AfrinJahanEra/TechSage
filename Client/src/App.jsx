@@ -1,5 +1,6 @@
 // src/App.jsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import CreateBlogs from './pages/CreateBlogs.jsx';
 import Home from './pages/Home.jsx';
 import InsideBlog from './pages/InsideBlog.jsx';
 import TopContributors from './pages/TopContributors.jsx';
@@ -13,7 +14,6 @@ import { AuthProvider } from './context/AuthContext.jsx';
 import PrivateRoute from './components/PrivateRoute.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 import Dashboard from './pages/Dashboard.jsx';
-import CreateBlogs from './pages/CreateBlogs.jsx'
 import Admin from './pages/Admin.jsx';
 import ModeratorDashboard from './pages/Moderator.jsx';
 
@@ -31,7 +31,10 @@ function AppRoutes() {
       <Route path="/other-dashboard" element={<OtherDashboard />} />
       <Route path="/signup" element={<SignupForm />} />
       <Route path="/login" element={<LoginForm />} />
-      <Route path="/new-blog" element={<CreateBlogs />} />
+      {/* Updated blog creation routes */}
+      <Route path="/create-blog" element={<CreateBlogs />} />
+
+      
       <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
       <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
       <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />

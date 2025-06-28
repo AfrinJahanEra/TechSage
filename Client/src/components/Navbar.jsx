@@ -48,7 +48,7 @@ const Navbar = ({ activePage }) => {
               )}
 
               {user.role === 'user' && (
-                <Link to="/new-blog" className={`text-white text-lg font-medium hover:underline ${activePage === 'new-blog' ? 'font-bold' : ''}`}>
+                <Link to="/create-blog" className={`text-white text-lg font-medium hover:underline ${activePage === 'create-blog' ? 'font-bold' : ''}`}>
                   Create Blog
                 </Link>
               )}
@@ -101,7 +101,7 @@ const Navbar = ({ activePage }) => {
           {user ? (
             <>
               {user.role === 'user' && (
-                <Link to="/new-blog" className="text-white text-lg font-medium py-3" onClick={() => setIsMenuOpen(false)}>
+                <Link to="/create-blog" className="text-white text-lg font-medium py-3" onClick={() => setIsMenuOpen(false)}>
                   Create Blog
                 </Link>
               )}
