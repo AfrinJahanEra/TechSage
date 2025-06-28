@@ -3,6 +3,7 @@ import { Chart } from 'chart.js/auto';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const ModeratorDashboard = () => {
     const performanceChartRef = useRef(null);
@@ -22,6 +23,18 @@ const ModeratorDashboard = () => {
         university: user?.university || 'Demo University',
         profession: 'Professor of Quantum Physics'
     });
+    
+    const navigate = useNavigate();
+
+    // Function to handle blog clicks (thumbnail, title, or read blog button)
+    const handleBlogClick = (blogId) => {
+        navigate(`/blog/${blogId}`);
+    };
+
+    // Function to handle profile icon/name clicks
+    const handleProfileClick = (userId) => {
+        navigate(`/dashboard/${userId}`);
+    };
 
     useEffect(() => {
         // Initialize dark mode from localStorage
@@ -46,6 +59,7 @@ const ModeratorDashboard = () => {
                     reason: "Plagiarism",
                     details: "This blog appears to copy content from a published paper without proper attribution.",
                     reporter: {
+                        id: "user1",
                         name: "Dr. Michael Chen",
                         avatar: "https://randomuser.me/api/portraits/men/32.jpg"
                     },
@@ -59,6 +73,7 @@ const ModeratorDashboard = () => {
                     reason: "Inappropriate content",
                     details: "Contains unverified medical claims that could be dangerous if followed.",
                     reporter: {
+                        id: "user2",
                         name: "Dr. Emily Rodriguez",
                         avatar: "https://randomuser.me/api/portraits/women/65.jpg"
                     },
@@ -72,6 +87,7 @@ const ModeratorDashboard = () => {
                     reason: "Spam",
                     details: "This was mistakenly reported as spam. The content is legitimate research.",
                     reporter: {
+                        id: "user3",
                         name: "Prof. David Wilson",
                         avatar: "https://randomuser.me/api/portraits/men/75.jpg"
                     },
@@ -89,7 +105,6 @@ const ModeratorDashboard = () => {
         if (activeSection === 'profile') {
             const ctx = document.getElementById('performanceChart');
             if (ctx) {
-
                 if (performanceChartRef.current) {
                     performanceChartRef.current.destroy();
                 }
@@ -229,7 +244,6 @@ const ModeratorDashboard = () => {
             {/* Navbar */}
             <Navbar activePage="dashboard" onProfileClick={toggleProfilePanel} />
             
-
             {/* Dashboard Content */}
             <div className="pt-20 min-h-screen">
                 <div className="flex flex-col md:flex-row">
@@ -368,11 +382,17 @@ const ModeratorDashboard = () => {
                                         {/* Blog Card 1 */}
                                         <div className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-4 pb-4 ${darkMode ? 'border-gray-700' : 'border-gray-200'} border-b`}>
                                             <div
-                                                className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center"
+                                                className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center cursor-pointer"
                                                 style={{ backgroundImage: "url('https://images.unsplash.com/photo-1620712943543-bcc4688e7485?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80')" }}
+                                                onClick={() => handleBlogClick("1")}
                                             ></div>
                                             <div>
-                                                <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Quantum Computing Breakthroughs</h3>
+                                                <h3 
+                                                    className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'} cursor-pointer hover:text-teal-500`}
+                                                    onClick={() => handleBlogClick("1")}
+                                                >
+                                                    Quantum Computing Breakthroughs
+                                                </h3>
                                                 <div className={`flex justify-between text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                                     <span>May 15, 2025</span>
                                                     <span>5 min read</span>
@@ -391,11 +411,17 @@ const ModeratorDashboard = () => {
                                         {/* Blog Card 2 */}
                                         <div className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-4 pb-4 ${darkMode ? 'border-gray-700' : 'border-gray-200'} border-b`}>
                                             <div
-                                                className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center"
+                                                className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center cursor-pointer"
                                                 style={{ backgroundImage: "url('https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80')" }}
+                                                onClick={() => handleBlogClick("2")}
                                             ></div>
                                             <div>
-                                                <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>AI in Healthcare Innovations</h3>
+                                                <h3 
+                                                    className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'} cursor-pointer hover:text-teal-500`}
+                                                    onClick={() => handleBlogClick("2")}
+                                                >
+                                                    AI in Healthcare Innovations
+                                                </h3>
                                                 <div className={`flex justify-between text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                                     <span>May 10, 2025</span>
                                                     <span>6 min read</span>
@@ -442,11 +468,17 @@ const ModeratorDashboard = () => {
                                     {/* Blog Card 1 */}
                                     <div className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-5 items-center pb-6 ${darkMode ? 'border-gray-700' : 'border-gray-200'} border-b`}>
                                         <div
-                                            className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center"
+                                            className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center cursor-pointer"
                                             style={{ backgroundImage: "url('https://images.unsplash.com/photo-1620712943543-bcc4688e7485?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80')" }}
+                                            onClick={() => handleBlogClick("1")}
                                         ></div>
                                         <div>
-                                            <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Quantum Computing Breakthroughs</h3>
+                                            <h3 
+                                                className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'} cursor-pointer hover:text-teal-500`}
+                                                onClick={() => handleBlogClick("1")}
+                                            >
+                                                Quantum Computing Breakthroughs
+                                            </h3>
                                             <div className={`flex justify-between text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                                 <span>May 15, 2025</span>
                                                 <span>5 min read</span>
@@ -471,11 +503,17 @@ const ModeratorDashboard = () => {
                                     {/* Blog Card 2 */}
                                     <div className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-5 items-center pb-6 ${darkMode ? 'border-gray-700' : 'border-gray-200'} border-b`}>
                                         <div
-                                            className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center"
+                                            className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center cursor-pointer"
                                             style={{ backgroundImage: "url('https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80')" }}
+                                            onClick={() => handleBlogClick("2")}
                                         ></div>
                                         <div>
-                                            <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>AI in Healthcare Innovations</h3>
+                                            <h3 
+                                                className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'} cursor-pointer hover:text-teal-500`}
+                                                onClick={() => handleBlogClick("2")}
+                                            >
+                                                AI in Healthcare Innovations
+                                            </h3>
                                             <div className={`flex justify-between text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                                 <span>May 10, 2025</span>
                                                 <span>6 min read</span>
@@ -512,11 +550,15 @@ const ModeratorDashboard = () => {
                                     {/* Blog Card 1 - Approved */}
                                     <div className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-5 items-center pb-6 ${darkMode ? 'border-gray-700' : 'border-gray-200'} border-b`}>
                                         <div
-                                            className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center"
+                                            className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center cursor-pointer"
                                             style={{ backgroundImage: "url('https://images.unsplash.com/photo-1620712943543-bcc4688e7485?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80')" }}
+                                            onClick={() => handleBlogClick("1")}
                                         ></div>
                                         <div>
-                                            <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                                            <h3 
+                                                className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'} cursor-pointer hover:text-teal-500`}
+                                                onClick={() => handleBlogClick("1")}
+                                            >
                                                 Quantum Computing Breakthroughs
                                                 <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold ml-2 bg-green-50 text-green-500">
                                                     Approved
@@ -543,11 +585,15 @@ const ModeratorDashboard = () => {
                                     {/* Blog Card 2 - Rejected */}
                                     <div className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-5 items-center pb-6 ${darkMode ? 'border-gray-700' : 'border-gray-200'} border-b`}>
                                         <div
-                                            className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center"
+                                            className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center cursor-pointer"
                                             style={{ backgroundImage: "url('https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80')" }}
+                                            onClick={() => handleBlogClick("2")}
                                         ></div>
                                         <div>
-                                            <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                                            <h3 
+                                                className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'} cursor-pointer hover:text-teal-500`}
+                                                onClick={() => handleBlogClick("2")}
+                                            >
                                                 AI in Healthcare Innovations
                                                 <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold ml-2 bg-red-50 text-red-500">
                                                     Rejected
@@ -585,11 +631,17 @@ const ModeratorDashboard = () => {
                                     {/* Deleted Blog 1 */}
                                     <div className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-5 items-center pb-6 ${darkMode ? 'border-gray-700' : 'border-gray-200'} border-b`}>
                                         <div
-                                            className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center"
+                                            className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center cursor-pointer"
                                             style={{ backgroundImage: "url('https://images.unsplash.com/photo-1454789548928-9efd52dc4031?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80')" }}
+                                            onClick={() => handleBlogClick("4")}
                                         ></div>
                                         <div>
-                                            <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Space Exploration Technologies</h3>
+                                            <h3 
+                                                className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'} cursor-pointer hover:text-teal-500`}
+                                                onClick={() => handleBlogClick("4")}
+                                            >
+                                                Space Exploration Technologies
+                                            </h3>
                                             <div className={`text-sm mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                                 <span>Deleted on: May 5, 2025</span>
                                             </div>
@@ -604,11 +656,17 @@ const ModeratorDashboard = () => {
                                     {/* Deleted Blog 2 */}
                                     <div className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-5 items-center pb-6 ${darkMode ? 'border-gray-700' : 'border-gray-200'} border-b`}>
                                         <div
-                                            className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center"
+                                            className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center cursor-pointer"
                                             style={{ backgroundImage: "url('https://images.unsplash.com/photo-1532094349884-543bc11b234d?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80')" }}
+                                            onClick={() => handleBlogClick("5")}
                                         ></div>
                                         <div>
-                                            <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Advances in Synthetic Biology</h3>
+                                            <h3 
+                                                className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'} cursor-pointer hover:text-teal-500`}
+                                                onClick={() => handleBlogClick("5")}
+                                            >
+                                                Advances in Synthetic Biology
+                                            </h3>
                                             <div className={`text-sm mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                                 <span>Deleted on: April 22, 2025</span>
                                             </div>
@@ -664,11 +722,15 @@ const ModeratorDashboard = () => {
                                         filteredReports.map((report, index) => (
                                             <div key={index} className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-5 items-center pb-6 ${darkMode ? 'border-gray-700' : 'border-gray-200'} border-b`}>
                                                 <div
-                                                    className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center"
+                                                    className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center cursor-pointer"
                                                     style={{ backgroundImage: `url('${report.blogImage}')` }}
+                                                    onClick={() => handleBlogClick(report.blogId)}
                                                 ></div>
                                                 <div>
-                                                    <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                                                    <h3 
+                                                        className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'} cursor-pointer hover:text-teal-500`}
+                                                        onClick={() => handleBlogClick(report.blogId)}
+                                                    >
                                                         {report.blogTitle}
                                                         <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ml-2 ${report.status === 'pending' ? 'bg-yellow-50 text-yellow-500' :
                                                             report.status === 'approved' ? 'bg-green-50 text-green-500' :
@@ -687,11 +749,16 @@ const ModeratorDashboard = () => {
                                                         </p>
                                                     )}
                                                     <div className="reporter-info flex items-center mt-2">
-                                                        <div className="flex items-center">
+                                                        <div 
+                                                            className="flex items-center cursor-pointer"
+                                                            onClick={() => handleProfileClick(report.reporter.id)}
+                                                        >
                                                             {report.reporter.avatar && (
                                                                 <img src={report.reporter.avatar} alt="Reporter" className="w-7 h-7 rounded-full mr-2 object-cover" />
                                                             )}
-                                                            <span className="text-teal-500 font-medium text-sm">Reported by: {report.reporter.name}</span>
+                                                            <span className="text-teal-500 font-medium text-sm hover:underline">
+                                                                Reported by: {report.reporter.name}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                     <div className="flex space-x-4 mt-3">
@@ -720,7 +787,10 @@ const ModeratorDashboard = () => {
                                                             </button>
                                                         )}
                                                         {report.status === 'rejected' && (
-                                                            <button className={`text-sm flex items-center ${darkMode ? 'text-gray-400 hover:text-teal-500' : 'text-gray-500 hover:text-teal-500'}`}>
+                                                            <button 
+                                                                className={`text-sm flex items-center ${darkMode ? 'text-gray-400 hover:text-teal-500' : 'text-gray-500 hover:text-teal-500'}`}
+                                                                onClick={() => handleBlogClick(report.blogId)}
+                                                            >
                                                                 <i className="fas fa-eye mr-1"></i> View Blog
                                                             </button>
                                                         )}
