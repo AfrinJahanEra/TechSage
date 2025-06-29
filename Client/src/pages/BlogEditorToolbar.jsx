@@ -208,51 +208,66 @@ const [matrixCols, setMatrixCols] = useState(2);
   };
 
   const insertLatex = () => {
-    if (!latexInput.trim()) return;
+  if (!latexInput.trim()) return;
 
-    const latexSpan = document.createElement('span');
-    latexSpan.className = 'latex-equation';
-    latexSpan.contentEditable = 'false';
-    latexSpan.style.display = 'inline-block';
-    latexSpan.style.padding = '0.2em 0.4em';
-    latexSpan.style.margin = '0 0.1em';
-    latexSpan.style.backgroundColor = '#f5f5f5';
-    latexSpan.style.borderRadius = '3px';
-    latexSpan.style.fontFamily = 'monospace';
-    latexSpan.style.fontSize = '0.9em';
-    latexSpan.style.color = '#333';
+  // Create the LaTeX element
+  const latexSpan = document.createElement('span');
+  latexSpan.className = 'latex-equation';
+  latexSpan.contentEditable = 'false';
+  latexSpan.style.display = 'inline-block';
+  latexSpan.style.padding = '0.2em 0.4em';
+  latexSpan.style.margin = '0 0.1em';
+  latexSpan.style.backgroundColor = '#f5f5f5';
+  latexSpan.style.borderRadius = '3px';
+  latexSpan.style.fontFamily = 'monospace';
+  latexSpan.style.fontSize = '0.9em';
+  latexSpan.style.color = '#333';
 
-    try {
-      latexSpan.innerHTML = katex.renderToString(latexInput, {
-        throwOnError: false,
-        displayMode: false,
-      });
-      latexSpan.setAttribute('data-latex', latexInput);
-    } catch (err) {
-      console.error('KaTeX render error:', err);
-      alert('Invalid LaTeX syntax.');
-      return;
-    }
+  try {
+    latexSpan.innerHTML = katex.renderToString(latexInput, {
+      throwOnError: false,
+      displayMode: false,
+    });
+    latexSpan.setAttribute('data-latex', latexInput);
+  } catch (err) {
+    console.error('KaTeX render error:', err);
+    alert('Invalid LaTeX syntax.');
+    return;
+  }
 
-    const selection = window.getSelection();
-    if (!selection.rangeCount) return;
-
-    const range = selection.getRangeAt(0);
+  // Get the editor reference
+  const editor = editorRef.current;
+  
+  // Save the current selection
+  const selection = window.getSelection();
+  const range = selection.getRangeAt(0);
+  
+  // Check if we're inside the editor
+  if (!editor.contains(range.startContainer)) {
+    // If not, append to the end of editor content
+    editor.appendChild(latexSpan);
+  } else {
+    // Insert at the current selection
     range.deleteContents();
-
     range.insertNode(latexSpan);
+  }
 
-    // Move the caret directly after the inserted span
-    const newRange = document.createRange();
-    newRange.setStartAfter(latexSpan);
-    newRange.setEndAfter(latexSpan);
-    selection.removeAllRanges();
-    selection.addRange(newRange);
+  // Create a new range after the inserted element
+  const newRange = document.createRange();
+  newRange.setStartAfter(latexSpan);
+  newRange.collapse(true);
+  
+  // Clear current selection and add the new range
+  selection.removeAllRanges();
+  selection.addRange(newRange);
 
-    editorRef.current.focus();
-    setShowLatexModal(false);
-    setLatexInput('');
-  };
+  // Focus the editor
+  editor.focus();
+
+  // Close modal and reset
+  setShowLatexModal(false);
+  setLatexInput('');
+};
 
 const insertLatexTemplate = (template) => {
   if (template === 'custom-matrix') {
