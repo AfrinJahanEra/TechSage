@@ -21,6 +21,8 @@ const BlogEditorToolbar = ({ editorRef }) => {
   const [latexPreview, setLatexPreview] = useState('');
 
   const [openTemplateCategory, setOpenTemplateCategory] = useState(null);
+  const [openFunctionSubcategory, setOpenFunctionSubcategory] = useState(null);
+
 
 
   // LaTeX templates organized by category
@@ -67,16 +69,52 @@ const BlogEditorToolbar = ({ editorRef }) => {
     },
     {
       category: 'Functions',
-      items: [
-        { name: 'Sine', template: '\\sin(x)' },
-        { name: 'Cosine', template: '\\cos(x)' },
-        { name: 'Tangent', template: '\\tan(x)' },
-        { name: 'Inverse Sine', template: '\\sin^{-1}(x)' },
-        { name: 'Inverse Cosine', template: '\\cos^{-1}(x)' },
-        { name: 'Hyperbolic Sine', template: '\\sinh(x)' },
-        { name: 'Hyperbolic Cosine', template: '\\cosh(x)' },
-        { name: 'Inverse Hyperbolic Sine', template: '\\sinh^{-1}(x)' },
-        { name: 'Inverse Hyperbolic Cosine', template: '\\cosh^{-1}(x)' },
+      subcategories: [
+        {
+          name: 'Trigonometric',
+          items: [
+            { name: 'sin', template: '\\sin(x)' },
+            { name: 'cos', template: '\\cos(x)' },
+            { name: 'tan', template: '\\tan(x)' },
+            { name: 'cot', template: '\\cot(x)' },
+            { name: 'sec', template: '\\sec(x)' },
+            { name: 'cosec', template: '\\csc(x)' },
+          ]
+        },
+        {
+          name: 'Inverse Trigonometric',
+          items: [
+            { name: 'Inverse sin', template: '\\sin^{-1}(x)' },
+            { name: 'Inverse cos', template: '\\cos^{-1}(x)' },
+            { name: 'Inverse tan', template: '\\tan^{-1}(x)' },
+            { name: 'Inverse cot', template: '\\cot^{-1}(x)' },
+            { name: 'Inverse sec', template: '\\sec^{-1}(x)' },
+            { name: 'Inverse cosec', template: '\\csc^{-1}(x)' },
+          ],
+        },
+        {
+          name: 'Hyperbolic',
+          items: [
+            { name: 'Hyperbolic sin', template: '\\sinh(x)' },
+            { name: 'Hyperbolic cos', template: '\\cosh(x)' },
+            { name: 'Hyperbolic tan', template: '\\tanh(x)' },
+            { name: 'Hyperbolic cot', template: '\\coth(x)' },
+            { name: 'Hyperbolic sec', template: '\\sech(x)' },
+            { name: 'Hyperbolic cosec', template: '\\csch(x)' },
+          ]
+        },
+        {
+          name: 'Inverse Hyperbolic',
+          items: [
+            { name: 'Inverse Hyperbolic sin', template: '\\sinh^{-1}(x)' },
+            { name: 'Inverse Hyperbolic cos', template: '\\cosh^{-1}(x)' },
+            { name: 'Inverse Hyperbolic tan', template: '\\tanh^{-1}(x)' },
+            { name: 'Inverse Hyperbolic cot', template: '\\coth^{-1}(x)' },
+            { name: 'Inverse Hyperbolic sec', template: '\\sech^{-1}(x)' },
+            { name: 'Inverse Hyperbolic cosec', template: '\\csch^{-1}(x)' },
+
+          ]
+        },
       ]
     },
 
@@ -482,82 +520,81 @@ const BlogEditorToolbar = ({ editorRef }) => {
             </div>
 
             <div className="flex flex-1 gap-6 overflow-hidden">
-  {/* Left - Scrollable LaTeX template list */}
-  <div className="w-full md:w-1/3 h-full overflow-y-auto pr-2 space-y-2">
-    {latexTemplates.map((category) => {
-      const isOpen = openTemplateCategory === category.category;
-
-      return (
-        <div key={category.category} className="shrink-0">
-          <button
-            onClick={() =>
-              setOpenTemplateCategory(isOpen ? null : category.category)
-            }
-            className={`w-full flex justify-between items-center px-4 py-2 rounded-md border text-sm font-medium 
-              ${isOpen
-                ? 'bg-teal-500 text-white border-teal-500'
-                : 'bg-white text-gray-800 border-gray-200 hover:bg-teal-500 hover:text-white hover:border-teal-500'}
-            `}
-          >
-            {category.category}
-            <span className="ml-2">{isOpen ? '▲' : '▼'}</span>
-          </button>
-
-          {isOpen && (
-            <div className="mt-1 border border-gray-200 rounded-md shadow-sm overflow-hidden">
-              {'subcategories' in category ? (
-                category.subcategories.map((subcat) => {
-                  const isSubOpen = openFunctionSubcategory === subcat.name;
+              {/* Left - Scrollable LaTeX template list */}
+              <div className="w-full md:w-1/3 h-full overflow-y-auto pr-2 space-y-2">
+                {latexTemplates.map((category) => {
+                  const isOpen = openTemplateCategory === category.category;
 
                   return (
-                    <div key={subcat.name}>
+                    <div key={category.category} className="shrink-0">
                       <button
                         onClick={() =>
-                          setOpenFunctionSubcategory(isSubOpen ? null : subcat.name)
+                          setOpenTemplateCategory(isOpen ? null : category.category)
                         }
-                        className={`w-full flex justify-between items-center px-4 py-2 text-sm font-medium ${
-                          isSubOpen
-                            ? 'bg-teal-400 text-white'
-                            : 'bg-white text-gray-800 hover:bg-teal-400 hover:text-white'
-                        }`}
+                        className={`w-full flex justify-between items-center px-4 py-2 rounded-md border text-sm font-medium 
+              ${isOpen
+                            ? 'bg-teal-500 text-white border-teal-500'
+                            : 'bg-white text-gray-800 border-gray-200 hover:bg-teal-500 hover:text-white hover:border-teal-500'}
+            `}
                       >
-                        {subcat.name}
-                        <span>{isSubOpen ? '▲' : '▼'}</span>
+                        {category.category}
+                        <span className="ml-2">{isOpen ? '▲' : '▼'}</span>
                       </button>
 
-                      {isSubOpen && (
-                        <div className="pl-4">
-                          {subcat.items.map((item) => (
-                            <button
-                              key={item.name}
-                              className="w-full text-left px-4 py-1 text-sm hover:bg-teal-500 hover:text-white transition-colors duration-200"
-                              onClick={() => insertLatexTemplate(item.template)}
-                            >
-                              {item.name}
-                            </button>
-                          ))}
+                      {isOpen && (
+                        <div className="mt-1 border border-gray-200 rounded-md shadow-sm overflow-hidden">
+                          {'subcategories' in category ? (
+                            category.subcategories.map((subcat) => {
+                              const isSubOpen = openFunctionSubcategory === subcat.name;
+
+                              return (
+                                <div key={subcat.name}>
+                                  <button
+                                    onClick={() =>
+                                      setOpenFunctionSubcategory(isSubOpen ? null : subcat.name)
+                                    }
+                                    className={`w-full flex justify-between items-center px-4 py-2 text-sm font-medium ${isSubOpen
+                                      ? 'bg-teal-400 text-white'
+                                      : 'bg-white text-gray-800 hover:bg-teal-400 hover:text-white'
+                                      }`}
+                                  >
+                                    {subcat.name}
+                                    <span>{isSubOpen ? '▲' : '▼'}</span>
+                                  </button>
+
+                                  {isSubOpen && (
+                                    <div className="pl-4">
+                                      {subcat.items.map((item) => (
+                                        <button
+                                          key={item.name}
+                                          className="w-full text-left px-4 py-1 text-sm hover:bg-teal-500 hover:text-white transition-colors duration-200"
+                                          onClick={() => insertLatexTemplate(item.template)}
+                                        >
+                                          {item.name}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })
+                          ) : (
+                            category.items.map((item) => (
+                              <button
+                                key={item.name}
+                                className="w-full text-left px-4 py-2 text-sm hover:bg-teal-500 hover:text-white transition-colors duration-200"
+                                onClick={() => insertLatexTemplate(item.template)}
+                              >
+                                {item.name}
+                              </button>
+                            ))
+                          )}
                         </div>
                       )}
                     </div>
                   );
-                })
-              ) : (
-                category.items.map((item) => (
-                  <button
-                    key={item.name}
-                    className="w-full text-left px-4 py-2 text-sm hover:bg-teal-500 hover:text-white transition-colors duration-200"
-                    onClick={() => insertLatexTemplate(item.template)}
-                  >
-                    {item.name}
-                  </button>
-                ))
-              )}
-            </div>
-          )}
-        </div>
-      );
-    })}
-  </div>
+                })}
+              </div>
 
               {/* Right side - Editor and preview */}
               <div className="w-full md:w-2/3">
