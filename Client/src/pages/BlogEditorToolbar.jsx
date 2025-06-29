@@ -28,8 +28,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
       category: 'Fractions',
       items: [
         { name: 'Simple Fraction', template: '\\frac{a}{b}' },
-        { name: 'Large Fraction', template: '\\dfrac{a}{b}' },
-        { name: 'Continued Fraction', template: '\\cfrac{a}{b}' }
+        { name: 'Mixed Fraction', template: 'c\\frac{a}{b}' }
       ]
     },
     {
@@ -130,72 +129,72 @@ const BlogEditorToolbar = ({ editorRef }) => {
   };
 
   const insertLatex = () => {
-  if (!latexInput.trim()) return;
+    if (!latexInput.trim()) return;
 
-  const latexSpan = document.createElement('span');
-  latexSpan.className = 'latex-equation';
-  latexSpan.contentEditable = 'false';
-  latexSpan.style.display = 'inline-block';
-  latexSpan.style.padding = '0.2em 0.4em';
-  latexSpan.style.margin = '0 0.1em';
-  latexSpan.style.backgroundColor = '#f5f5f5';
-  latexSpan.style.borderRadius = '3px';
-  latexSpan.style.fontFamily = 'monospace';
-  latexSpan.style.fontSize = '0.9em';
-  latexSpan.style.color = '#333';
+    const latexSpan = document.createElement('span');
+    latexSpan.className = 'latex-equation';
+    latexSpan.contentEditable = 'false';
+    latexSpan.style.display = 'inline-block';
+    latexSpan.style.padding = '0.2em 0.4em';
+    latexSpan.style.margin = '0 0.1em';
+    latexSpan.style.backgroundColor = '#f5f5f5';
+    latexSpan.style.borderRadius = '3px';
+    latexSpan.style.fontFamily = 'monospace';
+    latexSpan.style.fontSize = '0.9em';
+    latexSpan.style.color = '#333';
 
-  try {
-    latexSpan.innerHTML = katex.renderToString(latexInput, {
-      throwOnError: false,
-      displayMode: false,
-    });
-    latexSpan.setAttribute('data-latex', latexInput);
-  } catch (err) {
-    console.error('KaTeX render error:', err);
-    alert('Invalid LaTeX syntax.');
-    return;
-  }
+    try {
+      latexSpan.innerHTML = katex.renderToString(latexInput, {
+        throwOnError: false,
+        displayMode: false,
+      });
+      latexSpan.setAttribute('data-latex', latexInput);
+    } catch (err) {
+      console.error('KaTeX render error:', err);
+      alert('Invalid LaTeX syntax.');
+      return;
+    }
 
-  const selection = window.getSelection();
-  if (!selection.rangeCount) return;
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
 
-  const range = selection.getRangeAt(0);
-  range.deleteContents();
+    const range = selection.getRangeAt(0);
+    range.deleteContents();
 
-  range.insertNode(latexSpan);
+    range.insertNode(latexSpan);
 
-  // Move the caret directly after the inserted span
-  const newRange = document.createRange();
-  newRange.setStartAfter(latexSpan);
-  newRange.setEndAfter(latexSpan);
-  selection.removeAllRanges();
-  selection.addRange(newRange);
+    // Move the caret directly after the inserted span
+    const newRange = document.createRange();
+    newRange.setStartAfter(latexSpan);
+    newRange.setEndAfter(latexSpan);
+    selection.removeAllRanges();
+    selection.addRange(newRange);
 
-  editorRef.current.focus();
-  setShowLatexModal(false);
-  setLatexInput('');
-};
+    editorRef.current.focus();
+    setShowLatexModal(false);
+    setLatexInput('');
+  };
 
 
   const insertLatexTemplate = (template) => {
-  const textarea = document.querySelector('.latex-textarea');
-  if (!textarea) return;
+    const textarea = document.querySelector('.latex-textarea');
+    if (!textarea) return;
 
-  const start = textarea.selectionStart;
-  const end = textarea.selectionEnd;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
 
-  const before = latexInput.slice(0, start);
-  const after = latexInput.slice(end);
+    const before = latexInput.slice(0, start);
+    const after = latexInput.slice(end);
 
-  const newLatex = before + template + after;
-  setLatexInput(newLatex);
+    const newLatex = before + template + after;
+    setLatexInput(newLatex);
 
-  // Set cursor after inserted template
-  setTimeout(() => {
-    textarea.focus();
-    textarea.setSelectionRange(start + template.length, start + template.length);
-  }, 0);
-};
+    // Set cursor after inserted template
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + template.length, start + template.length);
+    }, 0);
+  };
 
 
   const buttons = [
