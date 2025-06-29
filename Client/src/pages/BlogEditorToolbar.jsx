@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   FiBold, FiItalic, FiUnderline, FiList, FiAlignLeft, FiAlignCenter, FiAlignRight,
@@ -24,98 +25,98 @@ const BlogEditorToolbar = ({ editorRef }) => {
 
   // LaTeX templates organized by category
   const latexTemplates = [
-  {
-    category: 'Fractions',
-    items: [
-      { name: 'Simple Fraction', template: '\\frac{a}{b}' },
-      { name: 'Mixed Fraction', template: 'c\\frac{a}{b}' },
-    ]
-  },
-  {
-    category: 'Script',
-    items: [
-      { name: 'Superscript', template: 'x^{n}' },
-      { name: 'Subscript', template: 'x_{i}' },
-      { name: 'Superscript with Subscript', template: 'x_{i}^{n}' },
-      { name: 'Left Subscript-Superscript', template: '{}_{i}^{n}x' },
-    ]
-  },
-  {
-    category: 'Radical',
-    items: [
-      { name: 'Square Root', template: '\\sqrt{a}' },
-      { name: 'N-th Root', template: '\\sqrt[n]{a}' },
-    ]
-  },
-  {
-    category: 'Differentiation',
-    items: [
-      { name: 'Derivative', template: '\\frac{dy}{dx}' },
-      { name: 'n-th Derivative', template: '\\frac{d^n y}{dx^n}' },
-      { name: 'Partial Derivative', template: '\\frac{\\partial y}{\\partial x}' },
-    ]
-  },
-  {
-    category: 'Integration',
-    items: [
-      { name: 'Indefinite Integral', template: '\\int y \\, dx' },
-      { name: 'Definite Integral', template: '\\int_{a}^{b} y \\, dx' },
-      { name: 'Double Integral', template: '\\iint y \\, dx' },
-      { name: 'Double Definite Integral', template: '\\iint_{a}^{b} y \\, dx \\, dy' },
-    ]
-  },
-  {
-    category: 'Functions',
-    items: [
-      { name: 'Sine', template: '\\sin(x)' },
-      { name: 'Cosine', template: '\\cos(x)' },
-      { name: 'Tangent', template: '\\tan(x)' },
-      { name: 'Inverse Sine', template: '\\sin^{-1}(x)' },
-      { name: 'Inverse Cosine', template: '\\cos^{-1}(x)' },
-      { name: 'Hyperbolic Sine', template: '\\sinh(x)' },
-      { name: 'Hyperbolic Cosine', template: '\\cosh(x)' },
-      { name: 'Inverse Hyperbolic Sine', template: '\\sinh^{-1}(x)' },
-      { name: 'Inverse Hyperbolic Cosine', template: '\\cosh^{-1}(x)' },
-    ]
-  },
-  
-  {
-    category: 'Logarithms',
-    items: [
-      { name: 'Logarithm with Base', template: '\\log_{a} b' },
-      { name: 'Natural Logarithm', template: '\\ln(a)' },
-      { name: 'Common Logarithm', template: '\\log_{10} a' },
-    ]
-  },
-  {
-    category: 'Greek Letters',
-    items: [
-      { name: 'Alpha', template: '\\alpha' },
-      { name: 'Beta', template: '\\beta' },
-      { name: 'Gamma', template: '\\gamma' },
-      { name: 'Delta', template: '\\delta' },
-      { name: 'Theta', template: '\\theta' },
-      { name: 'Pi', template: '\\pi' },
-      { name: 'Sigma', template: '\\sigma' },
-      { name: 'Omega', template: '\\omega' },
-    ]
-  },
-  {
-    category: 'Operators',
-    items: [
-      { name: 'Summation', template: '\\sum_{i=1}^{n}' },
-      { name: 'Product', template: '\\prod_{i=1}^{n}' },
-      { name: 'Limit', template: '\\lim_{x \\to \\infty}' },
-    ]
-  },
-  {
-    category: 'Matrix',
-    items: [
-      { name: '2x2 Matrix', template: '\\begin{matrix} a & b \\\\ c & d \\end{matrix}' },
-      // You can extend this with dynamic row/col input later
-    ]
-  },
-];
+    {
+      category: 'Fractions',
+      items: [
+        { name: 'Simple Fraction', template: '\\frac{a}{b}' },
+        { name: 'Mixed Fraction', template: 'c\\frac{a}{b}' },
+      ]
+    },
+    {
+      category: 'Script',
+      items: [
+        { name: 'Superscript', template: 'x^{n}' },
+        { name: 'Subscript', template: 'x_{i}' },
+        { name: 'Superscript with Subscript', template: 'x_{i}^{n}' },
+        { name: 'Left Subscript-Superscript', template: '{}_{i}^{n}x' },
+      ]
+    },
+    {
+      category: 'Radical',
+      items: [
+        { name: 'Square Root', template: '\\sqrt{a}' },
+        { name: 'N-th Root', template: '\\sqrt[n]{a}' },
+      ]
+    },
+    {
+      category: 'Differentiation',
+      items: [
+        { name: 'Derivative', template: '\\frac{dy}{dx}' },
+        { name: 'n-th Derivative', template: '\\frac{d^n y}{dx^n}' },
+        { name: 'Partial Derivative', template: '\\frac{\\partial y}{\\partial x}' },
+      ]
+    },
+    {
+      category: 'Integration',
+      items: [
+        { name: 'Indefinite Integral', template: '\\int y \\, dx' },
+        { name: 'Definite Integral', template: '\\int_{a}^{b} y \\, dx' },
+        { name: 'Double Integral', template: '\\iint y \\, dx' },
+        { name: 'Double Definite Integral', template: '\\iint_{a}^{b} y \\, dx \\, dy' },
+      ]
+    },
+    {
+      category: 'Functions',
+      items: [
+        { name: 'Sine', template: '\\sin(x)' },
+        { name: 'Cosine', template: '\\cos(x)' },
+        { name: 'Tangent', template: '\\tan(x)' },
+        { name: 'Inverse Sine', template: '\\sin^{-1}(x)' },
+        { name: 'Inverse Cosine', template: '\\cos^{-1}(x)' },
+        { name: 'Hyperbolic Sine', template: '\\sinh(x)' },
+        { name: 'Hyperbolic Cosine', template: '\\cosh(x)' },
+        { name: 'Inverse Hyperbolic Sine', template: '\\sinh^{-1}(x)' },
+        { name: 'Inverse Hyperbolic Cosine', template: '\\cosh^{-1}(x)' },
+      ]
+    },
+
+    {
+      category: 'Logarithms',
+      items: [
+        { name: 'Logarithm with Base', template: '\\log_{a} b' },
+        { name: 'Natural Logarithm', template: '\\ln(a)' },
+        { name: 'Common Logarithm', template: '\\log_{10} a' },
+      ]
+    },
+    {
+      category: 'Greek Letters',
+      items: [
+        { name: 'Alpha', template: '\\alpha' },
+        { name: 'Beta', template: '\\beta' },
+        { name: 'Gamma', template: '\\gamma' },
+        { name: 'Delta', template: '\\delta' },
+        { name: 'Theta', template: '\\theta' },
+        { name: 'Pi', template: '\\pi' },
+        { name: 'Sigma', template: '\\sigma' },
+        { name: 'Omega', template: '\\omega' },
+      ]
+    },
+    {
+      category: 'Operators',
+      items: [
+        { name: 'Summation', template: '\\sum_{i=1}^{n}' },
+        { name: 'Product', template: '\\prod_{i=1}^{n}' },
+        { name: 'Limit', template: '\\lim_{x \\to \\infty}' },
+      ]
+    },
+    {
+      category: 'Matrix',
+      items: [
+        { name: '2x2 Matrix', template: '\\begin{matrix} a & b \\\\ c & d \\end{matrix}' },
+        // You can extend this with dynamic row/col input later
+      ]
+    },
+  ];
 
 
   const formatText = (command, value = null) => {
@@ -455,7 +456,8 @@ const BlogEditorToolbar = ({ editorRef }) => {
       {/* LaTeX Modal */}
       {showLatexModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-3xl">
+          <div className="bg-white rounded-lg p-6 w-full max-w-3xl h-[550px] overflow-hidden flex flex-col">
+
             <div className="flex items-center justify-between mb-4">
               {/* LaTeX Templates title (left) */}
               <h4 className="text-sm font-semibold text-gray-700">
@@ -479,51 +481,83 @@ const BlogEditorToolbar = ({ editorRef }) => {
               </div>
             </div>
 
-            <div className="flex flex-col md:flex-row gap-6">
-              {/* Left side - LaTeX templates */}
-              <div className="w-full md:w-1/3">
-                <div className="space-y-2">
-                  {latexTemplates.map((category) => {
-                    const isOpen = openTemplateCategory === category.category;
+            <div className="flex flex-1 gap-6 overflow-hidden">
+  {/* Left - Scrollable LaTeX template list */}
+  <div className="w-full md:w-1/3 h-full overflow-y-auto pr-2 space-y-2">
+    {latexTemplates.map((category) => {
+      const isOpen = openTemplateCategory === category.category;
 
-                    return (
-                      <div key={category.category}>
-                        <button
-                          onClick={() =>
-                            setOpenTemplateCategory(isOpen ? null : category.category)
-                          }
-                          className={`w-full flex justify-between items-center px-4 py-2 rounded-md border text-sm font-medium 
-            ${isOpen
-                              ? 'bg-teal-500 text-white border-teal-500'
-                              : 'bg-white text-gray-800 border-gray-200 hover:bg-teal-500 hover:text-white hover:border-teal-500'
-                            }
-          `}
-                        >
-                          {category.category}
-                          <span className="ml-2">
-                            {isOpen ? '▲' : '▼'}
-                          </span>
-                        </button>
+      return (
+        <div key={category.category} className="shrink-0">
+          <button
+            onClick={() =>
+              setOpenTemplateCategory(isOpen ? null : category.category)
+            }
+            className={`w-full flex justify-between items-center px-4 py-2 rounded-md border text-sm font-medium 
+              ${isOpen
+                ? 'bg-teal-500 text-white border-teal-500'
+                : 'bg-white text-gray-800 border-gray-200 hover:bg-teal-500 hover:text-white hover:border-teal-500'}
+            `}
+          >
+            {category.category}
+            <span className="ml-2">{isOpen ? '▲' : '▼'}</span>
+          </button>
 
-                        {isOpen && (
-                          <div className="mt-1 border border-gray-200 rounded-md shadow-sm overflow-hidden">
-                            {category.items.map((item) => (
-                              <button
-                                key={item.name}
-                                className="w-full text-left px-4 py-2 text-sm hover:bg-teal-500 hover:text-white transition-colors duration-200"
-                                onClick={() => insertLatexTemplate(item.template)}
-                              >
-                                {item.name}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+          {isOpen && (
+            <div className="mt-1 border border-gray-200 rounded-md shadow-sm overflow-hidden">
+              {'subcategories' in category ? (
+                category.subcategories.map((subcat) => {
+                  const isSubOpen = openFunctionSubcategory === subcat.name;
 
-              </div>
+                  return (
+                    <div key={subcat.name}>
+                      <button
+                        onClick={() =>
+                          setOpenFunctionSubcategory(isSubOpen ? null : subcat.name)
+                        }
+                        className={`w-full flex justify-between items-center px-4 py-2 text-sm font-medium ${
+                          isSubOpen
+                            ? 'bg-teal-400 text-white'
+                            : 'bg-white text-gray-800 hover:bg-teal-400 hover:text-white'
+                        }`}
+                      >
+                        {subcat.name}
+                        <span>{isSubOpen ? '▲' : '▼'}</span>
+                      </button>
+
+                      {isSubOpen && (
+                        <div className="pl-4">
+                          {subcat.items.map((item) => (
+                            <button
+                              key={item.name}
+                              className="w-full text-left px-4 py-1 text-sm hover:bg-teal-500 hover:text-white transition-colors duration-200"
+                              onClick={() => insertLatexTemplate(item.template)}
+                            >
+                              {item.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              ) : (
+                category.items.map((item) => (
+                  <button
+                    key={item.name}
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-teal-500 hover:text-white transition-colors duration-200"
+                    onClick={() => insertLatexTemplate(item.template)}
+                  >
+                    {item.name}
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+      );
+    })}
+  </div>
 
               {/* Right side - Editor and preview */}
               <div className="w-full md:w-2/3">
