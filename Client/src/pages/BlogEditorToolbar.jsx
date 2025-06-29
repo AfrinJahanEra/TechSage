@@ -19,6 +19,9 @@ const BlogEditorToolbar = ({ editorRef }) => {
   const [isLatexSelected, setIsLatexSelected] = useState(false);
   const [latexPreview, setLatexPreview] = useState('');
 
+  const [openTemplateCategory, setOpenTemplateCategory] = useState(null);
+
+
   // LaTeX templates organized by category
   const latexTemplates = [
     {
@@ -416,51 +419,73 @@ const BlogEditorToolbar = ({ editorRef }) => {
       {showLatexModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-3xl">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold">
-                {isLatexSelected ? 'Edit LaTeX Equation' : 'Insert LaTeX Equation'}
-              </h3>
-              <button
-                onClick={() => {
-                  setShowLatexModal(false);
-                  setLatexInput('');
-                }}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <FiX size={20} />
-              </button>
+            <div className="flex items-center justify-between mb-4">
+              {/* LaTeX Templates title (left) */}
+              <h4 className="text-sm font-semibold text-gray-700">
+                LaTeX Templates
+              </h4>
+
+              {/* Centered Modal Title */}
+              <div className="relative flex-1 text-center">
+                <h3 className="text-xl font-bold">
+                  {isLatexSelected ? 'Edit LaTeX Equation' : 'Insert LaTeX Equation'}
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowLatexModal(false);
+                    setLatexInput('');
+                  }}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  <FiX size={20} />
+                </button>
+              </div>
             </div>
 
             <div className="flex flex-col md:flex-row gap-6">
               {/* Left side - LaTeX templates */}
               <div className="w-full md:w-1/3">
-                <h4 className="font-semibold mb-3">LaTeX Templates</h4>
-                <div className="space-y-4">
-                  {latexTemplates.map((category) => (
-                    <div key={category.category} className="relative group">
-                      <button className={`
-                  w-full text-left px-4 py-2 rounded-md border shadow-sm transition-colors duration-200
-                  bg-white text-gray-800 border-gray-200 hover:bg-teal-500 hover:text-white hover:border-teal-500
-                `}>
-                        {category.category}
-                      </button>
-                      <div className="absolute z-10 left-0 mt-1 w-full bg-white rounded-md border border-gray-200 shadow-lg hidden group-hover:block">
-                        {category.items.map((item) => (
-                          <button
-                            key={item.name}
-                            className={`
-                        w-full text-left px-4 py-2 text-sm
-                        hover:bg-teal-500 hover:text-white transition-colors duration-200
-                      `}
-                            onClick={() => insertLatexTemplate(item.template)}
-                          >
-                            {item.name}
-                          </button>
-                        ))}
+                <div className="space-y-2">
+                  {latexTemplates.map((category) => {
+                    const isOpen = openTemplateCategory === category.category;
+
+                    return (
+                      <div key={category.category}>
+                        <button
+                          onClick={() =>
+                            setOpenTemplateCategory(isOpen ? null : category.category)
+                          }
+                          className={`w-full flex justify-between items-center px-4 py-2 rounded-md border text-sm font-medium 
+            ${isOpen
+                              ? 'bg-teal-500 text-white border-teal-500'
+                              : 'bg-white text-gray-800 border-gray-200 hover:bg-teal-500 hover:text-white hover:border-teal-500'
+                            }
+          `}
+                        >
+                          {category.category}
+                          <span className="ml-2">
+                            {isOpen ? '▲' : '▼'}
+                          </span>
+                        </button>
+
+                        {isOpen && (
+                          <div className="mt-1 border border-gray-200 rounded-md shadow-sm overflow-hidden">
+                            {category.items.map((item) => (
+                              <button
+                                key={item.name}
+                                className="w-full text-left px-4 py-2 text-sm hover:bg-teal-500 hover:text-white transition-colors duration-200"
+                                onClick={() => insertLatexTemplate(item.template)}
+                              >
+                                {item.name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
+
               </div>
 
               {/* Right side - Editor and preview */}
