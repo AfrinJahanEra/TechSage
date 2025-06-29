@@ -179,11 +179,11 @@ const BlogEditorToolbar = ({ editorRef }) => {
     // Get current cursor position
     const cursorPos = document.getSelection().getRangeAt(0).startOffset;
     const currentValue = latexInput;
-    
+
     // Insert the template at cursor position
     const newValue = currentValue.slice(0, cursorPos) + template + currentValue.slice(cursorPos);
     setLatexInput(newValue);
-    
+
     // Focus back on the textarea
     setTimeout(() => {
       const textarea = document.querySelector('.latex-textarea');
@@ -412,6 +412,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
       ))}
 
       {/* LaTeX Modal */}
+      {/* LaTeX Modal */}
       {showLatexModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-3xl">
@@ -437,14 +438,20 @@ const BlogEditorToolbar = ({ editorRef }) => {
                 <div className="space-y-4">
                   {latexTemplates.map((category) => (
                     <div key={category.category} className="relative group">
-                      <button className="w-full text-left px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md font-medium">
+                      <button className={`
+                  w-full text-left px-4 py-2 rounded-md border shadow-sm transition-colors duration-200
+                  bg-white text-gray-800 border-gray-200 hover:bg-teal-500 hover:text-white hover:border-teal-500
+                `}>
                         {category.category}
                       </button>
                       <div className="absolute z-10 left-0 mt-1 w-full bg-white rounded-md border border-gray-200 shadow-lg hidden group-hover:block">
                         {category.items.map((item) => (
                           <button
                             key={item.name}
-                            className="w-full text-left px-4 py-2 hover:bg-teal-100 text-sm"
+                            className={`
+                        w-full text-left px-4 py-2 text-sm
+                        hover:bg-teal-500 hover:text-white transition-colors duration-200
+                      `}
                             onClick={() => insertLatexTemplate(item.template)}
                           >
                             {item.name}
