@@ -514,8 +514,23 @@ const insertLatexTemplate = (template) => {
       {/* LaTeX Modal */}
   
       {showLatexModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-3xl h-[550px] overflow-hidden flex flex-col">
+        <div
+  className="fixed inset-0 flex items-center justify-center z-50"
+  style={{
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',   // Light transparent overlay
+    backdropFilter: 'blur(8px)',                  // Blurred background
+    WebkitBackdropFilter: 'blur(8px)',            // Safari support
+  }}
+>
+          <div
+    className="rounded-xl p-6 w-full max-w-3xl h-[550px] overflow-hidden flex flex-col shadow-xl transition-transform duration-300 scale-100"
+    style={{
+      backgroundColor: 'rgba(255, 255, 255, 0.96)',       // Subtle translucent white
+      border: '1px solid rgba(0, 0, 0, 0.12)',            // Soft border
+      boxShadow: '0 12px 30px rgba(0,0,0,0.2)',           // Gentle shadow
+      backdropFilter: 'blur(2px)',                       // Optional inner blur (for glass effect)
+    }}
+  >
 
             <div className="flex items-center justify-between mb-4">
               {/* LaTeX Templates title (left) */}
