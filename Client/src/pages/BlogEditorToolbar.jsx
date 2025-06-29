@@ -152,7 +152,7 @@ const [matrixCols, setMatrixCols] = useState(2);
     {
   category: 'Matrix',
   items: [
-    { name: '2x2 Matrix', template: '\\begin{matrix} a & b \\\\ c & d \\end{matrix}' },
+    { name: '2x2 Matrix', template: '\\left| \\begin{matrix} a & b \\\\ c & d \\end{matrix} \\right|' },
     { name: 'Custom Matrix', template: 'custom-matrix' }
   ]
 }
@@ -634,16 +634,16 @@ const insertLatexTemplate = (template) => {
       <button
         className="ml-auto px-3 py-1 bg-teal-500 text-white text-sm rounded hover:bg-teal-600"
         onClick={() => {
-          let matrix = '\\begin{matrix}\n';
-          for (let i = 0; i < matrixRows; i++) {
-            let row = [];
-            for (let j = 0; j < matrixCols; j++) {
-              row.push(`a_{${i + 1}${j + 1}}`);
-            }
-            matrix += row.join(' & ');
-            if (i < matrixRows - 1) matrix += ' \\\\\n';
-          }
-          matrix += '\n\\end{matrix}';
+          let matrix = '\\left| \\begin{matrix}\n';
+for (let i = 0; i < matrixRows; i++) {
+  let row = [];
+  for (let j = 0; j < matrixCols; j++) {
+    row.push(`a_{${i + 1}${j + 1}}`);
+  }
+  matrix += row.join(' & ');
+  if (i < matrixRows - 1) matrix += ' \\\\\n';
+}
+matrix += '\n\\end{matrix} \\right|';
           insertLatexTemplate(matrix);
           setShowMatrixInput(false);
         }}
