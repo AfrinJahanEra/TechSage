@@ -24,61 +24,99 @@ const BlogEditorToolbar = ({ editorRef }) => {
 
   // LaTeX templates organized by category
   const latexTemplates = [
-    {
-      category: 'Fractions',
-      items: [
-        { name: 'Simple Fraction', template: '\\frac{a}{b}' },
-        { name: 'Mixed Fraction', template: 'c\\frac{a}{b}' }
-      ]
-    },
-    {
-      category: 'Differentiation',
-      items: [
-        { name: 'Derivative', template: '\\frac{dy}{dx}' },
-        { name: 'n-th Derivative', template: '\\frac{d^y}{dx^b}' },
-        { name: 'Partial Derivative', template: '\\partial_{x}' }
-      ]
-    },
-    {
-      category: 'Integration',
-      items: [
-        { name: 'Indefinite Integral', template: '\\int y \\, dx' },
-        { name: 'Definite Integral', template: '\\int_{a}^{b} y \\, dx' },
-        { name: 'Double Integral', template: '\\iint y \\, dx' }
-      ]
-    },
-    {
-      category: 'Logarithms',
-      items: [
-        { name: 'Logarithm with Base', template: '\\log_{a} b' },
-        { name: 'Natural Logarithm', template: '\\ln(a)' },
-        { name: 'Common Logarithm', template: '\\log_{10} a' }
-      ]
-    },
-    {
-      category: 'Greek Letters',
-      items: [
-        { name: 'Alpha', template: '\\alpha' },
-        { name: 'Beta', template: '\\beta' },
-        { name: 'Gamma', template: '\\gamma' },
-        { name: 'Delta', template: '\\delta' },
-        { name: 'Theta', template: '\\theta' },
-        { name: 'Pi', template: '\\pi' },
-        { name: 'Sigma', template: '\\sigma' },
-        { name: 'Omega', template: '\\omega' }
-      ]
-    },
-    {
-      category: 'Operators',
-      items: [
-        { name: 'Square Root', template: '\\sqrt{a}' },
-        { name: 'Summation', template: '\\sum_{i=1}^{n}' },
-        { name: 'Product', template: '\\prod_{i=1}^{n}' },
-        { name: 'Limit', template: '\\lim_{x \\to \\infty}' },
-        { name: 'Matrix', template: '\\begin{matrix} a & b \\\\ c & d \\end{matrix}' }
-      ]
-    }
-  ];
+  {
+    category: 'Fractions',
+    items: [
+      { name: 'Simple Fraction', template: '\\frac{a}{b}' },
+      { name: 'Mixed Fraction', template: 'c\\frac{a}{b}' },
+    ]
+  },
+  {
+    category: 'Script',
+    items: [
+      { name: 'Superscript', template: 'x^{n}' },
+      { name: 'Subscript', template: 'x_{i}' },
+      { name: 'Superscript with Subscript', template: 'x_{i}^{n}' },
+      { name: 'Left Subscript-Superscript', template: '{}_{i}^{n}x' },
+    ]
+  },
+  {
+    category: 'Radical',
+    items: [
+      { name: 'Square Root', template: '\\sqrt{a}' },
+      { name: 'N-th Root', template: '\\sqrt[n]{a}' },
+    ]
+  },
+  {
+    category: 'Differentiation',
+    items: [
+      { name: 'Derivative', template: '\\frac{dy}{dx}' },
+      { name: 'n-th Derivative', template: '\\frac{d^n y}{dx^n}' },
+      { name: 'Partial Derivative', template: '\\frac{\\partial y}{\\partial x}' },
+    ]
+  },
+  {
+    category: 'Integration',
+    items: [
+      { name: 'Indefinite Integral', template: '\\int y \\, dx' },
+      { name: 'Definite Integral', template: '\\int_{a}^{b} y \\, dx' },
+      { name: 'Double Integral', template: '\\iint y \\, dx' },
+      { name: 'Double Definite Integral', template: '\\iint_{a}^{b} y \\, dx \\, dy' },
+    ]
+  },
+  {
+    category: 'Functions',
+    items: [
+      { name: 'Sine', template: '\\sin(x)' },
+      { name: 'Cosine', template: '\\cos(x)' },
+      { name: 'Tangent', template: '\\tan(x)' },
+      { name: 'Inverse Sine', template: '\\sin^{-1}(x)' },
+      { name: 'Inverse Cosine', template: '\\cos^{-1}(x)' },
+      { name: 'Hyperbolic Sine', template: '\\sinh(x)' },
+      { name: 'Hyperbolic Cosine', template: '\\cosh(x)' },
+      { name: 'Inverse Hyperbolic Sine', template: '\\sinh^{-1}(x)' },
+      { name: 'Inverse Hyperbolic Cosine', template: '\\cosh^{-1}(x)' },
+    ]
+  },
+  
+  {
+    category: 'Logarithms',
+    items: [
+      { name: 'Logarithm with Base', template: '\\log_{a} b' },
+      { name: 'Natural Logarithm', template: '\\ln(a)' },
+      { name: 'Common Logarithm', template: '\\log_{10} a' },
+    ]
+  },
+  {
+    category: 'Greek Letters',
+    items: [
+      { name: 'Alpha', template: '\\alpha' },
+      { name: 'Beta', template: '\\beta' },
+      { name: 'Gamma', template: '\\gamma' },
+      { name: 'Delta', template: '\\delta' },
+      { name: 'Theta', template: '\\theta' },
+      { name: 'Pi', template: '\\pi' },
+      { name: 'Sigma', template: '\\sigma' },
+      { name: 'Omega', template: '\\omega' },
+    ]
+  },
+  {
+    category: 'Operators',
+    items: [
+      { name: 'Summation', template: '\\sum_{i=1}^{n}' },
+      { name: 'Product', template: '\\prod_{i=1}^{n}' },
+      { name: 'Limit', template: '\\lim_{x \\to \\infty}' },
+    ]
+  },
+  {
+    category: 'Matrix',
+    items: [
+      { name: '2x2 Matrix', template: '\\begin{matrix} a & b \\\\ c & d \\end{matrix}' },
+      // You can extend this with dynamic row/col input later
+    ]
+  },
+];
+
 
   const formatText = (command, value = null) => {
     const isActive = document.queryCommandState(command);
