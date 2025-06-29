@@ -8,7 +8,6 @@ import 'katex/dist/katex.min.css';
 import { MdFormatListNumbered } from 'react-icons/md';
 import { PiMathOperationsFill } from 'react-icons/pi';
 
-
 const BlogEditorToolbar = ({ editorRef }) => {
   const [tooltip, setTooltip] = useState('');
   const [hoveredIcon, setHoveredIcon] = useState(null);
@@ -18,8 +17,66 @@ const BlogEditorToolbar = ({ editorRef }) => {
   const [showLatexModal, setShowLatexModal] = useState(false);
   const [latexInput, setLatexInput] = useState('');
   const [isLatexSelected, setIsLatexSelected] = useState(false);
-
   const [latexPreview, setLatexPreview] = useState('');
+
+  // LaTeX templates organized by category
+  const latexTemplates = [
+    {
+      category: 'Fractions',
+      items: [
+        { name: 'Simple Fraction', template: '\\frac{a}{b}' },
+        { name: 'Large Fraction', template: '\\dfrac{a}{b}' },
+        { name: 'Continued Fraction', template: '\\cfrac{a}{b}' }
+      ]
+    },
+    {
+      category: 'Differentiation',
+      items: [
+        { name: 'Derivative', template: '\\frac{dy}{dx}' },
+        { name: 'n-th Derivative', template: '\\frac{d^y}{dx^b}' },
+        { name: 'Partial Derivative', template: '\\partial_{x}' }
+      ]
+    },
+    {
+      category: 'Integration',
+      items: [
+        { name: 'Indefinite Integral', template: '\\int y \\, dx' },
+        { name: 'Definite Integral', template: '\\int_{a}^{b} y \\, dx' },
+        { name: 'Double Integral', template: '\\iint y \\, dx' }
+      ]
+    },
+    {
+      category: 'Logarithms',
+      items: [
+        { name: 'Logarithm with Base', template: '\\log_{a} b' },
+        { name: 'Natural Logarithm', template: '\\ln(a)' },
+        { name: 'Common Logarithm', template: '\\log_{10} a' }
+      ]
+    },
+    {
+      category: 'Greek Letters',
+      items: [
+        { name: 'Alpha', template: '\\alpha' },
+        { name: 'Beta', template: '\\beta' },
+        { name: 'Gamma', template: '\\gamma' },
+        { name: 'Delta', template: '\\delta' },
+        { name: 'Theta', template: '\\theta' },
+        { name: 'Pi', template: '\\pi' },
+        { name: 'Sigma', template: '\\sigma' },
+        { name: 'Omega', template: '\\omega' }
+      ]
+    },
+    {
+      category: 'Operators',
+      items: [
+        { name: 'Square Root', template: '\\sqrt{a}' },
+        { name: 'Summation', template: '\\sum_{i=1}^{n}' },
+        { name: 'Product', template: '\\prod_{i=1}^{n}' },
+        { name: 'Limit', template: '\\lim_{x \\to \\infty}' },
+        { name: 'Matrix', template: '\\begin{matrix} a & b \\\\ c & d \\end{matrix}' }
+      ]
+    }
+  ];
 
   const formatText = (command, value = null) => {
     const isActive = document.queryCommandState(command);
@@ -53,7 +110,6 @@ const BlogEditorToolbar = ({ editorRef }) => {
   };
 
   const handleLatexButtonClick = () => {
-    // Check if we're currently selecting a LaTeX element
     const selection = window.getSelection();
     if (selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
@@ -90,7 +146,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
         throwOnError: false,
         displayMode: false,
       });
-      latexSpan.setAttribute('data-latex', latexInput); // For editing later
+      latexSpan.setAttribute('data-latex', latexInput);
     } catch (err) {
       console.error('KaTeX render error:', err);
       alert('Invalid LaTeX syntax.');
@@ -117,6 +173,26 @@ const BlogEditorToolbar = ({ editorRef }) => {
     editorRef.current.focus();
     setShowLatexModal(false);
     setLatexInput('');
+  };
+
+  const insertLatexTemplate = (template) => {
+    // Get current cursor position
+    const cursorPos = document.getSelection().getRangeAt(0).startOffset;
+    const currentValue = latexInput;
+    
+    // Insert the template at cursor position
+    const newValue = currentValue.slice(0, cursorPos) + template + currentValue.slice(cursorPos);
+    setLatexInput(newValue);
+    
+    // Focus back on the textarea
+    setTimeout(() => {
+      const textarea = document.querySelector('.latex-textarea');
+      if (textarea) {
+        const newCursorPos = cursorPos + template.length;
+        textarea.focus();
+        textarea.setSelectionRange(newCursorPos, newCursorPos);
+      }
+    }, 0);
   };
 
   const buttons = [
@@ -338,7 +414,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
       {/* LaTeX Modal */}
       {showLatexModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+          <div className="bg-white rounded-lg p-6 w-full max-w-3xl">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold">
                 {isLatexSelected ? 'Edit LaTeX Equation' : 'Insert LaTeX Equation'}
@@ -354,42 +430,72 @@ const BlogEditorToolbar = ({ editorRef }) => {
               </button>
             </div>
 
-            <textarea
-              className="w-full h-32 p-2 border border-gray-300 rounded mb-4 font-mono text-sm"
-              placeholder="Enter LaTeX code (e.g., \frac{a}{b} or x^2 + y^2 = z^2)"
-              value={latexInput}
-              onChange={(e) => setLatexInput(e.target.value)}
-              autoFocus
-            />
+            <div className="flex flex-col md:flex-row gap-6">
+              {/* Left side - LaTeX templates */}
+              <div className="w-full md:w-1/3">
+                <h4 className="font-semibold mb-3">LaTeX Templates</h4>
+                <div className="space-y-4">
+                  {latexTemplates.map((category) => (
+                    <div key={category.category} className="relative group">
+                      <button className="w-full text-left px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md font-medium">
+                        {category.category}
+                      </button>
+                      <div className="absolute z-10 left-0 mt-1 w-full bg-white rounded-md border border-gray-200 shadow-lg hidden group-hover:block">
+                        {category.items.map((item) => (
+                          <button
+                            key={item.name}
+                            className="w-full text-left px-4 py-2 hover:bg-teal-100 text-sm"
+                            onClick={() => insertLatexTemplate(item.template)}
+                          >
+                            {item.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
+              {/* Right side - Editor and preview */}
+              <div className="w-full md:w-2/3">
+                <textarea
+                  className="w-full h-32 p-2 border border-gray-300 rounded mb-4 font-mono text-sm latex-textarea"
+                  placeholder="Enter LaTeX code (e.g., \frac{a}{b} or x^2 + y^2 = z^2)"
+                  value={latexInput}
+                  onChange={(e) => setLatexInput(e.target.value)}
+                  autoFocus
+                />
 
-            <div className="text-xs text-gray-500 mb-4">
-              Tip: Use standard LaTeX syntax. Your equation will be rendered when published.
-            </div>
+                <div className="text-xs text-gray-500 mb-4">
+                  Tip: Use standard LaTeX syntax. Your equation will be rendered when published.
+                </div>
 
-            <div className="border border-gray-300 p-3 rounded bg-gray-50">
-              <div className="text-xs text-gray-500 mb-1">Live Preview:</div>
-              <div
-                className="text-sm"
-                dangerouslySetInnerHTML={{ __html: latexPreview }}
-              />
-            </div>
-            <div className="flex justify-end space-x-2">
-              <button
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
-                onClick={() => {
-                  setShowLatexModal(false);
-                  setLatexInput('');
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-2 bg-teal-500 text-white rounded hover:bg-teal-600"
-                onClick={insertLatex}
-              >
-                {isLatexSelected ? 'Update Equation' : 'Insert Equation'}
-              </button>
+                <div className="border border-gray-300 p-3 rounded bg-gray-50 mb-4">
+                  <div className="text-xs text-gray-500 mb-1">Live Preview:</div>
+                  <div
+                    className="text-sm"
+                    dangerouslySetInnerHTML={{ __html: latexPreview }}
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-2">
+                  <button
+                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+                    onClick={() => {
+                      setShowLatexModal(false);
+                      setLatexInput('');
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="px-4 py-2 bg-teal-500 text-white rounded hover:bg-teal-600"
+                    onClick={insertLatex}
+                  >
+                    {isLatexSelected ? 'Update Equation' : 'Insert Equation'}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
