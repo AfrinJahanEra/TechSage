@@ -22,7 +22,9 @@ const BlogEditorToolbar = ({ editorRef }) => {
 
   const [openTemplateCategory, setOpenTemplateCategory] = useState(null);
   const [openFunctionSubcategory, setOpenFunctionSubcategory] = useState(null);
-
+const [showMatrixInput, setShowMatrixInput] = useState(false);
+const [matrixRows, setMatrixRows] = useState(2);
+const [matrixCols, setMatrixCols] = useState(2);
 
 
   // LaTeX templates organized by category
@@ -148,12 +150,12 @@ const BlogEditorToolbar = ({ editorRef }) => {
       ]
     },
     {
-      category: 'Matrix',
-      items: [
-        { name: '2x2 Matrix', template: '\\begin{matrix} a & b \\\\ c & d \\end{matrix}' },
-        // You can extend this with dynamic row/col input later
-      ]
-    },
+  category: 'Matrix',
+  items: [
+    { name: '2x2 Matrix', template: '\\begin{matrix} a & b \\\\ c & d \\end{matrix}' },
+    { name: 'Custom Matrix', template: 'custom-matrix' }
+  ]
+}
   ];
 
 
@@ -252,26 +254,30 @@ const BlogEditorToolbar = ({ editorRef }) => {
     setLatexInput('');
   };
 
+const insertLatexTemplate = (template) => {
+  if (template === 'custom-matrix') {
+    setShowMatrixInput(true);
+    return; // <-- early return so it doesn't insert the text 'custom-matrix'
+  }
 
-  const insertLatexTemplate = (template) => {
-    const textarea = document.querySelector('.latex-textarea');
-    if (!textarea) return;
+  const textarea = document.querySelector('.latex-textarea');
+  if (!textarea) return;
 
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
 
-    const before = latexInput.slice(0, start);
-    const after = latexInput.slice(end);
+  const before = latexInput.slice(0, start);
+  const after = latexInput.slice(end);
 
-    const newLatex = before + template + after;
-    setLatexInput(newLatex);
+  const newLatex = before + template + after;
+  setLatexInput(newLatex);
 
-    // Set cursor after inserted template
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + template.length, start + template.length);
-    }, 0);
-  };
+  // Set cursor after inserted template
+  setTimeout(() => {
+    textarea.focus();
+    textarea.setSelectionRange(start + template.length, start + template.length);
+  }, 0);
+};
 
 
   const buttons = [
@@ -491,7 +497,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
       ))}
 
       {/* LaTeX Modal */}
-      {/* LaTeX Modal */}
+  
       {showLatexModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-3xl h-[550px] overflow-hidden flex flex-col">
@@ -598,6 +604,55 @@ const BlogEditorToolbar = ({ editorRef }) => {
 
               {/* Right side - Editor and preview */}
               <div className="w-full md:w-2/3">
+              {/* Show custom matrix input form */}
+{showMatrixInput && (
+  <div className="mb-4 border border-teal-200 p-3 rounded bg-teal-50">
+    <h4 className="text-sm font-semibold mb-2">Custom Matrix Size</h4>
+    <div className="flex gap-4 items-center mb-2">
+      <label className="text-sm text-gray-700">
+        Rows:
+        <input
+          type="number"
+          min="1"
+          max="10"
+          value={matrixRows}
+          onChange={(e) => setMatrixRows(Number(e.target.value))}
+          className="ml-2 w-16 border rounded px-2 py-1 text-sm"
+        />
+      </label>
+      <label className="text-sm text-gray-700">
+        Columns:
+        <input
+          type="number"
+          min="1"
+          max="10"
+          value={matrixCols}
+          onChange={(e) => setMatrixCols(Number(e.target.value))}
+          className="ml-2 w-16 border rounded px-2 py-1 text-sm"
+        />
+      </label>
+      <button
+        className="ml-auto px-3 py-1 bg-teal-500 text-white text-sm rounded hover:bg-teal-600"
+        onClick={() => {
+          let matrix = '\\begin{matrix}\n';
+          for (let i = 0; i < matrixRows; i++) {
+            let row = [];
+            for (let j = 0; j < matrixCols; j++) {
+              row.push(`a_{${i + 1}${j + 1}}`);
+            }
+            matrix += row.join(' & ');
+            if (i < matrixRows - 1) matrix += ' \\\\\n';
+          }
+          matrix += '\n\\end{matrix}';
+          insertLatexTemplate(matrix);
+          setShowMatrixInput(false);
+        }}
+      >
+        Insert
+      </button>
+    </div>
+  </div>
+)}
                 <textarea
                   className="w-full h-32 p-2 border border-gray-300 rounded mb-4 font-mono text-sm latex-textarea"
                   placeholder="Enter LaTeX code (e.g., \frac{a}{b} or x^2 + y^2 = z^2)"
