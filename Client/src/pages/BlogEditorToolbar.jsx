@@ -130,73 +130,73 @@ const BlogEditorToolbar = ({ editorRef }) => {
   };
 
   const insertLatex = () => {
-    if (!latexInput.trim()) return;
+  if (!latexInput.trim()) return;
 
-    const latexSpan = document.createElement('span');
-    latexSpan.className = 'latex-equation';
-    latexSpan.contentEditable = 'false';
-    latexSpan.style.display = 'inline-block';
-    latexSpan.style.padding = '0.2em 0.4em';
-    latexSpan.style.margin = '0 0.1em';
-    latexSpan.style.backgroundColor = '#f5f5f5';
-    latexSpan.style.borderRadius = '3px';
-    latexSpan.style.fontFamily = 'monospace';
-    latexSpan.style.fontSize = '0.9em';
-    latexSpan.style.color = '#333';
+  const latexSpan = document.createElement('span');
+  latexSpan.className = 'latex-equation';
+  latexSpan.contentEditable = 'false';
+  latexSpan.style.display = 'inline-block';
+  latexSpan.style.padding = '0.2em 0.4em';
+  latexSpan.style.margin = '0 0.1em';
+  latexSpan.style.backgroundColor = '#f5f5f5';
+  latexSpan.style.borderRadius = '3px';
+  latexSpan.style.fontFamily = 'monospace';
+  latexSpan.style.fontSize = '0.9em';
+  latexSpan.style.color = '#333';
 
-    try {
-      latexSpan.innerHTML = katex.renderToString(latexInput, {
-        throwOnError: false,
-        displayMode: false,
-      });
-      latexSpan.setAttribute('data-latex', latexInput);
-    } catch (err) {
-      console.error('KaTeX render error:', err);
-      alert('Invalid LaTeX syntax.');
-      return;
-    }
+  try {
+    latexSpan.innerHTML = katex.renderToString(latexInput, {
+      throwOnError: false,
+      displayMode: false,
+    });
+    latexSpan.setAttribute('data-latex', latexInput);
+  } catch (err) {
+    console.error('KaTeX render error:', err);
+    alert('Invalid LaTeX syntax.');
+    return;
+  }
 
-    const zeroWidthSpace = document.createTextNode('\u200B');
-    const selection = window.getSelection();
-    if (!selection.rangeCount) return;
+  const selection = window.getSelection();
+  if (!selection.rangeCount) return;
 
-    const range = selection.getRangeAt(0);
-    range.deleteContents();
+  const range = selection.getRangeAt(0);
+  range.deleteContents();
 
-    const frag = document.createDocumentFragment();
-    frag.appendChild(latexSpan);
-    frag.appendChild(zeroWidthSpace);
-    range.insertNode(frag);
+  range.insertNode(latexSpan);
 
-    range.setStartAfter(zeroWidthSpace);
-    range.collapse(true);
-    selection.removeAllRanges();
-    selection.addRange(range);
+  // Move the caret directly after the inserted span
+  const newRange = document.createRange();
+  newRange.setStartAfter(latexSpan);
+  newRange.setEndAfter(latexSpan);
+  selection.removeAllRanges();
+  selection.addRange(newRange);
 
-    editorRef.current.focus();
-    setShowLatexModal(false);
-    setLatexInput('');
-  };
+  editorRef.current.focus();
+  setShowLatexModal(false);
+  setLatexInput('');
+};
+
 
   const insertLatexTemplate = (template) => {
-    // Get current cursor position
-    const cursorPos = document.getSelection().getRangeAt(0).startOffset;
-    const currentValue = latexInput;
+  const textarea = document.querySelector('.latex-textarea');
+  if (!textarea) return;
 
-    // Insert the template at cursor position
-    const newValue = currentValue.slice(0, cursorPos) + template + currentValue.slice(cursorPos);
-    setLatexInput(newValue);
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
 
-    // Focus back on the textarea
-    setTimeout(() => {
-      const textarea = document.querySelector('.latex-textarea');
-      if (textarea) {
-        const newCursorPos = cursorPos + template.length;
-        textarea.focus();
-        textarea.setSelectionRange(newCursorPos, newCursorPos);
-      }
-    }, 0);
-  };
+  const before = latexInput.slice(0, start);
+  const after = latexInput.slice(end);
+
+  const newLatex = before + template + after;
+  setLatexInput(newLatex);
+
+  // Set cursor after inserted template
+  setTimeout(() => {
+    textarea.focus();
+    textarea.setSelectionRange(start + template.length, start + template.length);
+  }, 0);
+};
+
 
   const buttons = [
     { icon: <FiBold />, command: 'bold', name: 'Bold', action: () => formatText('bold') },
