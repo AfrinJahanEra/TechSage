@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   FiBold, FiItalic, FiUnderline, FiList, FiAlignLeft, FiAlignCenter, FiAlignRight,
   FiAlignJustify, FiLink, FiImage, FiCode, FiRotateCcw, FiRotateCw, FiX
@@ -8,8 +7,10 @@ import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import { MdFormatListNumbered } from 'react-icons/md';
 import { PiMathOperationsFill } from 'react-icons/pi';
+import { useTheme } from '../context/ThemeContext';
 
 const BlogEditorToolbar = ({ editorRef }) => {
+  const { primaryColor, darkMode } = useTheme();
   const [tooltip, setTooltip] = useState('');
   const [hoveredIcon, setHoveredIcon] = useState(null);
   const [activeFormats, setActiveFormats] = useState([]);
@@ -19,13 +20,11 @@ const BlogEditorToolbar = ({ editorRef }) => {
   const [latexInput, setLatexInput] = useState('');
   const [isLatexSelected, setIsLatexSelected] = useState(false);
   const [latexPreview, setLatexPreview] = useState('');
-
   const [openTemplateCategory, setOpenTemplateCategory] = useState(null);
   const [openFunctionSubcategory, setOpenFunctionSubcategory] = useState(null);
-const [showMatrixInput, setShowMatrixInput] = useState(false);
-const [matrixRows, setMatrixRows] = useState(2);
-const [matrixCols, setMatrixCols] = useState(2);
-
+  const [showMatrixInput, setShowMatrixInput] = useState(false);
+  const [matrixRows, setMatrixRows] = useState(2);
+  const [matrixCols, setMatrixCols] = useState(2);
 
   // LaTeX templates organized by category
   const latexTemplates = [
@@ -114,12 +113,10 @@ const [matrixCols, setMatrixCols] = useState(2);
             { name: 'Inverse Hyperbolic cot', template: '\\coth^{-1}(x)' },
             { name: 'Inverse Hyperbolic sec', template: '\\sech^{-1}(x)' },
             { name: 'Inverse Hyperbolic cosec', template: '\\csch^{-1}(x)' },
-
           ]
         },
       ]
     },
-
     {
       category: 'Logarithms',
       items: [
@@ -150,14 +147,13 @@ const [matrixCols, setMatrixCols] = useState(2);
       ]
     },
     {
-  category: 'Matrix',
-  items: [
-    { name: '2x2 Matrix', template: '\\left| \\begin{matrix} a & b \\\\ c & d \\end{matrix} \\right|' },
-    { name: 'Custom Matrix', template: 'custom-matrix' }
-  ]
-}
+      category: 'Matrix',
+      items: [
+        { name: '2x2 Matrix', template: '\\left| \\begin{matrix} a & b \\\\ c & d \\end{matrix} \\right|' },
+        { name: 'Custom Matrix', template: 'custom-matrix' }
+      ]
+    }
   ];
-
 
   const formatText = (command, value = null) => {
     const isActive = document.queryCommandState(command);
@@ -208,92 +204,78 @@ const [matrixCols, setMatrixCols] = useState(2);
   };
 
   const insertLatex = () => {
-  if (!latexInput.trim()) return;
+    if (!latexInput.trim()) return;
 
-  // Create the LaTeX element
-  const latexSpan = document.createElement('span');
-  latexSpan.className = 'latex-equation';
-  latexSpan.contentEditable = 'false';
-  latexSpan.style.display = 'inline-block';
-  latexSpan.style.padding = '0.2em 0.4em';
-  latexSpan.style.margin = '0 0.1em';
-  latexSpan.style.backgroundColor = '#f5f5f5';
-  latexSpan.style.borderRadius = '3px';
-  latexSpan.style.fontFamily = 'monospace';
-  latexSpan.style.fontSize = '0.9em';
-  latexSpan.style.color = '#333';
+    const latexSpan = document.createElement('span');
+    latexSpan.className = 'latex-equation';
+    latexSpan.contentEditable = 'false';
+    latexSpan.style.display = 'inline-block';
+    latexSpan.style.padding = '0.2em 0.4em';
+    latexSpan.style.margin = '0 0.1em';
+    latexSpan.style.borderRadius = '3px';
+    latexSpan.style.fontFamily = 'monospace';
+    latexSpan.style.fontSize = '0.9em';
+    latexSpan.style.backgroundColor = darkMode ? '#374151' : '#f5f5f5';
+    latexSpan.style.color = darkMode ? '#f3f4f6' : '#333';
 
-  try {
-    latexSpan.innerHTML = katex.renderToString(latexInput, {
-      throwOnError: false,
-      displayMode: false,
-    });
-    latexSpan.setAttribute('data-latex', latexInput);
-  } catch (err) {
-    console.error('KaTeX render error:', err);
-    alert('Invalid LaTeX syntax.');
-    return;
-  }
+    try {
+      latexSpan.innerHTML = katex.renderToString(latexInput, {
+        throwOnError: false,
+        displayMode: false,
+      });
+      latexSpan.setAttribute('data-latex', latexInput);
+    } catch (err) {
+      console.error('KaTeX render error:', err);
+      alert('Invalid LaTeX syntax.');
+      return;
+    }
 
-  // Get the editor reference
-  const editor = editorRef.current;
-  
-  // Save the current selection
-  const selection = window.getSelection();
-  const range = selection.getRangeAt(0);
-  
-  // Check if we're inside the editor
-  if (!editor.contains(range.startContainer)) {
-    // If not, append to the end of editor content
-    editor.appendChild(latexSpan);
-  } else {
-    // Insert at the current selection
-    range.deleteContents();
-    range.insertNode(latexSpan);
-  }
+    const editor = editorRef.current;
+    const selection = window.getSelection();
+    const range = selection.getRangeAt(0);
+    
+    if (!editor.contains(range.startContainer)) {
+      editor.appendChild(latexSpan);
+    } else {
+      range.deleteContents();
+      range.insertNode(latexSpan);
+    }
 
-  // Create a new range after the inserted element
-  const newRange = document.createRange();
-  newRange.setStartAfter(latexSpan);
-  newRange.collapse(true);
-  
-  // Clear current selection and add the new range
-  selection.removeAllRanges();
-  selection.addRange(newRange);
+    const newRange = document.createRange();
+    newRange.setStartAfter(latexSpan);
+    newRange.collapse(true);
+    
+    selection.removeAllRanges();
+    selection.addRange(newRange);
+    editor.focus();
 
-  // Focus the editor
-  editor.focus();
+    setShowLatexModal(false);
+    setLatexInput('');
+  };
 
-  // Close modal and reset
-  setShowLatexModal(false);
-  setLatexInput('');
-};
+  const insertLatexTemplate = (template) => {
+    if (template === 'custom-matrix') {
+      setShowMatrixInput(true);
+      return;
+    }
 
-const insertLatexTemplate = (template) => {
-  if (template === 'custom-matrix') {
-    setShowMatrixInput(true);
-    return; // <-- early return so it doesn't insert the text 'custom-matrix'
-  }
+    const textarea = document.querySelector('.latex-textarea');
+    if (!textarea) return;
 
-  const textarea = document.querySelector('.latex-textarea');
-  if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
 
-  const start = textarea.selectionStart;
-  const end = textarea.selectionEnd;
+    const before = latexInput.slice(0, start);
+    const after = latexInput.slice(end);
 
-  const before = latexInput.slice(0, start);
-  const after = latexInput.slice(end);
+    const newLatex = before + template + after;
+    setLatexInput(newLatex);
 
-  const newLatex = before + template + after;
-  setLatexInput(newLatex);
-
-  // Set cursor after inserted template
-  setTimeout(() => {
-    textarea.focus();
-    textarea.setSelectionRange(start + template.length, start + template.length);
-  }, 0);
-};
-
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + template.length, start + template.length);
+    }, 0);
+  };
 
   const buttons = [
     { icon: <FiBold />, command: 'bold', name: 'Bold', action: () => formatText('bold') },
@@ -366,7 +348,11 @@ const insertLatexTemplate = (template) => {
   }, [latexInput]);
 
   return (
-    <div className="flex items-center gap-1 mb-3 p-2 bg-gray-50 rounded-lg border border-gray-200">
+    <div 
+      className={`flex items-center gap-1 mb-3 p-2 rounded-lg border ${
+        darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
+      }`}
+    >
       {buttons.map((button) => (
         <React.Fragment key={button.command}>
           <div className="relative">
@@ -375,8 +361,10 @@ const insertLatexTemplate = (template) => {
               className={`
                 p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold
                 ${activeFormats.includes(button.command)
-                  ? 'bg-teal-500 text-white border-teal-500'
-                  : 'bg-white text-gray-800 border-gray-200 hover:bg-teal-500 hover:text-white hover:border-teal-500'}
+                  ? 'text-white'
+                  : darkMode 
+                    ? 'text-gray-200 hover:text-white'
+                    : 'text-gray-800 hover:text-white'}
               `}
               onClick={button.action}
               onMouseEnter={() => {
@@ -387,18 +375,24 @@ const insertLatexTemplate = (template) => {
                 setTooltip('');
                 setHoveredIcon(null);
               }}
+              style={{
+                backgroundColor: activeFormats.includes(button.command) ? primaryColor : darkMode ? '#374151' : 'white',
+                borderColor: activeFormats.includes(button.command) ? primaryColor : darkMode ? '#4b5563' : '#e5e7eb',
+                '--tw-ring-color': primaryColor
+              }}
             >
               {React.cloneElement(button.icon, { className: "font-bold" })}
             </button>
 
             {tooltip === button.name && (
-              <div className="absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap">
+              <div className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${
+                darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'
+              }`}>
                 {button.name}
               </div>
             )}
           </div>
 
-          {/* Insert dropdowns after underline */}
           {button.command === 'underline' && (
             <>
               {/* Bullet List Dropdown */}
@@ -408,8 +402,10 @@ const insertLatexTemplate = (template) => {
                   className={`
                     p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold
                     ${activeFormats.includes('insertUnorderedList')
-                      ? 'bg-teal-500 text-white border-teal-500'
-                      : 'bg-white text-gray-800 border-gray-200 hover:bg-teal-500 hover:text-white hover:border-teal-500'}
+                      ? 'text-white'
+                      : darkMode 
+                        ? 'text-gray-200 hover:text-white'
+                        : 'text-gray-800 hover:text-white'}
                   `}
                   onClick={() => setShowBulletDropdown(!showBulletDropdown)}
                   onMouseEnter={() => {
@@ -420,20 +416,30 @@ const insertLatexTemplate = (template) => {
                     setTooltip('');
                     setHoveredIcon(null);
                   }}
+                  style={{
+                    backgroundColor: activeFormats.includes('insertUnorderedList') ? primaryColor : darkMode ? '#374151' : 'white',
+                    borderColor: activeFormats.includes('insertUnorderedList') ? primaryColor : darkMode ? '#4b5563' : '#e5e7eb'
+                  }}
                 >
                   <FiList />
                 </button>
 
                 {tooltip === 'Bullet List' && (
-                  <div className="absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap">
+                  <div className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${
+                    darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'
+                  }`}>
                     Bullet List
                   </div>
                 )}
 
                 {showBulletDropdown && (
-                  <div className="absolute z-20 left-0 mt-1 w-40 bg-white rounded-md border border-gray-200 shadow-md">
+                  <div className={`absolute z-20 left-0 mt-1 w-40 rounded-md border shadow-md ${
+                    darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
+                  }`}>
                     <button
-                      className="w-full text-left px-4 py-2 hover:bg-teal-500 hover:text-white text-sm"
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
+                        darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
+                      }`}
                       onClick={() => {
                         formatText('insertUnorderedList');
                         setShowBulletDropdown(false);
@@ -442,7 +448,9 @@ const insertLatexTemplate = (template) => {
                       • Bulleted List
                     </button>
                     <button
-                      className="w-full text-left px-4 py-2 hover:bg-teal-500 hover:text-white text-sm"
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
+                        darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
+                      }`}
                       onClick={() => {
                         formatText('insertHTML', '<ul><li>☐ Item 1</li><li>☐ Item 2</li></ul>');
                         setShowBulletDropdown(false);
@@ -461,8 +469,10 @@ const insertLatexTemplate = (template) => {
                   className={`
                     p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold
                     ${activeFormats.includes('insertOrderedList')
-                      ? 'bg-teal-500 text-white border-teal-500'
-                      : 'bg-white text-gray-800 border-gray-200 hover:bg-teal-500 hover:text-white hover:border-teal-500'}
+                      ? 'text-white'
+                      : darkMode 
+                        ? 'text-gray-200 hover:text-white'
+                        : 'text-gray-800 hover:text-white'}
                   `}
                   onClick={() => setShowNumberDropdown(!showNumberDropdown)}
                   onMouseEnter={() => {
@@ -473,20 +483,30 @@ const insertLatexTemplate = (template) => {
                     setTooltip('');
                     setHoveredIcon(null);
                   }}
+                  style={{
+                    backgroundColor: activeFormats.includes('insertOrderedList') ? primaryColor : darkMode ? '#374151' : 'white',
+                    borderColor: activeFormats.includes('insertOrderedList') ? primaryColor : darkMode ? '#4b5563' : '#e5e7eb'
+                  }}
                 >
                   <MdFormatListNumbered />
                 </button>
 
                 {tooltip === 'Numbered List' && (
-                  <div className="absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap">
+                  <div className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${
+                    darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'
+                  }`}>
                     Numbered List
                   </div>
                 )}
 
                 {showNumberDropdown && (
-                  <div className="absolute z-20 left-0 mt-1 w-44 bg-white rounded-md border border-gray-200 shadow-md">
+                  <div className={`absolute z-20 left-0 mt-1 w-44 rounded-md border shadow-md ${
+                    darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
+                  }`}>
                     <button
-                      className="w-full text-left px-4 py-2 hover:bg-teal-500 hover:text-white text-sm"
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
+                        darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
+                      }`}
                       onClick={() => {
                         formatText('insertOrderedList');
                         setShowNumberDropdown(false);
@@ -495,7 +515,9 @@ const insertLatexTemplate = (template) => {
                       1. Numbered List
                     </button>
                     <button
-                      className="w-full text-left px-4 py-2 hover:bg-teal-500 hover:text-white text-sm"
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
+                        darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
+                      }`}
                       onClick={() => {
                         formatText('insertHTML', '<ol type="i"><li>First</li><li>Second</li></ol>');
                         setShowNumberDropdown(false);
@@ -511,36 +533,35 @@ const insertLatexTemplate = (template) => {
         </React.Fragment>
       ))}
 
-      {/* LaTeX Modal */}
-  
       {showLatexModal && (
         <div
-  className="fixed inset-0 flex items-center justify-center z-50"
-  style={{
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',   // Light transparent overlay
-    backdropFilter: 'blur(8px)',                  // Blurred background
-    WebkitBackdropFilter: 'blur(8px)',            // Safari support
-  }}
->
+          className="fixed inset-0 flex items-center justify-center z-50"
+          style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
+          }}
+        >
           <div
-    className="rounded-xl p-6 w-full max-w-3xl h-[550px] overflow-hidden flex flex-col shadow-xl transition-transform duration-300 scale-100"
-    style={{
-      backgroundColor: 'rgba(255, 255, 255, 0.96)',       // Subtle translucent white
-      border: '1px solid rgba(0, 0, 0, 0.12)',            // Soft border
-      boxShadow: '0 12px 30px rgba(0,0,0,0.2)',           // Gentle shadow
-      backdropFilter: 'blur(2px)',                       // Optional inner blur (for glass effect)
-    }}
-  >
-
+            className={`rounded-xl p-6 w-full max-w-3xl h-[550px] overflow-hidden flex flex-col shadow-xl ${
+              darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+            }`}
+            style={{
+              border: '1px solid rgba(0, 0, 0, 0.12)',
+              boxShadow: '0 12px 30px rgba(0,0,0,0.2)',
+            }}
+          >
             <div className="flex items-center justify-between mb-4">
-              {/* LaTeX Templates title (left) */}
-              <h4 className="text-sm font-semibold text-gray-700">
+              <h4 className={`text-sm font-semibold ${
+                darkMode ? 'text-gray-300' : 'text-gray-700'
+              }`}>
                 LaTeX Templates
               </h4>
 
-              {/* Centered Modal Title */}
               <div className="relative flex-1 text-center">
-                <h3 className="text-xl font-bold">
+                <h3 className={`text-xl font-bold ${
+                  darkMode ? 'text-white' : 'text-gray-800'
+                }`}>
                   {isLatexSelected ? 'Edit LaTeX Equation' : 'Insert LaTeX Equation'}
                 </h3>
                 <button
@@ -548,7 +569,9 @@ const insertLatexTemplate = (template) => {
                     setShowLatexModal(false);
                     setLatexInput('');
                   }}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className={`absolute right-0 top-1/2 -translate-y-1/2 ${
+                    darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
+                  }`}
                 >
                   <FiX size={20} />
                 </button>
@@ -556,7 +579,6 @@ const insertLatexTemplate = (template) => {
             </div>
 
             <div className="flex flex-1 gap-6 overflow-hidden">
-              {/* Left - Scrollable LaTeX template list */}
               <div className="w-full md:w-1/3 h-full overflow-y-auto pr-2 space-y-2">
                 {latexTemplates.map((category) => {
                   const isOpen = openTemplateCategory === category.category;
@@ -567,18 +589,26 @@ const insertLatexTemplate = (template) => {
                         onClick={() =>
                           setOpenTemplateCategory(isOpen ? null : category.category)
                         }
-                        className={`w-full flex justify-between items-center px-4 py-2 rounded-md border text-sm font-medium 
-              ${isOpen
-                            ? 'bg-teal-500 text-white border-teal-500'
-                            : 'bg-white text-gray-800 border-gray-200 hover:bg-teal-500 hover:text-white hover:border-teal-500'}
-            `}
+                        className={`w-full flex justify-between items-center px-4 py-2 rounded-md border text-sm font-medium transition-colors duration-200 ${
+                          isOpen
+                            ? 'text-white'
+                            : darkMode
+                              ? 'text-gray-200 hover:text-white'
+                              : 'text-gray-800 hover:text-white'
+                        }`}
+                        style={{
+                          backgroundColor: isOpen ? primaryColor : darkMode ? '#374151' : 'white',
+                          borderColor: isOpen ? primaryColor : darkMode ? '#4b5563' : '#e5e7eb'
+                        }}
                       >
                         {category.category}
                         <span className="ml-2">{isOpen ? '▲' : '▼'}</span>
                       </button>
 
                       {isOpen && (
-                        <div className="mt-1 border border-gray-200 rounded-md shadow-sm overflow-hidden">
+                        <div className={`mt-1 border rounded-md shadow-sm overflow-hidden ${
+                          darkMode ? 'border-gray-600' : 'border-gray-200'
+                        }`}>
                           {'subcategories' in category ? (
                             category.subcategories.map((subcat) => {
                               const isSubOpen = openFunctionSubcategory === subcat.name;
@@ -589,21 +619,31 @@ const insertLatexTemplate = (template) => {
                                     onClick={() =>
                                       setOpenFunctionSubcategory(isSubOpen ? null : subcat.name)
                                     }
-                                    className={`w-full flex justify-between items-center px-4 py-2 text-sm font-medium ${isSubOpen
-                                      ? 'bg-teal-400 text-white'
-                                      : 'bg-white text-gray-800 hover:bg-teal-400 hover:text-white'
-                                      }`}
+                                    className={`w-full flex justify-between items-center px-4 py-2 text-sm font-medium transition-colors duration-200 ${
+                                      isSubOpen
+                                        ? 'text-white'
+                                        : darkMode
+                                          ? 'text-gray-200 hover:text-white'
+                                          : 'text-gray-800 hover:text-white'
+                                    }`}
+                                    style={{
+                                      backgroundColor: isSubOpen ? primaryColor : darkMode ? '#4b5563' : '#f9fafb'
+                                    }}
                                   >
                                     {subcat.name}
                                     <span>{isSubOpen ? '▲' : '▼'}</span>
                                   </button>
 
                                   {isSubOpen && (
-                                    <div className="pl-4">
+                                    <div className={`pl-4 ${
+                                      darkMode ? 'bg-gray-700' : 'bg-white'
+                                    }`}>
                                       {subcat.items.map((item) => (
                                         <button
                                           key={item.name}
-                                          className="w-full text-left px-4 py-1 text-sm hover:bg-teal-500 hover:text-white transition-colors duration-200"
+                                          className={`w-full text-left px-4 py-1 text-sm transition-colors duration-200 ${
+                                            darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
+                                          }`}
                                           onClick={() => insertLatexTemplate(item.template)}
                                         >
                                           {item.name}
@@ -618,7 +658,9 @@ const insertLatexTemplate = (template) => {
                             category.items.map((item) => (
                               <button
                                 key={item.name}
-                                className="w-full text-left px-4 py-2 text-sm hover:bg-teal-500 hover:text-white transition-colors duration-200"
+                                className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
+                                  darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
+                                }`}
                                 onClick={() => insertLatexTemplate(item.template)}
                               >
                                 {item.name}
@@ -632,71 +674,94 @@ const insertLatexTemplate = (template) => {
                 })}
               </div>
 
-              {/* Right side - Editor and preview */}
               <div className="w-full md:w-2/3">
-              {/* Show custom matrix input form */}
-{showMatrixInput && (
-  <div className="mb-4 border border-teal-200 p-3 rounded bg-teal-50">
-    <h4 className="text-sm font-semibold mb-2">Custom Matrix Size</h4>
-    <div className="flex gap-4 items-center mb-2">
-      <label className="text-sm text-gray-700">
-        Rows:
-        <input
-          type="number"
-          min="1"
-          max="10"
-          value={matrixRows}
-          onChange={(e) => setMatrixRows(Number(e.target.value))}
-          className="ml-2 w-16 border rounded px-2 py-1 text-sm"
-        />
-      </label>
-      <label className="text-sm text-gray-700">
-        Columns:
-        <input
-          type="number"
-          min="1"
-          max="10"
-          value={matrixCols}
-          onChange={(e) => setMatrixCols(Number(e.target.value))}
-          className="ml-2 w-16 border rounded px-2 py-1 text-sm"
-        />
-      </label>
-      <button
-        className="ml-auto px-3 py-1 bg-teal-500 text-white text-sm rounded hover:bg-teal-600"
-        onClick={() => {
-          let matrix = '\\left| \\begin{matrix}\n';
-for (let i = 0; i < matrixRows; i++) {
-  let row = [];
-  for (let j = 0; j < matrixCols; j++) {
-    row.push(`a_{${i + 1}${j + 1}}`);
-  }
-  matrix += row.join(' & ');
-  if (i < matrixRows - 1) matrix += ' \\\\\n';
-}
-matrix += '\n\\end{matrix} \\right|';
-          insertLatexTemplate(matrix);
-          setShowMatrixInput(false);
-        }}
-      >
-        Insert
-      </button>
-    </div>
-  </div>
-)}
+                {showMatrixInput && (
+                  <div className={`mb-4 border p-3 rounded ${
+                    darkMode ? 'bg-gray-700 border-gray-600' : 'bg-teal-50 border-teal-200'
+                  }`}>
+                    <h4 className={`text-sm font-semibold mb-2 ${
+                      darkMode ? 'text-gray-300' : 'text-gray-800'
+                    }`}>
+                      Custom Matrix Size
+                    </h4>
+                    <div className="flex gap-4 items-center mb-2">
+                      <label className={`text-sm ${
+                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
+                        Rows:
+                        <input
+                          type="number"
+                          min="1"
+                          max="10"
+                          value={matrixRows}
+                          onChange={(e) => setMatrixRows(Number(e.target.value))}
+                          className={`ml-2 w-16 border rounded px-2 py-1 text-sm ${
+                            darkMode ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-300'
+                          }`}
+                        />
+                      </label>
+                      <label className={`text-sm ${
+                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
+                        Columns:
+                        <input
+                          type="number"
+                          min="1"
+                          max="10"
+                          value={matrixCols}
+                          onChange={(e) => setMatrixCols(Number(e.target.value))}
+                          className={`ml-2 w-16 border rounded px-2 py-1 text-sm ${
+                            darkMode ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-300'
+                          }`}
+                        />
+                      </label>
+                      <button
+                        className="ml-auto px-3 py-1 text-white text-sm rounded hover:opacity-90 transition-colors duration-200"
+                        style={{ backgroundColor: primaryColor }}
+                        onClick={() => {
+                          let matrix = '\\left| \\begin{matrix}\n';
+                          for (let i = 0; i < matrixRows; i++) {
+                            let row = [];
+                            for (let j = 0; j < matrixCols; j++) {
+                              row.push(`a_{${i + 1}${j + 1}}`);
+                            }
+                            matrix += row.join(' & ');
+                            if (i < matrixRows - 1) matrix += ' \\\\\n';
+                          }
+                          matrix += '\n\\end{matrix} \\right|';
+                          insertLatexTemplate(matrix);
+                          setShowMatrixInput(false);
+                        }}
+                      >
+                        Insert
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <textarea
-                  className="w-full h-32 p-2 border border-gray-300 rounded mb-4 font-mono text-sm latex-textarea"
+                  className={`w-full h-32 p-2 border rounded mb-4 font-mono text-sm ${
+                    darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
+                  }`}
                   placeholder="Enter LaTeX code (e.g., \frac{a}{b} or x^2 + y^2 = z^2)"
                   value={latexInput}
                   onChange={(e) => setLatexInput(e.target.value)}
                   autoFocus
                 />
 
-                <div className="text-xs text-gray-500 mb-4">
+                <div className={`text-xs mb-4 ${
+                  darkMode ? 'text-gray-400' : 'text-gray-500'
+                }`}>
                   Tip: Use standard LaTeX syntax. Your equation will be rendered when published.
                 </div>
 
-                <div className="border border-gray-300 p-3 rounded bg-gray-50 mb-4">
-                  <div className="text-xs text-gray-500 mb-1">Live Preview:</div>
+                <div className={`border p-3 rounded mb-4 ${
+                  darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'
+                }`}>
+                  <div className={`text-xs mb-1 ${
+                    darkMode ? 'text-gray-400' : 'text-gray-500'
+                  }`}>
+                    Live Preview:
+                  </div>
                   <div
                     className="text-sm"
                     dangerouslySetInnerHTML={{ __html: latexPreview }}
@@ -705,7 +770,9 @@ matrix += '\n\\end{matrix} \\right|';
 
                 <div className="flex justify-end space-x-2">
                   <button
-                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+                    className={`px-4 py-2 rounded hover:opacity-90 transition-colors duration-200 ${
+                      darkMode ? 'bg-gray-600 text-white' : 'bg-gray-200 text-gray-800'
+                    }`}
                     onClick={() => {
                       setShowLatexModal(false);
                       setLatexInput('');
@@ -714,7 +781,8 @@ matrix += '\n\\end{matrix} \\right|';
                     Cancel
                   </button>
                   <button
-                    className="px-4 py-2 bg-teal-500 text-white rounded hover:bg-teal-600"
+                    className="px-4 py-2 text-white rounded hover:opacity-90 transition-colors duration-200"
+                    style={{ backgroundColor: primaryColor }}
                     onClick={insertLatex}
                   >
                     {isLatexSelected ? 'Update Equation' : 'Insert Equation'}
