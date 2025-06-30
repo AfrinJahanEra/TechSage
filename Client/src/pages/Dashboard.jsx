@@ -4,65 +4,25 @@ import { Chart } from 'chart.js/auto';
 import Footer from '../components/Footer.jsx';
 import Navbar from '../components/Navbar.jsx';
 import { useTheme } from '../context/ThemeContext';
-import axios from 'axios';
 
 const Dashboard = () => {
     const { user } = useAuth();
     const { darkMode, primaryColor, shadeColor } = useTheme();
     const [activeSection, setActiveSection] = useState('profile');
     const [profileData, setProfileData] = useState({
-        username: '',
-        name: '',
-        email: '',
-        university: '',
-        job_title: 'User',
-        bio: '',
-        avatar_url: '',
-        role: 'user',
-        is_verified: false,
-        total_publications: 0,
-        followers: 0,
-        points: 0
+        name: user?.username || 'Demo User',
+        email: user?.email || 'demo@university.edu',
+        university: user?.university || 'Demo University',
+        profession: user?.job_title || 'Professor'
     });
-    const [loading, setLoading] = useState(true);
 
     // Generate color variants based on primary color
     const primaryDark = shadeColor(primaryColor, -20);
     const primaryLight = shadeColor(primaryColor, 20);
 
     useEffect(() => {
-        const fetchUserData = async () => {
-            try {
-                const response = await axios.get(`/api/user/${user.username}`);
-                setProfileData({
-                    username: response.data.username || '',
-                    name: response.data.name || response.data.username || '',
-                    email: response.data.email || '',
-                    university: response.data.university || '',
-                    job_title: response.data.job_title || 'User',
-                    bio: response.data.bio || '',
-                    avatar_url: response.data.avatar_url || '',
-                    role: response.data.role || 'user',
-                    is_verified: response.data.is_verified || false,
-                    total_publications: response.data.total_publications || 0,
-                    followers: response.data.followers || 0,
-                    points: response.data.points || 0
-                });
-                setLoading(false);
-            } catch (error) {
-                console.error('Error fetching user data:', error);
-                setLoading(false);
-            }
-        };
-
-        if (user && user.username) {
-            fetchUserData();
-        }
-    }, [user]);
-
-    useEffect(() => {
         const ctx = document.getElementById('performanceChart');
-        if (ctx && !loading) {
+        if (ctx) {
             const performanceChart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -124,7 +84,7 @@ const Dashboard = () => {
                 performanceChart.destroy();
             };
         }
-    }, [darkMode, primaryColor, primaryDark, loading]);
+    }, [darkMode, primaryColor, primaryDark]);
 
     // Dynamic style variables for theme colors
     const themeStyles = {
@@ -133,20 +93,14 @@ const Dashboard = () => {
         '--primary-light': primaryLight,
     };
 
-    const getBadgeColor = (points) => {
-        if (points >= 1000) return 'from-purple-600 to-pink-600';
-        if (points >= 500) return 'from-blue-600 to-teal-600';
-        if (points >= 200) return 'from-green-600 to-emerald-600';
-        return 'from-yellow-600 to-orange-600';
+    // Get badge based on points
+    const getBadge = () => {
+        if (!user?.points) return 'Newbie';
+        if (user.points < 100) return 'Beginner';
+        if (user.points < 500) return 'Contributor';
+        if (user.points < 1000) return 'Expert';
+        return 'Master';
     };
-
-    if (loading) {
-        return (
-            <div className={`min-h-screen flex items-center justify-center ${darkMode ? 'bg-gray-900' : 'bg-white'}`}>
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
-            </div>
-        );
-    }
 
     return (
         <div 
@@ -274,24 +228,22 @@ const Dashboard = () => {
                                     <div className={`rounded-lg p-6 shadow-sm transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
                                         <div className="flex flex-col md:flex-row items-center mb-6">
                                             <img
-                                                src={profileData.avatar_url || "https://randomuser.me/api/portraits/women/44.jpg"}
+                                                src={user?.avatar_url || "https://randomuser.me/api/portraits/women/44.jpg"}
                                                 alt="Profile"
                                                 className="w-20 h-20 rounded-full border-4 object-cover mr-0 md:mr-6 mb-4 md:mb-0"
                                                 style={{ borderColor: primaryColor }}
                                             />
                                             <div className="text-center md:text-left">
-                                                <h2 className="text-xl font-bold">{profileData.name || profileData.username}</h2>
-                                                <p className={`mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{profileData.job_title}</p>
+                                                <h2 className="text-xl font-bold">{user?.username || 'User'}</h2>
+                                                <p className={`mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{user?.job_title || 'Member'}</p>
                                                 <div className="flex justify-center md:justify-start space-x-2">
-                                                    {profileData.role && (
-                                                        <span 
-                                                            className="px-3 py-1 rounded-full text-xs text-white"
-                                                            style={{ backgroundColor: primaryColor }}
-                                                        >
-                                                            {profileData.role.charAt(0).toUpperCase() + profileData.role.slice(1)}
-                                                        </span>
-                                                    )}
-                                                    {profileData.is_verified && (
+                                                    <span 
+                                                        className="px-3 py-1 rounded-full text-xs text-white"
+                                                        style={{ backgroundColor: primaryColor }}
+                                                    >
+                                                        {user?.university || 'TechSage'} {user?.role || 'User'}
+                                                    </span>
+                                                    {user?.is_verified && (
                                                         <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs">
                                                             Verified
                                                         </span>
@@ -305,7 +257,7 @@ const Dashboard = () => {
                                                 About
                                             </h3>
                                             <p className={`mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                                {profileData.bio || 'No bio provided'}
+                                                {user?.bio || 'No bio provided yet.'}
                                             </p>
                                             <div className="flex space-x-4">
                                                 <button 
@@ -325,56 +277,24 @@ const Dashboard = () => {
                                     </div>
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div className={`rounded-lg p-4 shadow-sm text-center transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
-                                            <div 
-                                                className="text-3xl font-bold mb-1"
-                                                style={{ color: primaryColor }}
-                                            >
-                                                {profileData.total_publications}
-                                            </div>
-                                            <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                                                Total Publications
-                                            </div>
-                                        </div>
-                                        <div className={`rounded-lg p-4 shadow-sm text-center transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
-                                            <div 
-                                                className="text-3xl font-bold mb-1"
-                                                style={{ color: primaryColor }}
-                                            >
-                                                {profileData.followers}
-                                            </div>
-                                            <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                                                Followers
-                                            </div>
-                                        </div>
-                                        <div className={`rounded-lg p-4 shadow-sm text-center transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
-                                            <div 
-                                                className="text-3xl font-bold mb-1"
-                                                style={{ color: primaryColor }}
-                                            >
-                                                4.7
-                                            </div>
-                                            <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                                                Avg. Reading Time (min)
-                                            </div>
-                                        </div>
-                                        <div className={`rounded-lg p-4 shadow-sm text-center transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
-                                            <div className="flex flex-col items-center">
+                                        {[
+                                            { value: user?.total_publications || '0', label: 'Total Publications' },
+                                            { value: user?.followers || '0', label: 'Followers' },
+                                            { value: '4.7', label: 'Avg. Reading Time (min)' },
+                                            { value: getBadge(), label: 'Badge' }
+                                        ].map((item, index) => (
+                                            <div key={index} className={`rounded-lg p-4 shadow-sm text-center transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
                                                 <div 
-                                                    className={`text-3xl font-bold mb-1 bg-gradient-to-r ${getBadgeColor(profileData.points)} text-transparent bg-clip-text`}
+                                                    className="text-3xl font-bold mb-1"
+                                                    style={{ color: primaryColor }}
                                                 >
-                                                    {profileData.points}
+                                                    {item.value}
                                                 </div>
                                                 <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                                                    Points
+                                                    {item.label}
                                                 </div>
-                                                <span className={`text-xs mt-1 px-2 py-1 rounded-full ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                                                    {profileData.points >= 1000 ? 'Expert' : 
-                                                     profileData.points >= 500 ? 'Advanced' : 
-                                                     profileData.points >= 200 ? 'Intermediate' : 'Beginner'}
-                                                </span>
                                             </div>
-                                        </div>
+                                        ))}
                                     </div>
                                 </div>
 
