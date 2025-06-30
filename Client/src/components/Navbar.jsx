@@ -96,7 +96,7 @@ const Navbar = ({ activePage }) => {
                   style={{ color: primaryColor }}
                 >
                   <img 
-                    src={user.avatar || "https://randomuser.me/api/portraits/women/44.jpg"} 
+                    src={user.avatar_url || "https://randomuser.me/api/portraits/women/44.jpg"} 
                     alt="Profile" 
                     className="w-full h-full object-cover" 
                   />
@@ -141,8 +141,68 @@ const Navbar = ({ activePage }) => {
         style={mobileMenuStyle}
       >
         <div className="flex flex-col items-center space-y-4 text-white">
-          {/* Mobile menu content remains the same */}
-          {/* ... */}
+          {user ? (
+            <>
+              {user.role === 'user' && (
+                <Link 
+                  to="/home" 
+                  className="text-white text-lg font-medium hover:underline"
+                  onClick={toggleMenu}
+                >
+                  Home
+                </Link>
+              )}
+              {user.role === 'user' && (
+                <Link 
+                  to="/create-blog" 
+                  className="text-white text-lg font-medium hover:underline"
+                  onClick={toggleMenu}
+                >
+                  Create Blog
+                </Link>
+              )}
+              <Link
+                to={getDashboardLink()}
+                className="text-white text-lg font-medium hover:underline"
+                onClick={toggleMenu}
+              >
+                {getDashboardText()}
+              </Link>
+              <Link 
+                to="/settings" 
+                className="text-white text-lg font-medium hover:underline"
+                onClick={toggleMenu}
+              >
+                Settings
+              </Link>
+              <button 
+                onClick={() => {
+                  logout();
+                  toggleMenu();
+                }}
+                className="text-white text-lg font-medium hover:underline"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link 
+                to="/signup" 
+                className="text-white text-lg font-medium hover:underline"
+                onClick={toggleMenu}
+              >
+                Create Account
+              </Link>
+              <Link 
+                to="/login" 
+                className="text-white text-lg font-medium hover:underline"
+                onClick={toggleMenu}
+              >
+                Login
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </nav>
