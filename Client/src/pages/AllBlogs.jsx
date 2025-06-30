@@ -3,16 +3,31 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import SearchForm from '../components/SearchForm';
+import { useTheme } from '../context/ThemeContext.jsx';
 
 const AllBlogs = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const showAllArticles = location.state?.showAllArticles || false;
+  const { darkMode, primaryColor, shadeColor } = useTheme();
   
   const [currentView, setCurrentView] = useState(showAllArticles ? 'community' : 'recommendations');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [activeScienceFilter, setActiveScienceFilter] = useState('all');
+
+
+
+  // Generate color variants
+  const primaryDark = shadeColor(primaryColor, -20);
+  const primaryLight = shadeColor(primaryColor, 20);
+
+  // Dynamic style variables for theme colors
+  const themeStyles = {
+    '--primary-color': primaryColor,
+    '--primary-dark': primaryDark,
+    '--primary-light': primaryLight,
+  };
 
   // Handle view toggle
   const handleSeeAllArticles = () => {
@@ -35,48 +50,21 @@ const AllBlogs = () => {
     },
     {
       id: 2,
-      image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80',
-      category: 'mathematics',
-      title: 'New algorithm revolutionizes complex calculations',
-      excerpt: 'The breakthrough computational method could dramatically speed up simulations in fields ranging from climate modeling to financial forecasting.',
-      date: 'May 12, 2025',
-      readTime: '4 min read'
-    },
-    {
-      id: 3,
-      image: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80',
-      category: 'scholarships',
-      title: 'Global scholarship program expands to 10 new countries',
-      excerpt: 'The initiative will provide full tuition and living expenses for outstanding students from developing nations to pursue graduate studies.',
-      date: 'May 10, 2025',
-      readTime: '6 min read'
-    },
-    {
-      id: 4,
-      image: 'https://images.unsplash.com/photo-1576091160550-2173dbe999ef?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80',
-      category: 'social-impact',
-      title: 'Community outreach programs show measurable impact',
-      excerpt: 'New study demonstrates significant improvements in educational outcomes and economic mobility in neighborhoods with intensive programs.',
-      date: 'May 8, 2025',
+      image: 'https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80',
+      category: 'operations',
+      title: 'New study reveals breakthroughs in quantum computing operations',
+      excerpt: 'Researchers have discovered more efficient methods for quantum error correction, potentially accelerating the timeline for practical quantum computing applications.',
+      date: 'June 2, 2025',
       readTime: '7 min read'
     },
     {
-      id: 5,
-      image: 'https://images.unsplash.com/photo-1581093450021-4a7360e9a9b5?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80',
+      id: 3,
+      image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80',
       category: 'medical',
-      title: 'Breakthrough in cancer immunotherapy research',
-      excerpt: 'New approach shows 80% response rate in early clinical trials for previously untreatable forms of cancer.',
-      date: 'May 5, 2025',
-      readTime: '8 min read'
-    },
-    {
-      id: 6,
-      image: 'https://images.unsplash.com/photo-1581094271901-8022df4466f9?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80',
-      category: 'open-access',
-      title: 'Major universities adopt open-access publishing mandate',
-      excerpt: 'New policy requires all faculty research to be published in open-access journals or repositories.',
-      date: 'May 3, 2025',
-      readTime: '5 min read'
+      title: 'Revolutionary cancer treatment shows 90% success rate in phase 2 trials',
+      excerpt: 'The new immunotherapy approach combines genetic engineering with targeted drug delivery to attack tumors while sparing healthy cells.',
+      date: 'June 10, 2025',
+      readTime: '6 min read'
     }
   ];
 
@@ -94,33 +82,23 @@ const AllBlogs = () => {
     },
     {
       id: 2,
-      category: 'physics',
-      title: 'Breakthrough in High-Temperature Superconductivity',
-      excerpt: 'Experimental results showing stable superconductivity at temperatures previously thought impossible, with implications for energy transmission and storage.',
+      category: 'biotech',
+      title: 'CRISPR 3.0: Next Generation Gene Editing with Improved Precision',
+      excerpt: 'Breakthrough modifications to the CRISPR-Cas9 system reduce off-target effects by 99% while maintaining editing efficiency.',
       author: 'Dr. Sarah Johnson',
       authorImage: 'https://randomuser.me/api/portraits/women/44.jpg',
-      date: 'Jun 12, 2025',
-      readTime: '6 min read'
-    },
-    {
-      id: 3,
-      category: 'biotech',
-      title: 'CRISPR-Based Gene Drives for Disease Control',
-      excerpt: 'Ethical and technical considerations of using gene drive systems to combat mosquito-borne illnesses in vulnerable populations.',
-      author: 'Dr. Emily Rodriguez',
-      authorImage: 'https://randomuser.me/api/portraits/women/68.jpg',
-      date: 'Jun 10, 2025',
+      date: 'Jun 8, 2025',
       readTime: '10 min read'
     },
     {
-      id: 4,
-      category: 'data-science',
-      title: 'Federated Learning for Privacy-Preserving AI',
-      excerpt: 'New frameworks that enable machine learning model training across decentralized devices while maintaining data privacy standards.',
-      author: 'Prof. James Wilson',
-      authorImage: 'https://randomuser.me/api/portraits/men/75.jpg',
-      date: 'Jun 8, 2025',
-      readTime: '7 min read'
+      id: 3,
+      category: 'physics',
+      title: 'Experimental Verification of Hawking Radiation in Analog Black Holes',
+      excerpt: 'Researchers using Bose-Einstein condensates provide the most compelling evidence yet for the existence of Hawking radiation.',
+      author: 'Dr. Raj Patel',
+      authorImage: 'https://randomuser.me/api/portraits/men/68.jpg',
+      date: 'Jun 5, 2025',
+      readTime: '12 min read'
     }
   ];
 
@@ -137,30 +115,12 @@ const AllBlogs = () => {
     },
     {
       id: 2,
-      title: 'Machine Learning Researcher',
-      company: 'Google AI',
-      location: 'New York',
-      type: 'PhD Required',
-      recommender: 'Mohmina Richi',
-      recommenderTitle: 'AI Research Lab'
-    },
-    {
-      id: 3,
-      title: 'Data Science Intern',
-      company: 'Microsoft Research',
-      location: 'Redmond',
-      type: 'Summer 2025',
-      recommender: 'Ayesha Siddika Juthi',
-      recommenderTitle: 'Data Science Institute'
-    },
-    {
-      id: 4,
-      title: 'DevOps Engineer',
-      company: 'Amazon Web Services',
-      location: 'Remote',
-      type: 'Contract',
-      recommender: 'Abdul Hakim',
-      recommenderTitle: 'Cloud Computing Center'
+      title: 'Machine Learning Research Scientist',
+      company: 'DeepMind',
+      location: 'London, UK',
+      type: 'Full-time',
+      recommender: 'Dr. Alan Turing',
+      recommenderTitle: 'AI Research Lead'
     }
   ];
 
@@ -174,14 +134,14 @@ const AllBlogs = () => {
     },
     {
       id: 2,
-      name: 'Ridika Naznin',
-      image: 'https://randomuser.me/api/portraits/men/32.jpg',
+      name: 'Alex Johnson',
+      image: 'https://randomuser.me/api/portraits/men/22.jpg',
       blogs: '12 research blogs'
     },
     {
       id: 3,
-      name: 'Afrin Jahan Era',
-      image: 'https://randomuser.me/api/portraits/women/68.jpg',
+      name: 'Maria Garcia',
+      image: 'https://randomuser.me/api/portraits/women/33.jpg',
       blogs: '9 research blogs'
     }
   ];
@@ -196,10 +156,13 @@ const AllBlogs = () => {
     : recommendationPosts.filter(post => post.category === activeScienceFilter);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div 
+      className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-800'}`}
+      style={themeStyles}
+    >
       <Navbar activePage="all-blogs" />
       
-      <main className="container mx-auto px-20 py-20 pt-28">
+      <main className="container mx-auto px-4 md:px-20 py-20 pt-28">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Content */}
           <div className="flex-1">
@@ -211,13 +174,27 @@ const AllBlogs = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setCurrentView('community')}
-                    className={`px-3 py-1 rounded text-sm font-medium ${currentView === 'community' ? 'bg-teal-500 text-white' : 'bg-teal-100 text-teal-800'}`}
+                    className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                      currentView === 'community' 
+                        ? 'text-white' 
+                        : 'hover:bg-[var(--card-bg)]'
+                    }`}
+                    style={{
+                      backgroundColor: currentView === 'community' ? 'var(--primary-color)' : 'transparent'
+                    }}
                   >
                     Community
                   </button>
                   <button
                     onClick={() => setCurrentView('recommendations')}
-                    className={`px-3 py-1 rounded text-sm font-medium ${currentView === 'recommendations' ? 'bg-teal-500 text-white' : 'bg-teal-100 text-teal-800'}`}
+                    className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                      currentView === 'recommendations' 
+                        ? 'text-white' 
+                        : 'hover:bg-[var(--card-bg)]'
+                    }`}
+                    style={{
+                      backgroundColor: currentView === 'recommendations' ? 'var(--primary-color)' : 'transparent'
+                    }}
                   >
                     Recommendations
                   </button>
@@ -228,11 +205,17 @@ const AllBlogs = () => {
             {/* Search Bar */}
             <div className="relative mb-6">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <i className="fas fa-search text-gray-400"></i>
+                <i className="fas fa-search" style={{ color: 'var(--muted-text)' }}></i>
               </div>
               <input
                 type="text"
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-full bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                className="block w-full pl-10 pr-3 py-2 border rounded-full shadow-sm focus:outline-none focus:ring-2 focus:border-transparent transition-colors"
+                style={{
+                  backgroundColor: 'var(--card-bg)',
+                  borderColor: 'var(--border-color)',
+                  color: 'var(--text-color)',
+                  '--tw-ring-color': 'var(--primary-color)'
+                }}
                 placeholder={showAllArticles ? "Search updates..." : "Search research..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -246,7 +229,14 @@ const AllBlogs = () => {
                   <button
                     key={category}
                     onClick={() => setActiveCategory(category)}
-                    className={`px-3 py-1 rounded-full text-sm ${activeCategory === category ? 'bg-teal-500 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                    className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                      activeCategory === category 
+                        ? 'text-white' 
+                        : 'hover:bg-[var(--card-bg)]'
+                    }`}
+                    style={{
+                      backgroundColor: activeCategory === category ? 'var(--primary-color)' : 'transparent'
+                    }}
                   >
                     {category === 'all' ? 'All' : category.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                   </button>
@@ -258,7 +248,14 @@ const AllBlogs = () => {
                   <button
                     key={filter}
                     onClick={() => setActiveScienceFilter(filter)}
-                    className={`px-3 py-1 rounded text-sm ${activeScienceFilter === filter ? 'bg-teal-500 text-white' : 'bg-teal-100 text-teal-800 hover:bg-teal-200'}`}
+                    className={`px-3 py-1 rounded text-sm transition-colors ${
+                      activeScienceFilter === filter 
+                        ? 'text-white' 
+                        : 'hover:bg-[var(--card-bg)]'
+                    }`}
+                    style={{
+                      backgroundColor: activeScienceFilter === filter ? 'var(--primary-color)' : 'transparent'
+                    }}
                   >
                     {filter === 'all' ? 'All' : filter.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                   </button>
@@ -276,20 +273,31 @@ const AllBlogs = () => {
                   )
                   .map(post => (
                     <Link to="/inside-blog" key={post.id} className="block">
-                      <div className="flex flex-col md:flex-row gap-6 pb-6 border-b border-gray-200">
+                      <div 
+                        className="flex flex-col md:flex-row gap-6 pb-6 border-b transition-colors"
+                        style={{ borderColor: 'var(--border-color)' }}
+                      >
                         <div 
-                          className="w-full md:w-48 h-40 bg-gray-200 rounded-lg bg-cover bg-center"
-                          style={{ backgroundImage: `url(${post.image})` }}
+                          className="w-full md:w-48 h-40 rounded-lg bg-cover bg-center"
+                          style={{ 
+                            backgroundImage: `url(${post.image})`,
+                            backgroundColor: 'var(--card-bg)'
+                          }}
                         ></div>
                         <div className="flex-1">
-                          <span className="inline-block text-teal-500 text-xs font-semibold uppercase tracking-wider mb-2">
+                          <span 
+                            className="inline-block text-xs font-semibold uppercase tracking-wider mb-2"
+                            style={{ color: 'var(--primary-color)' }}
+                          >
                             {post.category.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                           </span>
-                          <h3 className="text-xl font-bold mb-2 hover:text-teal-600 transition-colors">
+                          <h3 
+                            className="text-xl font-bold mb-2 hover:text-[var(--primary-color)] transition-colors"
+                          >
                             {post.title}
                           </h3>
-                          <p className="text-gray-600 mb-4">{post.excerpt}</p>
-                          <div className="flex justify-between text-gray-500 text-sm">
+                          <p className="mb-4" style={{ color: 'var(--muted-text)' }}>{post.excerpt}</p>
+                          <div className="flex justify-between text-sm" style={{ color: 'var(--muted-text)' }}>
                             <span>{post.date}</span>
                             <span>{post.readTime}</span>
                           </div>
@@ -306,24 +314,34 @@ const AllBlogs = () => {
                     post.excerpt.toLowerCase().includes(searchQuery.toLowerCase())
                   )
                   .map(post => (
-                    <div key={post.id} className="pb-6 border-b border-gray-200">
-                      <span className="inline-block text-teal-500 text-xs font-semibold uppercase tracking-wider mb-1">
+                    <div 
+                      key={post.id} 
+                      className="pb-6 border-b transition-colors"
+                      style={{ borderColor: 'var(--border-color)' }}
+                    >
+                      <span 
+                        className="inline-block text-xs font-semibold uppercase tracking-wider mb-1"
+                        style={{ color: 'var(--primary-color)' }}
+                      >
                         {post.category.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                       </span>
                       <Link to="/inside-blog" className="block">
-                        <h3 className="text-lg font-semibold mb-2 hover:text-teal-600 transition-colors">
+                        <h3 className="text-lg font-semibold mb-2 hover:text-[var(--primary-color)] transition-colors">
                           {post.title}
                         </h3>
                       </Link>
-                      <p className="text-gray-600 text-sm mb-4">{post.excerpt}</p>
-                      <div className="flex items-center text-gray-500 text-xs">
+                      <p className="text-sm mb-4" style={{ color: 'var(--muted-text)' }}>{post.excerpt}</p>
+                      <div className="flex items-center text-xs" style={{ color: 'var(--muted-text)' }}>
                         <div className="flex items-center mr-4">
                           <img 
                             src={post.authorImage} 
                             alt={post.author} 
                             className="w-5 h-5 rounded-full mr-2"
                           />
-                          <Link to="/other-dashboard" className="hover:text-teal-600 transition-colors">
+                          <Link 
+                            to="/other-dashboard" 
+                            className="hover:text-[var(--primary-color)] transition-colors"
+                          >
                             {post.author}
                           </Link>
                         </div>
@@ -337,25 +355,38 @@ const AllBlogs = () => {
 
             {/* Pagination */}
             <div className="flex justify-center gap-1">
-              <button className="w-10 h-10 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200">
+              <button 
+                className="w-10 h-10 flex items-center justify-center rounded hover:bg-[var(--card-bg)] transition-colors"
+                style={{ color: 'var(--text-color)' }}
+              >
                 <i className="fas fa-chevron-left text-sm"></i>
               </button>
-              <button className="w-10 h-10 flex items-center justify-center rounded bg-teal-500 text-white">
+              <button 
+                className="w-10 h-10 flex items-center justify-center rounded text-white"
+                style={{ backgroundColor: 'var(--primary-color)' }}
+              >
                 1
               </button>
               {[2, 3, 4].map(page => (
                 <button 
                   key={page}
-                  className="w-10 h-10 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200"
+                  className="w-10 h-10 flex items-center justify-center rounded hover:bg-[var(--card-bg)] transition-colors"
+                  style={{ color: 'var(--text-color)' }}
                 >
                   {page}
                 </button>
               ))}
-              <span className="w-10 h-10 flex items-center justify-center">...</span>
-              <button className="w-10 h-10 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200">
+              <span className="w-10 h-10 flex items-center justify-center" style={{ color: 'var(--muted-text)' }}>...</span>
+              <button 
+                className="w-10 h-10 flex items-center justify-center rounded hover:bg-[var(--card-bg)] transition-colors"
+                style={{ color: 'var(--text-color)' }}
+              >
                 10
               </button>
-              <button className="w-10 h-10 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200">
+              <button 
+                className="w-10 h-10 flex items-center justify-center rounded hover:bg-[var(--card-bg)] transition-colors"
+                style={{ color: 'var(--text-color)' }}
+              >
                 <i className="fas fa-chevron-right text-sm"></i>
               </button>
             </div>
@@ -364,18 +395,34 @@ const AllBlogs = () => {
           {/* Sidebar */}
           <div className="lg:w-80 space-y-6">
             {/* Job Recommendations */}
-            <div className="bg-white p-4 rounded-lg border-l-4 border-teal-500">
-              <h3 className="text-lg font-semibold text-teal-600 mb-4 flex items-center">
+            <div 
+              className="p-4 rounded-lg border-l-4 transition-colors"
+              style={{
+                backgroundColor: 'var(--card-bg)',
+                borderColor: 'var(--primary-color)'
+              }}
+            >
+              <h3 
+                className="text-lg font-semibold mb-4 flex items-center"
+                style={{ color: 'var(--primary-color)' }}
+              >
                 <i className="fas fa-briefcase mr-2"></i>
                 Career Opportunities
               </h3>
               <ul className="space-y-4">
                 {jobOpportunities.map(job => (
-                  <li key={job.id} className="pb-4 border-b border-gray-100 last:border-0">
-                    <Link to="/inside-blog" className="block font-medium text-gray-800 hover:text-teal-600 mb-1">
+                  <li 
+                    key={job.id} 
+                    className="pb-4 border-b last:border-0 transition-colors"
+                    style={{ borderColor: 'var(--border-color)' }}
+                  >
+                    <Link 
+                      to="/inside-blog" 
+                      className="block font-medium mb-1 hover:text-[var(--primary-color)] transition-colors"
+                    >
                       {job.title}
                     </Link>
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-2">
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs mb-2" style={{ color: 'var(--muted-text)' }}>
                       <span className="font-medium">{job.company}</span>
                       <span className="flex items-center">
                         <i className="fas fa-map-marker-alt text-xs mr-1"></i>
@@ -383,12 +430,16 @@ const AllBlogs = () => {
                       </span>
                       <span>{job.type}</span>
                     </div>
-                    <div className="text-xs text-gray-500">
-                      <span className="text-gray-400">Recommended by: </span>
-                      <Link to="/other-dashboard" className="text-teal-600 hover:underline font-medium">
+                    <div className="text-xs" style={{ color: 'var(--muted-text)' }}>
+                      <span>Recommended by: </span>
+                      <Link 
+                        to="/other-dashboard" 
+                        className="hover:underline font-medium"
+                        style={{ color: 'var(--primary-color)' }}
+                      >
                         {job.recommender}
                       </Link>
-                      <span className="text-gray-400"> ({job.recommenderTitle})</span>
+                      <span> ({job.recommenderTitle})</span>
                     </div>
                   </li>
                 ))}
@@ -396,7 +447,8 @@ const AllBlogs = () => {
               <div className="text-center mt-4">
                 <button 
                   onClick={handleSeeAllArticles}
-                  className="text-teal-600 font-semibold hover:underline"
+                  className="font-semibold hover:underline transition-colors"
+                  style={{ color: 'var(--primary-color)' }}
                 >
                   {showAllArticles ? 'Back to Recommendations' : 'See All Articles'}
                   <i className={`fas fa-chevron-${showAllArticles ? 'left' : 'right'} ml-1`}></i>
@@ -406,25 +458,40 @@ const AllBlogs = () => {
 
             {/* More Articles (shown in recommendations view) */}
             {!showAllArticles && (
-              <div className="bg-white p-4 rounded-lg">
-                <h3 className="text-lg font-semibold text-teal-600 mb-4 border-b border-gray-200 pb-2">
+              <div 
+                className="p-4 rounded-lg transition-colors"
+                style={{ backgroundColor: 'var(--card-bg)' }}
+              >
+                <h3 
+                  className="text-lg font-semibold mb-4 pb-2 border-b transition-colors"
+                  style={{ 
+                    color: 'var(--primary-color)',
+                    borderColor: 'var(--border-color)'
+                  }}
+                >
                   More Articles
                 </h3>
                 <div className="space-y-4">
                   {communityPosts.slice(0, 4).map(post => (
                     <Link to="/inside-blog" key={post.id} className="flex gap-3">
                       <div 
-                        className="w-16 h-16 bg-gray-200 rounded bg-cover bg-center flex-shrink-0"
-                        style={{ backgroundImage: `url(${post.image})` }}
+                        className="w-16 h-16 rounded flex-shrink-0 bg-cover bg-center"
+                        style={{ 
+                          backgroundImage: `url(${post.image})`,
+                          backgroundColor: 'var(--card-bg)'
+                        }}
                       ></div>
                       <div>
-                        <span className="block text-teal-500 text-xs font-semibold uppercase tracking-wider mb-1">
+                        <span 
+                          className="block text-xs font-semibold uppercase tracking-wider mb-1"
+                          style={{ color: 'var(--primary-color)' }}
+                        >
                           {post.category.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                         </span>
-                        <h4 className="text-sm font-medium hover:text-teal-600 transition-colors">
+                        <h4 className="text-sm font-medium hover:text-[var(--primary-color)] transition-colors">
                           {post.title}
                         </h4>
-                        <div className="flex justify-between text-gray-500 text-xs mt-1">
+                        <div className="flex justify-between text-xs mt-1" style={{ color: 'var(--muted-text)' }}>
                           <span>{post.date}</span>
                           <span>{post.readTime}</span>
                         </div>
@@ -435,7 +502,8 @@ const AllBlogs = () => {
                 <div className="text-center mt-4">
                   <button 
                     onClick={handleSeeAllArticles}
-                    className="text-teal-600 font-semibold hover:underline"
+                    className="font-semibold hover:underline transition-colors"
+                    style={{ color: 'var(--primary-color)' }}
                   >
                     See All Articles <i className="fas fa-chevron-right ml-1"></i>
                   </button>
@@ -444,13 +512,26 @@ const AllBlogs = () => {
             )}
 
             {/* Top Contributors */}
-            <div className="bg-white p-4 rounded-lg">
-              <h3 className="text-lg font-semibold text-teal-600 mb-4 border-b border-gray-200 pb-2">
+            <div 
+              className="p-4 rounded-lg transition-colors"
+              style={{ backgroundColor: 'var(--card-bg)' }}
+            >
+              <h3 
+                className="text-lg font-semibold mb-4 pb-2 border-b transition-colors"
+                style={{ 
+                  color: 'var(--primary-color)',
+                  borderColor: 'var(--border-color)'
+                }}
+              >
                 Top Contributors
               </h3>
               <ul className="space-y-3">
                 {topContributors.map(contributor => (
-                  <li key={contributor.id} className="pb-3 border-b border-gray-100 last:border-0">
+                  <li 
+                    key={contributor.id} 
+                    className="pb-3 border-b last:border-0 transition-colors"
+                    style={{ borderColor: 'var(--border-color)' }}
+                  >
                     <Link to="/other-dashboard" className="flex items-center gap-3">
                       <img 
                         src={contributor.image} 
@@ -458,17 +539,23 @@ const AllBlogs = () => {
                         className="w-10 h-10 rounded-full object-cover"
                       />
                       <div>
-                        <h4 className="font-medium hover:text-teal-600 transition-colors">
+                        <h4 className="font-medium hover:text-[var(--primary-color)] transition-colors">
                           {contributor.name}
                         </h4>
-                        <p className="text-teal-600 text-xs">{contributor.blogs}</p>
+                        <p className="text-xs" style={{ color: 'var(--primary-color)' }}>
+                          {contributor.blogs}
+                        </p>
                       </div>
                     </Link>
                   </li>
                 ))}
               </ul>
               <div className="text-center mt-4">
-                <Link to="/top-contributors" className="text-teal-600 font-semibold hover:underline">
+                <Link 
+                  to="/top-contributors" 
+                  className="font-semibold hover:underline transition-colors"
+                  style={{ color: 'var(--primary-color)' }}
+                >
                   See All Contributors <i className="fas fa-chevron-right ml-1"></i>
                 </Link>
               </div>
@@ -476,8 +563,8 @@ const AllBlogs = () => {
 
             {/* Search Users */}
             <div className="lg:w-80 space-y-8">
-            <SearchForm/>
-          </div>
+              <SearchForm />
+            </div>
           </div>
         </div>
       </main>
