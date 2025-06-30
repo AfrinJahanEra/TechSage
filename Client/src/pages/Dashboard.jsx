@@ -9,12 +9,7 @@ const Dashboard = () => {
     const { user } = useAuth();
     const { darkMode, primaryColor, shadeColor } = useTheme();
     const [activeSection, setActiveSection] = useState('profile');
-    const [profileData, setProfileData] = useState({
-        name: user?.username || 'Demo User',
-        email: user?.email || 'demo@university.edu',
-        university: user?.university || 'Demo University',
-        profession: user?.job_title || 'Professor'
-    });
+
 
     // Generate color variants based on primary color
     const primaryDark = shadeColor(primaryColor, -20);
