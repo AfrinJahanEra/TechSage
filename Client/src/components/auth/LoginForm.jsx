@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 
 const LoginForm = () => {
   const [formData, setFormData] = useState({
-    email: '',
+    username: '',
     password: ''
   });
   const [errors, setErrors] = useState({});
@@ -22,38 +22,31 @@ const LoginForm = () => {
 
   const validate = () => {
     const newErrors = {};
-    if (!formData.email) newErrors.email = 'Email is required';
+    if (!formData.username) newErrors.username = 'Username is required';
     if (!formData.password) newErrors.password = 'Password is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (validate()) {
       setLoading(true);
-      setTimeout(() => {
-        const userData = {
-          id: Math.random().toString(36).substring(7),
-          name: 'Demo User',
-          email: formData.email,
-          university: 'Demo University',
-          role: formData.email.includes('admin') ? 'admin' : 
-                formData.email.includes('moderator') ? 'moderator' : 'user',
-          avatar: `https://ui-avatars.com/api/?name=Demo+User&background=1abc9c&color=fff`
-        };
-        login(userData);
+      try {
+        const user = await login(formData);
         
-        if (userData.role === 'admin') {
+        if (user.role === 'admin') {
           navigate('/admin');
-        } else if (userData.role === 'moderator') {
+        } else if (user.role === 'moderator') {
           navigate('/moderator');
         } else {
           navigate('/home');
         }
-        
+      } catch (error) {
+        setErrors({ api: error.error || 'Login failed' });
+      } finally {
         setLoading(false);
-      }, 1000);
+      }
     }
   };
 
@@ -74,22 +67,24 @@ const LoginForm = () => {
           </p>
         </div>
         
+        {errors.api && <p className="mb-4 text-sm text-red-600 text-center">{errors.api}</p>}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              Email address
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+              Username
             </label>
             <div className="mt-1">
               <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                value={formData.email}
+                id="username"
+                name="username"
+                type="text"
+                autoComplete="username"
+                value={formData.username}
                 onChange={handleChange}
-                className={`appearance-none block w-full px-3 py-2 border ${errors.email ? 'border-red-300' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm`}
+                className={`appearance-none block w-full px-3 py-2 border ${errors.username ? 'border-red-300' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm`}
               />
-              {errors.email && <p className="mt-2 text-sm text-red-600">{errors.email}</p>}
+              {errors.username && <p className="mt-2 text-sm text-red-600">{errors.username}</p>}
             </div>
           </div>
 

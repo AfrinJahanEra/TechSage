@@ -1,12 +1,13 @@
-// src/components/CommentSection.jsx
 import { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext.jsx';
+import { useTheme } from '../context/ThemeContext';
 
 const CommentSection = () => {
   const [comment, setComment] = useState('');
   const [replyTo, setReplyTo] = useState(null);
   const [replyContent, setReplyContent] = useState('');
   const { user } = useContext(AuthContext);
+  const { primaryColor, darkMode } = useTheme();
   const [comments, setComments] = useState([
     {
       id: 1,
@@ -145,40 +146,44 @@ const CommentSection = () => {
   };
 
   return (
-    <section className="mt-16 border-t border-gray-200 pt-10">
-      <h2 className="text-2xl font-bold mb-8 relative pb-2">
+    <section className={`mt-16 border-t pt-10 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+      <h2 className={`text-2xl font-bold mb-8 relative pb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
         Academic Discussion
-        <span className="absolute bottom-0 left-0 w-16 h-1 bg-teal-500"></span>
+        <span className="absolute bottom-0 left-0 w-16 h-1" style={{ backgroundColor: primaryColor }}></span>
       </h2>
 
-      {/* Comment Form */}
       <form onSubmit={handleCommentSubmit} className="mb-10">
         <textarea
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           placeholder={user ? "Contribute to the academic discussion..." : "Please login to comment"}
-          className="w-full p-4 border border-gray-300 rounded-lg mb-4 min-h-32 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+          className={`w-full p-4 rounded-lg mb-4 min-h-32 focus:outline-none focus:ring-2 ${
+            darkMode 
+              ? 'bg-gray-800 border-gray-600 text-white focus:border-gray-500' 
+              : 'bg-white border-gray-300 text-gray-700 focus:border-gray-400'
+          }`}
+          style={{ '--tw-ring-color': primaryColor }}
           disabled={!user}
         ></textarea>
         <button 
           type="submit" 
-          className="bg-teal-500 text-white px-6 py-2 rounded-lg hover:bg-teal-600 transition-colors disabled:opacity-50"
+          className="px-6 py-2 text-white rounded-lg hover:opacity-90 transition-colors disabled:opacity-50"
+          style={{ backgroundColor: primaryColor }}
           disabled={!user}
         >
           Post Comment
         </button>
       </form>
 
-      {/* Comments List */}
       <div className="space-y-8 max-h-screen overflow-y-auto pr-4">
         {comments.map(comment => (
-          <div key={comment.id} className="border-b border-gray-200 pb-8 last:border-0">
+          <div key={comment.id} className={`pb-8 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
             <div className="flex items-start gap-4 mb-4">
               <img src={comment.avatar} alt={comment.author} className="w-10 h-10 rounded-full object-cover" />
               <div>
                 <div className="flex items-center gap-4">
-                  <h4 className="font-semibold">{comment.author}</h4>
-                  <span className="text-gray-500 text-sm">{comment.date}</span>
+                  <h4 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{comment.author}</h4>
+                  <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{comment.date}</span>
                   {user && (
                     <button 
                       onClick={() => handleDeleteComment(comment.id)}
@@ -188,14 +193,16 @@ const CommentSection = () => {
                     </button>
                   )}
                 </div>
-                <p className="mt-1">{comment.content}</p>
+                <p className={`mt-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{comment.content}</p>
               </div>
             </div>
 
             <div className="flex gap-6 ml-14">
               <button 
                 onClick={() => handleLike(comment.id)}
-                className="flex items-center gap-1 text-gray-500 hover:text-gray-700 text-sm"
+                className={`flex items-center gap-1 text-sm ${
+                  darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
+                }`}
               >
                 <i className="fas fa-thumbs-up"></i>
                 <span>Like ({comment.likes})</span>
@@ -208,33 +215,44 @@ const CommentSection = () => {
                   }
                   setReplyTo(replyTo === comment.id ? null : comment.id);
                 }}
-                className="flex items-center gap-1 text-gray-500 hover:text-gray-700 text-sm"
+                className={`flex items-center gap-1 text-sm ${
+                  darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
+                }`}
               >
                 <i className="fas fa-reply"></i>
                 <span>Reply</span>
               </button>
             </div>
 
-            {/* Reply Form */}
             {replyTo === comment.id && (
               <form onSubmit={(e) => handleReplySubmit(comment.id, e)} className="mt-4 ml-14">
                 <textarea
                   value={replyContent}
                   onChange={(e) => setReplyContent(e.target.value)}
                   placeholder="Write your academic reply..."
-                  className="w-full p-3 border border-gray-300 rounded-lg mb-2 min-h-24 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className={`w-full p-3 rounded-lg mb-2 min-h-24 focus:outline-none focus:ring-2 ${
+                    darkMode 
+                      ? 'bg-gray-800 border-gray-600 text-white focus:border-gray-500' 
+                      : 'bg-white border-gray-300 text-gray-700 focus:border-gray-400'
+                  }`}
+                  style={{ '--tw-ring-color': primaryColor }}
                 ></textarea>
                 <div className="flex justify-end gap-2">
                   <button 
                     type="button" 
                     onClick={() => setReplyTo(null)}
-                    className="px-4 py-1 border border-gray-300 rounded-lg hover:bg-gray-100"
+                    className={`px-4 py-1 border rounded-lg ${
+                      darkMode 
+                        ? 'border-gray-600 hover:bg-gray-700' 
+                        : 'border-gray-300 hover:bg-gray-100'
+                    }`}
                   >
                     Cancel
                   </button>
                   <button 
                     type="submit" 
-                    className="bg-teal-500 text-white px-4 py-1 rounded-lg hover:bg-teal-600"
+                    className="px-4 py-1 text-white rounded-lg hover:opacity-90"
+                    style={{ backgroundColor: primaryColor }}
                   >
                     Post Reply
                   </button>
@@ -242,17 +260,16 @@ const CommentSection = () => {
               </form>
             )}
 
-            {/* Replies */}
             {comment.replies.length > 0 && (
-              <div className="mt-6 ml-14 pl-6 border-l-2 border-gray-200">
+              <div className={`mt-6 ml-14 pl-6 border-l-2 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                 {comment.replies.map(reply => (
-                  <div key={reply.id} className="py-4 border-b border-gray-100 last:border-0">
+                  <div key={reply.id} className={`py-4 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
                     <div className="flex items-start gap-4 mb-2">
                       <img src={reply.avatar} alt={reply.author} className="w-8 h-8 rounded-full object-cover" />
                       <div>
                         <div className="flex items-center gap-3">
-                          <h4 className="font-semibold text-sm">{reply.author}</h4>
-                          <span className="text-gray-500 text-xs">{reply.date}</span>
+                          <h4 className={`font-semibold text-sm ${darkMode ? 'text-white' : 'text-gray-800'}`}>{reply.author}</h4>
+                          <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{reply.date}</span>
                           {user && (
                             <button 
                               onClick={() => handleDeleteComment(comment.id, true, reply.id)}
@@ -262,14 +279,16 @@ const CommentSection = () => {
                             </button>
                           )}
                         </div>
-                        <p className="mt-1 text-sm">{reply.content}</p>
+                        <p className={`mt-1 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{reply.content}</p>
                       </div>
                     </div>
 
                     <div className="flex gap-4 ml-12">
                       <button 
                         onClick={() => handleLike(comment.id, true, reply.id)}
-                        className="flex items-center gap-1 text-gray-500 hover:text-gray-700 text-xs"
+                        className={`flex items-center gap-1 text-xs ${
+                          darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
+                        }`}
                       >
                         <i className="fas fa-thumbs-up"></i>
                         <span>Like ({reply.likes})</span>

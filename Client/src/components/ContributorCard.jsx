@@ -1,14 +1,26 @@
 import { Link } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
 
 const ContributorCard = ({ image, name, blogs }) => {
+  const { primaryColor, darkMode } = useTheme();
+
   return (
-    <Link to="/other-dashboard" className="block py-3 border-b border-gray-200 last:border-0 hover:bg-gray-50 transition-colors">
-      <div className="flex items-center gap-3">
-        <img src={image} alt={name} className="w-10 h-10 rounded-full object-cover" />
-        <div>
-          <h4 className="font-semibold text-sm">{name}</h4>
-          <p className="text-teal-700 text-xs">{blogs}</p>
-        </div>
+    <Link 
+      to={`/contributors/${name.toLowerCase().replace(/\s+/g, '-')}`}
+      className={`flex items-center gap-4 p-3 rounded-md transition-colors ${
+        darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+      }`}
+    >
+      <div className="w-12 h-12 rounded-full overflow-hidden">
+        <img 
+          src={image} 
+          alt={name} 
+          className="w-full h-full object-cover"
+        />
+      </div>
+      <div>
+        <h4 className={`font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>{name}</h4>
+        <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{blogs}</p>
       </div>
     </Link>
   );

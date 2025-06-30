@@ -1,4 +1,3 @@
-// src/components/auth/SignupForm.jsx
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -18,7 +17,7 @@ const SignupForm = () => {
   const [otp, setOtp] = useState('');
   const [otpVerified, setOtpVerified] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -61,7 +60,6 @@ const SignupForm = () => {
   const handleSendOtp = (e) => {
     e.preventDefault();
     if (validate()) {
-      // In a real app, you would send OTP to the user's email
       setLoading(true);
       setTimeout(() => {
         setOtpSent(true);
@@ -72,46 +70,45 @@ const SignupForm = () => {
 
   const handleVerifyOtp = (e) => {
     e.preventDefault();
-    // In a real app, you would verify OTP from backend
-    if (otp === '123456') { // Mock OTP
+    if (otp === '123456') {
       setOtpVerified(true);
     } else {
       setErrors({ ...errors, otp: 'Invalid OTP' });
     }
   };
 
-const handleSubmit = (e) => {
-  e.preventDefault();
-  if (validate() && otpVerified) {
-    setLoading(true);
-    // In a real app, you would send data to your backend
-    setTimeout(() => {
-      const userData = {
-        id: Math.random().toString(36).substring(7),
-        name: formData.name,
-        email: formData.email,
-        university: formData.university,
-        role: formData.role,
-        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=1abc9c&color=fff`
-      };
-      login(userData);
-      
-      // Redirect based on role
-      if (formData.role === 'admin') {
-        navigate('/admin');
-      } else if (formData.role === 'moderator') {
-        navigate('/moderator');
-      } else {
-        navigate('/home');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (validate() && otpVerified) {
+      setLoading(true);
+      try {
+        const username = formData.name.replace(/\s+/g, '').toLowerCase();
+        const userData = {
+          username,
+          email: formData.email,
+          password: formData.password,
+          university: formData.university,
+          role: formData.role
+        };
+
+        await register(userData);
+        
+        if (formData.role === 'admin') {
+          navigate('/admin');
+        } else if (formData.role === 'moderator') {
+          navigate('/moderator');
+        } else {
+          navigate('/home');
+        }
+      } catch (error) {
+        setErrors({ api: error.error || 'Registration failed' });
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
-    }, 1500);
-  }
-};
+    }
+  };
 
   const handleGoogleSignup = () => {
-    // In a real app, implement Google OAuth
     alert('Google signup would be implemented here');
   };
 
@@ -119,6 +116,8 @@ const handleSubmit = (e) => {
     <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">
       <h2 className="text-2xl font-bold text-center text-teal-700 mb-6">Create Account</h2>
       
+      {errors.api && <p className="mb-4 text-sm text-red-600 text-center">{errors.api}</p>}
+
       {!otpSent ? (
         <form onSubmit={handleSendOtp}>
           <div className="mb-4">
