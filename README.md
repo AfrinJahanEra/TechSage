@@ -1,6 +1,7 @@
 <h1 align="center" font-style="bold">
-  $\Huge\textnormal{\color{Green}TechSage}$
+  $\Huge\textnormal{\color{#2196F3}TechSage}$
 </h1>
+
 
 ![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white)
 ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
@@ -14,7 +15,7 @@
 
 <details>
   <summary>
-    <h1>$\textnormal{\color{gold}{FILE STRUCTURE}}$</h1><br>
+    <h1>$\textnormal{\color{#2196F3}{FILE STRUCTURE}}$</h1><br>
   </summary>
   
   ```
@@ -63,7 +64,7 @@
 
 <details>
   <summary>
-    <h1>$\textnormal{\color{pink}{INSTALLATION}}$</h1><br>
+    <h1>$\textnormal{\color{#2196F3}{INSTALLATION}}$</h1><br>
   </summary>
 
   To install python dependencies
@@ -80,7 +81,7 @@ then run `redis-server.exe`
 
 <details>
   <summary>
-    <h1>$\textnormal{\color{blue}{HOW TO RUN}}$</h1><br>
+    <h1>$\textnormal{\color{#2196F3}{HOW TO RUN}}$</h1><br>
   </summary>
   
 ```
