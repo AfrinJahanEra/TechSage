@@ -34,4 +34,5 @@ urlpatterns = [
     path('blogs/<str:blog_id>/', GetBlog.as_view()),  # Moved to last
 
     path('comments/', include('comments.urls')),
+    path('reports/', include('reports.urls')),
 ]
