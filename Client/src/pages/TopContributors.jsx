@@ -1,13 +1,26 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import Sidebar from '../components/Sidebar';
 import SearchForm from '../components/SearchForm';
 
 const TopContributors = () => {
+  const { primaryColor, darkMode, shadeColor } = useTheme();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Generate color variants
+  const primaryDark = shadeColor(primaryColor, -20);
+  const primaryLight = shadeColor(primaryColor, 20);
+
+  // Dynamic style variables for theme colors
+  const themeStyles = {
+    '--primary-color': primaryColor,
+    '--primary-dark': primaryDark,
+    '--primary-light': primaryLight,
+  };
 
   const contributors = [
     {
@@ -107,23 +120,31 @@ const TopContributors = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div 
+      className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'}`}
+      style={themeStyles}
+    >
       <Navbar activePage="top-contributors" />
       
-      <main className="container mx-auto px-20 py-8 pt-28">
+      <main className="container mx-auto px-4 sm:px-6 lg:px-20 py-8 pt-28">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Content */}
           <article className="flex-1">
-            <header className="border-b border-gray-200 pb-6 mb-8">
-              <h1 className="text-3xl md:text-4xl font-bold leading-tight mb-3">Top Researchers</h1>
-              <p className="text-lg text-gray-600">
+            <header className={`border-b pb-6 mb-8 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <h1 className={`text-3xl md:text-4xl font-bold leading-tight mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                Top Researchers
+              </h1>
+              <p className={`text-lg ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 Our most active and influential contributors based on publications, citations, and community engagement.
               </p>
             </header>
 
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-teal-500 text-white">
+                <thead 
+                  className="text-white"
+                  style={{ backgroundColor: primaryColor }}
+                >
                   <tr>
                     <th className="px-4 py-3 text-left">Rank</th>
                     <th className="px-4 py-3 text-left">Researcher</th>
@@ -135,7 +156,10 @@ const TopContributors = () => {
                 </thead>
                 <tbody>
                   {contributors.map(contributor => (
-                    <tr key={contributor.id} className="border-b border-gray-200 hover:bg-teal-50 transition-colors">
+                    <tr 
+                      key={contributor.id} 
+                      className={`border-b transition-colors ${darkMode ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-200 hover:bg-[var(--primary-light)]'}`}
+                    >
                       <td className="px-4 py-3">{contributor.rank}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center">
@@ -170,13 +194,21 @@ const TopContributors = () => {
                   <button
                     key={page}
                     onClick={() => handlePageChange(page)}
-                    className={`px-4 py-2 border border-gray-300 rounded-md ${currentPage === page ? 'bg-teal-500 text-white border-teal-500' : 'hover:bg-gray-100'}`}
+                    className={`px-4 py-2 border rounded-md ${currentPage === page 
+                      ? 'text-white border-[var(--primary-color)]' 
+                      : darkMode 
+                        ? 'border-gray-700 hover:bg-gray-700' 
+                        : 'border-gray-300 hover:bg-gray-100'}`}
+                    style={{
+                      backgroundColor: currentPage === page ? primaryColor : 'transparent',
+                      borderColor: currentPage === page ? primaryColor : (darkMode ? 'rgb(55, 65, 81)' : 'rgb(209, 213, 219)')
+                    }}
                   >
                     {page}
                   </button>
                 ))}
                 <button 
-                  className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100"
+                  className={`px-4 py-2 border rounded-md ${darkMode ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-300 hover:bg-gray-100'}`}
                   onClick={() => handlePageChange(currentPage + 1)}
                 >
                   <i className="fas fa-chevron-right"></i>
@@ -188,7 +220,7 @@ const TopContributors = () => {
           {/* Sidebar */}
           <div className="lg:w-80 space-y-8">
             <Sidebar />
-            <SearchForm/>
+            <SearchForm />
           </div>
         </div>
       </main>

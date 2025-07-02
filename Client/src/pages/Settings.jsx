@@ -1,25 +1,29 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import axios from 'axios';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
 const Settings = () => {
+  const { user, api, logout, updateUser } = useAuth();
+  const { primaryColor, darkMode, changeThemeColor, toggleDarkMode, shadeColor } = useTheme();
+  
   const [activeSection, setActiveSection] = useState('edit-profile');
-  const [darkMode, setDarkMode] = useState(false);
-  const [primaryColor, setPrimaryColor] = useState('#1abc9c');
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-  // Form states
   const [profileData, setProfileData] = useState({
-    firstName: 'Sarah',
-    lastName: 'Johnson',
-    email: 's.johnson@mit.edu',
-    university: 'Massachusetts Institute of Technology',
-    title: 'Professor of Quantum Physics',
-    bio: 'Professor of Quantum Physics at MIT. My research focuses on quantum error correction and quantum algorithms. Currently working on topological quantum computing approaches.',
-    website: 'https://quantum.mit.edu/sjohnson'
+    username: '',
+    email: '',
+    university: '',
+    job_title: '',
+    bio: '',
+    avatar_url: ''
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -28,161 +32,231 @@ const Settings = () => {
     confirmPassword: ''
   });
 
-  const [settings, setSettings] = useState({
-    emailNotifications: true,
-    pushNotifications: true,
-    publicProfile: true,
-    showEmail: false,
-    twoFactorAuth: false
-  });
+  // Generate color variants
+  const primaryDark = shadeColor(primaryColor, -20);
+  const primaryLight = shadeColor(primaryColor, 20);
 
-  // Handle dark mode toggle
-  const toggleDarkMode = () => {
-    const newDarkMode = !darkMode;
-    setDarkMode(newDarkMode);
-    document.body.classList.toggle('dark-mode', newDarkMode);
-    localStorage.setItem('darkMode', newDarkMode ? 'enabled' : 'disabled');
+  // Dynamic style variables for theme colors
+  const themeStyles = {
+    '--primary-color': primaryColor,
+    '--primary-dark': primaryDark,
+    '--primary-light': primaryLight,
   };
 
-  // Handle theme color change
-  const changeThemeColor = (color) => {
-    setPrimaryColor(color);
-    document.documentElement.style.setProperty('--primary-color', color);
-    document.documentElement.style.setProperty('--primary-dark', shadeColor(color, -20));
-    localStorage.setItem('themeColor', color);
-  };
-
-  // Helper function to darken a color
-  const shadeColor = (color, percent) => {
-    let R = parseInt(color.substring(1,3), 16);
-    let G = parseInt(color.substring(3,5), 16);
-    let B = parseInt(color.substring(5,7), 16);
-
-    R = parseInt(R * (100 + percent) / 100);
-    G = parseInt(G * (100 + percent) / 100);
-    B = parseInt(B * (100 + percent) / 100);
-
-    R = (R<255)?R:255;  
-    G = (G<255)?G:255;  
-    B = (B<255)?B:255;  
-
-    R = Math.round(R);
-    G = Math.round(G);
-    B = Math.round(B);
-
-    const RR = ((R.toString(16).length==1)?"0"+R.toString(16):R.toString(16));
-    const GG = ((G.toString(16).length==1)?"0"+G.toString(16):G.toString(16));
-    const BB = ((B.toString(16).length==1)?"0"+B.toString(16):B.toString(16));
-
-    return "#"+RR+GG+BB;
-  };
+  // Load user data on component mount
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        username: user.username,
+        email: user.email,
+        university: user.university || '',
+        job_title: user.job_title || 'User',
+        bio: user.bio || '',
+        avatar_url: user.avatar_url || ''
+      });
+      setAvatarPreview(user.avatar_url || null);
+    }
+  }, [user]);
 
   // Check password strength
   const checkPasswordStrength = (password) => {
     let strength = 0;
-    
-    // Length check
     if (password.length >= 8) strength += 1;
     if (password.length >= 12) strength += 1;
-    
-    // Complexity checks
     if (password.match(/[a-z]/)) strength += 1;
     if (password.match(/[A-Z]/)) strength += 1;
     if (password.match(/[0-9]/)) strength += 1;
     if (password.match(/[^a-zA-Z0-9]/)) strength += 1;
-    
     setPasswordStrength(strength);
   };
 
-  // Handle profile form submission
-  const handleProfileSubmit = (e) => {
-    e.preventDefault();
-    alert('Profile updated successfully!');
+  // Handle avatar upload
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Preview image
+    const reader = new FileReader();
+    reader.onload = () => setAvatarPreview(reader.result);
+    reader.readAsDataURL(file);
+
+    try {
+      setIsUploading(true);
+      const formData = new FormData();
+      formData.append('avatar', file);
+
+      const response = await api.put(`/user/${user.username}/`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      const updatedUser = response.data;
+      setProfileData(prev => ({
+        ...prev,
+        avatar_url: updatedUser.avatar_url
+      }));
+      
+      updateUser(updatedUser);
+    } catch (error) {
+      console.error('Avatar upload failed:', error);
+      alert('Failed to upload avatar');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  // Handle password form submission
-  const handlePasswordSubmit = (e) => {
+  // Handle profile update
+  const handleProfileSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await api.put(`/user/${user.username}/`, {
+        job_title: profileData.job_title,
+        bio: profileData.bio
+      });
+      
+      const updatedUser = response.data;
+      setProfileData(updatedUser);
+      updateUser(updatedUser);
+      alert('Profile updated successfully!');
+    } catch (error) {
+      console.error('Profile update failed:', error);
+      alert('Failed to update profile');
+    }
+  };
+
+  // Handle password change
+  const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       alert("Passwords don't match!");
       return;
     }
-    if (passwordData.newPassword.length < 8) {
-      alert("Password must be at least 8 characters long!");
-      return;
+    
+    try {
+      await api.put(`/user/${user.username}/change-password/`, {
+        current_password: passwordData.currentPassword,
+        new_password: passwordData.newPassword
+      });
+      
+      alert('Password changed successfully!');
+      setPasswordModalOpen(false);
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+    } catch (error) {
+      console.error('Password change failed:', error);
+      alert(error.response?.data?.error || 'Failed to change password');
     }
-    alert('Password changed successfully!');
-    setPasswordModalOpen(false);
-    setPasswordData({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
-    });
   };
 
-  // Handle logout
-  const handleLogout = () => {
-    // In a real app, you would clear authentication state
-    alert('You have been logged out successfully!');
-    // Redirect to login page
-    window.location.href = '/login';
+  // Handle account deletion
+  const handleDeleteAccount = async () => {
+    try {
+      await api.delete(`/user/${user.username}/`);
+      logout();
+      alert('Account deleted successfully');
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Account deletion failed:', error);
+      alert('Failed to delete account');
+    }
   };
 
-  // Load saved preferences on component mount
-  useEffect(() => {
-    // Dark mode
-    const savedDarkMode = localStorage.getItem('darkMode') === 'enabled';
-    setDarkMode(savedDarkMode);
-    document.body.classList.toggle('dark-mode', savedDarkMode);
-
-    // Theme color
-    const savedColor = localStorage.getItem('themeColor') || '#1abc9c';
-    setPrimaryColor(savedColor);
-    document.documentElement.style.setProperty('--primary-color', savedColor);
-    document.documentElement.style.setProperty('--primary-dark', shadeColor(savedColor, -20));
-  }, []);
+  // Render password strength indicator
+  const renderPasswordStrength = () => {
+    const strengthText = passwordStrength >= 6 ? 'Strong' : passwordStrength >= 4 ? 'Medium' : 'Weak';
+    const strengthColor = passwordStrength >= 6 ? 'bg-green-500' : passwordStrength >= 4 ? 'bg-yellow-500' : 'bg-red-500';
+    
+    return (
+      <div className="mt-1">
+        <div className={`h-1 rounded-full overflow-hidden ${darkMode ? 'bg-gray-600' : 'bg-gray-200'}`}>
+          <div
+            className={`h-full ${strengthColor}`}
+            style={{ width: `${Math.min(100, passwordStrength * 20)}%` }}
+          ></div>
+        </div>
+        <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          Password strength: {strengthText}
+        </p>
+      </div>
+    );
+  };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
+    <div 
+      className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'}`}
+      style={themeStyles}
+    >
       <Navbar activePage="settings" />
-      
+
       {/* Dashboard Layout */}
       <div className="flex flex-col md:flex-row min-h-[calc(100vh-80px)] py-20">
         {/* Sidebar */}
-        <div className="w-full md:w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
-          <ul className="py-4">
+        <div className={`w-full md:w-64 border-r p-4 transition-colors duration-300 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <ul className="space-y-1">
             <li>
               <button
                 onClick={() => setActiveSection('edit-profile')}
-                className={`w-full px-6 py-3 text-left flex items-center ${activeSection === 'edit-profile' ? 'bg-blue-50 dark:bg-gray-700 border-l-4 border-blue-500 text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                className={`w-full text-left px-4 py-3 rounded-lg flex items-center transition-colors duration-200 ${
+                  activeSection === 'edit-profile' 
+                    ? `${darkMode ? 'bg-gray-700' : 'bg-[var(--primary-light)]'} border-l-4`
+                    : `${darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`
+                }`}
+                style={{
+                  borderColor: activeSection === 'edit-profile' ? primaryColor : 'transparent',
+                  color: activeSection === 'edit-profile' ? primaryColor : 'inherit'
+                }}
               >
                 <i className="fas fa-user-edit mr-3"></i>
                 Edit Profile
               </button>
             </li>
-            <li>
-              <button
-                onClick={() => setActiveSection('collaboration-request')}
-                className={`w-full px-6 py-3 text-left flex items-center ${activeSection === 'collaboration-request' ? 'bg-blue-50 dark:bg-gray-700 border-l-4 border-blue-500 text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-              >
-                <i className="fas fa-handshake mr-3"></i>
-                Collaboration
-                <span className="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">3</span>
-              </button>
-            </li>
+            
+            {user?.role === 'user' && (
+              <li>
+                <button
+                  onClick={() => setActiveSection('collaboration-request')}
+                  className={`w-full text-left px-4 py-3 rounded-lg flex items-center transition-colors duration-200 ${
+                    activeSection === 'collaboration-request' 
+                      ? `${darkMode ? 'bg-gray-700' : 'bg-[var(--primary-light)]'} border-l-4`
+                      : `${darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`
+                  }`}
+                  style={{
+                    borderColor: activeSection === 'collaboration-request' ? primaryColor : 'transparent',
+                    color: activeSection === 'collaboration-request' ? primaryColor : 'inherit'
+                  }}
+                >
+                  <i className="fas fa-handshake mr-3"></i>
+                  Collaboration
+                </button>
+              </li>
+            )}
+            
             <li>
               <button
                 onClick={() => setActiveSection('settings')}
-                className={`w-full px-6 py-3 text-left flex items-center ${activeSection === 'settings' ? 'bg-blue-50 dark:bg-gray-700 border-l-4 border-blue-500 text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                className={`w-full text-left px-4 py-3 rounded-lg flex items-center transition-colors duration-200 ${
+                  activeSection === 'settings' 
+                    ? `${darkMode ? 'bg-gray-700' : 'bg-[var(--primary-light)]'} border-l-4`
+                    : `${darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`
+                }`}
+                style={{
+                  borderColor: activeSection === 'settings' ? primaryColor : 'transparent',
+                  color: activeSection === 'settings' ? primaryColor : 'inherit'
+                }}
               >
                 <i className="fas fa-cog mr-3"></i>
                 Settings
               </button>
             </li>
+            
             <li>
               <button
                 onClick={() => setLogoutModalOpen(true)}
-                className="w-full px-6 py-3 text-left flex items-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                className={`w-full px-4 py-3 text-left flex items-center rounded-lg transition-colors duration-200 ${darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`}
               >
                 <i className="fas fa-sign-out-alt mr-3"></i>
                 Logout
@@ -192,108 +266,143 @@ const Settings = () => {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 p-6 bg-white dark:bg-gray-900">
+        <div className="flex-1 p-6">
           {/* Edit Profile Section */}
           {activeSection === 'edit-profile' && (
             <div>
-              <h1 className="text-2xl font-bold mb-6 pb-2 border-b border-gray-200 dark:border-gray-700 relative">
+              <h1 className={`text-2xl font-bold mb-6 pb-2 border-b-2 inline-block ${darkMode ? 'text-gray-100' : 'text-gray-800'}`} style={{ borderColor: primaryColor }}>
                 Edit Profile
-                <span className="absolute bottom-0 left-0 w-16 h-1 bg-blue-500"></span>
               </h1>
 
               <form onSubmit={handleProfileSubmit} className="max-w-3xl">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  <div>
-                    <label className="block text-gray-700 dark:text-gray-300 mb-2">First Name</label>
-                    <input
-                      type="text"
-                      value={profileData.firstName}
-                      onChange={(e) => setProfileData({...profileData, firstName: e.target.value})}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                {/* Avatar Upload */}
+                <div className="mb-6 flex items-center">
+                  <div className="relative mr-6">
+                    <img
+                      src={avatarPreview || profileData.avatar_url || '/default-avatar.png'}
+                      alt="Profile"
+                      className={`w-24 h-24 rounded-full object-cover border-2 ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}
+                      style={{ borderColor: primaryColor }}
                     />
+                    {isUploading && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
+                        <i className="fas fa-spinner fa-spin text-white"></i>
+                      </div>
+                    )}
                   </div>
                   <div>
-                    <label className="block text-gray-700 dark:text-gray-300 mb-2">Last Name</label>
-                    <input
-                      type="text"
-                      value={profileData.lastName}
-                      onChange={(e) => setProfileData({...profileData, lastName: e.target.value})}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
-                    />
+                    <label className="block mb-2">
+                      <span 
+                        className="px-4 py-2 rounded-md cursor-pointer hover:opacity-90 transition-colors duration-200 text-white"
+                        style={{ backgroundColor: primaryColor }}
+                      >
+                        Change Avatar
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarChange}
+                          className="hidden"
+                        />
+                      </span>
+                    </label>
+                    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      JPG, PNG max 5MB
+                    </p>
                   </div>
                 </div>
 
+                {/* Username (read-only) */}
                 <div className="mb-6">
-                  <label className="block text-gray-700 dark:text-gray-300 mb-2">Email</label>
+                  <label className={`block mb-2 font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Username</label>
+                  <input
+                    type="text"
+                    value={profileData.username}
+                    readOnly
+                    className={`w-full px-4 py-2 border rounded-md cursor-not-allowed ${darkMode ? 'bg-gray-700 border-gray-600 text-gray-300' : 'bg-gray-100 border-gray-300 text-gray-700'}`}
+                  />
+                </div>
+
+                {/* Email (read-only) */}
+                <div className="mb-6">
+                  <label className={`block mb-2 font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Email</label>
                   <input
                     type="email"
                     value={profileData.email}
                     readOnly
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-100 dark:bg-gray-700 dark:text-gray-300 cursor-not-allowed"
+                    className={`w-full px-4 py-2 border rounded-md cursor-not-allowed ${darkMode ? 'bg-gray-700 border-gray-600 text-gray-300' : 'bg-gray-100 border-gray-300 text-gray-700'}`}
                   />
                 </div>
 
+                {/* University (read-only) */}
                 <div className="mb-6">
-                  <label className="block text-gray-700 dark:text-gray-300 mb-2">University</label>
+                  <label className={`block mb-2 font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>University</label>
                   <input
                     type="text"
                     value={profileData.university}
-                    onChange={(e) => setProfileData({...profileData, university: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                    readOnly
+                    className={`w-full px-4 py-2 border rounded-md cursor-not-allowed ${darkMode ? 'bg-gray-700 border-gray-600 text-gray-300' : 'bg-gray-100 border-gray-300 text-gray-700'}`}
                   />
                 </div>
 
+                {/* Role (read-only) */}
                 <div className="mb-6">
-                  <label className="block text-gray-700 dark:text-gray-300 mb-2">Title/Position</label>
+                  <label className={`block mb-2 font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Role</label>
                   <input
                     type="text"
-                    value={profileData.title}
-                    onChange={(e) => setProfileData({...profileData, title: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                    value={user?.role || 'user'}
+                    readOnly
+                    className={`w-full px-4 py-2 border rounded-md cursor-not-allowed capitalize ${darkMode ? 'bg-gray-700 border-gray-600 text-gray-300' : 'bg-gray-100 border-gray-300 text-gray-700'}`}
                   />
                 </div>
 
+                {/* Job Title */}
                 <div className="mb-6">
-                  <label className="block text-gray-700 dark:text-gray-300 mb-2">Bio</label>
+                  <label className={`block mb-2 font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Job Title</label>
+                  <input
+                    type="text"
+                    value={profileData.job_title}
+                    onChange={(e) => setProfileData({...profileData, job_title: e.target.value})}
+                    className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${darkMode ? 'bg-gray-800 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-700'}`}
+                    style={{ '--tw-ring-color': primaryColor }}
+                  />
+                </div>
+
+                {/* Bio */}
+                <div className="mb-6">
+                  <label className={`block mb-2 font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Bio</label>
                   <textarea
                     value={profileData.bio}
                     onChange={(e) => setProfileData({...profileData, bio: e.target.value})}
                     rows="4"
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                    className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${darkMode ? 'bg-gray-800 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-700'}`}
+                    style={{ '--tw-ring-color': primaryColor }}
                   ></textarea>
                 </div>
 
-                <div className="mb-6">
-                  <label className="block text-gray-700 dark:text-gray-300 mb-2">Website</label>
-                  <input
-                    type="url"
-                    value={profileData.website}
-                    onChange={(e) => setProfileData({...profileData, website: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
-                  />
-                </div>
-
+                {/* Password Change Button */}
                 <div className="mb-6">
                   <button
                     type="button"
                     onClick={() => setPasswordModalOpen(true)}
-                    className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
+                    className={`px-4 py-2 rounded-md transition-colors duration-200 ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'}`}
                   >
                     <i className="fas fa-lock mr-2"></i>
                     Change Password
                   </button>
                 </div>
 
-                <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+                {/* Form Actions */}
+                <div className={`flex justify-end space-x-4 pt-6 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                   <button
                     type="button"
-                    className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
+                    className={`px-6 py-2 rounded-md transition-colors duration-200 ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'}`}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                    className="px-6 py-2 text-white rounded-md hover:opacity-90 transition-colors duration-200"
+                    style={{ backgroundColor: primaryColor }}
                   >
                     Save Changes
                   </button>
@@ -302,111 +411,15 @@ const Settings = () => {
             </div>
           )}
 
-          {/* Collaboration Request Section */}
-          {activeSection === 'collaboration-request' && (
+          {/* Collaboration Request Section (only for regular users) */}
+          {activeSection === 'collaboration-request' && user?.role === 'user' && (
             <div>
-              <h1 className="text-2xl font-bold mb-6 pb-2 border-b border-gray-200 dark:border-gray-700 relative">
+              <h1 className={`text-2xl font-bold mb-6 pb-2 border-b-2 inline-block ${darkMode ? 'text-gray-100' : 'text-gray-800'}`} style={{ borderColor: primaryColor }}>
                 Collaboration Requests
-                <span className="absolute bottom-0 left-0 w-16 h-1 bg-blue-500"></span>
               </h1>
-
-              <div className="space-y-4">
-                {/* Request Item - Unread */}
-                <div className="p-4 bg-blue-50 dark:bg-gray-800 rounded-md border-l-4 border-blue-500">
-                  <div className="flex flex-col md:flex-row md:items-center">
-                    <div className="flex items-center mb-4 md:mb-0 md:mr-4">
-                      <img 
-                        src="https://randomuser.me/api/portraits/women/33.jpg" 
-                        alt="Era" 
-                        className="w-12 h-12 rounded-full mr-3"
-                      />
-                      <div>
-                        <p className="font-medium"><span className="text-blue-600 dark:text-blue-400">Era</span> sent you a request for collaboration on Quantum Computing research</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">2 hours ago</p>
-                      </div>
-                    </div>
-                    <div className="flex space-x-2 ml-auto">
-                      <button className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">
-                        Accept
-                      </button>
-                      <button className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">
-                        Reject
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Request Item - Unread */}
-                <div className="p-4 bg-blue-50 dark:bg-gray-800 rounded-md border-l-4 border-blue-500">
-                  <div className="flex flex-col md:flex-row md:items-center">
-                    <div className="flex items-center mb-4 md:mb-0 md:mr-4">
-                      <img 
-                        src="https://randomuser.me/api/portraits/women/45.jpg" 
-                        alt="Ridika" 
-                        className="w-12 h-12 rounded-full mr-3"
-                      />
-                      <div>
-                        <p className="font-medium"><span className="text-blue-600 dark:text-blue-400">Ridika</span> wants to collaborate on your AI Ethics paper</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">1 day ago</p>
-                      </div>
-                    </div>
-                    <div className="flex space-x-2 ml-auto">
-                      <button className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">
-                        Accept
-                      </button>
-                      <button className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">
-                        Reject
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Request Item - Unread */}
-                <div className="p-4 bg-blue-50 dark:bg-gray-800 rounded-md border-l-4 border-blue-500">
-                  <div className="flex flex-col md:flex-row md:items-center">
-                    <div className="flex items-center mb-4 md:mb-0 md:mr-4">
-                      <img 
-                        src="https://randomuser.me/api/portraits/women/28.jpg" 
-                        alt="Ramisa" 
-                        className="w-12 h-12 rounded-full mr-3"
-                      />
-                      <div>
-                        <p className="font-medium"><span className="text-blue-600 dark:text-blue-400">Ramisa</span> invited you to join her research team on Neural Networks</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">3 days ago</p>
-                      </div>
-                    </div>
-                    <div className="flex space-x-2 ml-auto">
-                      <button className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">
-                        Accept
-                      </button>
-                      <button className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">
-                        Reject
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Request Item - Read */}
-                <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-md opacity-80">
-                  <div className="flex flex-col md:flex-row md:items-center">
-                    <div className="flex items-center mb-4 md:mb-0 md:mr-4">
-                      <img 
-                        src="https://randomuser.me/api/portraits/women/22.jpg" 
-                        alt="Tahmina" 
-                        className="w-12 h-12 rounded-full mr-3"
-                      />
-                      <div>
-                        <p className="font-medium"><span className="text-blue-600 dark:text-blue-400">Tahmina</span> requested to collaborate on Data Science project</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">1 week ago</p>
-                      </div>
-                    </div>
-                    <div className="flex space-x-2 ml-auto">
-                      <button className="px-4 py-2 bg-green-500 text-white rounded-md opacity-50 cursor-not-allowed">
-                        Accepted
-                      </button>
-                    </div>
-                  </div>
-                </div>
+              <div className="p-8 text-center">
+                <i className={`fas fa-handshake text-5xl mb-4 ${darkMode ? 'text-gray-600' : 'text-gray-300'}`}></i>
+                <p className={darkMode ? 'text-gray-400' : 'text-gray-500'}>No collaboration requests yet</p>
               </div>
             </div>
           )}
@@ -414,217 +427,96 @@ const Settings = () => {
           {/* Settings Section */}
           {activeSection === 'settings' && (
             <div>
-              <h1 className="text-2xl font-bold mb-6 pb-2 border-b border-gray-200 dark:border-gray-700 relative">
+              <h1 className={`text-2xl font-bold mb-6 pb-2 border-b-2 inline-block ${darkMode ? 'text-gray-100' : 'text-gray-800'}`} style={{ borderColor: primaryColor }}>
                 Settings
-                <span className="absolute bottom-0 left-0 w-16 h-1 bg-blue-500"></span>
               </h1>
 
               <div className="max-w-3xl space-y-8">
                 {/* Appearance Settings */}
                 <div>
-                  <h3 className="text-xl font-semibold mb-4">Appearance</h3>
-                  
-                  <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-md mb-4">
+                  <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>Appearance</h3>
+
+                  <div className={`p-4 border rounded-md mb-4 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                     <div className="flex justify-between items-center">
                       <div>
-                        <div className="font-medium">Dark Mode</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">Switch between light and dark theme</div>
+                        <div className={`font-medium ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>Dark Mode</div>
+                        <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          Switch between light and dark theme
+                        </div>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          checked={darkMode} 
+                        <input
+                          type="checkbox"
+                          checked={darkMode}
                           onChange={toggleDarkMode}
-                          className="sr-only peer" 
+                          className="sr-only peer"
                         />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-500"></div>
+                        <div 
+                          className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600"
+                          style={{ backgroundColor: darkMode ? primaryColor : 'rgb(229, 231, 235)' }}
+                        ></div>
                       </label>
                     </div>
                   </div>
 
-                  <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-md">
+                  <div className={`p-4 border rounded-md ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                     <div className="mb-4">
-                      <div className="font-medium">Theme Color</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">Choose your preferred color scheme</div>
+                      <div className={`font-medium ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>Theme Color</div>
+                      <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        Choose your preferred color scheme
+                      </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
-                      {/* Teal */}
-                      <button
-                        onClick={() => changeThemeColor('#1abc9c')}
-                        className={`flex flex-col items-center p-2 rounded-md ${primaryColor === '#1abc9c' ? 'ring-2 ring-blue-500' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                      >
-                        <div className="w-12 h-12 rounded-full bg-teal-500 mb-1"></div>
-                        <span className="text-sm">Teal</span>
-                      </button>
-                      
-                      {/* Blue */}
-                      <button
-                        onClick={() => changeThemeColor('#3498db')}
-                        className={`flex flex-col items-center p-2 rounded-md ${primaryColor === '#3498db' ? 'ring-2 ring-blue-500' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                      >
-                        <div className="w-12 h-12 rounded-full bg-blue-500 mb-1"></div>
-                        <span className="text-sm">Blue</span>
-                      </button>
-                      
-                      {/* Purple */}
-                      <button
-                        onClick={() => changeThemeColor('#9b59b6')}
-                        className={`flex flex-col items-center p-2 rounded-md ${primaryColor === '#9b59b6' ? 'ring-2 ring-blue-500' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                      >
-                        <div className="w-12 h-12 rounded-full bg-purple-500 mb-1"></div>
-                        <span className="text-sm">Purple</span>
-                      </button>
-                      
-                      {/* Red */}
-                      <button
-                        onClick={() => changeThemeColor('#e74c3c')}
-                        className={`flex flex-col items-center p-2 rounded-md ${primaryColor === '#e74c3c' ? 'ring-2 ring-blue-500' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                      >
-                        <div className="w-12 h-12 rounded-full bg-red-500 mb-1"></div>
-                        <span className="text-sm">Red</span>
-                      </button>
-                      
-                      {/* Orange */}
-                      <button
-                        onClick={() => changeThemeColor('#e67e22')}
-                        className={`flex flex-col items-center p-2 rounded-md ${primaryColor === '#e67e22' ? 'ring-2 ring-blue-500' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                      >
-                        <div className="w-12 h-12 rounded-full bg-orange-500 mb-1"></div>
-                        <span className="text-sm">Orange</span>
-                      </button>
-                      
-                      {/* Yellow */}
-                      <button
-                        onClick={() => changeThemeColor('#f1c40f')}
-                        className={`flex flex-col items-center p-2 rounded-md ${primaryColor === '#f1c40f' ? 'ring-2 ring-blue-500' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                      >
-                        <div className="w-12 h-12 rounded-full bg-yellow-500 mb-1"></div>
-                        <span className="text-sm">Yellow</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Notification Settings */}
-                <div>
-                  <h3 className="text-xl font-semibold mb-4">Notifications</h3>
-                  
-                  <div className="space-y-4">
-                    <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-md">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <div className="font-medium">Email Notifications</div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">Receive email alerts for new collaborations and messages</div>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input 
-                            type="checkbox" 
-                            checked={settings.emailNotifications} 
-                            onChange={() => setSettings({...settings, emailNotifications: !settings.emailNotifications})}
-                            className="sr-only peer" 
-                          />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-500"></div>
-                        </label>
-                      </div>
-                    </div>
-                    
-                    <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-md">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <div className="font-medium">Push Notifications</div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">Get instant notifications on your device</div>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input 
-                            type="checkbox" 
-                            checked={settings.pushNotifications} 
-                            onChange={() => setSettings({...settings, pushNotifications: !settings.pushNotifications})}
-                            className="sr-only peer" 
-                          />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-500"></div>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Privacy Settings */}
-                <div>
-                  <h3 className="text-xl font-semibold mb-4">Privacy</h3>
-                  
-                  <div className="space-y-4">
-                    <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-md">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <div className="font-medium">Public Profile</div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">Make your profile visible to all users</div>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input 
-                            type="checkbox" 
-                            checked={settings.publicProfile} 
-                            onChange={() => setSettings({...settings, publicProfile: !settings.publicProfile})}
-                            className="sr-only peer" 
-                          />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-500"></div>
-                        </label>
-                      </div>
-                    </div>
-                    
-                    <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-md">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <div className="font-medium">Show Email</div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">Display your email address on your profile</div>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input 
-                            type="checkbox" 
-                            checked={settings.showEmail} 
-                            onChange={() => setSettings({...settings, showEmail: !settings.showEmail})}
-                            className="sr-only peer" 
-                          />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-500"></div>
-                        </label>
-                      </div>
+                      {['#1abc9c', '#3498db', '#9b59b6', '#e74c3c', '#e67e22', '#f1c40f'].map((color) => (
+                        <button
+                          key={color}
+                          onClick={() => changeThemeColor(color)}
+                          className={`flex flex-col items-center p-2 rounded-md transition-colors duration-200 ${
+                            primaryColor === color 
+                              ? 'ring-2' 
+                              : `${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`
+                          }`}
+                          style={{
+                            ringColor: primaryColor,
+                            backgroundColor: primaryColor === color ? (darkMode ? 'rgba(156, 163, 175, 0.3)' : 'rgba(243, 244, 246, 1)') : 'transparent'
+                          }}
+                        >
+                          <div 
+                            className="w-12 h-12 rounded-full mb-1"
+                            style={{ backgroundColor: color }}
+                          ></div>
+                          <span className={`text-sm capitalize ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                            {color === '#1abc9c' ? 'Teal' :
+                             color === '#3498db' ? 'Blue' :
+                             color === '#9b59b6' ? 'Purple' :
+                             color === '#e74c3c' ? 'Red' :
+                             color === '#e67e22' ? 'Orange' : 'Yellow'}
+                          </span>
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </div>
 
                 {/* Account Settings */}
                 <div>
-                  <h3 className="text-xl font-semibold mb-4">Account</h3>
-                  
-                  <div className="space-y-4">
-                    <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-md">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <div className="font-medium">Two-Factor Authentication</div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">Add an extra layer of security to your account</div>
+                  <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>Account</h3>
+
+                  <div className={`p-4 border rounded-md ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className={`font-medium ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>Delete Account</div>
+                        <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          Permanently remove your account and all data
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input 
-                            type="checkbox" 
-                            checked={settings.twoFactorAuth} 
-                            onChange={() => setSettings({...settings, twoFactorAuth: !settings.twoFactorAuth})}
-                            className="sr-only peer" 
-                          />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-500"></div>
-                        </label>
                       </div>
-                    </div>
-                    
-                    <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-md">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <div className="font-medium">Delete Account</div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">Permanently remove your account and all data</div>
-                        </div>
-                        <button className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">
-                          Delete Account
-                        </button>
-                      </div>
+                      <button 
+                        onClick={() => setDeleteModalOpen(true)}
+                        className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-200"
+                      >
+                        Delete Account
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -637,31 +529,32 @@ const Settings = () => {
       {/* Password Change Modal */}
       {passwordModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+          <div className={`rounded-lg p-6 w-full max-w-md ${darkMode ? 'bg-gray-800 text-gray-100 border-gray-700' : 'bg-white text-gray-800 border-gray-200'} border`}>
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold">Change Password</h3>
-              <button 
+              <button
                 onClick={() => setPasswordModalOpen(false)}
-                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                className={`${darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 <i className="fas fa-times"></i>
               </button>
             </div>
-            
+
             <form onSubmit={handlePasswordSubmit}>
               <div className="mb-4">
-                <label className="block text-gray-700 dark:text-gray-300 mb-2">Current Password</label>
+                <label className={`block mb-2 font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Current Password</label>
                 <input
                   type="password"
                   value={passwordData.currentPassword}
                   onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-[var(--primary-color)]' : 'bg-white border-gray-300 text-gray-700 focus:border-[var(--primary-color)]'}`}
                   required
+                  style={{ '--tw-ring-color': primaryColor }}
                 />
               </div>
-              
+
               <div className="mb-4">
-                <label className="block text-gray-700 dark:text-gray-300 mb-2">New Password</label>
+                <label className={`block mb-2 font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>New Password</label>
                 <input
                   type="password"
                   value={passwordData.newPassword}
@@ -669,42 +562,37 @@ const Settings = () => {
                     setPasswordData({...passwordData, newPassword: e.target.value});
                     checkPasswordStrength(e.target.value);
                   }}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-[var(--primary-color)]' : 'bg-white border-gray-300 text-gray-700 focus:border-[var(--primary-color)]'}`}
                   required
+                  style={{ '--tw-ring-color': primaryColor }}
                 />
-                <div className="h-1 bg-gray-200 dark:bg-gray-600 mt-1 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full ${passwordStrength >= 6 ? 'bg-green-500' : passwordStrength >= 4 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                    style={{ width: `${Math.min(100, passwordStrength * 20)}%` }}
-                  ></div>
-                </div>
-                <p className="text-sm mt-1 text-gray-500 dark:text-gray-400">
-                  Password strength: {passwordStrength >= 6 ? 'Strong' : passwordStrength >= 4 ? 'Medium' : 'Weak'}
-                </p>
+                {renderPasswordStrength()}
               </div>
-              
+
               <div className="mb-6">
-                <label className="block text-gray-700 dark:text-gray-300 mb-2">Confirm New Password</label>
+                <label className={`block mb-2 font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Confirm New Password</label>
                 <input
                   type="password"
                   value={passwordData.confirmPassword}
                   onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-[var(--primary-color)]' : 'bg-white border-gray-300 text-gray-700 focus:border-[var(--primary-color)]'}`}
                   required
+                  style={{ '--tw-ring-color': primaryColor }}
                 />
               </div>
-              
+
               <div className="flex justify-end space-x-4">
                 <button
                   type="button"
                   onClick={() => setPasswordModalOpen(false)}
-                  className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
+                  className={`px-4 py-2 rounded-md transition-colors duration-200 ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'}`}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                  className="px-4 py-2 text-white rounded-md hover:opacity-90 transition-colors duration-200"
+                  style={{ backgroundColor: primaryColor }}
                 >
                   Change Password
                 </button>
@@ -714,32 +602,67 @@ const Settings = () => {
         </div>
       )}
 
-      {/* Logout Confirmation Modal */}
-      {logoutModalOpen && (
+      {/* Delete Account Modal */}
+      {deleteModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md text-center">
+          <div className={`rounded-lg p-6 w-full max-w-md text-center ${darkMode ? 'bg-gray-800 text-gray-100 border-gray-700' : 'bg-white text-gray-800 border-gray-200'} border`}>
             <div className="flex justify-end">
-              <button 
-                onClick={() => setLogoutModalOpen(false)}
-                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              <button
+                onClick={() => setDeleteModalOpen(false)}
+                className={`${darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 <i className="fas fa-times"></i>
               </button>
             </div>
-            
-            <h3 className="text-xl font-bold mb-4">Logout Confirmation</h3>
-            <p className="mb-6">Are you sure you want to logout?</p>
-            
+
+            <h3 className="text-xl font-bold mb-4">Delete Account Confirmation</h3>
+            <p className={`mb-6 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Are you sure you want to delete your account? This action cannot be undone.</p>
+
             <div className="flex justify-center space-x-4">
               <button
-                onClick={() => setLogoutModalOpen(false)}
-                className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
+                onClick={() => setDeleteModalOpen(false)}
+                className={`px-6 py-2 rounded-md transition-colors duration-200 ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'}`}
               >
                 Cancel
               </button>
               <button
-                onClick={handleLogout}
-                className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                onClick={handleDeleteAccount}
+                className="px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-200"
+              >
+                Delete Account
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Logout Confirmation Modal */}
+      {logoutModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className={`rounded-lg p-6 w-full max-w-md text-center ${darkMode ? 'bg-gray-800 text-gray-100 border-gray-700' : 'bg-white text-gray-800 border-gray-200'} border`}>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setLogoutModalOpen(false)}
+                className={`${darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+
+            <h3 className="text-xl font-bold mb-4">Logout Confirmation</h3>
+            <p className={`mb-6 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Are you sure you want to logout?</p>
+
+            <div className="flex justify-center space-x-4">
+              <button
+                onClick={() => setLogoutModalOpen(false)}
+                className={`px-6 py-2 rounded-md transition-colors duration-200 ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'}`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={logout}
+                className="px-6 py-2 text-white rounded-md hover:opacity-90 transition-colors duration-200"
+                style={{ backgroundColor: primaryColor }}
               >
                 Logout
               </button>

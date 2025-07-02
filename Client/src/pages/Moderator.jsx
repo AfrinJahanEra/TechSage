@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
 
 const ModeratorDashboard = () => {
     const performanceChartRef = useRef(null);
@@ -13,16 +14,10 @@ const ModeratorDashboard = () => {
     const [reports, setReports] = useState([]);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { user } = useAuth();
-    const [darkMode, setDarkMode] = useState(false);
+    const { darkMode, primaryColor } = useTheme();
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
     const [showProfilePanel, setShowProfilePanel] = useState(false);
     const [editMode, setEditMode] = useState(false);
-    const [profileData, setProfileData] = useState({
-        name: user?.name || 'Demo User',
-        email: user?.email || 'demo@university.edu',
-        university: user?.university || 'Demo University',
-        profession: 'Professor of Quantum Physics'
-    });
     
     const navigate = useNavigate();
 
@@ -37,14 +32,6 @@ const ModeratorDashboard = () => {
     };
 
     useEffect(() => {
-        // Initialize dark mode from localStorage
-        const savedDarkMode = localStorage.getItem('darkMode') === 'enabled';
-        setDarkMode(savedDarkMode);
-
-        if (savedDarkMode) {
-            document.body.classList.add('dark-mode');
-        }
-
         // Initialize reports from localStorage
         let performanceChart = null;
         const storedReports = JSON.parse(localStorage.getItem('blogReports'));
@@ -116,15 +103,15 @@ const ModeratorDashboard = () => {
                         datasets: [{
                             label: 'Blog Views',
                             data: [1200, 1900, 1500, 2200, 1800, 2500],
-                            borderColor: '#1a5276',
-                            backgroundColor: 'rgba(26, 82, 118, 0.1)',
+                            borderColor: primaryColor,
+                            backgroundColor: darkMode ? `${primaryColor}20` : `${primaryColor}10`,
                             tension: 0.3,
                             fill: true
                         }, {
                             label: 'Engagement Rate',
                             data: [65, 59, 70, 72, 75, 78],
                             borderColor: '#7d3c98',
-                            backgroundColor: 'rgba(125, 60, 152, 0.1)',
+                            backgroundColor: darkMode ? 'rgba(125, 60, 152, 0.1)' : 'rgba(125, 60, 152, 0.1)',
                             tension: 0.3,
                             fill: true
                         }]
@@ -134,12 +121,29 @@ const ModeratorDashboard = () => {
                         maintainAspectRatio: false,
                         scales: {
                             y: {
-                                beginAtZero: false
+                                beginAtZero: false,
+                                grid: {
+                                    color: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                                },
+                                ticks: {
+                                    color: darkMode ? '#e2e8f0' : '#4a5568'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    color: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                                },
+                                ticks: {
+                                    color: darkMode ? '#e2e8f0' : '#4a5568'
+                                }
                             }
                         },
                         plugins: {
                             legend: {
                                 position: 'top',
+                                labels: {
+                                    color: darkMode ? '#e2e8f0' : '#4a5568'
+                                }
                             }
                         }
                     }
@@ -159,37 +163,11 @@ const ModeratorDashboard = () => {
 
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
-    }, [activeSection]);
-
-    const toggleDarkMode = () => {
-        const newDarkMode = !darkMode;
-        setDarkMode(newDarkMode);
-        if (newDarkMode) {
-            document.body.classList.add('dark-mode');
-            localStorage.setItem('darkMode', 'enabled');
-        } else {
-            document.body.classList.remove('dark-mode');
-            localStorage.setItem('darkMode', 'disabled');
-        }
-    };
+    }, [activeSection, darkMode, primaryColor]);
 
     const toggleNotifications = () => {
         setNotificationsEnabled(!notificationsEnabled);
         alert(`Notifications ${!notificationsEnabled ? 'enabled' : 'disabled'}`);
-    };
-
-    const handleProfileUpdate = (e) => {
-        e.preventDefault();
-        setEditMode(false);
-        alert('Profile updated successfully!');
-    };
-
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setProfileData(prev => ({
-            ...prev,
-            [name]: value
-        }));
     };
 
     const toggleProfilePanel = (e) => {
@@ -312,20 +290,22 @@ const ModeratorDashboard = () => {
                                     <div className={`rounded-lg p-6 shadow-sm ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
                                         <div className="flex flex-col md:flex-row items-center mb-6">
                                             <img
-                                                src={user?.avatar || "https://randomuser.me/api/portraits/women/44.jpg"}
+                                                src={user?.avatar_url || "https://randomuser.me/api/portraits/women/44.jpg"}
                                                 alt="Profile"
                                                 className="w-20 h-20 rounded-full border-4 border-teal-500 object-cover mr-0 md:mr-6 mb-4 md:mb-0"
                                             />
                                             <div className="text-center md:text-left">
-                                                <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{profileData.name}</h2>
-                                                <p className={`mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{profileData.profession}</p>
+                                                <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{user?.username || 'Moderator'}</h2>
+                                                <p className={`mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{user?.job_title || 'Moderator'}</p>
                                                 <div className="flex justify-center md:justify-start space-x-2">
                                                     <span className="bg-teal-500 text-white px-3 py-1 rounded-full text-xs">
-                                                        {profileData.university} Faculty
+                                                        {user?.university || 'TechSage'} {user?.role || 'Moderator'}
                                                     </span>
-                                                    <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs">
-                                                        Verified
-                                                    </span>
+                                                    {user?.is_verified && (
+                                                        <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs">
+                                                            Verified
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -333,8 +313,7 @@ const ModeratorDashboard = () => {
                                         <div>
                                             <h3 className={`text-lg font-semibold mb-3 pb-2 border-b ${darkMode ? 'border-gray-700 text-white' : 'border-gray-200'}`}>About</h3>
                                             <p className={`mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                                Professor of Quantum Physics at {profileData.university}. My research focuses on quantum error correction and
-                                                quantum algorithms. Currently working on topological quantum computing approaches.
+                                                {user?.bio || 'No bio provided yet.'}
                                             </p>
                                             <div className="flex space-x-4">
                                                 <button className="text-teal-500 hover:text-teal-600 flex items-center">
@@ -350,11 +329,11 @@ const ModeratorDashboard = () => {
                                     {/* Stats Cards */}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div className={`rounded-lg p-4 shadow-sm text-center ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
-                                            <div className="text-3xl font-bold text-teal-500 mb-1">24</div>
+                                            <div className="text-3xl font-bold text-teal-500 mb-1">{user?.total_publications || '0'}</div>
                                             <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Total Blogs</div>
                                         </div>
                                         <div className={`rounded-lg p-4 shadow-sm text-center ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
-                                            <div className="text-3xl font-bold text-teal-500 mb-1">1.2K</div>
+                                            <div className="text-3xl font-bold text-teal-500 mb-1">{user?.followers || '0'}</div>
                                             <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Followers</div>
                                         </div>
                                         <div className={`rounded-lg p-4 shadow-sm text-center ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>

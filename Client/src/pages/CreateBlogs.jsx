@@ -1,10 +1,13 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useContext } from 'react';
 import { FiUpload, FiX, FiPlus, FiCheck, FiUsers, FiClock, FiInfo } from 'react-icons/fi';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
 import BlogEditorToolbar from './BlogEditorToolbar';
+import { useTheme } from '../context/ThemeContext';
 
 const CreateBlogPage = () => {
+  const { primaryColor, darkMode } = useTheme();
+
   // State management
   const [title, setTitle] = useState('');
   const [categories, setCategories] = useState([]);
@@ -129,26 +132,26 @@ const CreateBlogPage = () => {
   useEffect(() => {
     // Show placeholder on mount
     if (editorRef.current) {
-      editorRef.current.innerHTML = `<p class="text-gray-400">Start writing your blog post here...</p>`;
-      editorRef.current.classList.add('text-gray-400');
-      editorRef.current.classList.remove('text-gray-800');
+      editorRef.current.innerHTML = `<p class="${darkMode ? 'text-gray-400' : 'text-gray-400'}">Start writing your blog post here...</p>`;
+      editorRef.current.classList.add(darkMode ? 'text-gray-400' : 'text-gray-400');
+      editorRef.current.classList.remove(darkMode ? 'text-gray-200' : 'text-gray-800');
     }
-  }, []);
+  }, [darkMode]);
 
   const handleFocus = () => {
     const isPlaceholder = editorRef.current.textContent.trim() === 'Start writing your blog post here...';
     if (isPlaceholder) {
       editorRef.current.innerHTML = '';
       editorRef.current.classList.remove('text-gray-400');
-      editorRef.current.classList.add('text-gray-800');
+      editorRef.current.classList.add(darkMode ? 'text-gray-200' : 'text-gray-800');
     }
   };
 
   const handleBlur = () => {
     if (editorRef.current.textContent.trim() === '') {
-      editorRef.current.innerHTML = `<p class="text-gray-400">Start writing your blog post here...</p>`;
-      editorRef.current.classList.add('text-gray-400');
-      editorRef.current.classList.remove('text-gray-800');
+      editorRef.current.innerHTML = `<p class="${darkMode ? 'text-gray-400' : 'text-gray-400'}">Start writing your blog post here...</p>`;
+      editorRef.current.classList.add(darkMode ? 'text-gray-400' : 'text-gray-400');
+      editorRef.current.classList.remove(darkMode ? 'text-gray-200' : 'text-gray-800');
     }
   };
 
@@ -159,30 +162,37 @@ const CreateBlogPage = () => {
     // Ensure gray class is removed if real input begins
     if (text !== '' && text !== 'Start writing your blog post here...') {
       editorRef.current.classList.remove('text-gray-400');
-      editorRef.current.classList.add('text-gray-800');
+      editorRef.current.classList.add(darkMode ? 'text-gray-200' : 'text-gray-800');
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-50 text-gray-800'}`}>
       <Navbar />
 
       <div className="flex flex-1 pt-16">
         {/* Main Content */}
         <main className="flex-1 p-6 overflow-auto">
-          <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className={`max-w-5xl mx-auto rounded-xl shadow-sm overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'
+            }`}>
             {/* Page Header */}
-            <div className="px-8 py-6 border-b border-gray-200">
-              <h1 className="text-2xl font-bold text-gray-800">Create New Blog</h1>
+            <div className={`px-8 py-6 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'
+              }`}>
+              <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'
+                }`}>Create New Blog</h1>
             </div>
 
             <form onSubmit={handleSubmit} className="p-8">
               {/* Blog Title */}
               <div className="mb-8">
-                <label className="block text-sm font-bold text-gray-700 mb-2">Blog Title</label>
+                <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>Blog Title</label>
                 <input
                   type="text"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors"
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition-colors ${darkMode
+                      ? 'bg-gray-700 border-gray-600 text-white focus:ring-[var(--primary-color)]'
+                      : 'border-gray-300 focus:ring-[var(--primary-color)]'
+                    }`}
                   placeholder="Enter your blog title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
@@ -192,9 +202,13 @@ const CreateBlogPage = () => {
 
               {/* Thumbnail Upload */}
               <div className="mb-8">
-                <label className="block text-sm font-bold text-gray-700 mb-2">Thumbnail Image</label>
+                <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>Thumbnail Image</label>
                 <div
-                  className={`border-2 border-dashed ${thumbnail ? 'border-gray-200' : 'border-gray-300'} rounded-lg p-8 text-center cursor-pointer hover:border-teal-500 transition-colors relative`}
+                  className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors relative ${thumbnail
+                      ? darkMode ? 'border-gray-700' : 'border-gray-200'
+                      : darkMode ? 'border-gray-700 hover:border-[var(--primary-color)]' : 'border-gray-300 hover:border-[var(--primary-color)]'
+                    }`}
                   onClick={() => fileInputRef.current.click()}
                 >
                   {thumbnail ? (
@@ -217,9 +231,12 @@ const CreateBlogPage = () => {
                     </div>
                   ) : (
                     <>
-                      <FiUpload className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-                      <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
-                      <p className="text-xs text-gray-500 mt-1">Recommended size: 1200×630px</p>
+                      <FiUpload className={`mx-auto h-12 w-12 mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'
+                        }`} />
+                      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'
+                        }`}>Click to upload or drag and drop</p>
+                      <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'
+                        }`}>Recommended size: 1200×630px</p>
                     </>
                   )}
                   <input
@@ -235,16 +252,22 @@ const CreateBlogPage = () => {
 
               {/* Category Selection */}
               <div className="mb-8">
-                <label className="block text-sm font-bold text-gray-700 mb-2">Categories</label>
+                <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>Categories</label>
                 <div className="flex flex-wrap gap-2">
                   {availableCategories.map((cat) => (
                     <button
                       key={cat}
                       type="button"
                       className={`px-4 py-2 rounded-full border text-sm font-medium flex items-center transition-colors duration-200 ${categories.includes(cat)
-                        ? 'bg-teal-500 text-white border-teal-500'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-teal-500 hover:text-white hover:border-teal-500'
+                          ? 'text-white border-[var(--primary-color)]'
+                          : darkMode
+                            ? 'bg-gray-700 text-gray-200 border-gray-600 hover:text-white hover:border-[var(--primary-color)]'
+                            : 'bg-white text-gray-700 border-gray-300 hover:text-white hover:border-[var(--primary-color)]'
                         }`}
+                      style={{
+                        backgroundColor: categories.includes(cat) ? primaryColor : ''
+                      }}
                       onClick={() => toggleCategory(cat)}
                     >
                       {cat}
@@ -253,11 +276,10 @@ const CreateBlogPage = () => {
                 </div>
               </div>
 
-
-
               {/* Blog Content Editor */}
               <div className="mb-8">
-                <label className="block text-sm font-bold text-gray-700 mb-2">Blog Content</label>
+                <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>Blog Content</label>
 
                 <BlogEditorToolbar editorRef={editorRef} />
 
@@ -268,27 +290,33 @@ const CreateBlogPage = () => {
                   onFocus={handleFocus}
                   onBlur={handleBlur}
                   onInput={handleInput}
-                  className="min-h-[300px] border border-gray-300 rounded-lg p-4 prose max-w-none focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className={`min-h-[300px] border rounded-lg p-4 prose max-w-none focus:outline-none focus:ring-2 ${darkMode
+                      ? 'bg-gray-700 border-gray-600 focus:ring-[var(--primary-color)]'
+                      : 'border-gray-300 focus:ring-[var(--primary-color)]'
+                    }`}
                 />
-
               </div>
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-8">
-                <div className="text-sm text-gray-500 flex items-center gap-4">
+                <div className={`text-sm flex items-center gap-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'
+                  }`}>
                   <div className="flex items-center gap-1">
-                    <FiInfo className="text-teal-500" />
+                    <FiInfo className="text-[var(--primary-color)]" />
                     <span>Status: <span className="font-medium text-amber-500">Draft</span></span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <FiClock className="text-teal-500" />
+                    <FiClock className="text-[var(--primary-color)]" />
                     <span>Last Saved: <span className="font-medium">{lastSaved}</span></span>
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                   <button
                     type="button"
-                    className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors w-full sm:w-auto"
+                    className={`px-6 py-2 border rounded-lg transition-colors w-full sm:w-auto ${darkMode
+                        ? 'border-gray-600 text-gray-200 hover:bg-gray-700'
+                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
                     onClick={() => {
                       if (confirm('Are you sure you want to discard all changes?')) {
                         setTitle('');
@@ -314,7 +342,8 @@ const CreateBlogPage = () => {
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors w-full sm:w-auto"
+                    className="px-6 py-2 text-white rounded-lg hover:opacity-90 transition-colors w-full sm:w-auto"
+                    style={{ backgroundColor: primaryColor }}
                   >
                     Publish Blog
                   </button>
@@ -325,16 +354,22 @@ const CreateBlogPage = () => {
         </main>
 
         {/* Sidebar */}
-        <aside className="hidden lg:block w-80 bg-gray-50 border-l border-gray-200 p-6 overflow-y-auto">
+        <aside className={`hidden lg:block w-80 border-l p-6 overflow-y-auto ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
+          }`}>
           {/* Collaborators Section */}
           <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <FiUsers className="text-teal-500" />
+            <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'
+              }`}>
+              <FiUsers className="text-[var(--primary-color)]" />
               Collaborators
             </h3>
             <div className="space-y-3">
               {collaborators.map((person) => (
-                <div key={person.id} className="flex justify-between items-center bg-white p-3 rounded-lg shadow-xs hover:shadow-sm transition-shadow">
+                <div
+                  key={person.id}
+                  className={`flex justify-between items-center p-3 rounded-lg transition-shadow ${darkMode ? 'bg-gray-700 hover:shadow-md' : 'bg-white hover:shadow-sm'
+                    }`}
+                >
                   <div className="flex items-center">
                     <img
                       src={person.avatar}
@@ -342,12 +377,15 @@ const CreateBlogPage = () => {
                       className="h-10 w-10 rounded-full object-cover mr-3"
                     />
                     <div>
-                      <p className="text-sm font-medium text-gray-800">{person.name}</p>
-                      <p className="text-xs text-gray-500">{person.role}</p>
+                      <p className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-800'
+                        }`}>{person.name}</p>
+                      <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'
+                        }`}>{person.role}</p>
                     </div>
                   </div>
                   <button
-                    className="text-gray-400 hover:text-red-500 transition-colors"
+                    className={`transition-colors ${darkMode ? 'text-gray-400 hover:text-red-400' : 'text-gray-400 hover:text-red-500'
+                      }`}
                     onClick={() => setCollaborators(collaborators.filter(c => c.id !== person.id))}
                   >
                     <FiX />
@@ -360,12 +398,16 @@ const CreateBlogPage = () => {
                 type="email"
                 value={newCollaborator}
                 onChange={(e) => setNewCollaborator(e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-teal-500 focus:border-teal-500 text-sm"
+                className={`flex-1 px-3 py-2 border text-sm rounded-l-lg focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)] ${darkMode
+                    ? 'bg-gray-700 border-gray-600 text-white'
+                    : 'border-gray-300'
+                  }`}
                 placeholder="Add collaborator by email"
               />
               <button
                 type="submit"
-                className="px-3 py-2 bg-teal-500 text-white rounded-r-lg hover:bg-teal-600 transition-colors"
+                className="px-3 py-2 text-white rounded-r-lg hover:opacity-90 transition-colors"
+                style={{ backgroundColor: primaryColor }}
               >
                 <FiPlus />
               </button>
@@ -373,9 +415,11 @@ const CreateBlogPage = () => {
           </div>
 
           {/* Version History */}
-          <div className="bg-white p-6 rounded-lg shadow-xs">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <FiClock className="text-teal-500" />
+          <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-white'
+            }`}>
+            <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'
+              }`}>
+              <FiClock className="text-[var(--primary-color)]" />
               Version History
             </h3>
             <div className="space-y-3">
@@ -383,18 +427,29 @@ const CreateBlogPage = () => {
                 <div
                   key={version.id}
                   className={`p-3 rounded-lg cursor-pointer transition-colors ${version.active
-                    ? 'bg-teal-50 border-l-4 border-teal-500'
-                    : 'hover:bg-gray-50'
+                      ? 'border-l-4'
+                      : darkMode
+                        ? 'hover:bg-gray-600'
+                        : 'hover:bg-gray-50'
                     }`}
+                  style={{
+                    backgroundColor: version.active
+                      ? darkMode ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.05)'
+                      : undefined,
+                    borderColor: version.active ? primaryColor : 'transparent'
+                  }}
                   onClick={() => selectVersion(version.id)}
                 >
-                  <p className="font-medium text-gray-800">{version.name}</p>
-                  <p className="text-xs text-gray-500">{version.date} • {version.author}</p>
+                  <p className={`font-medium ${darkMode ? 'text-white' : 'text-gray-800'
+                    }`}>{version.name}</p>
+                  <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`}>{version.date} • {version.author}</p>
                 </div>
               ))}
             </div>
             <button
-              className="mt-4 text-sm text-teal-500 hover:text-teal-600 hover:underline w-full text-center transition-colors"
+              className={`mt-4 text-sm hover:underline w-full text-center transition-colors ${darkMode ? 'text-teal-400 hover:text-teal-300' : 'text-teal-500 hover:text-teal-600'
+                }`}
               onClick={() => {
                 const activeVersions = versions.filter(v => v.active);
                 if (activeVersions.length === 1) {
@@ -409,22 +464,25 @@ const CreateBlogPage = () => {
           </div>
 
           {/* Blog Status */}
-          <div className="mt-6 bg-white p-6 rounded-lg shadow-xs">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <FiInfo className="text-teal-500" />
+          <div className={`mt-6 p-6 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-white'
+            }`}>
+            <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'
+              }`}>
+              <FiInfo className="text-[var(--primary-color)]" />
               Blog Status
             </h3>
-            <div className="space-y-2 text-sm">
+            <div className={`space-y-2 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'
+              }`}>
               <div className="flex justify-between">
-                <span className="text-gray-500">Status:</span>
+                <span>Status:</span>
                 <span className="font-medium text-amber-500">Draft</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Last Saved:</span>
+                <span>Last Saved:</span>
                 <span className="font-medium">{lastSaved}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Created:</span>
+                <span>Created:</span>
                 <span className="font-medium">3 days ago</span>
               </div>
             </div>

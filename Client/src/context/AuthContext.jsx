@@ -1,4 +1,5 @@
 import { createContext, useState, useEffect, useContext } from 'react';
+import axios from 'axios';
 
 export const AuthContext = createContext();
 
@@ -6,6 +7,10 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [firstVisit, setFirstVisit] = useState(true);
+
+  const api = axios.create({
+    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
+  });
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -20,11 +25,35 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = (userData) => {
+  const updateUser = (userData) => {
     localStorage.setItem('user', JSON.stringify(userData));
-    localStorage.setItem('firstVisit', 'false');
     setUser(userData);
-    setFirstVisit(false);
+  };
+
+  const login = async (credentials) => {
+    try {
+      const response = await api.post('/login/', credentials);
+      const userData = response.data;
+      updateUser(userData);
+      localStorage.setItem('firstVisit', 'false');
+      setFirstVisit(false);
+      return userData;
+    } catch (error) {
+      throw error.response?.data || { error: 'Login failed' };
+    }
+  };
+
+  const register = async (userData) => {
+    try {
+      const response = await api.post('/register/', userData);
+      const newUser = response.data;
+      updateUser(newUser);
+      localStorage.setItem('firstVisit', 'false');
+      setFirstVisit(false);
+      return newUser;
+    } catch (error) {
+      throw error.response?.data || { error: 'Registration failed' };
+    }
   };
 
   const logout = () => {
@@ -33,7 +62,16 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, firstVisit, login, logout }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      firstVisit, 
+      login, 
+      register,
+      logout,
+      updateUser,
+      api 
+    }}>
       {children}
     </AuthContext.Provider>
   );

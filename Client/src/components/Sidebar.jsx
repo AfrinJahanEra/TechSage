@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import BlogCard from './BlogCard';
 import ContributorCard from './ContributorCard';
+import { useTheme } from '../context/ThemeContext';
 
 const Sidebar = ({ type = 'default' }) => {
   const [showJobs, setShowJobs] = useState(false);
+  const { primaryColor, darkMode } = useTheme();
 
   const recentPublications = [
     {
@@ -94,7 +96,10 @@ const Sidebar = ({ type = 'default' }) => {
       {type === 'inside-blog' && (
         <div className="space-y-8">
           <div className="space-y-4">
-            <h3 className="text-teal-700 uppercase text-sm font-semibold tracking-wider border-b border-gray-200 pb-2">
+            <h3 
+              className="uppercase text-sm font-semibold tracking-wider border-b pb-2"
+              style={{ color: primaryColor, borderColor: darkMode ? '#374151' : '#e5e7eb' }}
+            >
               Related Research
             </h3>
             <div className="space-y-4">
@@ -103,14 +108,21 @@ const Sidebar = ({ type = 'default' }) => {
               ))}
             </div>
             <div className="text-center">
-              <Link to="/all-blogs" className="text-teal-500 font-semibold hover:underline">
+              <Link 
+                to="/all-blogs" 
+                className="font-semibold hover:underline"
+                style={{ color: primaryColor }}
+              >
                 View All Publications →
               </Link>
             </div>
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-teal-700 uppercase text-sm font-semibold tracking-wider border-b border-gray-200 pb-2">
+            <h3 
+              className="uppercase text-sm font-semibold tracking-wider border-b pb-2"
+              style={{ color: primaryColor, borderColor: darkMode ? '#374151' : '#e5e7eb' }}
+            >
               Related Studies
             </h3>
             <div className="space-y-4">
@@ -124,25 +136,37 @@ const Sidebar = ({ type = 'default' }) => {
 
       {type !== 'inside-blog' && (
         <div className="space-y-8">
- 
-
           {showJobs ? (
             <div className="space-y-4">
-              <h3 className="text-teal-700 uppercase text-sm font-semibold tracking-wider border-b border-gray-200 pb-2">
+              <h3 
+                className="uppercase text-sm font-semibold tracking-wider border-b pb-2"
+                style={{ color: primaryColor, borderColor: darkMode ? '#374151' : '#e5e7eb' }}
+              >
                 Job Opportunities
               </h3>
               <div className="space-y-4">
                 {jobOpportunities.map(job => (
-                  <div key={job.id} className="border border-gray-200 rounded-md p-4 hover:border-teal-400 transition-colors">
-                    <h4 className="font-semibold">{job.title}</h4>
-                    <p className="text-teal-700 text-sm">{job.company}</p>
-                    <p className="text-gray-600 text-sm flex items-center mt-1">
+                  <div 
+                    key={job.id} 
+                    className={`border rounded-md p-4 hover:border-opacity-80 transition-colors ${
+                      darkMode 
+                        ? 'border-gray-700 hover:border-gray-600 bg-gray-800' 
+                        : 'border-gray-200 hover:border-gray-300 bg-white'
+                    }`}
+                    style={{ borderColor: primaryColor }}
+                  >
+                    <h4 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{job.title}</h4>
+                    <p className="text-sm" style={{ color: primaryColor }}>{job.company}</p>
+                    <p className={`text-sm flex items-center mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       <i className="fas fa-map-marker-alt mr-1"></i> {job.location}
                     </p>
-                    <p className="text-gray-700 text-sm mt-2">{job.description}</p>
+                    <p className={`text-sm mt-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{job.description}</p>
                     <div className="flex justify-between items-center mt-3">
-                      <span className="text-gray-500 text-xs">{job.posted}</span>
-                      <button className="bg-teal-500 text-white text-xs py-1 px-3 rounded hover:bg-teal-600 transition-colors">
+                      <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>{job.posted}</span>
+                      <button 
+                        className="text-xs py-1 px-3 rounded hover:opacity-90 transition-colors text-white"
+                        style={{ backgroundColor: primaryColor }}
+                      >
                         Apply
                       </button>
                     </div>
@@ -152,7 +176,10 @@ const Sidebar = ({ type = 'default' }) => {
             </div>
           ) : (
             <div className="space-y-4">
-              <h3 className="text-teal-700 uppercase text-sm font-semibold tracking-wider border-b border-gray-200 pb-2">
+              <h3 
+                className="uppercase text-sm font-semibold tracking-wider border-b pb-2"
+                style={{ color: primaryColor, borderColor: darkMode ? '#374151' : '#e5e7eb' }}
+              >
                 Recent Publications
               </h3>
               <div className="space-y-4">
@@ -161,7 +188,11 @@ const Sidebar = ({ type = 'default' }) => {
                 ))}
               </div>
               <div className="text-center">
-                <Link to="/all-blogs" className="text-teal-500 font-semibold hover:underline">
+                <Link 
+                  to="/all-blogs" 
+                  className="font-semibold hover:underline"
+                  style={{ color: primaryColor }}
+                >
                   View All Publications →
                 </Link>
               </div>
@@ -171,7 +202,7 @@ const Sidebar = ({ type = 'default' }) => {
       )}
 
       <div className="space-y-4">
-        <h3 className="text-teal-700 uppercase text-sm font-semibold tracking-wider border-b border-gray-200 pb-2">
+        <h3 className="text-teal-700 uppercase text-sm font-semibold tracking-wider border-b border-gray-200 pb-2" style={{ color: primaryColor, borderColor: darkMode ? '#374151' : '#e5e7eb' }}>
           Top Contributors
         </h3>
         <div className="space-y-4">
@@ -179,10 +210,11 @@ const Sidebar = ({ type = 'default' }) => {
             <ContributorCard key={contributor.id} {...contributor} />
           ))}
         </div>
-        <div className="text-center">
+        <div className="text-center" >
           <Link 
             to="/top-contributors" 
             className="text-teal-500 font-semibold hover:underline"
+            style={{ color: primaryColor, borderColor: darkMode ? '#374151' : '#e5e7eb' }}
           >
             See All Contributors →
           </Link>
