@@ -2,7 +2,9 @@
   $\Huge\textbf{\color{#2196F3}TECHSAGE}$
 </h1>
 
-> A blogging platform for academics & researchers, which supports Markdown, LaTeX and collaborative writing—perfect for sharing papers, tutorials, and academic journals and insights.
+$${\color{lightblue}An \space \color{#5EEAD4}Academic \space \color{#FBF3D4}Bloggin \space \color{#D4D4FF}Platform}$$
+
+> Specially made for academics & researchers, which supports Markdown, LaTeX and collaborative writing—perfect for sharing papers, tutorials, and academic journals and insights.
 >
 > <img src="https://github.com/user-attachments/assets/0eae2112-58da-4f03-883b-06e1ac956e72" align="right" width="100px"/>
 
@@ -18,9 +20,34 @@
 ![Admin Panel](https://img.shields.io/badge/Admin-Panel-228B22?style=for-the-badge)
 ![CKEditor](https://img.shields.io/badge/Editor-CKEditor-7952B3?style=for-the-badge)
 
+<br>
+
+| $\large\text{\color{#2196F3}{Tech Stack}}$            | $\large\text{\color{red}{Technology}}$      | $\large\text{\color{#EEC900}{Version}}$  |
+|----------------------|--------------------|----------|
+| **Frontend Library**         | React.js           | 18.2.0   |
+| **Backend Framework**          | Django             | 5.2.1    |
+|                      | Django Channels    | 4.1.0    |
+|                      | Daphne             | 4.0.0    |
+|                      | ASGI               | 3.0+     |
+| **Database**         | MongoDB            | 8.0.9    |
+|                      | mongoengine        | 0.27.0   |
+| **Real-Time**        | WebSockets         | via Channels |
+|                      | Redis              | 7.x      |
+| **Tools & Languages**            | Python             | 3.13.1   |
+|                      | OS                 | Windows  |
+
+
+> [!IMPORTANT]  
+> The binds system has changed. Instead of doing the name of the key, there are scancodes assigned per key.
+        
+> [!NOTE]  
+> The crosshair is designed for a 1920x1080 resolution; in other case, the experience may vary.
+
+<br>
+
 <details>
   <summary>
-    <h1>$\huge\textbf{\color{#2196F3}{File Strucure}}$</h1><br>
+    <h1>$\large\textbf{\color{#2196F3}{File Strucure}}$</h1><br>
   </summary>
   
   ```
@@ -67,29 +94,24 @@
 ```
 </details>
 
-<details>
-  <summary>
-    <h1>$\huge\textnormal{\color{#2196F3}{Installation}}$</h1><br>
-  </summary>
+<h1>$\large\textnormal{\color{#2196F3}{Installation}}$</h1><br>
 
   To install python dependencies
 ```
 pip install -r requirements.txt
 ```
+<br>
 
+Download Redis from [tporadowski/redis/release](https://github.com/tporadowski/redis/releases) (use the latest zip version)
+<br>
 
-Download Redis from `https://github.com/tporadowski/redis/releases` (use the latest zip version)
 then run `redis-server.exe`
 
-</details>
+<br><br>
 
 
-<details>
-  <summary>
-    <h1>$\huge\textnormal{\color{#2196F3}{How To Run}}$</h1><br>
-  </summary>
-  
+<h1>$\large\textnormal{\color{#2196F3}{How To Run}}$</h1><br>
+
 ```
 daphne techsage.asgi:application
 ```
-</details>
