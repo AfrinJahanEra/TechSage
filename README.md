@@ -22,19 +22,17 @@ $${\color{lightblue}An \space \color{#5EEAD4}Academic \space \color{#FBF3D4}Blog
 
 <br>
 
-| $\large\text{\color{#2196F3}{Tech Stack}}$            | $\large\text{\color{red}{Technology}}$      | $\large\text{\color{#EEC900}{Version}}$  |
+<div align="center">
+  
+  | $\large\text{\color{#76DCF1}{Tech Stack}}$            | $\large\text{\color{#FD8FAB}{Technology}}$      | $\large\text{\color{#52CCF6}{Version}}$  |
 |----------------------|--------------------|----------|
-| **Frontend Library**         | React.js           | 18.2.0   |
+| **Frontend Library**         | Vite+React.js           | 18.2.0   |
 | **Backend Framework**          | Django             | 5.2.1    |
-|                      | Django Channels    | 4.1.0    |
-|                      | Daphne             | 4.0.0    |
-|                      | ASGI               | 3.0+     |
-| **Database**         | MongoDB            | 8.0.9    |
-|                      | mongoengine        | 0.27.0   |
-| **Real-Time**        | WebSockets         | via Channels |
-|                      | Redis              | 7.x      |
+| **Database**         | MongoDB          | 8.0.9    |
+| **Real-Time**                 | Redis              | 5.0.14.1      |
 | **Tools & Languages**            | Python             | 3.13.1   |
-|                      | OS                 | Windows  |
+
+</div>
 
 
 > [!IMPORTANT]  
