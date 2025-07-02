@@ -1,5 +1,5 @@
 <h1 align="center" font-style="bold">
-  $\Huge\textnormal{\color{#2196F3}TechSage}$
+  $\Huge\textbf{\color{#2196F3}TECHSAGE}$
 </h1>
 
 > A blogging platform for academics & researchers, which supports Markdown, LaTeX and collaborative writing—perfect for sharing papers, tutorials, and academic journals and insights.
@@ -20,7 +20,7 @@
 
 <details>
   <summary>
-    <h1>FILE STRUCTURE</h1><br>
+    <h1>$\huge\textbf{\color{#2196F3}{File Strucure}}$</h1><br>
   </summary>
   
   ```
@@ -69,7 +69,7 @@
 
 <details>
   <summary>
-    <h1>$\textnormal{\color{#2196F3}{INSTALLATION}}$</h1><br>
+    <h1>$\huge\textnormal{\color{#2196F3}{Installation}}$</h1><br>
   </summary>
 
   To install python dependencies
@@ -86,7 +86,7 @@ then run `redis-server.exe`
 
 <details>
   <summary>
-    <h1>$\textnormal{\color{#2196F3}{HOW TO RUN}}$</h1><br>
+    <h1>$\huge\textnormal{\color{#2196F3}{How To Run}}$</h1><br>
   </summary>
   
 ```
