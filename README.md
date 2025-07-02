@@ -4,9 +4,8 @@
 
 $${\color{lightblue}An \space \color{#5EEAD4}Academic \space \color{#FBF3D4}Bloggin \space \color{#D4D4FF}Platform}$$
 
-> <img src="https://github.com/user-attachments/assets/393bcacd-269e-45ca-9a99-bca904d71d98" align="right" width="120px"/>
->
-> Specially made for academics & researchers, which supports Markdown, LaTeX and collaborative writing—perfect for sharing papers, tutorials, and academic journals and insights.
+> <img src="https://github.com/user-attachments/assets/393bcacd-269e-45ca-9a99-bca904d71d98" align="right" width="80px"/>
+> Specially made for academics & researchers, which supports Markdown, LaTeX and collaborative writing—perfect for sharing papers, tutorials, academic journals and insights.
 
 <br>
 
