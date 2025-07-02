@@ -2,6 +2,11 @@
   $\Huge\textnormal{\color{#2196F3}TechSage}$
 </h1>
 
+> A blogging platform for academics & researchers, which supports Markdown, LaTeX and collaborative writing—perfect for sharing papers, tutorials, and academic journals and insights.
+>
+> <img src="https://github.com/user-attachments/assets/0eae2112-58da-4f03-883b-06e1ac956e72" align="right" width="100px"/>
+
+<br>
 
 ![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white)
 ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
@@ -15,7 +20,7 @@
 
 <details>
   <summary>
-    <h1>$\textnormal{\color{#2196F3}{FILE STRUCTURE}}$</h1><br>
+    <h1>FILE STRUCTURE</h1><br>
   </summary>
   
   ```
