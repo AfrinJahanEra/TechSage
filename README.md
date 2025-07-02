@@ -26,7 +26,6 @@ $${\color{lightblue}An \space \color{#5EEAD4}Academic \space \color{#FBF3D4}Blog
 </div>
 
 
-
 <br>
 
 <div align="center">
