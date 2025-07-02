@@ -4,9 +4,9 @@
 
 $${\color{lightblue}An \space \color{#5EEAD4}Academic \space \color{#FBF3D4}Bloggin \space \color{#D4D4FF}Platform}$$
 
-> Specially made for academics & researchers, which supports Markdown, LaTeX and collaborative writing—perfect for sharing papers, tutorials, and academic journals and insights.
+> <img src="https://github.com/user-attachments/assets/393bcacd-269e-45ca-9a99-bca904d71d98" align="right" width="120px"/>
 >
-> <img src="https://github.com/user-attachments/assets/0eae2112-58da-4f03-883b-06e1ac956e72" align="right" width="100px"/>
+> Specially made for academics & researchers, which supports Markdown, LaTeX and collaborative writing—perfect for sharing papers, tutorials, and academic journals and insights.
 
 <br>
 
@@ -20,17 +20,24 @@ $${\color{lightblue}An \space \color{#5EEAD4}Academic \space \color{#FBF3D4}Blog
 ![Admin Panel](https://img.shields.io/badge/Admin-Panel-228B22?style=for-the-badge)
 ![CKEditor](https://img.shields.io/badge/Editor-CKEditor-7952B3?style=for-the-badge)
 
+<br><br>
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/7db7c258-5ec2-4cd9-9c65-db868e95e9b7" width="500px"/>
+</div>
+
+
+
 <br>
 
 <div align="center">
   
   | $\large\text{\color{#76DCF1}{Tech Stack}}$            | $\large\text{\color{#FD8FAB}{Technology}}$      | $\large\text{\color{#52CCF6}{Version}}$  |
 |----------------------|--------------------|----------|
-| **Frontend Library**         | Vite+React.js           | 18.2.0   |
-| **Backend Framework**          | Django             | 5.2.1    |
-| **Database**         | MongoDB          | 8.0.9    |
-| **Real-Time**                 | Redis              | 5.0.14.1      |
-| **Tools & Languages**            | Python             | 3.13.1   |
+| **Frontend Library**         | Vite+React.js           | `18.2.0`   |
+| **Backend Framework**          | Django             | `5.2.1`    |
+| **Database**         | MongoDB          | `8.0.9`    |
+| **Real-Time**                 | Redis              | `5.0.14.1`      |
+| **Tools & Languages**            | Python             | `3.13.1`   |
 
 </div>
 
@@ -48,7 +55,7 @@ $${\color{lightblue}An \space \color{#5EEAD4}Academic \space \color{#FBF3D4}Blog
     <h1>$\large\textbf{\color{#2196F3}{File Strucure}}$</h1><br>
   </summary>
   
-  ```
+  ```console
     project-root/
     │
     ├── backend/                  # Django backend
@@ -95,7 +102,7 @@ $${\color{lightblue}An \space \color{#5EEAD4}Academic \space \color{#FBF3D4}Blog
 <h1>$\large\textnormal{\color{#2196F3}{Installation}}$</h1><br>
 
   To install python dependencies
-```
+```console
 pip install -r requirements.txt
 ```
 <br>
@@ -110,6 +117,6 @@ then run `redis-server.exe`
 
 <h1>$\large\textnormal{\color{#2196F3}{How To Run}}$</h1><br>
 
-```
+```console
 daphne techsage.asgi:application
 ```
