@@ -57,16 +57,15 @@ $${\color{lightblue}An \space \color{#5EEAD4}Academic \space \color{#FBF3D4}Blog
     project-root/
     │
     ├── backend/                  # Django backend
-    │   ├── project/              # Main Django project folder
+    │   ├── techsage/              # Main Django project folder
     │   │   ├── __init__.py
     │   │   ├── settings.py       # Django settings
     │   │   ├── urls.py           # Main URLs
     │   │   └── wsgi.py
-    │   ├── app/                  # Your Django app(s)
+    │   ├── user/                  # Your Django app(s)
     │   │   ├── __init__.py
     │   │   ├── models.py        # MongoDB models (using Djongo or similar)
     │   │   ├── views.py         # API views
-    │   │   ├── serializers.py   # DRF serializers
     │   │   └── urls.py          # App-specific URLs
     │   ├── manage.py
     │   ├── requirements.txt      # Python dependencies
@@ -117,21 +116,50 @@ Extract the files from `redis-release` zip file. Then click on `redis-server.exe
 
 Open the command prompt, write
 ```console
+cd "path\to\extracted folder"
 redis-cli
 ping
 ```
 
-Or directly open `redis-cli.exe`
-then write `ping`. If it result's `PONG`, then the redis server is connected successfully.
+Or directly open `redis-cli.exe`. Then write `ping`. If it result's `PONG`, then the redis server is connected successfully.
 
-If the `redis-server.exe` isn't running
-- Go to task manager (Run as administrator)
-- Search for `redis-server`
-- If it's on, click on `end task`
+Successful connection example :
+```console
+127.0.0.1:6379> ping
+PONG
+127.0.0.1:6379>
+```
+<img src="https://github.com/user-attachments/assets/46b4e6f2-4a4d-4d82-927f-116c85f78511" width=100px align="right">
 
-Then try running the `redis-server.exe` again.
+If the `redis-server.exe` isn't running :
+- Go to task manager (Run as administrator).
+- Search for something like `redis`.
+- If it's on, click on `end task`.
 
-Then in backend project directory, run
+If it still doesn't work, try checking that `port 6379` is already running or not :
+- Open command prompt.
+- run
+```console
+netstat -aon | findstr :6379
+```
+If you see something like this, means this port is already in use.
+
+  <div align="center"> 
+
+  | $\large\text{\color{#76DCF1}{Proto}}$ | $\large\text{\color{#76DCF1}{Local Address}}$ | $\large\text{\color{#76DCF1}{Foreign Address}}$ | $\large\text{\color{#76DCF1}{State}}$ | $\large\text{\color{#76DCF1}{PID}}$ |
+  |------|------------------|----------------------|--------------------|-----------|
+  | TCP  |  0.0.0.0:6379    |       0.0.0.0:0      |        LISTENING   |    14220  |
+  | TCP  |  [::]:6379       |       [::]:0         |        LISTENING   |    14220  |
+  
+  </div>
+
+- Kill this port. run (Change the PID according to)
+```console
+taskkill /PID 14220 /F
+```
+- Then try refreshing the pc and run the `redis-server.exe` again.
+
+Then open this project. In backend project directory, Open terminal and run
 ```console
 daphne techsage.asgi:application
 ```
