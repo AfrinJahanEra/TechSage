@@ -108,15 +108,30 @@ To install python dependencies
 ```console
 pip install -r requirements.txt
 ```
-<br>
 
-Download Redis from [tporadowski/redis/release](https://github.com/tporadowski/redis/releases) (use the latest zip version), then run `redis-server.exe`
-
-<br><br>
-
+Download Redis from [redis-release](https://github.com/tporadowski/redis/releases) (use the latest zip version)
 
 <h1>$\large\textnormal{\color{#2196F3}{How To Run}}$</h1><br>
 
+Extract the files from `redis-release` zip file. Then click on `redis-server.exe`. To check the server is running or not
+
+Open the command prompt, write
+```console
+redis-cli
+ping
+```
+
+Or directly open `redis-cli.exe`
+then write `ping`. If it result's `PONG`, then the redis server is connected successfully.
+
+If the `redis-server.exe` isn't running
+- Go to task manager (Run as administrator)
+- Search for `redis-server`
+- If it's on, click on `end task`
+
+Then try running the `redis-server.exe` again.
+
+Then in backend project directory, run
 ```console
 daphne techsage.asgi:application
 ```
