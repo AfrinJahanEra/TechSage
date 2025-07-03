@@ -4,10 +4,10 @@
   $\Huge\textbf{\color{#2196F3}TECHSAGE}$
 </h1>
 
-$${\color{lightblue}An \space \color{#5EEAD4}Academic \space \color{#FBF3D4}Bloggin \space \color{#D4D4FF}Platform}$$
+$${\color{lightblue}Create, \space \color{#5EEAD4}manage \space \color{#FBF3D4}and \space \color{#D4D4FF}publish \space \color{#5EEAD4}scholarly \space \color{lightblue}blogs \space \color{#FBF3D4}with \space \color{#D4D4FF}real-time \space \color{#FBF3D4}interactions}$$
 
 > <img src="https://github.com/user-attachments/assets/393bcacd-269e-45ca-9a99-bca904d71d98" align="right" width="80px"/>
-> Specially made for academics & researchers, which supports Markdown, LaTeX and collaborative writing—perfect for sharing papers, tutorials, academic journals and insights.
+> An academic blogging platform specially made for academics & researchers, which supports Markdown, LaTeX and collaborative writing—perfect for sharing papers, tutorials, academic journals and insights.
 
 <br>
 
@@ -31,7 +31,7 @@ $${\color{lightblue}An \space \color{#5EEAD4}Academic \space \color{#FBF3D4}Blog
 
 <div align="center">
   
-  | $\large\text{\color{#76DCF1}{Tech Stack}}$            | $\large\text{\color{#FD8FAB}{Technology}}$      | $\large\text{\color{#52CCF6}{Version}}$  |
+  | $\large\text{\color{#76DCF1}{Layer}}$            | $\large\text{\color{#FD8FAB}{Technology}}$      | $\large\text{\color{#52CCF6}{Version}}$  |
 |----------------------|--------------------|----------|
 | **Frontend Library**         | Vite+React.js           | `18.2.0`   |
 | **Backend Framework**          | Django             | `5.2.1`    |
@@ -41,60 +41,24 @@ $${\color{lightblue}An \space \color{#5EEAD4}Academic \space \color{#FBF3D4}Blog
 
 </div>
 
-
-> [!IMPORTANT]  
-> The binds system has changed. Instead of doing the name of the key, there are scancodes assigned per key.
-        
-> [!NOTE]  
-> The crosshair is designed for a 1920x1080 resolution; in other case, the experience may vary.
-
 <br>
 
 <details>
   <summary>
-    <h1>$\large\textbf{\color{#2196F3}{File Strucure}}$</h1><br>
+    <h1>$\large\textbf{\color{#2196F3}{File Structure}}$</h1><br>
   </summary>
   
   ```console
-    project-root/
-    │
-    ├── backend/                  # Django backend
-    │   ├── techsage/              # Main Django project folder
-    │   │   ├── __init__.py
-    │   │   ├── settings.py       # Django settings
-    │   │   ├── urls.py           # Main URLs
-    │   │   └── wsgi.py
-    │   ├── user/                  # Your Django app(s)
-    │   │   ├── __init__.py
-    │   │   ├── models.py        # MongoDB models (using Djongo or similar)
-    │   │   ├── views.py         # API views
-    │   │   └── urls.py          # App-specific URLs
-    │   ├── manage.py
-    │   ├── requirements.txt      # Python dependencies
-    │   └── .env                  # Environment variables
-    │
-    ├── frontend/                 # React frontend
-    │   ├── public/               # Static files
-    │   │   ├── index.html
-    │   │   ├── favicon.ico
-    │   │   └── assets/           # Images, fonts, etc.
-    │   ├── src/
-    │   │   ├── components/       # Reusable components
-    │   │   ├── pages/           # Page components
-    │   │   ├── services/        # API service calls
-    │   │   ├── store/           # State management (Redux, etc.)
-    │   │   ├── utils/           # Utility functions
-    │   │   ├── App.js
-    │   │   ├── index.js
-    │   │   └── styles/          # Global styles
-    │   ├── package.json
-    │   ├── package-lock.json
-    │   └── .env                  # Frontend environment variables
-    │
-    ├── .gitignore
-    ├── README.md
-    ├── docker-compose.yml        # If using Docker
-    └── requirements.txt         # Top-level Python requirements (optional)
+techsage/
+├── backend/
+│   ├── manage.py
+│   └── ...
+├── frontend/
+│   ├── index.html
+│   └── ...
+├── .gitignore
+├── README.md
+└── requirements.txt 
 ```
 </details>
 
@@ -104,13 +68,25 @@ Clone the repository
 ```console
 https://github.com/AfrinJahanEra/TechSage.git
 ```
+Install `Python` and `React.js` and `Mongodb`. Then create a virtual environment. (Optional but recommended)
 
-To install python dependencies
+For `Linux/MacOS`
+```console
+python -m venv env
+source env/bin/activate
+```
+For `Windows`
+```console
+python -m venv env
+.\\env\\Scripts\\activate
+```
+
+Then install python dependencies
 ```console
 pip install -r requirements.txt
 ```
 
-Download Redis from [redis-release](https://github.com/tporadowski/redis/releases) (use the latest zip version)
+Then download Redis from [`redis-release`](https://github.com/tporadowski/redis/releases) (use the latest zip version)
 
 <h1>$\large\textnormal{\color{#2196F3}{How To Run}}$</h1><br>
 
@@ -133,10 +109,8 @@ PONG
 ```
 <img src="https://github.com/user-attachments/assets/46b4e6f2-4a4d-4d82-927f-116c85f78511" width=100px align="right">
 
-If the `redis-server.exe` isn't running :
-- Go to task manager (Run as administrator).
-- Search for something like `redis`.
-- If it's on, click on `end task`.
+> [!TIP]  
+> If the `redis-server.exe` isn't running then go to task manager (Run as administrator). Search for something like `redis`. If it's on, click on `end task`.
 
 If it still doesn't work, try checking that `port 6379` is already running or not :
 - Open command prompt.
@@ -165,7 +139,28 @@ Then open this project. In backend project directory, Open terminal and run
 ```console
 daphne techsage.asgi:application
 ```
+ In frontend directory, Open terminal and run
+ ```console
+npm install
+npm run build
+```
+and serve it with Django or a production web server. Don’t deploy with `npm run dev`.
 
+> [!IMPORTANT]  
+> This project uses `ASGI` (not `WSGI`), and runs via Daphne instead of `python manage.py runserver`.
+> `Redis` & `MongoDB` must be running before you start the app.
+
+> [!NOTE]  
+> The app runs on `http://localhost:8000` by default. If port is taken, use `daphne -b 127.0.0.1 -p 8080 techsage.asgi:application`.
+
+$${\color{#2196F3}You \space can \space change \space the \space port \space (-p) \space or \space host \space (-b) \space as \space needed.}$$
+
+<h1>$\large\textnormal{\color{#2196F3}{Things To Consider}}$</h1>
+
+> [!WARNING]  
+> Browsers block WebSocket connections on `HTTP` if the main site is `HTTPS`.
+- Use WSS (`wss://`) with SSL in production
+- Run `Daphne` behind an HTTPS reverse proxy (like `Nginx`)
 
 <h1>$\large\textnormal{\color{#2196F3}{License}}$</h1>
 
