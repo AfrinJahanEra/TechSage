@@ -68,7 +68,7 @@ Clone the repository
 ```console
 https://github.com/AfrinJahanEra/TechSage.git
 ```
-Install `Python` and `React.js` and `Mongodb`. Then create a virtual environment. (Optional but recommended)
+Install `Python` and `React.js` and `Mongodb`. Then create a virtual environment(Optional but recommended).
 
 For `Linux/MacOS`
 ```console
@@ -110,7 +110,9 @@ PONG
 <img src="https://github.com/user-attachments/assets/46b4e6f2-4a4d-4d82-927f-116c85f78511" width=100px align="right">
 
 > [!TIP]  
-> If the `redis-server.exe` isn't running then go to task manager (Run as administrator). Search for something like `redis`. If it's on, click on `end task`.
+> If the `redis-server.exe` isn't running then go to task manager (Run as administrator).
+> - Search for something like `redis`.
+> - If it's on, click on `end task`.
 
 If it still doesn't work, try checking that `port 6379` is already running or not :
 - Open command prompt.
@@ -147,15 +149,15 @@ npm run build
 and serve it with Django or a production web server. Don’t deploy with `npm run dev`.
 
 > [!IMPORTANT]  
-> This project uses `ASGI` (not `WSGI`), and runs via Daphne instead of `python manage.py runserver`.
-> `Redis` & `MongoDB` must be running before you start the app.
+> - This project uses `ASGI` (not `WSGI`), and runs via Daphne instead of `python manage.py runserver`.
+> - `Redis` & `MongoDB` must be running before you start the app.
 
 > [!NOTE]  
 > The app runs on `http://localhost:8000` by default. If port is taken, use `daphne -b 127.0.0.1 -p 8080 techsage.asgi:application`.
 
 $${\color{#2196F3}You \space can \space change \space the \space port \space (-p) \space or \space host \space (-b) \space as \space needed.}$$
 
-<h1>$\large\textnormal{\color{#2196F3}{Things To Consider}}$</h1>
+<h1>$\large\textnormal{\color{#EE4B2B}{‼ Things To Consider}}$</h1>
 
 List this in `.env.example` file do not commit this `.env` in github
 
@@ -167,7 +169,7 @@ REDIS_URL=redis://localhost:6379
 ALLOWED_HOSTS=127.0.0.1,localhost
 ```
 
-> Commit a .env.example file instead, which shows others what keys they need to set (but with no real values)
+> Commit a `.env.example` file instead, which shows others what keys they need to set (but with no real values)
 
 Check port conflicts
 
@@ -187,8 +189,8 @@ Make sure none of these ports are already in use.
 
 > [!WARNING]  
 > Browsers block WebSocket connections on `HTTP` if the main site is `HTTPS`.
-- Use WSS (`wss://`) with SSL in production
-- Run `Daphne` behind an HTTPS reverse proxy (like `Nginx`)
+> - Use WSS (`wss://`) with SSL in production
+> - Run `Daphne` behind an HTTPS reverse proxy (like `Nginx`)
 
 <h1>$\large\textnormal{\color{#2196F3}{Team Members}}$</h1>
 
