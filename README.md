@@ -157,10 +157,46 @@ $${\color{#2196F3}You \space can \space change \space the \space port \space (-p
 
 <h1>$\large\textnormal{\color{#2196F3}{Things To Consider}}$</h1>
 
+List this in `.env.example` file do not commit this `.env` in github
+
+```console
+SECRET_KEY=your-django-secret
+DEBUG=True
+MONGO_URL=mongodb://localhost:27017/techsage
+REDIS_URL=redis://localhost:6379
+ALLOWED_HOSTS=127.0.0.1,localhost
+```
+
+> Commit a .env.example file instead, which shows others what keys they need to set (but with no real values)
+
+Check port conflicts
+
+<img src="https://github.com/user-attachments/assets/3a3e6527-24d8-4f28-958f-9f17563a9dcb" width=100px align="right">
+
+<div align="center">
+
+| $\large\text{\color{#76DCF1}{Service}}$ | $\large\text{\color{#76DCF1}{Default Port}}$ |
+|-----------------------------------------|----------------------------------------------|
+| Redis              | `6379`       |
+| Daphne / Django    | `8000`       |
+| React dev server   | `5173`       |
+
+</div>
+
+Make sure none of these ports are already in use.
+
 > [!WARNING]  
 > Browsers block WebSocket connections on `HTTP` if the main site is `HTTPS`.
 - Use WSS (`wss://`) with SSL in production
 - Run `Daphne` behind an HTTPS reverse proxy (like `Nginx`)
+
+<h1>$\large\textnormal{\color{#2196F3}{Team Members}}$</h1>
+
+| $\large\text{\color{#DAA5A4}{Name}}$ | $\large\text{\color{#D6C8FF}{Github Profile}}$ | $\large\text{\color{#C8A2C8}{Contribution}}$ |
+|--------------------------------------|------------------------------------------------|----------------------------------------------|
+| Afrin Jahan Era | [github](https://github.com/AfrinJahanEra) | Frontend |
+| Ramisa Anan Rahman | [github](https://github.com/Ramisa105) | Frontend |
+| Ridika Naznin | [github](https://github.com/ridika-2004) | Backend |
 
 <h1>$\large\textnormal{\color{#2196F3}{License}}$</h1>
 
