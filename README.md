@@ -99,16 +99,18 @@ $${\color{lightblue}An \space \color{#5EEAD4}Academic \space \color{#FBF3D4}Blog
 
 <h1>$\large\textnormal{\color{#2196F3}{Installation}}$</h1><br>
 
-  To install python dependencies
+Clone the repository
+```console
+https://github.com/AfrinJahanEra/TechSage.git
+```
+
+To install python dependencies
 ```console
 pip install -r requirements.txt
 ```
 <br>
 
-Download Redis from [tporadowski/redis/release](https://github.com/tporadowski/redis/releases) (use the latest zip version)
-<br>
-
-then run `redis-server.exe`
+Download Redis from [tporadowski/redis/release](https://github.com/tporadowski/redis/releases) (use the latest zip version), then run `redis-server.exe`
 
 <br><br>
 
@@ -118,3 +120,10 @@ then run `redis-server.exe`
 ```console
 daphne techsage.asgi:application
 ```
+
+
+<h1>$\large\textnormal{\color{#2196F3}{License}}$</h1>
+
+> <img src="https://github.com/user-attachments/assets/780a54a1-6b15-45e6-82a2-f6c36f75faea" align = "right" width = "60px">
+
+$${\color{lightblue}This \space \color{#5EEAD4}project \space \color{#FBF3D4}is \space \color{#D4D4FF}under}$$ [MIT License](https://github.com/AfrinJahanEra/TechSage?tab=MIT-1-ov-file)
