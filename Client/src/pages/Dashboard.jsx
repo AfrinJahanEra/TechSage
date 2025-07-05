@@ -6,15 +6,141 @@ import Navbar from '../components/Navbar.jsx';
 import { useTheme } from '../context/ThemeContext';
 
 const Dashboard = () => {
-    const { user } = useAuth();
+    const { user, api } = useAuth();
     const { darkMode, primaryColor, shadeColor } = useTheme();
     const [activeSection, setActiveSection] = useState('profile');
-
+    const [blogs, setBlogs] = useState([]);
+    const [drafts, setDrafts] = useState([]);
+    const [trash, setTrash] = useState([]);
+    const [savedBlogs, setSavedBlogs] = useState([]);
+    const [sortOption, setSortOption] = useState('newest');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
     // Generate color variants based on primary color
     const primaryDark = shadeColor(primaryColor, -20);
     const primaryLight = shadeColor(primaryColor, 20);
 
+    // Fetch blogs based on active section
+    useEffect(() => {
+        const fetchBlogs = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                let response;
+                switch (activeSection) {
+                    case 'blogs':
+                        response = await api.get(`/blogs/?author=${user.username}&status=published`);
+                        setBlogs(response.data || []);
+                        break;
+                    case 'drafts':
+                        response = await api.get(`/blogs/?author=${user.username}&status=draft`);
+                        setDrafts(response.data || []);
+                        break;
+                    case 'trash':
+                        response = await api.get(`/blogs/?author=${user.username}&status=trash`);
+                        setTrash(response.data || []);
+                        break;
+                    case 'saved':
+                        response = await api.get(`/user/${user.username}/saved-blogs/`);
+                        setSavedBlogs(response.data || []);
+                        break;
+                    case 'profile':
+                        // Fetch recent published blogs for profile
+                        response = await api.get(`/blogs/?author=${user.username}&status=published&limit=2`);
+                        setBlogs(response.data || []);
+                        break;
+                    default:
+                        break;
+                }
+            } catch (err) {
+                setError(err.response?.data?.error || 'Failed to fetch data');
+                // Reset relevant state
+                if (activeSection === 'blogs' || activeSection === 'profile') {
+                    setBlogs([]);
+                } else if (activeSection === 'drafts') {
+                    setDrafts([]);
+                } else if (activeSection === 'trash') {
+                    setTrash([]);
+                } else if (activeSection === 'saved') {
+                    setSavedBlogs([]);
+                }
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (user?.username) {
+            fetchBlogs();
+        }
+    }, [activeSection, user?.username, api]);
+
+    // Sort blogs based on selected option
+    const sortedBlogs = () => {
+        if (!blogs || blogs.length === 0) return [];
+        
+        return [...blogs].sort((a, b) => {
+            switch (sortOption) {
+                case 'popular':
+                    return (b.upvotes || 0) - (a.upvotes || 0);
+                case 'newest':
+                    return new Date(b.created_at) - new Date(a.created_at);
+                case 'oldest':
+                    return new Date(a.created_at) - new Date(b.created_at);
+                default:
+                    return 0;
+            }
+        });
+    };
+
+    // Handle blog actions
+    const handlePublish = async (blogId) => {
+        try {
+            await api.post(`/blogs/publish/${blogId}/`, { username: user.username });
+            setDrafts(drafts.filter(blog => blog.id !== blogId));
+            const response = await api.get(`/blogs/?author=${user.username}&status=published`);
+            setBlogs(response.data || []);
+        } catch (err) {
+            setError(err.response?.data?.error || 'Failed to publish blog');
+        }
+    };
+
+    const handleDelete = async (blogId) => {
+        try {
+            await api.delete(`/blogs/delete/${blogId}/`, { data: { username: user.username } });
+            if (activeSection === 'blogs') {
+                setBlogs(blogs.filter(blog => blog.id !== blogId));
+            } else if (activeSection === 'drafts') {
+                setDrafts(drafts.filter(blog => blog.id !== blogId));
+            }
+            const response = await api.get(`/blogs/?author=${user.username}&status=trash`);
+            setTrash(response.data || []);
+        } catch (err) {
+            setError(err.response?.data?.error || 'Failed to delete blog');
+        }
+    };
+
+    const handleRestore = async (blogId) => {
+        try {
+            await api.post(`/blogs/restore/${blogId}/`, { username: user.username });
+            setTrash(trash.filter(blog => blog.id !== blogId));
+            const response = await api.get(`/blogs/?author=${user.username}&status=published`);
+            setBlogs(response.data || []);
+        } catch (err) {
+            setError(err.response?.data?.error || 'Failed to restore blog');
+        }
+    };
+
+    const handlePermanentDelete = async (blogId) => {
+        try {
+            await api.delete(`/blogs/mod/delete/${blogId}/`);
+            setTrash(trash.filter(blog => blog.id !== blogId));
+        } catch (err) {
+            setError(err.response?.data?.error || 'Failed to permanently delete blog');
+        }
+    };
+
+    // Initialize chart
     useEffect(() => {
         const ctx = document.getElementById('performanceChart');
         if (ctx) {
@@ -27,8 +153,8 @@ const Dashboard = () => {
                         data: [1200, 1900, 1500, 2200, 1800, 2500],
                         borderColor: primaryColor,
                         backgroundColor: darkMode 
-                            ? `${primaryColor}20` // 20% opacity
-                            : `${primaryColor}10`, // 10% opacity
+                            ? `${primaryColor}20`
+                            : `${primaryColor}10`,
                         tension: 0.3,
                         fill: true
                     }, {
@@ -95,6 +221,21 @@ const Dashboard = () => {
         if (user.points < 500) return 'Contributor';
         if (user.points < 1000) return 'Expert';
         return 'Master';
+    };
+
+    // Format date
+    const formatDate = (dateString) => {
+        if (!dateString) return 'Unknown date';
+        const options = { year: 'numeric', month: 'short', day: 'numeric' };
+        return new Date(dateString).toLocaleDateString(undefined, options);
+    };
+
+    // Calculate read time
+    const calculateReadTime = (content) => {
+        if (!content) return '0 min read';
+        const words = content.split(/\s+/).length;
+        const minutes = Math.ceil(words / 200);
+        return `${minutes} min read`;
     };
 
     return (
@@ -183,6 +324,30 @@ const Dashboard = () => {
                             </li>
                             <li>
                                 <button
+                                    onClick={() => setActiveSection('trash')}
+                                    className={`w-full text-left px-4 py-3 rounded-lg flex items-center transition-colors duration-200 ${
+                                        activeSection === 'trash' 
+                                            ? `${darkMode ? 'bg-gray-700 border-[var(--primary-color)]' : 'bg-[var(--primary-light)] border-[var(--primary-color)]'}`
+                                            : `${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`
+                                    } border-l-4`}
+                                    style={{ 
+                                        color: activeSection === 'trash' 
+                                            ? darkMode 
+                                                ? primaryColor 
+                                                : primaryDark 
+                                            : 'inherit',
+                                        borderColor: activeSection === 'trash' ? primaryColor : 'transparent'
+                                    }}
+                                >
+                                    <i 
+                                        className="fas fa-trash mr-3"
+                                        style={{ color: activeSection === 'trash' ? primaryColor : primaryColor }}
+                                    ></i>
+                                    Trash
+                                </button>
+                            </li>
+                            <li>
+                                <button
                                     onClick={() => setActiveSection('saved')}
                                     className={`w-full text-left px-4 py-3 rounded-lg flex items-center transition-colors duration-200 ${
                                         activeSection === 'saved' 
@@ -210,7 +375,19 @@ const Dashboard = () => {
 
                     {/* Main Content */}
                     <div className="flex-1 p-6">
-                        {activeSection === 'profile' && (
+                        {error && (
+                            <div className={`p-4 mb-4 rounded-lg ${darkMode ? 'bg-red-900 text-red-100' : 'bg-red-100 text-red-800'}`}>
+                                {error}
+                            </div>
+                        )}
+
+                        {loading && (
+                            <div className="flex justify-center items-center h-64">
+                                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
+                            </div>
+                        )}
+
+                        {!loading && activeSection === 'profile' && (
                             <div>
                                 <h1 
                                     className="text-2xl font-bold mb-6 pb-2 border-b-2 inline-block"
@@ -273,8 +450,8 @@ const Dashboard = () => {
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         {[
-                                            { value: user?.total_publications || '0', label: 'Total Publications' },
-                                            { value: user?.followers || '0', label: 'Followers' },
+                                            { value: blogs?.length || 0, label: 'Total Publications' },
+                                            { value: user?.followers || 0, label: 'Followers' },
                                             { value: '4.7', label: 'Avg. Reading Time (min)' },
                                             { value: getBadge(), label: 'Badge' }
                                         ].map((item, index) => (
@@ -298,65 +475,63 @@ const Dashboard = () => {
                                 </div>
 
                                 <div>
-                                    <h2 
-                                        className="text-xl font-bold mb-4 pb-2 border-b-2 inline-block"
-                                        style={{ borderColor: primaryColor }}
-                                    >
-                                        Recent Blogs
-                                    </h2>
-                                    <div className="space-y-6">
-                                        {[
-                                            {
-                                                title: 'Quantum Computing Breakthroughs',
-                                                date: 'May 15, 2025',
-                                                readTime: '5 min read',
-                                                views: '1.2K',
-                                                likes: '124',
-                                                image: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80'
-                                            },
-                                            {
-                                                title: 'Space Exploration Technologies',
-                                                date: 'April 28, 2025',
-                                                readTime: '7 min read',
-                                                views: '890',
-                                                likes: '95',
-                                                image: 'https://images.unsplash.com/photo-1454789548928-9efd52dc4031?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80'
-                                            }
-                                        ].map((blog, index) => (
-                                            <div key={index} className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-4 pb-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                                                <div
-                                                    className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center"
-                                                    style={{ backgroundImage: `url('${blog.image}')` }}
-                                                ></div>
-                                                <div>
-                                                    <h3 className="text-lg font-semibold">{blog.title}</h3>
-                                                    <div className={`flex justify-between text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                        <span>{blog.date}</span>
-                                                        <span>{blog.readTime}</span>
-                                                    </div>
-                                                    <div className="flex space-x-4 mt-2">
-                                                        <button 
-                                                            className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
-                                                            style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
-                                                        >
-                                                            <i className="fas fa-eye mr-1"></i> {blog.views}
-                                                        </button>
-                                                        <button 
-                                                            className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
-                                                            style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
-                                                        >
-                                                            <i className="fas fa-heart mr-1"></i> {blog.likes}
-                                                        </button>
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h2 
+                                            className="text-xl font-bold pb-2 border-b-2 inline-block"
+                                            style={{ borderColor: primaryColor }}
+                                        >
+                                            Recent Blogs
+                                        </h2>
+                                        <button 
+                                            onClick={() => setActiveSection('blogs')}
+                                            className="px-4 py-2 rounded-md"
+                                            style={{ backgroundColor: primaryColor, color: 'white' }}
+                                        >
+                                            View All Blogs
+                                        </button>
+                                    </div>
+                                    {blogs && blogs.length > 0 ? (
+                                        <div className="space-y-6">
+                                            {blogs.slice(0, 2).map((blog, index) => (
+                                                <div key={index} className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-4 pb-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                                                    <div
+                                                        className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center"
+                                                        style={{ backgroundImage: `url('${blog.thumbnail_url || 'https://via.placeholder.com/150'}')` }}
+                                                    ></div>
+                                                    <div>
+                                                        <h3 className="text-lg font-semibold">{blog.title}</h3>
+                                                        <div className={`flex justify-between text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                            <span>{formatDate(blog.created_at)}</span>
+                                                            <span>{calculateReadTime(blog.content)}</span>
+                                                        </div>
+                                                        <div className="flex space-x-4 mt-2">
+                                                            <button 
+                                                                className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
+                                                                style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
+                                                            >
+                                                                <i className="fas fa-eye mr-1"></i> {blog.views || '0'}
+                                                            </button>
+                                                            <button 
+                                                                className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
+                                                                style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
+                                                            >
+                                                                <i className="fas fa-heart mr-1"></i> {blog.upvotes || '0'}
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        ))}
-                                    </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className={`p-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                            {loading ? 'Loading...' : 'No published blogs yet.'}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         )}
 
-                        {activeSection === 'blogs' && (
+                        {!loading && activeSection === 'blogs' && (
                             <div>
                                 <h1 
                                     className="text-2xl font-bold mb-6 pb-2 border-b-2 inline-block"
@@ -365,73 +540,66 @@ const Dashboard = () => {
                                     My Blogs
                                 </h1>
 
-                                <div className="mb-6">
-                                    <select className={`border rounded px-3 py-2 w-full md:w-64 transition-colors duration-300 ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white border-gray-300 text-gray-800'}`}>
-                                        <option value="all">All Blogs</option>
-                                        <option value="popular">Most Popular</option>
+                                <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                    <select 
+                                        className={`border rounded px-3 py-2 w-full md:w-64 transition-colors duration-300 ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white border-gray-300 text-gray-800'}`}
+                                        value={sortOption}
+                                        onChange={(e) => setSortOption(e.target.value)}
+                                    >
                                         <option value="newest">Newest First</option>
                                         <option value="oldest">Oldest First</option>
+                                        <option value="popular">Most Popular</option>
                                     </select>
                                 </div>
 
-                                <div className="space-y-6">
-                                    {[
-                                        {
-                                            title: 'Quantum Computing Breakthroughs',
-                                            date: 'May 15, 2025',
-                                            readTime: '5 min read',
-                                            views: '1.2K',
-                                            likes: '124',
-                                            image: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80'
-                                        },
-                                        {
-                                            title: 'Space Exploration Technologies',
-                                            date: 'April 28, 2025',
-                                            readTime: '7 min read',
-                                            views: '890',
-                                            likes: '95',
-                                            image: 'https://images.unsplash.com/photo-1454789548928-9efd52dc4031?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80'
-                                        }
-                                    ].map((blog, index) => (
-                                        <div key={index} className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-4 pb-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                                            <div
-                                                className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center"
-                                                style={{ backgroundImage: `url('${blog.image}')` }}
-                                            ></div>
-                                            <div>
-                                                <h3 className="text-lg font-semibold">{blog.title}</h3>
-                                                <div className={`flex justify-between text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                    <span>{blog.date}</span>
-                                                    <span>{blog.readTime}</span>
-                                                </div>
-                                                <div className="flex space-x-4 mt-2">
-                                                    <button 
-                                                        className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
-                                                        style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
-                                                    >
-                                                        <i className="fas fa-eye mr-1"></i> {blog.views}
-                                                    </button>
-                                                    <button 
-                                                        className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
-                                                        style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
-                                                    >
-                                                        <i className="fas fa-heart mr-1"></i> {blog.likes}
-                                                    </button>
-                                                    <button 
-                                                        className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
-                                                        style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
-                                                    >
-                                                        <i className="fas fa-ellipsis-v"></i>
-                                                    </button>
+                                {sortedBlogs().length > 0 ? (
+                                    <div className="space-y-6">
+                                        {sortedBlogs().map((blog, index) => (
+                                            <div key={index} className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-4 pb-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                                                <div
+                                                    className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center"
+                                                    style={{ backgroundImage: `url('${blog.thumbnail_url || 'https://via.placeholder.com/150'}')` }}
+                                                ></div>
+                                                <div>
+                                                    <h3 className="text-lg font-semibold">{blog.title}</h3>
+                                                    <div className={`flex justify-between text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                        <span>{formatDate(blog.created_at)}</span>
+                                                        <span>{calculateReadTime(blog.content)}</span>
+                                                    </div>
+                                                    <div className="flex space-x-4 mt-2">
+                                                        <button 
+                                                            className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
+                                                            style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
+                                                        >
+                                                            <i className="fas fa-eye mr-1"></i> {blog.views || '0'}
+                                                        </button>
+                                                        <button 
+                                                            className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
+                                                            style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
+                                                        >
+                                                            <i className="fas fa-heart mr-1"></i> {blog.upvotes || '0'}
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handleDelete(blog.id)}
+                                                            className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
+                                                            style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
+                                                        >
+                                                            <i className="fas fa-trash mr-1"></i> Delete
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
-                                </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className={`p-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                        {loading ? 'Loading...' : 'No published blogs yet.'}
+                                    </p>
+                                )}
                             </div>
                         )}
 
-                        {activeSection === 'drafts' && (
+                        {!loading && activeSection === 'drafts' && (
                             <div>
                                 <h1 
                                     className="text-2xl font-bold mb-6 pb-2 border-b-2 inline-block"
@@ -440,55 +608,103 @@ const Dashboard = () => {
                                     Draft Blogs
                                 </h1>
 
-                                {[
-                                    {
-                                        title: '$20 million gift supports theoretical physics research at MIT',
-                                        date: 'May 14, 2025',
-                                        image: 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80'
-                                    },
-                                    {
-                                        title: 'New findings in quantum entanglement research',
-                                        date: 'May 10, 2025',
-                                        image: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80'
-                                    }
-                                ].map((draft, index) => (
-                                    <div key={index} className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-4 pb-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                                        <div
-                                            className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center"
-                                            style={{ backgroundImage: `url('${draft.image}')` }}
-                                        ></div>
-                                        <div>
-                                            <h3 className="text-lg font-semibold">{draft.title}</h3>
-                                            <div className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                Last edited: {draft.date}
-                                            </div>
-                                            <div className="flex space-x-4 mt-2">
-                                                <button 
-                                                    className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
-                                                    style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
-                                                >
-                                                    <i className="fas fa-edit mr-1"></i> Edit
-                                                </button>
-                                                <button 
-                                                    className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
-                                                    style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
-                                                >
-                                                    <i className="fas fa-trash mr-1"></i> Delete
-                                                </button>
-                                                <button 
-                                                    className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
-                                                    style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
-                                                >
-                                                    <i className="fas fa-share mr-1"></i> Publish
-                                                </button>
+                                {drafts && drafts.length > 0 ? (
+                                    drafts.map((draft, index) => (
+                                        <div key={index} className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-4 pb-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                                            <div
+                                                className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center"
+                                                style={{ backgroundImage: `url('${draft.thumbnail_url || 'https://via.placeholder.com/150'}')` }}
+                                            ></div>
+                                            <div>
+                                                <h3 className="text-lg font-semibold">{draft.title}</h3>
+                                                <div className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                    Last edited: {formatDate(draft.updated_at)}
+                                                </div>
+                                                <div className="flex space-x-4 mt-2">
+                                                    <button 
+                                                        className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
+                                                        style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
+                                                    >
+                                                        <i className="fas fa-edit mr-1"></i> Edit
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleDelete(draft.id)}
+                                                        className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
+                                                        style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
+                                                    >
+                                                        <i className="fas fa-trash mr-1"></i> Delete
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handlePublish(draft.id)}
+                                                        className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
+                                                        style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
+                                                    >
+                                                        <i className="fas fa-share mr-1"></i> Publish
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))
+                                ) : (
+                                    <p className={`p-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                        {loading ? 'Loading...' : 'No draft blogs found.'}
+                                    </p>
+                                )}
                             </div>
                         )}
 
-                        {activeSection === 'saved' && (
+                        {!loading && activeSection === 'trash' && (
+                            <div>
+                                <h1 
+                                    className="text-2xl font-bold mb-6 pb-2 border-b-2 inline-block"
+                                    style={{ borderColor: primaryColor }}
+                                >
+                                    Trash
+                                </h1>
+
+                                {trash && trash.length > 0 ? (
+                                    <div className="space-y-6">
+                                        {trash.map((blog, index) => (
+                                            <div key={index} className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-4 pb-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                                                <div
+                                                    className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center"
+                                                    style={{ backgroundImage: `url('${blog.thumbnail_url || 'https://via.placeholder.com/150'}')` }}
+                                                ></div>
+                                                <div>
+                                                    <h3 className="text-lg font-semibold">{blog.title}</h3>
+                                                    <div className={`flex justify-between text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                        <span>Deleted on: {formatDate(blog.deleted_at)}</span>
+                                                        <span>{calculateReadTime(blog.content)}</span>
+                                                    </div>
+                                                    <div className="flex space-x-4 mt-2">
+                                                        <button 
+                                                            onClick={() => handleRestore(blog.id)}
+                                                            className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
+                                                            style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
+                                                        >
+                                                            <i className="fas fa-undo mr-1"></i> Restore
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handlePermanentDelete(blog.id)}
+                                                            className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
+                                                            style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
+                                                        >
+                                                            <i className="fas fa-trash-alt mr-1"></i> Delete Permanently
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className={`p-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                        {loading ? 'Loading...' : 'Trash is empty.'}
+                                    </p>
+                                )}
+                            </div>
+                        )}
+
+                        {!loading && activeSection === 'saved' && (
                             <div>
                                 <h1 
                                     className="text-2xl font-bold mb-6 pb-2 border-b-2 inline-block"
@@ -497,50 +713,43 @@ const Dashboard = () => {
                                     Saved Blogs
                                 </h1>
 
-                                <div className="space-y-6">
-                                    {[
-                                        {
-                                            title: 'Space Exploration Technologies',
-                                            author: 'By Dr. Emily Wong',
-                                            date: 'May 5, 2025',
-                                            image: 'https://images.unsplash.com/photo-1454789548928-9efd52dc4031?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80'
-                                        },
-                                        {
-                                            title: 'AI in Healthcare: Clinical Trial Results',
-                                            author: 'By Dr. Michael Chen',
-                                            date: 'April 22, 2025',
-                                            image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80'
-                                        }
-                                    ].map((saved, index) => (
-                                        <div key={index} className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-4 pb-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                                            <div
-                                                className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center"
-                                                style={{ backgroundImage: `url('${saved.image}')` }}
-                                            ></div>
-                                            <div>
-                                                <h3 className="text-lg font-semibold">{saved.title}</h3>
-                                                <div className={`flex justify-between text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                    <span>{saved.author}</span>
-                                                    <span>{saved.date}</span>
-                                                </div>
-                                                <div className="flex space-x-4 mt-2">
-                                                    <button 
-                                                        className="flex items-center text-sm"
-                                                        style={{ color: primaryColor }}
-                                                    >
-                                                        <i className="fas fa-bookmark mr-1"></i> Saved
-                                                    </button>
-                                                    <button 
-                                                        className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
-                                                        style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
-                                                    >
-                                                        <i className="fas fa-share-alt mr-1"></i> Share
-                                                    </button>
+                                {savedBlogs && savedBlogs.length > 0 ? (
+                                    <div className="space-y-6">
+                                        {savedBlogs.map((saved, index) => (
+                                            <div key={index} className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-4 pb-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                                                <div
+                                                    className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center"
+                                                    style={{ backgroundImage: `url('${saved.thumbnail_url || 'https://via.placeholder.com/150'}')` }}
+                                                ></div>
+                                                <div>
+                                                    <h3 className="text-lg font-semibold">{saved.title}</h3>
+                                                    <div className={`flex justify-between text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                        <span>By {saved.authors?.[0]?.username || 'Unknown'}</span>
+                                                        <span>{formatDate(saved.created_at)}</span>
+                                                    </div>
+                                                    <div className="flex space-x-4 mt-2">
+                                                        <button 
+                                                            className="flex items-center text-sm"
+                                                            style={{ color: primaryColor }}
+                                                        >
+                                                            <i className="fas fa-bookmark mr-1"></i> Saved
+                                                        </button>
+                                                        <button 
+                                                            className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
+                                                            style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
+                                                        >
+                                                            <i className="fas fa-share-alt mr-1"></i> Share
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
-                                </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className={`p-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                        {loading ? 'Loading...' : 'No saved blogs found.'}
+                                    </p>
+                                )}
                             </div>
                         )}
                     </div>
