@@ -1,38 +1,48 @@
-import { useState, useRef, useEffect, useContext } from 'react';
-import { FiUpload, FiX, FiPlus, FiCheck, FiUsers, FiClock, FiInfo } from 'react-icons/fi';
+import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FiUpload, FiX, FiPlus, FiCheck, FiUsers, FiClock, FiInfo, FiSave, FiTrash2 } from 'react-icons/fi';
+import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { toast } from 'react-hot-toast';
+import BlogEditorToolbar from './BlogEditorToolbar';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
-import BlogEditorToolbar from './BlogEditorToolbar';
-import { useTheme } from '../context/ThemeContext';
 
 const CreateBlogPage = () => {
   const { primaryColor, darkMode } = useTheme();
+  const { user, api } = useAuth();
+  const navigate = useNavigate();
 
   // State management
   const [title, setTitle] = useState('');
   const [categories, setCategories] = useState([]);
+  const [tags, setTags] = useState([]);
+  const [newTag, setNewTag] = useState('');
   const [thumbnail, setThumbnail] = useState(null);
-  const [content, setContent] = useState('<p>Start writing your blog post here...</p>');
-  const [collaborators, setCollaborators] = useState([
-    { id: 1, name: 'Ramisa Anan', email: 'ramisa@example.com', role: 'Editor', avatar: 'https://randomuser.me/api/portraits/women/44.jpg' },
-    { id: 2, name: 'Ridika Naznin', email: 'ridika@example.com', role: 'Professor', avatar: 'https://randomuser.me/api/portraits/women/65.jpg' }
-  ]);
+  const [thumbnailFile, setThumbnailFile] = useState(null);
+  const [content, setContent] = useState('');
+  const [collaborators, setCollaborators] = useState([]);
   const [newCollaborator, setNewCollaborator] = useState('');
-  const [lastSaved, setLastSaved] = useState('Just now');
-  const [versions, setVersions] = useState([
-    { id: 1, name: 'Current Version', date: 'Just now', author: 'You', active: true },
-    { id: 2, name: 'Updated content', date: '2 hours ago', author: 'Ridika Naznin', active: false },
-    { id: 3, name: 'Initial draft', date: 'Yesterday', author: 'You', active: false }
-  ]);
+  const [status, setStatus] = useState('draft');
+  const [lastSaved, setLastSaved] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Available categories
   const availableCategories = [
-    'Software', 'Math', 'Electronics', 'AI', 'Cybersecurity', 'Web Development'
+    'Technology', 'Science', 'Programming', 'AI', 'Web Development', 'Mobile'
   ];
 
   // Refs
   const editorRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  // Initialize editor content
+  useEffect(() => {
+    if (editorRef.current && !content) {
+      editorRef.current.innerHTML = 
+        `<p class="${darkMode ? 'text-gray-400' : 'text-gray-400'}">Start writing your blog post here...</p>`;
+    }
+  }, [darkMode, content]);
 
   // Toggle category selection
   const toggleCategory = (category) => {
@@ -43,10 +53,25 @@ const CreateBlogPage = () => {
     );
   };
 
+  // Handle tag addition
+  const addTag = (e) => {
+    e.preventDefault();
+    if (newTag.trim() && !tags.includes(newTag.trim())) {
+      setTags([...tags, newTag.trim()]);
+      setNewTag('');
+    }
+  };
+
+  // Remove tag
+  const removeTag = (tagToRemove) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
   // Handle image upload
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setThumbnailFile(file);
       const reader = new FileReader();
       reader.onload = (event) => {
         setThumbnail(event.target.result);
@@ -56,88 +81,37 @@ const CreateBlogPage = () => {
   };
 
   // Handle collaborator addition
-  const addCollaborator = (e) => {
+  const addCollaborator = async (e) => {
     e.preventDefault();
-    if (!newCollaborator.includes('@')) {
-      alert('Please enter a valid email');
-      return;
-    }
-    setCollaborators([...collaborators, {
-      id: Date.now(),
-      name: newCollaborator.split('@')[0],
-      email: newCollaborator,
-      role: 'Contributor',
-      avatar: `https://ui-avatars.com/api/?name=${newCollaborator.split('@')[0]}&background=random`
-    }]);
-    setNewCollaborator('');
-  };
+    if (!newCollaborator.trim()) return;
 
-  // Handle version selection
-  const selectVersion = (id) => {
-    setVersions(versions.map(version => ({
-      ...version,
-      active: version.id === id
-    })));
-    // In a real app, you would load the selected version content here
-  };
-
-  // Auto-save functionality
-  useEffect(() => {
-    const autoSave = setInterval(() => {
-      if (title || content !== '<p>Start writing your blog post here...</p>') {
-        setLastSaved(new Date().toLocaleTimeString());
-        console.log('Auto-saved draft');
+    try {
+      const response = await api.get(`/user/search/?q=${newCollaborator.trim()}`);
+      if (response.data.length === 0) {
+        toast.error('User not found');
+        return;
       }
-    }, 30000);
 
-    return () => clearInterval(autoSave);
-  }, [title, content]);
-
-  // Handle form submission
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    if (!title.trim()) {
-      alert('Please enter a blog title');
-      return;
+      const userToAdd = response.data[0];
+      if (!collaborators.some(c => c._id === userToAdd._id)) {
+        setCollaborators([...collaborators, userToAdd]);
+        setNewCollaborator('');
+        toast.success('Collaborator added');
+      } else {
+        toast.error('User is already a collaborator');
+      }
+    } catch (error) {
+      toast.error('Failed to add collaborator');
+      console.error(error);
     }
-
-    if (!categories.length) {
-      alert('Please select at least one category');
-      return;
-    }
-
-    if (!thumbnail) {
-      alert('Please upload a thumbnail image');
-      return;
-    }
-
-    if (content === '<p>Start writing your blog post here...</p>' || !content.trim()) {
-      alert('Please write some content for your blog');
-      return;
-    }
-
-    // In a real app, you would send this data to your backend
-    console.log('Blog data:', {
-      title,
-      categories,
-      content,
-      thumbnail,
-      collaborators
-    });
-
-    alert('Blog published successfully!');
   };
 
-  useEffect(() => {
-    // Show placeholder on mount
-    if (editorRef.current) {
-      editorRef.current.innerHTML = `<p class="${darkMode ? 'text-gray-400' : 'text-gray-400'}">Start writing your blog post here...</p>`;
-      editorRef.current.classList.add(darkMode ? 'text-gray-400' : 'text-gray-400');
-      editorRef.current.classList.remove(darkMode ? 'text-gray-200' : 'text-gray-800');
-    }
-  }, [darkMode]);
+  // Remove collaborator
+  const removeCollaborator = (userId) => {
+    setCollaborators(collaborators.filter(c => c._id !== userId));
+  };
 
+  // Handle editor content changes
   const handleFocus = () => {
     const isPlaceholder = editorRef.current.textContent.trim() === 'Start writing your blog post here...';
     if (isPlaceholder) {
@@ -166,33 +140,179 @@ const CreateBlogPage = () => {
     }
   };
 
+  // Save as draft
+  const saveAsDraft = async () => {
+    try {
+      setIsSubmitting(true);
+      
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('content', content);
+      formData.append('is_draft', true);
+      formData.append('is_published', false);
+      formData.append('username', user.username);
+      
+      categories.forEach(cat => formData.append('categories[]', cat));
+      tags.forEach(tag => formData.append('tags[]', tag));
+      collaborators.forEach(collab => formData.append('authors[]', collab._id));
+      
+      if (thumbnailFile) {
+        formData.append('thumbnail', thumbnailFile);
+      }
+
+      const response = await api.post('/blogs/create/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      setStatus('draft');
+      setLastSaved(new Date());
+      toast.success('Draft saved successfully');
+      navigate(`/blogs/edit/${response.data.id}`);
+    } catch (error) {
+      console.error('Error saving draft:', error);
+      toast.error(error.response?.data?.error || 'Failed to save draft');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Publish blog
+  const publishBlog = async () => {
+    if (!title.trim()) {
+      toast.error('Please enter a blog title');
+      return;
+    }
+
+    if (!content.trim() || content === '<p>Start writing your blog post here...</p>') {
+      toast.error('Please add some content to your blog');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('content', content);
+      formData.append('is_draft', false);
+      formData.append('is_published', true);
+      formData.append('username', user.username);
+      
+      categories.forEach(cat => formData.append('categories[]', cat));
+      tags.forEach(tag => formData.append('tags[]', tag));
+      collaborators.forEach(collab => formData.append('authors[]', collab._id));
+      
+      if (thumbnailFile) {
+        formData.append('thumbnail', thumbnailFile);
+      }
+
+      const response = await api.post('/blogs/create/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      setStatus('published');
+      toast.success('Blog published successfully');
+      navigate(`/blogs/${response.data.id}`);
+    } catch (error) {
+      console.error('Error publishing blog:', error);
+      toast.error(error.response?.data?.error || 'Failed to publish blog');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Discard blog (move to trash)
+  const discardBlog = async () => {
+    if (window.confirm('Are you sure you want to discard this blog? It will be moved to trash.')) {
+      try {
+        setIsSubmitting(true);
+        
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('content', content);
+        formData.append('is_deleted', true);
+        formData.append('username', user.username);
+        
+        categories.forEach(cat => formData.append('categories[]', cat));
+        tags.forEach(tag => formData.append('tags[]', tag));
+        
+        if (thumbnailFile) {
+          formData.append('thumbnail', thumbnailFile);
+        }
+
+        await api.post('/blogs/create/', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+
+        toast.success('Blog moved to trash');
+        navigate('/blogs/drafts');
+      } catch (error) {
+        console.error('Error discarding blog:', error);
+        toast.error(error.response?.data?.error || 'Failed to discard blog');
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+  };
+
+  // Format last saved time
+  const formatLastSaved = () => {
+    if (!lastSaved) return 'Not saved yet';
+    
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - new Date(lastSaved)) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    return `${Math.floor(diffInSeconds / 86400)} days ago`;
+  };
+
+  // Auto-save functionality for drafts
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if ((title || content) && status === 'draft') {
+        saveAsDraft();
+      }
+    }, 30000); // Auto-save every 30 seconds
+
+    return () => clearTimeout(timer);
+  }, [title, content, categories, tags, thumbnail]);
+
   return (
     <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-50 text-gray-800'}`}>
-      <Navbar />
-
+      <Navbar/>
+      
       <div className="flex flex-1 pt-16">
         {/* Main Content */}
         <main className="flex-1 p-6 overflow-auto">
-          <div className={`max-w-5xl mx-auto rounded-xl shadow-sm overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'
-            }`}>
+          <div className={`max-w-5xl mx-auto rounded-xl shadow-sm overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
             {/* Page Header */}
-            <div className={`px-8 py-6 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'
-              }`}>
-              <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'
-                }`}>Create New Blog</h1>
+            <div className={`px-8 py-6 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                Create New Blog
+              </h1>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-8">
+            <div className="p-8">
               {/* Blog Title */}
               <div className="mb-8">
-                <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'
-                  }`}>Blog Title</label>
+                <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Blog Title *
+                </label>
                 <input
                   type="text"
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition-colors ${darkMode
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition-colors ${
+                    darkMode
                       ? 'bg-gray-700 border-gray-600 text-white focus:ring-[var(--primary-color)]'
                       : 'border-gray-300 focus:ring-[var(--primary-color)]'
-                    }`}
+                  }`}
                   placeholder="Enter your blog title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
@@ -202,13 +322,15 @@ const CreateBlogPage = () => {
 
               {/* Thumbnail Upload */}
               <div className="mb-8">
-                <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'
-                  }`}>Thumbnail Image</label>
+                <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Thumbnail Image
+                </label>
                 <div
-                  className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors relative ${thumbnail
+                  className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+                    thumbnail
                       ? darkMode ? 'border-gray-700' : 'border-gray-200'
                       : darkMode ? 'border-gray-700 hover:border-[var(--primary-color)]' : 'border-gray-300 hover:border-[var(--primary-color)]'
-                    }`}
+                  }`}
                   onClick={() => fileInputRef.current.click()}
                 >
                   {thumbnail ? (
@@ -224,6 +346,7 @@ const CreateBlogPage = () => {
                         onClick={(e) => {
                           e.stopPropagation();
                           setThumbnail(null);
+                          setThumbnailFile(null);
                         }}
                       >
                         <FiX size={16} />
@@ -231,12 +354,13 @@ const CreateBlogPage = () => {
                     </div>
                   ) : (
                     <>
-                      <FiUpload className={`mx-auto h-12 w-12 mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'
-                        }`} />
-                      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'
-                        }`}>Click to upload or drag and drop</p>
-                      <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'
-                        }`}>Recommended size: 1200×630px</p>
+                      <FiUpload className={`mx-auto h-12 w-12 mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        Click to upload or drag and drop
+                      </p>
+                      <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                        Recommended size: 1200×630px
+                      </p>
                     </>
                   )}
                   <input
@@ -245,26 +369,27 @@ const CreateBlogPage = () => {
                     className="hidden"
                     accept="image/*"
                     onChange={handleImageUpload}
-                    required
                   />
                 </div>
               </div>
 
               {/* Category Selection */}
               <div className="mb-8">
-                <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'
-                  }`}>Categories</label>
+                <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Categories *
+                </label>
                 <div className="flex flex-wrap gap-2">
                   {availableCategories.map((cat) => (
                     <button
                       key={cat}
                       type="button"
-                      className={`px-4 py-2 rounded-full border text-sm font-medium flex items-center transition-colors duration-200 ${categories.includes(cat)
+                      className={`px-4 py-2 rounded-full border text-sm font-medium flex items-center transition-colors duration-200 ${
+                        categories.includes(cat)
                           ? 'text-white border-[var(--primary-color)]'
                           : darkMode
                             ? 'bg-gray-700 text-gray-200 border-gray-600 hover:text-white hover:border-[var(--primary-color)]'
                             : 'bg-white text-gray-700 border-gray-300 hover:text-white hover:border-[var(--primary-color)]'
-                        }`}
+                      }`}
                       style={{
                         backgroundColor: categories.includes(cat) ? primaryColor : ''
                       }}
@@ -276,8 +401,54 @@ const CreateBlogPage = () => {
                 </div>
               </div>
 
-              {/* Blog Content Editor */}
+              {/* Tags Input */}
               <div className="mb-8">
+                <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Tags
+                </label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {tags.map((tag) => (
+                    <div
+                      key={tag}
+                      className={`px-3 py-1 rounded-full text-sm flex items-center ${
+                        darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        className="ml-1.5 hover:text-red-500 transition-colors"
+                        onClick={() => removeTag(tag)}
+                      >
+                        <FiX size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <form onSubmit={addTag} className="flex">
+                  <input
+                    type="text"
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.target.value)}
+                    className={`flex-1 px-3 py-2 border text-sm rounded-l-lg focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)] ${
+                      darkMode
+                        ? 'bg-gray-700 border-gray-600 text-white'
+                        : 'border-gray-300'
+                    }`}
+                    placeholder="Add tags (press Enter)"
+                  />
+                  <button
+                    type="submit"
+                    className="px-3 py-2 text-white rounded-r-lg hover:opacity-90 transition-colors"
+                    style={{ backgroundColor: primaryColor }}
+                  >
+                    <FiPlus />
+                  </button>
+                </form>
+              </div>
+
+              {/* Blog Content Editor */}
+                            <div className="mb-8">
                 <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'
                   }`}>Blog Content</label>
 
@@ -299,94 +470,121 @@ const CreateBlogPage = () => {
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-8">
-                <div className={`text-sm flex items-center gap-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'
-                  }`}>
+                <div className={`text-sm flex items-center gap-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   <div className="flex items-center gap-1">
                     <FiInfo className="text-[var(--primary-color)]" />
-                    <span>Status: <span className="font-medium text-amber-500">Draft</span></span>
+                    <span>
+                      Status: <span className="font-medium text-amber-500 capitalize">{status}</span>
+                    </span>
                   </div>
                   <div className="flex items-center gap-1">
                     <FiClock className="text-[var(--primary-color)]" />
-                    <span>Last Saved: <span className="font-medium">{lastSaved}</span></span>
+                    <span>
+                      Last Saved: <span className="font-medium">{formatLastSaved()}</span>
+                    </span>
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                   <button
                     type="button"
-                    className={`px-6 py-2 border rounded-lg transition-colors w-full sm:w-auto ${darkMode
+                    disabled={isSubmitting}
+                    className={`px-6 py-2 border rounded-lg transition-colors w-full sm:w-auto flex items-center justify-center gap-2 ${
+                      darkMode
                         ? 'border-gray-600 text-gray-200 hover:bg-gray-700'
                         : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                      }`}
-                    onClick={() => {
-                      if (confirm('Are you sure you want to discard all changes?')) {
-                        setTitle('');
-                        setCategories([]);
-                        setThumbnail(null);
-                        setContent('<p>Start writing your blog post here...</p>');
-                      }
-                    }}
+                    }`}
+                    onClick={discardBlog}
                   >
+                    <FiTrash2 />
                     Discard
                   </button>
                   <button
                     type="button"
-                    className="px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors w-full sm:w-auto"
-                    onClick={() => {
-                      if (title || content !== '<p>Start writing your blog post here...</p>') {
-                        setLastSaved(new Date().toLocaleTimeString());
-                        alert('Draft saved successfully!');
-                      }
-                    }}
+                    disabled={isSubmitting}
+                    className="px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors w-full sm:w-auto flex items-center justify-center gap-2"
+                    onClick={saveAsDraft}
                   >
+                    <FiSave />
                     Save Draft
                   </button>
                   <button
-                    type="submit"
-                    className="px-6 py-2 text-white rounded-lg hover:opacity-90 transition-colors w-full sm:w-auto"
+                    type="button"
+                    disabled={isSubmitting || !title || !content || !categories.length}
+                    className="px-6 py-2 text-white rounded-lg hover:opacity-90 transition-colors w-full sm:w-auto flex items-center justify-center gap-2"
                     style={{ backgroundColor: primaryColor }}
+                    onClick={publishBlog}
                   >
-                    Publish Blog
+                    <FiCheck />
+                    Publish
                   </button>
                 </div>
               </div>
-            </form>
+            </div>
           </div>
         </main>
 
         {/* Sidebar */}
-        <aside className={`hidden lg:block w-80 border-l p-6 overflow-y-auto ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
-          }`}>
+        <aside className={`hidden lg:block w-80 border-l p-6 overflow-y-auto ${
+          darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
+        }`}>
           {/* Collaborators Section */}
           <div className="mb-8">
-            <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'
-              }`}>
+            <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${
+              darkMode ? 'text-white' : 'text-gray-800'
+            }`}>
               <FiUsers className="text-[var(--primary-color)]" />
               Collaborators
             </h3>
             <div className="space-y-3">
+              {/* Current user as default author */}
+              {user && (
+                <div className={`flex items-center p-3 rounded-lg ${
+                  darkMode ? 'bg-gray-700' : 'bg-white'
+                }`}>
+                  <img
+                    src={user.avatar_url || `https://ui-avatars.com/api/?name=${user.username}&background=random`}
+                    alt={user.username}
+                    className="h-10 w-10 rounded-full object-cover mr-3"
+                  />
+                  <div>
+                    <p className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                      {user.username} (You)
+                    </p>
+                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      Author
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Additional collaborators */}
               {collaborators.map((person) => (
                 <div
-                  key={person.id}
-                  className={`flex justify-between items-center p-3 rounded-lg transition-shadow ${darkMode ? 'bg-gray-700 hover:shadow-md' : 'bg-white hover:shadow-sm'
-                    }`}
+                  key={person._id}
+                  className={`flex justify-between items-center p-3 rounded-lg ${
+                    darkMode ? 'bg-gray-700 hover:shadow-md' : 'bg-white hover:shadow-sm'
+                  }`}
                 >
                   <div className="flex items-center">
                     <img
-                      src={person.avatar}
-                      alt={person.name}
+                      src={person.avatar_url || `https://ui-avatars.com/api/?name=${person.username}&background=random`}
+                      alt={person.username}
                       className="h-10 w-10 rounded-full object-cover mr-3"
                     />
                     <div>
-                      <p className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-800'
-                        }`}>{person.name}</p>
-                      <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'
-                        }`}>{person.role}</p>
+                      <p className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                        {person.username}
+                      </p>
+                      <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        Collaborator
+                      </p>
                     </div>
                   </div>
                   <button
-                    className={`transition-colors ${darkMode ? 'text-gray-400 hover:text-red-400' : 'text-gray-400 hover:text-red-500'
-                      }`}
-                    onClick={() => setCollaborators(collaborators.filter(c => c.id !== person.id))}
+                    className={`transition-colors ${
+                      darkMode ? 'text-gray-400 hover:text-red-400' : 'text-gray-400 hover:text-red-500'
+                    }`}
+                    onClick={() => removeCollaborator(person._id)}
                   >
                     <FiX />
                   </button>
@@ -395,14 +593,15 @@ const CreateBlogPage = () => {
             </div>
             <form onSubmit={addCollaborator} className="mt-4 flex">
               <input
-                type="email"
+                type="text"
                 value={newCollaborator}
                 onChange={(e) => setNewCollaborator(e.target.value)}
-                className={`flex-1 px-3 py-2 border text-sm rounded-l-lg focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)] ${darkMode
+                className={`flex-1 px-3 py-2 border text-sm rounded-l-lg focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)] ${
+                  darkMode
                     ? 'bg-gray-700 border-gray-600 text-white'
                     : 'border-gray-300'
-                  }`}
-                placeholder="Add collaborator by email"
+                }`}
+                placeholder="Add collaborator by username"
               />
               <button
                 type="submit"
@@ -414,83 +613,33 @@ const CreateBlogPage = () => {
             </form>
           </div>
 
-          {/* Version History */}
-          <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-white'
-            }`}>
-            <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'
-              }`}>
-              <FiClock className="text-[var(--primary-color)]" />
-              Version History
-            </h3>
-            <div className="space-y-3">
-              {versions.map((version) => (
-                <div
-                  key={version.id}
-                  className={`p-3 rounded-lg cursor-pointer transition-colors ${version.active
-                      ? 'border-l-4'
-                      : darkMode
-                        ? 'hover:bg-gray-600'
-                        : 'hover:bg-gray-50'
-                    }`}
-                  style={{
-                    backgroundColor: version.active
-                      ? darkMode ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.05)'
-                      : undefined,
-                    borderColor: version.active ? primaryColor : 'transparent'
-                  }}
-                  onClick={() => selectVersion(version.id)}
-                >
-                  <p className={`font-medium ${darkMode ? 'text-white' : 'text-gray-800'
-                    }`}>{version.name}</p>
-                  <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'
-                    }`}>{version.date} • {version.author}</p>
-                </div>
-              ))}
-            </div>
-            <button
-              className={`mt-4 text-sm hover:underline w-full text-center transition-colors ${darkMode ? 'text-teal-400 hover:text-teal-300' : 'text-teal-500 hover:text-teal-600'
-                }`}
-              onClick={() => {
-                const activeVersions = versions.filter(v => v.active);
-                if (activeVersions.length === 1) {
-                  alert('Please select another version to compare by clicking on it');
-                } else {
-                  alert('Comparing selected versions');
-                }
-              }}
-            >
-              Compare Versions
-            </button>
-          </div>
-
           {/* Blog Status */}
-          <div className={`mt-6 p-6 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-white'
+          <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-white'}`}>
+            <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${
+              darkMode ? 'text-white' : 'text-gray-800'
             }`}>
-            <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'
-              }`}>
               <FiInfo className="text-[var(--primary-color)]" />
               Blog Status
             </h3>
-            <div className={`space-y-2 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'
-              }`}>
+            <div className={`space-y-2 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
               <div className="flex justify-between">
                 <span>Status:</span>
-                <span className="font-medium text-amber-500">Draft</span>
+                <span className="font-medium text-amber-500 capitalize">{status}</span>
               </div>
               <div className="flex justify-between">
                 <span>Last Saved:</span>
-                <span className="font-medium">{lastSaved}</span>
+                <span className="font-medium">{formatLastSaved()}</span>
               </div>
               <div className="flex justify-between">
                 <span>Created:</span>
-                <span className="font-medium">3 days ago</span>
+                <span className="font-medium">{lastSaved ? new Date(lastSaved).toLocaleString() : 'Not saved yet'}</span>
               </div>
             </div>
           </div>
         </aside>
       </div>
 
-      <Footer />
+      <Footer/>
     </div>
   );
 };
