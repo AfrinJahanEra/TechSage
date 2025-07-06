@@ -1,69 +1,95 @@
-
 from datetime import datetime
-import pytz
-
-from datetime import datetime
-import pytz
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from mongoengine import ValidationError
+import cloudinary.uploader
+import json
 from .models import Blog
 from users.models import User
+import pytz
+
 class CreateBlog(APIView):
     def post(self, request):
         data = request.data
         username = data.get('username')
         
+        # Validate required fields
         if not username:
             return Response({"error": "username is required"}, status=status.HTTP_400_BAD_REQUEST)
-            
-        user = User.objects(username=username).first()
-        if not user:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-            
+        if not data.get('title'):
+            return Response({"error": "title is required"}, status=status.HTTP_400_BAD_REQUEST)
+        if not data.get('content'):
+            return Response({"error": "content is required"}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
+            user = User.objects.get(username=username)
+            
+            # Parse list fields
+            categories = self._parse_list_field(data.get('categories', []))
+            tags = self._parse_list_field(data.get('tags', []))
+            
+            # Handle thumbnail upload
             thumbnail_url = None
             if 'thumbnail' in request.FILES:
                 upload_result = cloudinary.uploader.upload(request.FILES['thumbnail'])
                 thumbnail_url = upload_result['secure_url']
             
-            # Get status from request
-            is_published = data.get('is_published', False)
-            is_draft = not is_published  # Default to draft if not published
+            # Determine status
+            is_draft = str(data.get('is_draft', 'true')).lower() == 'true'
+            is_deleted = str(data.get('is_deleted', 'false')).lower() == 'true'
             
+            # Create blog
             blog = Blog(
-                title=data.get('title', ''),
-                content=data.get('content', ''),
+                title=data['title'],
+                content=data['content'],
                 authors=[user],
                 thumbnail_url=thumbnail_url,
-                categories=data.get('categories', []),
-                tags=data.get('tags', []),
+                categories=categories,
+                tags=tags,
                 is_draft=is_draft,
-                is_published=is_published
+                is_deleted=is_deleted,
+                is_published=False  # Will be set by publish() if needed
             )
             
-            # This will validate and save
-            blog.save()
-            
-            # If published, update published fields
-            if is_published:
+            # Handle special cases
+            if is_deleted:
+                blog.soft_delete(username)
+            elif not is_draft:
                 blog.publish(username)
             
-            return Response({
-                "message": "Blog created successfully",
-                "id": str(blog.id),
-                "status": "published" if blog.is_published else "draft",
-                "created_at": blog.created_at.isoformat(),
-                "thumbnail_url": blog.thumbnail_url
-            }, status=status.HTTP_201_CREATED)
+            blog.save()
             
+            # Prepare response
+            response_data = {
+                "id": str(blog.id),
+                "title": blog.title,
+                "status": "draft" if blog.is_draft else "published",
+                "is_deleted": blog.is_deleted,
+                "thumbnail_url": blog.thumbnail_url,
+                "created_at": blog.created_at.isoformat(),
+                "version": blog.current_version
+            }
+            
+            return Response(response_data, status=status.HTTP_201_CREATED)
+            
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
         except ValidationError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except cloudinary.exceptions.Error as e:
+            return Response({"error": f"Image upload failed: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-# In your views.py
-
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def _parse_list_field(self, field_data):
+        """Helper to parse categories/tags from string or list"""
+        if isinstance(field_data, str):
+            try:
+                return json.loads(field_data.replace("'", '"'))
+            except json.JSONDecodeError:
+                return [field_data.strip() for field_data in field_data.split(',') if field_data.strip()]
+        return field_data if isinstance(field_data, (list, tuple)) else []
 
 class ListBlogs(APIView):
     def get(self, request):
