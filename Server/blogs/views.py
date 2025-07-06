@@ -25,9 +25,20 @@ class CreateBlog(APIView):
         try:
             user = User.objects.get(username=username)
             
-            # Parse list fields
-            categories = self._parse_list_field(data.get('categories', []))
-            tags = self._parse_list_field(data.get('tags', []))
+            # Parse categories and tags
+            categories = []
+            if 'categories[]' in data:
+                if isinstance(data['categories[]'], list):
+                    categories = data['categories[]']
+                else:
+                    categories = [data['categories[]']]
+            
+            tags = []
+            if 'tags[]' in data:
+                if isinstance(data['tags[]'], list):
+                    tags = data['tags[]']
+                else:
+                    tags = [data['tags[]']]
             
             # Handle thumbnail upload
             thumbnail_url = None
@@ -49,7 +60,7 @@ class CreateBlog(APIView):
                 tags=tags,
                 is_draft=is_draft,
                 is_deleted=is_deleted,
-                is_published=False  # Will be set by publish() if needed
+                is_published=False
             )
             
             # Handle special cases
@@ -67,6 +78,8 @@ class CreateBlog(APIView):
                 "status": "draft" if blog.is_draft else "published",
                 "is_deleted": blog.is_deleted,
                 "thumbnail_url": blog.thumbnail_url,
+                "categories": blog.categories,
+                "tags": blog.tags,
                 "created_at": blog.created_at.isoformat(),
                 "version": blog.current_version
             }
@@ -81,15 +94,6 @@ class CreateBlog(APIView):
             return Response({"error": f"Image upload failed: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
-    def _parse_list_field(self, field_data):
-        """Helper to parse categories/tags from string or list"""
-        if isinstance(field_data, str):
-            try:
-                return json.loads(field_data.replace("'", '"'))
-            except json.JSONDecodeError:
-                return [field_data.strip() for field_data in field_data.split(',') if field_data.strip()]
-        return field_data if isinstance(field_data, (list, tuple)) else []
 
 class ListBlogs(APIView):
     def get(self, request):

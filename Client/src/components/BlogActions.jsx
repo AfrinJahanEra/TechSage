@@ -1,9 +1,9 @@
+// src/components/BlogActions.jsx
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTheme } from '../context/ThemeContext';
 
-const BlogActions = ({ upvotes, downvotes, onReport }) => {
+const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle }) => {
   const [votes, setVotes] = useState({
     up: upvotes,
     down: downvotes,
@@ -64,11 +64,30 @@ const BlogActions = ({ upvotes, downvotes, onReport }) => {
     }
   };
 
-  const shareOptions = [
-    { name: 'Facebook', icon: 'facebook-f', color: 'text-blue-600' },
-    { name: 'Twitter', icon: 'twitter', color: 'text-blue-400' },
-    { name: 'LinkedIn', icon: 'linkedin-in', color: 'text-blue-700' }
-  ];
+  const shareBlog = (platform) => {
+    const url = `${window.location.origin}/blog/${blogId}`;
+    const text = `Check out this research: ${blogTitle}`;
+    
+    switch(platform) {
+      case 'facebook':
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+        break;
+      case 'twitter':
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+        break;
+      case 'linkedin':
+        window.open(`https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(url)}&title=${encodeURIComponent(blogTitle)}`, '_blank');
+        break;
+      default:
+        if (navigator.share) {
+          navigator.share({
+            title: blogTitle,
+            text: text,
+            url: url
+          }).catch(err => console.log('Error sharing:', err));
+        }
+    }
+  };
 
   return (
     <div className={`border-t border-b py-5 my-8 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
@@ -76,7 +95,7 @@ const BlogActions = ({ upvotes, downvotes, onReport }) => {
         <div className="flex space-x-4">
           <button 
             onClick={() => handleVote('up')}
-            className={`flex items-center space-x-2 px-20 py-2 border rounded-full ${
+            className={`flex items-center space-x-2 px-4 py-2 border rounded-full ${
               votes.userVote === 'up' 
                 ? `border-green-500 text-green-500` 
                 : `${darkMode ? 'border-gray-600 hover:border-green-400' : 'border-gray-300 hover:border-green-400'} hover:text-green-500`
@@ -111,28 +130,39 @@ const BlogActions = ({ upvotes, downvotes, onReport }) => {
             
             {showShareOptions && (
               <div className={`absolute right-0 bottom-full mb-2 w-48 shadow-lg rounded-md py-2 z-10 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-                {shareOptions.map(option => (
-                  <a 
-                    key={option.name}
-                    href="#" 
-                    className={`flex items-center px-4 py-2 ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} ${option.color}`}
+                <button 
+                  onClick={() => shareBlog('facebook')}
+                  className={`flex items-center px-4 py-2 w-full text-left ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} text-blue-600`}
+                >
+                  <i className="fab fa-facebook-f mr-2"></i>
+                  Facebook
+                </button>
+                <button 
+                  onClick={() => shareBlog('twitter')}
+                  className={`flex items-center px-4 py-2 w-full text-left ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} text-blue-400`}
+                >
+                  <i className="fab fa-twitter mr-2"></i>
+                  Twitter
+                </button>
+                <button 
+                  onClick={() => shareBlog('linkedin')}
+                  className={`flex items-center px-4 py-2 w-full text-left ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} text-blue-700`}
+                >
+                  <i className="fab fa-linkedin-in mr-2"></i>
+                  LinkedIn
+                </button>
+                {navigator.share && (
+                  <button 
+                    onClick={() => shareBlog('native')}
+                    className={`flex items-center px-4 py-2 w-full text-left ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
                   >
-                    <i className={`fab fa-${option.icon} mr-2`}></i>
-                    {option.name}
-                  </a>
-                ))}
+                    <i className="fas fa-share-alt mr-2"></i>
+                    Other
+                  </button>
+                )}
               </div>
             )}
           </div>
-          
-          <Link 
-            to="/inside-blog"
-            className="flex items-center space-x-2 px-4 py-2 rounded-full transition-colors"
-            style={{ backgroundColor: primaryColor, color: 'white' }}
-          >
-            <i className="fas fa-book-open"></i>
-            <span>Read Full</span>
-          </Link>
           
           <button 
             onClick={() => {

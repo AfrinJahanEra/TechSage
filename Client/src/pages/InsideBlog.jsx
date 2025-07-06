@@ -1,17 +1,36 @@
-import { useState } from 'react';
+// src/pages/InsideBlog.jsx
+import { useState, useEffect } from 'react';
+import { useParams, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
 import Navbar from '../components/Navbar.jsx';
 import Footer from '../components/Footer.jsx';
 import Sidebar from '../components/Sidebar.jsx';
 import BlogActions from '../components/BlogActions.jsx';
 import CommentSection from '../components/CommentSection.jsx';
+import SearchForm from '../components/SearchForm.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
+import {
+  getThumbnailUrl,
+  formatDate,
+  calculateReadTime,
+  normalizeBlog
+} from '../utils/blogUtils.js';
+import BlogLink from '../components/BlogLink';
 
 const InsideBlog = () => {
+  const { id } = useParams();
+  const location = useLocation();
+  const { user, api } = useAuth();
+  const [blog, setBlog] = useState(location.state?.blog || null);
+  const [loading, setLoading] = useState(!location.state?.blog);
+  const [error, setError] = useState(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportSubmitted, setReportSubmitted] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportDetails, setReportDetails] = useState('');
-  const { darkMode, primaryColor, shadeColor, changeThemeColor, toggleDarkMode } = useTheme();
+  const { darkMode, primaryColor, shadeColor } = useTheme();
+  const [relatedBlogs, setRelatedBlogs] = useState([]);
+  const [loadingRelated, setLoadingRelated] = useState(true);
 
   // Generate color variants
   const primaryDark = shadeColor(primaryColor, -20);
@@ -24,39 +43,126 @@ const InsideBlog = () => {
     '--primary-light': primaryLight,
   };
 
+// src/pages/InsideBlog.jsx
+// Update the useEffect that fetches the blog data:
+useEffect(() => {
+  // If we have blog data in location state (from BlogLink), use that immediately
+  if (location.state?.blog) {
+    setBlog(location.state.blog);
+    setLoading(false);
+    
+    // Still fetch fresh data in the background
+    const fetchFreshData = async () => {
+      try {
+        const response = await api.get(`/blogs/${id}`);
+        setBlog(response.data);
+      } catch (err) {
+        console.error('Error fetching fresh blog data:', err);
+      }
+    };
+    fetchFreshData();
+  } else {
+    // No state, fetch from API
+    const fetchBlog = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get(`/blogs/${id}`);
+        setBlog(response.data);
+        setLoading(false);
+      } catch (err) {
+        setError(err.response?.data?.error || 'Failed to fetch blog');
+        setLoading(false);
+      }
+    };
+    fetchBlog();
+  }
+}, [id, api, location.state]);
+
+  useEffect(() => {
+    if (blog && blog.categories && blog.categories.length > 0) {
+      const fetchRelatedBlogs = async () => {
+        try {
+          setLoadingRelated(true);
+          const response = await api.get(`/published-blogs/?category=${blog.categories[0]}&limit=5`);
+          // Filter out the current blog from the results
+          const filteredBlogs = response.data.blogs.filter(b => b.id !== blog.id);
+          setRelatedBlogs(filteredBlogs);
+          setLoadingRelated(false);
+        } catch (err) {
+          console.error('Error fetching related blogs:', err);
+          setRelatedBlogs([]);
+          setLoadingRelated(false);
+        }
+      };
+      fetchRelatedBlogs();
+    }
+  }, [blog, api]);
+
+  const handleVote = async (type) => {
+    try {
+      const response = await api.post(`/blogs/vote/${id}/`, {
+        type,
+        username: 'current_user' // Replace with actual username from auth
+      });
+      setBlog(prev => ({
+        ...prev,
+        upvotes: response.data.upvotes,
+        downvotes: response.data.downvotes
+      }));
+    } catch (err) {
+      console.error('Vote error:', err);
+    }
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: blog.title,
+        text: blog.content.substring(0, 100),
+        url: window.location.href,
+      }).catch(err => console.log('Error sharing:', err));
+    } else {
+      // Fallback for browsers that don't support Web Share API
+      const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(blog.title)}&url=${encodeURIComponent(window.location.href)}`;
+      window.open(shareUrl, '_blank');
+    }
+  };
+
   const handleReportSubmit = (e) => {
     e.preventDefault();
     console.log('Report submitted:', { reason: reportReason, details: reportDetails });
     setReportSubmitted(true);
   };
 
-  const featuredResearch = [
-    {
-      id: 1,
-      image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80',
-      title: 'Quantum Computing Research Breakthroughs'
-    },
-    {
-      id: 2,
-      image: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80',
-      title: 'Sustainable Energy Solutions Study'
-    },
-    {
-      id: 3,
-      image: 'https://images.unsplash.com/photo-1576091160550-2173dbe999ef?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80',
-      title: 'AI in Healthcare: Clinical Trial Results'
-    },
-    {
-      id: 4,
-      image: 'https://images.unsplash.com/photo-1593508512255-86ab42a8e620?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80',
-      title: 'Robotics Systems: New Control Algorithms'
-    },
-    {
-      id: 5,
-      image: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80',
-      title: 'Cognitive Neuroscience Meta-Analysis'
-    }
-  ];
+  if (loading) {
+    return (
+      <div className={`min-h-screen flex items-center justify-center ${darkMode ? 'bg-gray-900' : 'bg-white'}`}>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={`min-h-screen flex items-center justify-center ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-800'}`}>
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Error loading blog</h2>
+          <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!blog) {
+    return (
+      <div className={`min-h-screen flex items-center justify-center ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-800'}`}>
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Blog not found</h2>
+          <p>The requested blog could not be found.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -70,85 +176,116 @@ const InsideBlog = () => {
           {/* Main Content */}
           <article className="flex-1">
             <header className={`border-b pb-6 mb-8 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-              <h1 className="text-3xl md:text-4xl font-bold leading-tight mb-3">
-                Fueling Social Impact: PKG IDEAS Challenge Invests in Bold Student-Led Social Enterprises
+              <h1 className={`text-3xl md:text-4xl font-bold leading-tight mb-3 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                {blog.title}
               </h1>
-              <div className="flex flex-wrap gap-4 text-sm " style={{ color: primaryColor, borderColor: darkMode ? '#374151' : '#e5e7eb' }}>
-                <span className="font-semibold">Social Innovation</span>
-                <span>Published: June 15, 2025</span>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {blog.categories?.map((category, index) => (
+                  <span
+                    key={`cat-${index}`}
+                    className="px-3 py-1 text-sm rounded-full font-medium"
+                    style={{
+                      backgroundColor: `${primaryColor}20`,
+                      color: primaryColor
+                    }}
+                  >
+                    {category}
+                  </span>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {blog.tags?.map((tag, index) => (
+                  <span
+                    key={`tag-${index}`}
+                    className={`px-2 py-1 text-xs rounded-full ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'}`}
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+              <div className={`flex flex-wrap gap-4 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                <span>Published: {formatDate(blog.published_at)}</span>
                 <span>
-                  By: <a href="/other-dashboard" style={{ color: primaryColor, borderColor: darkMode ? '#374151' : '#e5e7eb' }}>MIT Research Office</a>
+                  By: {blog.authors?.map((author, index) => (
+                    <BlogLink key={index} blog={blog}>
+                      <a
+                        href={`/user/${author.username}`}
+                        style={{ color: primaryColor }}
+                        className="hover:underline"
+                      >
+                        {author.username}
+                        {index < blog.authors.length - 1 ? ', ' : ''}
+                      </a>
+                    </BlogLink>
+                  ))}
                 </span>
+                <span>{calculateReadTime(blog.content)}</span>
               </div>
             </header>
 
-            <div className="prose max-w-none">
-              <p>
-                At AcademicSage, pushing the boundaries of knowledge and possibility is our core mission, and we celebrate both fundamental discoveries and practical applications. The PKG IDEAS Challenge exemplifies this commitment, providing funding and support to undergraduate teams developing innovative solutions to pressing societal problems through rigorous academic research.
-              </p>
+            <div className="flex flex-col lg:flex-row gap-8">
+              {/* Blog content with floating sidebar */}
+              <div className="prose max-w-none lg:w-[calc(100%-200px)]">
+                <div
+                  className={`float-left mr-6 mb-4 w-48 h-48 bg-cover bg-center rounded-md ${darkMode ? 'bg-gray-800' : 'bg-gray-200'}`}
+                  style={{ backgroundImage: `url('${getThumbnailUrl(blog)}')` }}
+                ></div>
 
-              <p>
-                This year's cohort represents the most diverse group of projects in the challenge's history, with proposals addressing issues ranging from educational equity to sustainable agriculture. The selection committee reviewed over 80 applications before selecting 15 finalists to receive research grants ranging from $5,000 to $20,000.
-              </p>
-
-              <blockquote className={`border-l-4 pl-5 italic my-6 ${darkMode ? 'border-teal-400 text-teal-300' : 'border-teal-500 text-teal-700'}`}>
-                "What excites me most about these projects is how they combine technical innovation with deep community engagement and rigorous academic methodology," said Professor Larissa Zhou, faculty advisor for the program. "Our students aren't just building solutions—they're conducting peer-reviewed research and building relationships."
-              </blockquote>
-
-              <div className={`p-6 rounded-lg my-8 ${darkMode ? 'bg-gray-800 text-white' : 'bg-teal-50 text-gray-800'}`}>
-                <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-teal-300' : 'text-teal-800'}`}>Key Findings from the 2025 Cohort</h3>
-                <p>
-                  The research projects include a mobile app connecting food-insecure students with campus resources (with 87% effectiveness in pilot studies), a low-cost water purification system for rural communities (demonstrating 99.9% pathogen removal), and an AI platform helping small businesses optimize their energy usage (showing 23% average reduction in energy costs).
-                </p>
+                <div dangerouslySetInnerHTML={{ __html: blog.content }} />
               </div>
-
-              <p>
-                The program, now in its eighth year, has supported over 100 student research projects with more than $1.2 million in funding. Alumni projects have gone on to receive academic recognition, including three that evolved into published research papers and nonprofit organizations with annual research budgets exceeding $500,000.
-              </p>
             </div>
 
             <BlogActions
-              upvotes={124}
-              downvotes={7}
+              upvotes={blog.upvotes?.length || 0}
+              downvotes={blog.downvotes?.length || 0}
               onReport={() => setShowReportModal(true)}
+              blogId={blog.id}
+              blogTitle={blog.title}
             />
 
+
             {/* Author Bio */}
-            <div className={`flex flex-col md:flex-row gap-5 p-6 rounded-lg my-8 ${darkMode ? 'bg-gray-800 text-white' : 'bg-teal-50 text-gray-800'}`}>
-              <img
-                src="https://randomuser.me/api/portraits/men/32.jpg"
-                alt="Author"
-                className="w-20 h-20 rounded-full object-cover self-center md:self-start"
-              />
-              <div>
-                <h3 className="text-xl font-semibold">Dr. Mohammudunnobi Firoz</h3>
-                <p className="text-sm mb-3" style={{ color: primaryColor, borderColor: darkMode ? '#374151' : '#e5e7eb' }}>Professor of Social Innovation, MIT</p>
-                <p className="mb-4">
-                  Dr. Chen leads the Social Innovation Research Group at MIT. His research focuses on community-based solutions, social entrepreneurship methodologies, and the implementation of sustainable social programs. He has published over 100 papers in leading social science journals and holds several awards for community-engaged research.
-                </p>
-                <div className="flex gap-4">
-                  <a href="#" className={`${darkMode ? 'text-gray-300 hover:text-teal-400' : 'text-gray-700 hover:text-teal-500'}`}>
-                    <i className="fab fa-twitter"></i>
-                  </a>
-                  <a href="#" className={`${darkMode ? 'text-gray-300 hover:text-teal-400' : 'text-gray-700 hover:text-teal-500'}`}>
-                    <i className="fab fa-linkedin-in"></i>
-                  </a>
-                  <a href="#" className={`${darkMode ? 'text-gray-300 hover:text-teal-400' : 'text-gray-700 hover:text-teal-500'}`}>
-                    <i className="fab fa-google-scholar"></i>
-                  </a>
-                  <a href="#" className={`${darkMode ? 'text-gray-300 hover:text-teal-400' : 'text-gray-700 hover:text-teal-500'}`}>
-                    <i className="fas fa-envelope"></i>
-                  </a>
+            {blog.authors?.map(author => (
+              <div key={author.username} className={`flex flex-col md:flex-row gap-5 p-6 rounded-lg my-8 ${darkMode ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-800'}`}>
+                <img
+                  src={user?.avatar_url || "https://randomuser.me/api/portraits/women/44.jpg"}
+                  alt="Profile"
+                  className="w-20 h-20 rounded-full border-4 object-cover mr-0 md:mr-6 mb-4 md:mb-0"
+                  style={{ borderColor: primaryColor }}
+                />
+                <div>
+                  <h3 className="text-xl font-semibold">{author.username}</h3>
+                  <p className="text-sm mb-3" style={{ color: primaryColor }}>
+                    {author.job_title || 'Author'} {author.university ? `at ${author.university}` : ''}
+                  </p>
+                  <p className="mb-4">
+                    {author.bio || 'No bio provided.'}
+                  </p>
+                  <div className="flex gap-4">
+                    <a href="#" className={`${darkMode ? 'text-gray-300 hover:text-teal-400' : 'text-gray-700 hover:text-teal-500'}`}>
+                      <i className="fab fa-twitter"></i>
+                    </a>
+                    <a href="#" className={`${darkMode ? 'text-gray-300 hover:text-teal-400' : 'text-gray-700 hover:text-teal-500'}`}>
+                      <i className="fab fa-linkedin-in"></i>
+                    </a>
+                    <a href="#" className={`${darkMode ? 'text-gray-300 hover:text-teal-400' : 'text-gray-700 hover:text-teal-500'}`}>
+                      <i className="fab fa-google-scholar"></i>
+                    </a>
+                    <a href="#" className={`${darkMode ? 'text-gray-300 hover:text-teal-400' : 'text-gray-700 hover:text-teal-500'}`}>
+                      <i className="fas fa-envelope"></i>
+                    </a>
+                  </div>
                 </div>
               </div>
-            </div>
+            ))}
 
-            <CommentSection />
+            <CommentSection blogId={id} />
           </article>
 
           {/* Sidebar */}
-          <div className="lg:w-80">
-            <Sidebar type="inside-blog" />
+          <div className="lg:w-80 space-y-8" >
+            <Sidebar />
+            <SearchForm />
           </div>
         </div>
       </main>
@@ -157,33 +294,42 @@ const InsideBlog = () => {
       <section className={`py-16 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
         <div className="container mx-auto px-4 md:px-20">
           <h2 className={`text-3xl font-bold mb-4 relative pb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-            Latest Research
+            {blog?.categories?.[0] ? `More in ${blog.categories[0]}` : 'Latest Research'}
             <span className="absolute bottom-0 left-0 w-16 h-1" style={{ backgroundColor: primaryColor }}></span>
           </h2>
           <p className={`text-xl mb-8 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-            Explore the latest peer-reviewed publications from our academic community
+            Explore more research in this category
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {featuredResearch.map(research => (
-              <a
-                key={research.id}
-                href="/inside-blog"
-                className="group relative rounded-lg overflow-hidden h-48"
-                style={{ borderColor: primaryColor }}
-              >
-                <img
-                  src={research.image}
-                  alt={research.title}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                <div className={`absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${darkMode ? 'from-black/90' : 'from-black/80'}`}></div>
-                <h3 className="absolute bottom-0 left-0 w-full p-4 text-white text-lg font-semibold translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                  {research.title}
-                </h3>
-              </a>
-            ))}
-          </div>
+          {loadingRelated ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
+            </div>
+          ) : relatedBlogs.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+              {relatedBlogs.map((relatedBlog) => {
+                const normalizedBlog = normalizeBlog(relatedBlog);
+                return (
+                  <BlogLink key={normalizedBlog.id} blog={normalizedBlog}>
+                    <div className="group relative rounded-lg overflow-hidden h-48">
+                      <div
+                        className={`w-full h-full bg-cover bg-center ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}
+                        style={{ backgroundImage: `url('${getThumbnailUrl(normalizedBlog)}')` }}
+                      ></div>
+                      <div className={`absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${darkMode ? 'from-black/90' : 'from-black/80'}`}></div>
+                      <h3 className="absolute bottom-0 left-0 w-full p-4 text-white text-lg font-semibold translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                        {normalizedBlog.title}
+                      </h3>
+                    </div>
+                  </BlogLink>
+                );
+              })}
+            </div>
+          ) : (
+            <div className={`text-center py-8 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              No related blogs found in this category
+            </div>
+          )}
         </div>
       </section>
 
@@ -200,7 +346,6 @@ const InsideBlog = () => {
             >
               &times;
             </button>
-
 
             {!reportSubmitted ? (
               <>
@@ -275,17 +420,18 @@ const InsideBlog = () => {
                   <div className="flex justify-end space-x-4">
                     <button
                       type="button"
-                      className="px-6 py-2 text-white rounded-md hover:opacity-90 transition-colors duration-200"
-                      style={{ backgroundColor: primaryColor }}
+                      onClick={() => setShowReportModal(false)}
+                      className="px-6 py-2 border rounded-md hover:opacity-90 transition-colors duration-200"
+                      style={{ borderColor: primaryColor, color: primaryColor }}
                     >
-                      Logout
+                      Cancel
                     </button>
                     <button
                       type="submit"
                       className="px-6 py-2 text-white rounded-md hover:opacity-90 transition-colors duration-200"
                       style={{ backgroundColor: primaryColor }}
                     >
-                      Logout
+                      Submit Report
                     </button>
                   </div>
                 </form>

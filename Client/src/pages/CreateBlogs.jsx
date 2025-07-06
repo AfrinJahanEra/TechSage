@@ -152,8 +152,10 @@ const CreateBlogPage = () => {
       formData.append('is_published', false);
       formData.append('username', user.username);
       
+      // Append categories and tags
       categories.forEach(cat => formData.append('categories[]', cat));
       tags.forEach(tag => formData.append('tags[]', tag));
+      
       collaborators.forEach(collab => formData.append('authors[]', collab._id));
       
       if (thumbnailFile) {
@@ -176,10 +178,9 @@ const CreateBlogPage = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
+};
 
-  // Publish blog
-  const publishBlog = async () => {
+const publishBlog = async () => {
     if (!title.trim()) {
       toast.error('Please enter a blog title');
       return;
@@ -187,6 +188,11 @@ const CreateBlogPage = () => {
 
     if (!content.trim() || content === '<p>Start writing your blog post here...</p>') {
       toast.error('Please add some content to your blog');
+      return;
+    }
+
+    if (categories.length === 0) {
+      toast.error('Please select at least one category');
       return;
     }
 
@@ -202,6 +208,7 @@ const CreateBlogPage = () => {
       
       categories.forEach(cat => formData.append('categories[]', cat));
       tags.forEach(tag => formData.append('tags[]', tag));
+      
       collaborators.forEach(collab => formData.append('authors[]', collab._id));
       
       if (thumbnailFile) {
@@ -223,7 +230,7 @@ const CreateBlogPage = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
+};
 
   // Discard blog (move to trash)
   const discardBlog = async () => {

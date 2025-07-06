@@ -1,47 +1,69 @@
-import { useState } from 'react';
+// src/components/Sidebar.jsx
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import BlogCard from './BlogCard';
 import ContributorCard from './ContributorCard';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
-const Sidebar = ({ type = 'default' }) => {
+const Sidebar = ({ type = 'default', currentBlogId = null }) => {
   const [showJobs, setShowJobs] = useState(false);
+  const [relatedBlogs, setRelatedBlogs] = useState([]);
+  const [recentBlogs, setRecentBlogs] = useState([]);
+  const [newestBlogs, setNewestBlogs] = useState([]);
+  const [featuredBlogs, setFeaturedBlogs] = useState([]);
+  const [loading, setLoading] = useState(true);
   const { primaryColor, darkMode } = useTheme();
+  const { api } = useAuth();
 
-  const recentPublications = [
-    {
-      id: 1,
-      image: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80',
-      category: 'Physics',
-      title: 'New discoveries in dark matter research',
-      date: 'June 12, 2025',
-      readTime: '8 min read'
-    },
-    {
-      id: 2,
-      image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80',
-      category: 'Mathematics',
-      title: 'Proof of the Riemann Hypothesis',
-      date: 'June 10, 2025',
-      readTime: '12 min read'
-    },
-    {
-      id: 3,
-      image: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80',
-      category: 'Biology',
-      title: 'CRISPR gene editing breakthrough',
-      date: 'June 8, 2025',
-      readTime: '10 min read'
-    },
-    {
-      id: 4,
-      image: 'https://images.unsplash.com/photo-1576091160550-2173dbe999ef?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80',
-      category: 'Chemistry',
-      title: 'New catalyst for carbon capture',
-      date: 'June 5, 2025',
-      readTime: '7 min read'
-    }
-  ];
+  useEffect(() => {
+    const fetchBlogs = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch newest blogs (top 5)
+        const newestResponse = await api.get('/published-blogs/?limit=5&sort=-published_at');
+        setNewestBlogs(newestResponse.data.blogs || []);
+        
+        // Fetch recent blogs for all cases
+        const recentResponse = await api.get('/published-blogs/?limit=5&sort=-published_at');
+        setRecentBlogs(recentResponse.data.blogs || []);
+        
+        // If inside a blog page, fetch related blogs and featured blogs
+        if (type === 'inside-blog' && currentBlogId) {
+          const currentBlogResponse = await api.get(`/blogs/${currentBlogId}`);
+          const currentCategories = currentBlogResponse.data.categories || [];
+          
+          if (currentCategories.length > 0) {
+            // Fetch related blogs (same category)
+            const relatedResponse = await api.get(
+              `/published-blogs/?category=${currentCategories[0]}&limit=4`
+            );
+            setRelatedBlogs(
+              (relatedResponse.data.blogs || [])
+                .filter(blog => blog.id !== currentBlogId)
+                .slice(0, 3)
+            );
+            
+            // Fetch featured blogs (same category, top 5)
+            const featuredResponse = await api.get(
+              `/published-blogs/?category=${currentCategories[0]}&limit=5&sort=-published_at`
+            );
+            setFeaturedBlogs(
+              featuredResponse.data.blogs || []
+            );
+          }
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching blogs:', err);
+        setLoading(false);
+      }
+    };
+
+    fetchBlogs();
+  }, [type, currentBlogId, api]);
 
   const topContributors = [
     {
@@ -93,133 +115,137 @@ const Sidebar = ({ type = 'default' }) => {
 
   return (
     <aside className="w-full md:max-w-xs space-y-8">
-      {type === 'inside-blog' && (
-        <div className="space-y-8">
+      {loading ? (
+        <div className="flex justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
+        </div>
+      ) : (
+        <>
+          {type === 'inside-blog' && (
+            <div className="space-y-8">
+              {relatedBlogs.length > 0 && (
+                <div className="space-y-4">
+                  <h3 
+                    className="uppercase text-sm font-semibold tracking-wider border-b pb-2"
+                    style={{ color: primaryColor, borderColor: darkMode ? '#374151' : '#e5e7eb' }}
+                  >
+                    Related Research
+                  </h3>
+                  <div className="space-y-4">
+                    {relatedBlogs.map(blog => (
+                      <BlogCard key={blog.id} blog={blog} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <h3 
+                  className="uppercase text-sm font-semibold tracking-wider border-b pb-2"
+                  style={{ color: primaryColor, borderColor: darkMode ? '#374151' : '#e5e7eb' }}
+                >
+                  Recent Studies
+                </h3>
+                <div className="space-y-4">
+                  {recentBlogs
+                    .filter(blog => blog.id !== currentBlogId)
+                    .slice(0, 2)
+                    .map(blog => (
+                      <BlogCard key={`recent-${blog.id}`} blog={blog} />
+                    ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {type !== 'inside-blog' && (
+            <div className="space-y-8">
+              {showJobs ? (
+                <div className="space-y-4">
+                  <h3 
+                    className="uppercase text-sm font-semibold tracking-wider border-b pb-2"
+                    style={{ color: primaryColor, borderColor: darkMode ? '#374151' : '#e5e7eb' }}
+                  >
+                    Job Opportunities
+                  </h3>
+                  <div className="space-y-4">
+                    {jobOpportunities.map(job => (
+                      <div 
+                        key={job.id} 
+                        className={`border rounded-md p-4 hover:border-opacity-80 transition-colors ${
+                          darkMode 
+                            ? 'border-gray-700 hover:border-gray-600 bg-gray-800' 
+                            : 'border-gray-200 hover:border-gray-300 bg-white'
+                        }`}
+                        style={{ borderColor: primaryColor }}
+                      >
+                        <h4 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{job.title}</h4>
+                        <p className="text-sm" style={{ color: primaryColor }}>{job.company}</p>
+                        <p className={`text-sm flex items-center mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                          <i className="fas fa-map-marker-alt mr-1"></i> {job.location}
+                        </p>
+                        <p className={`text-sm mt-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{job.description}</p>
+                        <div className="flex justify-between items-center mt-3">
+                          <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>{job.posted}</span>
+                          <button 
+                            className="text-xs py-1 px-3 rounded hover:opacity-90 transition-colors text-white"
+                            style={{ backgroundColor: primaryColor }}
+                          >
+                            Apply
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <h3 
+                    className="uppercase text-sm font-semibold tracking-wider border-b pb-2"
+                    style={{ color: primaryColor, borderColor: darkMode ? '#374151' : '#e5e7eb' }}
+                  >
+                    Recent Publications
+                  </h3>
+                  <div className="space-y-4">
+                    {recentBlogs.map(blog => (
+                      <BlogCard key={blog.id} blog={blog} />
+                    ))}
+                  </div>
+                  <div className="text-center">
+                    <Link 
+                      to="/all-blogs" 
+                      className="font-semibold hover:underline"
+                      style={{ color: primaryColor }}
+                    >
+                      View All Publications →
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="space-y-4">
-            <h3 
-              className="uppercase text-sm font-semibold tracking-wider border-b pb-2"
-              style={{ color: primaryColor, borderColor: darkMode ? '#374151' : '#e5e7eb' }}
-            >
-              Related Research
+            <h3 className="uppercase text-sm font-semibold tracking-wider border-b pb-2" style={{ color: primaryColor, borderColor: darkMode ? '#374151' : '#e5e7eb' }}>
+              Top Contributors
             </h3>
             <div className="space-y-4">
-              {recentPublications.map(publication => (
-                <BlogCard key={publication.id} {...publication} />
+              {topContributors.map(contributor => (
+                <ContributorCard key={contributor.id} {...contributor} />
               ))}
             </div>
             <div className="text-center">
               <Link 
-                to="/all-blogs" 
+                to="/top-contributors" 
                 className="font-semibold hover:underline"
                 style={{ color: primaryColor }}
               >
-                View All Publications →
+                See All Contributors →
               </Link>
             </div>
           </div>
-
-          <div className="space-y-4">
-            <h3 
-              className="uppercase text-sm font-semibold tracking-wider border-b pb-2"
-              style={{ color: primaryColor, borderColor: darkMode ? '#374151' : '#e5e7eb' }}
-            >
-              Related Studies
-            </h3>
-            <div className="space-y-4">
-              {recentPublications.slice(0, 2).map(publication => (
-                <BlogCard key={`related-${publication.id}`} {...publication} />
-              ))}
-            </div>
-          </div>
-        </div>
+        </>
       )}
-
-      {type !== 'inside-blog' && (
-        <div className="space-y-8">
-          {showJobs ? (
-            <div className="space-y-4">
-              <h3 
-                className="uppercase text-sm font-semibold tracking-wider border-b pb-2"
-                style={{ color: primaryColor, borderColor: darkMode ? '#374151' : '#e5e7eb' }}
-              >
-                Job Opportunities
-              </h3>
-              <div className="space-y-4">
-                {jobOpportunities.map(job => (
-                  <div 
-                    key={job.id} 
-                    className={`border rounded-md p-4 hover:border-opacity-80 transition-colors ${
-                      darkMode 
-                        ? 'border-gray-700 hover:border-gray-600 bg-gray-800' 
-                        : 'border-gray-200 hover:border-gray-300 bg-white'
-                    }`}
-                    style={{ borderColor: primaryColor }}
-                  >
-                    <h4 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{job.title}</h4>
-                    <p className="text-sm" style={{ color: primaryColor }}>{job.company}</p>
-                    <p className={`text-sm flex items-center mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      <i className="fas fa-map-marker-alt mr-1"></i> {job.location}
-                    </p>
-                    <p className={`text-sm mt-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{job.description}</p>
-                    <div className="flex justify-between items-center mt-3">
-                      <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>{job.posted}</span>
-                      <button 
-                        className="text-xs py-1 px-3 rounded hover:opacity-90 transition-colors text-white"
-                        style={{ backgroundColor: primaryColor }}
-                      >
-                        Apply
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <h3 
-                className="uppercase text-sm font-semibold tracking-wider border-b pb-2"
-                style={{ color: primaryColor, borderColor: darkMode ? '#374151' : '#e5e7eb' }}
-              >
-                Recent Publications
-              </h3>
-              <div className="space-y-4">
-                {recentPublications.map(publication => (
-                  <BlogCard key={publication.id} {...publication} />
-                ))}
-              </div>
-              <div className="text-center">
-                <Link 
-                  to="/all-blogs" 
-                  className="font-semibold hover:underline"
-                  style={{ color: primaryColor }}
-                >
-                  View All Publications →
-                </Link>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      <div className="space-y-4">
-        <h3 className="text-teal-700 uppercase text-sm font-semibold tracking-wider border-b border-gray-200 pb-2" style={{ color: primaryColor, borderColor: darkMode ? '#374151' : '#e5e7eb' }}>
-          Top Contributors
-        </h3>
-        <div className="space-y-4">
-          {topContributors.map(contributor => (
-            <ContributorCard key={contributor.id} {...contributor} />
-          ))}
-        </div>
-        <div className="text-center" >
-          <Link 
-            to="/top-contributors" 
-            className="text-teal-500 font-semibold hover:underline"
-            style={{ color: primaryColor, borderColor: darkMode ? '#374151' : '#e5e7eb' }}
-          >
-            See All Contributors →
-          </Link>
-        </div>
-      </div>
     </aside>
   );
 };

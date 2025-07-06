@@ -4,6 +4,7 @@ import {
   calculateReadTime, 
   formatDate 
 } from '../utils/blogUtils.js';
+import BlogLink from '../components/BlogLink.jsx';
 
 const BlogCardDash = ({ 
   blog, 
@@ -20,12 +21,16 @@ const BlogCardDash = ({
 }) => {
   return (
     <div className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-4 pb-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-      <div
-        className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center"
-        style={{ backgroundImage: `url('${getThumbnailUrl(blog)}')` }}
-      ></div>
+      <BlogLink blog={blog}>
+        <div
+          className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center cursor-pointer"
+          style={{ backgroundImage: `url('${getThumbnailUrl(blog)}')` }}
+        ></div>
+      </BlogLink>
       <div>
-        <h3 className="text-lg font-semibold">{blog.title}</h3>
+        <BlogLink blog={blog}>
+          <h3 className="text-lg font-semibold cursor-pointer hover:underline">{blog.title}</h3>
+        </BlogLink>
         <p className={`mt-1 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
           {getContentPreview(blog.content)}
         </p>
