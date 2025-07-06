@@ -13,7 +13,7 @@ from blogs.views import (
     RevertBlogVersion, DeleteBlog,
     ModeratorDeleteBlog, VoteBlog, 
     BlogSearch, PublishBlog, UnpublishBlog,
-    SaveAsDraft, RestoreBlog, AddAuthorToBlog,JobBlogs
+    SaveAsDraft, RestoreBlog, AddAuthorToBlog,JobBlogs,PublishedBlogs 
 )
 
 urlpatterns = [
@@ -50,6 +50,7 @@ urlpatterns = [
     path('blogs/vote/<str:blog_id>/', VoteBlog.as_view()),
     
     path('blogs/<str:blog_id>/', GetBlog.as_view()),
+    path('published-blogs/', PublishedBlogs.as_view(), name='published_blogs'),
 
     
 

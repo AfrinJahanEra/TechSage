@@ -615,3 +615,85 @@ class AddAuthorToBlog(APIView):
             return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
         
 
+
+class PublishedBlogs(APIView):
+    def get(self, request):
+        """
+        Get all published blogs (non-draft, non-deleted)
+        Optional query parameters:
+        - category: filter by category
+        - author: filter by author username
+        - limit: limit number of results
+        """
+        dhaka_tz = pytz.timezone('Asia/Dhaka')
+        
+        try:
+            # Base query for published blogs only
+            query = Blog.objects(
+                is_published=True,
+                is_draft=False,
+                is_deleted=False
+            )
+            
+            # Apply filters if provided
+            category = request.GET.get('category')
+            if category:
+                query = query.filter(categories__in=[category])
+            
+            author_username = request.GET.get('author')
+            if author_username:
+                query = query.filter(authors__username=author_username)
+            
+            # Apply ordering and optional limit
+            blogs = query.order_by('-published_at')
+            
+            limit = request.GET.get('limit')
+            if limit and limit.isdigit():
+                blogs = blogs[:int(limit)]
+            
+            # Prepare response data
+            blogs_list = []
+            for blog in blogs:
+                published_at_dhaka = blog.published_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)
+                updated_at_dhaka = blog.updated_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)
+                
+                blog_data = {
+                    "id": str(blog.id),
+                    "title": blog.title,
+                    "excerpt": blog.content[:200] + "..." if len(blog.content) > 200 else blog.content,
+                    "authors": [{
+                        "username": author.username,
+                        "avatar": getattr(author, 'avatar_url', None)
+                    } for author in blog.authors],
+                    "thumbnail_url": blog.thumbnail_url,
+                    "categories": blog.categories,
+                    "tags": blog.tags,
+                    "published_at": published_at_dhaka.isoformat(),
+                    "updated_at": updated_at_dhaka.isoformat(),
+                    "read_time": f"{max(1, len(blog.content.split()) // 200)} min read",  # Approximate read time
+                    "stats": {
+                        "upvotes": len(blog.upvotes),
+                        "downvotes": len(blog.downvotes),
+                        "comments": getattr(blog, 'comment_count', 0)  # Assuming you might add this later
+                    },
+                    "url_slug": getattr(blog, 'slug', None)  # Optional slug field for SEO-friendly URLs
+                }
+                blogs_list.append(blog_data)
+            
+            return Response({
+                "success": True,
+                "count": len(blogs_list),
+                "blogs": blogs_list,
+                "filters": {
+                    "applied_category": category,
+                    "applied_author": author_username,
+                    "result_limit": limit
+                }
+            })
+            
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": "Failed to fetch published blogs",
+                "details": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
