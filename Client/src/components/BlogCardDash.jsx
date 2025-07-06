@@ -1,4 +1,3 @@
-// src/components/BlogCard.jsx
 import { 
   getThumbnailUrl, 
   getContentPreview, 
@@ -31,7 +30,14 @@ const BlogCardDash = ({
           {getContentPreview(blog.content)}
         </p>
         <div className={`flex justify-between text-xs mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-          <span>{blog.deleted_at ? `Deleted on: ${formatDate(blog.deleted_at)}` : formatDate(blog.created_at)}</span>
+          <span>
+            {blog.deleted_at 
+              ? `Deleted on: ${formatDate(blog.deleted_at)}` 
+              : blog.published_at 
+                ? `Published on: ${formatDate(blog.published_at)}`
+                : `Created on: ${formatDate(blog.created_at)}`
+            }
+          </span>
           <span>{calculateReadTime(blog.content)}</span>
         </div>
         <div className="flex space-x-4 mt-2">

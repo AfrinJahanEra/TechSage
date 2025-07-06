@@ -1,28 +1,37 @@
-
 export const normalizeBlog = (blog) => {
   if (!blog) return null;
   
-
-  const authors = Array.isArray(blog.authors) ? blog.authors.map(author => ({
-    username: author.username || author.user?.username || 'Unknown',
-    avatar_url: author.avatar_url || author.user?.avatar_url || ''
-  })) : [];
+  // Handle both array and single author cases
+  const authors = Array.isArray(blog.authors) 
+      ? blog.authors.map(author => ({
+          username: author.username || 'Unknown',
+          avatar_url: author.avatar || ''
+      }))
+      : [{
+          username: blog.authors?.username || 'Unknown',
+          avatar_url: blog.authors?.avatar || ''
+      }];
 
   return {
-    id: blog._id?.toString() || blog.id?.toString() || '',
-    title: blog.title || 'Untitled Blog',
-    content: blog.content || '',
-    thumbnail_url: blog.thumbnail_url || '',
-    created_at: blog.created_at || new Date().toISOString(),
-    updated_at: blog.updated_at || blog.created_at || new Date().toISOString(),
-    deleted_at: blog.deleted_at || null,
-    authors,
-    upvotes: Array.isArray(blog.upvotes) ? blog.upvotes : [],
-    downvotes: Array.isArray(blog.downvotes) ? blog.downvotes : [],
-    versions: Array.isArray(blog.versions) ? blog.versions : [],
-    is_draft: Boolean(blog.is_draft),
-    is_published: Boolean(blog.is_published),
-    is_deleted: Boolean(blog.is_deleted)
+      id: blog.id?.toString() || blog._id?.toString() || '',
+      title: blog.title || 'Untitled Blog',
+      content: blog.content || blog.excerpt || '',
+      thumbnail_url: blog.thumbnail_url || '',
+      created_at: blog.created_at || new Date().toISOString(),
+      updated_at: blog.updated_at || blog.created_at || new Date().toISOString(),
+      deleted_at: blog.deleted_at || null,
+      published_at: blog.published_at || null,
+      authors,
+      upvotes: Array.isArray(blog.upvotes) 
+          ? blog.upvotes 
+          : (blog.stats?.upvotes ? Array(blog.stats.upvotes).fill({}) : []),
+      downvotes: Array.isArray(blog.downvotes) 
+          ? blog.downvotes 
+          : (blog.stats?.downvotes ? Array(blog.stats.downvotes).fill({}) : []),
+      versions: Array.isArray(blog.versions) ? blog.versions : [],
+      is_draft: blog.is_draft || blog.status === 'draft',
+      is_published: blog.is_published || blog.status === 'published',
+      is_deleted: blog.is_deleted || false
   };
 };
 
@@ -39,12 +48,10 @@ const isValidUrl = (url) => {
 export const getThumbnailUrl = (blog) => {
   const normalized = normalizeBlog(blog);
   
-
   if (normalized.thumbnail_url && isValidUrl(normalized.thumbnail_url)) {
     return normalized.thumbnail_url;
   }
   
-
   if (normalized.versions?.length > 0) {
     for (let i = normalized.versions.length - 1; i >= 0; i--) {
       const version = normalized.versions[i];
@@ -54,7 +61,6 @@ export const getThumbnailUrl = (blog) => {
     }
   }
   
-
   return '../assets/placeholder.png';
 };
 
@@ -62,7 +68,6 @@ export const getContentPreview = (content) => {
   if (!content) return 'No content available';
   
   try {
-
     const temp = document.createElement('div');
     temp.innerHTML = content;
     
@@ -83,7 +88,6 @@ export const calculateReadTime = (content) => {
     const temp = document.createElement('div');
     temp.innerHTML = content;
     
-
     const text = temp.textContent || temp.innerText || '';
     const wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
     const minutes = Math.max(1, Math.ceil(wordCount / 200));

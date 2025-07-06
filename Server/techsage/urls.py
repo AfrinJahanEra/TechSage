@@ -50,7 +50,7 @@ urlpatterns = [
     path('blogs/vote/<str:blog_id>/', VoteBlog.as_view()),
     
     path('blogs/<str:blog_id>/', GetBlog.as_view()),
-    path('published-blogs/', PublishedBlogs.as_view(), name='published_blogs'),
+    path('published-blogs/', PublishedBlogs.as_view(), name='published_blogs'),#for all blogs of all ids
 
     
 

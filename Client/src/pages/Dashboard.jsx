@@ -35,23 +35,23 @@ const Dashboard = () => {
                 switch (activeSection) {
                     case 'blogs':
                         response = await api.get(`/blogs/?author=${user.username}&status=published`);
-                        setBlogs((response.data || []).map(normalizeBlog));
+                        setBlogs((response.data.results || []).map(normalizeBlog));
                         break;
                     case 'drafts':
                         response = await api.get(`/blogs/?author=${user.username}&status=draft`);
-                        setDrafts((response.data || []).map(normalizeBlog));
+                        setDrafts((response.data.results || []).map(normalizeBlog));
                         break;
                     case 'trash':
                         response = await api.get(`/blogs/?author=${user.username}&status=trash`);
-                        setTrash((response.data || []).map(normalizeBlog));
+                        setTrash((response.data.results || []).map(normalizeBlog));
                         break;
                     case 'saved':
                         response = await api.get(`/user/${user.username}/saved-blogs/`);
                         setSavedBlogs((response.data || []).map(normalizeBlog));
                         break;
                     case 'profile':
-                        response = await api.get(`/blogs/?author=${user.username}&status=published&limit=2`);
-                        setBlogs((response.data || []).map(normalizeBlog));
+                        response = await api.get(`/published-blogs/?author=${user.username}&limit=2`);
+                        setBlogs((response.data.blogs || []).map(normalizeBlog));
                         break;
                     default:
                         break;
@@ -100,7 +100,7 @@ const Dashboard = () => {
             await api.post(`/blogs/publish/${blogId}/`, { username: user.username });
             setDrafts(drafts.filter(blog => blog.id !== blogId));
             const response = await api.get(`/blogs/?author=${user.username}&status=published`);
-            setBlogs((response.data || []).map(normalizeBlog));
+            setBlogs((response.data.results || []).map(normalizeBlog));
         } catch (err) {
             console.error('Publish error:', err);
             setError(err.response?.data?.error || 'Failed to publish blog');
@@ -113,7 +113,7 @@ const Dashboard = () => {
             setBlogs(blogs.filter(blog => blog.id !== blogId));
             setDrafts(drafts.filter(blog => blog.id !== blogId));
             const response = await api.get(`/blogs/?author=${user.username}&status=trash`);
-            setTrash((response.data || []).map(normalizeBlog));
+            setTrash((response.data.results || []).map(normalizeBlog));
         } catch (err) {
             console.error('Delete error:', err);
             setError(err.response?.data?.error || 'Failed to delete blog');
@@ -125,7 +125,7 @@ const Dashboard = () => {
             await api.post(`/blogs/restore/${blogId}/`, { username: user.username });
             setTrash(trash.filter(blog => blog.id !== blogId));
             const response = await api.get(`/blogs/?author=${user.username}&status=published`);
-            setBlogs((response.data || []).map(normalizeBlog));
+            setBlogs((response.data.results || []).map(normalizeBlog));
         } catch (err) {
             console.error('Restore error:', err);
             setError(err.response?.data?.error || 'Failed to restore blog');
