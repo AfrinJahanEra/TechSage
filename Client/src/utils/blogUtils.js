@@ -1,9 +1,8 @@
-// src/utils/blogUtils.js
-// src/utils/blogUtils.js
+
 export const normalizeBlog = (blog) => {
   if (!blog) return null;
   
-  // Handle author data
+
   const authors = Array.isArray(blog.authors) ? blog.authors.map(author => ({
     username: author.username || author.user?.username || 'Unknown',
     avatar_url: author.avatar_url || author.user?.avatar_url || ''
@@ -40,12 +39,12 @@ const isValidUrl = (url) => {
 export const getThumbnailUrl = (blog) => {
   const normalized = normalizeBlog(blog);
   
-  // Check main thumbnail_url first
+
   if (normalized.thumbnail_url && isValidUrl(normalized.thumbnail_url)) {
     return normalized.thumbnail_url;
   }
   
-  // Then check versions
+
   if (normalized.versions?.length > 0) {
     for (let i = normalized.versions.length - 1; i >= 0; i--) {
       const version = normalized.versions[i];
@@ -55,19 +54,18 @@ export const getThumbnailUrl = (blog) => {
     }
   }
   
-  // Default placeholder
-  return '/images/placeholder.jpg';
+
+  return '../assets/placeholder.png';
 };
 
 export const getContentPreview = (content) => {
   if (!content) return 'No content available';
   
   try {
-    // Create a temporary div to parse HTML
+
     const temp = document.createElement('div');
     temp.innerHTML = content;
     
-    // Get text content and clean it up
     let plainText = temp.textContent || temp.innerText || '';
     plainText = plainText.replace(/\s+/g, ' ').trim();
     
@@ -85,7 +83,7 @@ export const calculateReadTime = (content) => {
     const temp = document.createElement('div');
     temp.innerHTML = content;
     
-    // Get text content and count words
+
     const text = temp.textContent || temp.innerText || '';
     const wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
     const minutes = Math.max(1, Math.ceil(wordCount / 200));
