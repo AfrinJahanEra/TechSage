@@ -43,15 +43,13 @@ const InsideBlog = () => {
     '--primary-light': primaryLight,
   };
 
-// src/pages/InsideBlog.jsx
-// Update the useEffect that fetches the blog data:
+
 useEffect(() => {
-  // If we have blog data in location state (from BlogLink), use that immediately
+
   if (location.state?.blog) {
     setBlog(location.state.blog);
     setLoading(false);
-    
-    // Still fetch fresh data in the background
+
     const fetchFreshData = async () => {
       try {
         const response = await api.get(`/blogs/${id}`);
@@ -62,7 +60,7 @@ useEffect(() => {
     };
     fetchFreshData();
   } else {
-    // No state, fetch from API
+
     const fetchBlog = async () => {
       try {
         setLoading(true);
@@ -98,35 +96,6 @@ useEffect(() => {
     }
   }, [blog, api]);
 
-  const handleVote = async (type) => {
-    try {
-      const response = await api.post(`/blogs/vote/${id}/`, {
-        type,
-        username: 'current_user' // Replace with actual username from auth
-      });
-      setBlog(prev => ({
-        ...prev,
-        upvotes: response.data.upvotes,
-        downvotes: response.data.downvotes
-      }));
-    } catch (err) {
-      console.error('Vote error:', err);
-    }
-  };
-
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: blog.title,
-        text: blog.content.substring(0, 100),
-        url: window.location.href,
-      }).catch(err => console.log('Error sharing:', err));
-    } else {
-      // Fallback for browsers that don't support Web Share API
-      const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(blog.title)}&url=${encodeURIComponent(window.location.href)}`;
-      window.open(shareUrl, '_blank');
-    }
-  };
 
   const handleReportSubmit = (e) => {
     e.preventDefault();

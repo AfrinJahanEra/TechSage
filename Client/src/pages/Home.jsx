@@ -1,13 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Navbar from '../components/Navbar.jsx';
 import Footer from '../components/Footer.jsx';
 import Sidebar from '../components/Sidebar.jsx';
 import SearchForm from '../components/SearchForm.jsx';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../context/ThemeContext.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
+import { normalizeBlog, getThumbnailUrl, formatDate, calculateReadTime } from '../utils/blogUtils';
+import BlogLink from '../components/BlogLink';
 
 const Home = () => {
-  const [fadeInElements, setFadeInElements] = useState([]);
   const { darkMode, primaryColor, shadeColor } = useTheme();
+  const { api } = useAuth();
+  const [mostPopularBlog, setMostPopularBlog] = useState(null);
+  const [featuredBlogs, setFeaturedBlogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Generate color variants
   const primaryDark = shadeColor(primaryColor, -20);
@@ -20,52 +27,72 @@ const Home = () => {
     '--primary-light': primaryLight,
   };
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const elements = document.querySelectorAll('.fade-in');
-      const windowHeight = window.innerHeight;
+  const fetchPopularBlogs = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch published blogs from API
+      const response = await api.get('/published-blogs/');
+      if (!response.data || !response.data.blogs) {
+        throw new Error('Invalid response format');
+      }
+
+      // Normalize and sort blogs
+      let blogs = response.data.blogs.map(blog => normalizeBlog(blog));
       
-      elements.forEach(element => {
-        const elementPosition = element.getBoundingClientRect().top;
-        if (elementPosition < windowHeight - 100) {
-          setFadeInElements(prev => [...prev, element]);
-          element.classList.add('visible');
-        }
+      // Sort by upvotes (descending) and then by published date (descending)
+      blogs.sort((a, b) => {
+        const aUpvotes = a.upvotes?.length || 0;
+        const bUpvotes = b.upvotes?.length || 0;
+        const upvoteDiff = bUpvotes - aUpvotes;
+        if (upvoteDiff !== 0) return upvoteDiff;
+        return new Date(b.published_at || b.created_at) - new Date(a.published_at || a.created_at);
       });
-    };
 
-    window.addEventListener('scroll', handleScroll);
-    handleScroll(); // Check on initial load
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+      // Set most popular blog (first in sorted array)
+      setMostPopularBlog(blogs[0] || null);
 
-  const featuredResearch = [
-    {
-      id: 1,
-      image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80',
-      title: 'Quantum Computing Research'
-    },
-    {
-      id: 2,
-      image: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80',
-      title: 'Renewable Energy Studies'
-    },
-    {
-      id: 3,
-      image: 'https://images.unsplash.com/photo-1576091160550-2173dbe999ef?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80',
-      title: 'Neuroscience Discoveries'
-    },
-    {
-      id: 4,
-      image: 'https://images.unsplash.com/photo-1593508512255-86ab42a8e620?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80',
-      title: 'AI and Robotics'
-    },
-    {
-      id: 5,
-      image: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80',
-      title: 'Cognitive Science'
+      // Set featured blogs (next 5 in sorted array)
+      setFeaturedBlogs(blogs.length > 1 ? blogs.slice(1, 10) : []);
+      
+    } catch (err) {
+      console.error('Error fetching popular blogs:', err);
+      setError(err.response?.data?.error || 'Failed to load popular blogs. Please try again later.');
+    } finally {
+      setLoading(false);
     }
-  ];
+  }, [api]);
+
+  useEffect(() => {
+    fetchPopularBlogs();
+  }, [fetchPopularBlogs]);
+
+  if (loading) {
+    return (
+      <div className={`min-h-screen flex items-center justify-center ${darkMode ? 'bg-gray-900' : 'bg-white'}`}>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={`min-h-screen flex items-center justify-center ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-800'}`}>
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Error loading content</h2>
+          <p>{error}</p>
+          <button
+            onClick={fetchPopularBlogs}
+            className="mt-4 px-4 py-2 rounded-md hover:opacity-90 transition-opacity"
+            style={{ backgroundColor: primaryColor, color: 'white' }}
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div 
@@ -78,53 +105,94 @@ const Home = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Content */}
           <article className="flex-1">
-            <header className={`border-b pb-6 mb-8 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-              <h1 className="text-3xl md:text-4xl font-bold leading-tight mb-3">
-                Advancements in Quantum Computing: A Breakthrough in Academic Research
-              </h1>
-              <div className="flex flex-wrap gap-4 text-sm" style={{ color: primaryColor, borderColor: darkMode ? '#374151' : '#e5e7eb' }}>
-                <span className="font-semibold"  >Computer Science</span>
-                <span>Published: June 15, 2025</span>
-                <span>
-                  By: <a href="/other-dashboard" className="text-teal-500 hover:underline" style={{ color: primaryColor, borderColor: darkMode ? '#374151' : '#e5e7eb' }}>Dr. Tahira Jannat</a>
-                </span>
+            {mostPopularBlog ? (
+              <>
+                <header className={`border-b pb-6 mb-8 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <h1 className="text-3xl md:text-4xl font-bold leading-tight mb-3">
+                    {mostPopularBlog.title}
+                  </h1>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {mostPopularBlog.categories?.map((category, index) => (
+                      <span 
+                        key={`cat-${index}`} 
+                        className="px-3 py-1 text-sm rounded-full font-medium"
+                        style={{ 
+                          backgroundColor: `${primaryColor}20`,
+                          color: primaryColor
+                        }}
+                      >
+                        {category}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {mostPopularBlog.tags?.map((tag, index) => (
+                      <span 
+                        key={`tag-${index}`} 
+                        className={`px-2 py-1 text-xs rounded-full ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'}`}
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                  <div className={`flex flex-wrap gap-4 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    <span>Published: {formatDate(mostPopularBlog.published_at)}</span>
+                    <span>
+                      By: {mostPopularBlog.authors?.map((author, index) => (
+                        <BlogLink key={index} blog={mostPopularBlog}>
+                          <a
+                            href={`/user/${author.username}`}
+                            style={{ color: primaryColor }}
+                            className="hover:underline"
+                          >
+                            {author.username}
+                            {index < mostPopularBlog.authors.length - 1 ? ', ' : ''}
+                          </a>
+                        </BlogLink>
+                      ))}
+                    </span>
+                    <span>{calculateReadTime(mostPopularBlog.content)}</span>
+                    <span className="flex items-center">
+                      <i className="fas fa-arrow-up mr-1"></i>
+                      {mostPopularBlog.upvotes?.length || 0} upvotes
+                    </span>
+                  </div>
+                </header>
+
+                <div className="prose max-w-none">
+                  <div 
+                    dangerouslySetInnerHTML={{ __html: mostPopularBlog.content }} 
+                    className={`${darkMode ? 'text-gray-300' : 'text-gray-800'}`}
+                  />
+                </div>
+
+                <div className="mt-8">
+                  <BlogLink blog={mostPopularBlog}>
+                    <a 
+                      className="font-semibold hover:underline"
+                      style={{ color: primaryColor }}
+                    >
+                      Read Full Blog →
+                    </a>
+                  </BlogLink>
+                </div>
+              </>
+            ) : (
+              <div className={`text-center py-8 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                <p>No popular blogs available</p>
+                <button
+                  onClick={fetchPopularBlogs}
+                  className="mt-4 px-4 py-2 rounded-md hover:opacity-90 transition-opacity"
+                  style={{ backgroundColor: primaryColor, color: 'white' }}
+                >
+                  Refresh
+                </button>
               </div>
-            </header>
-
-            <div className="prose max-w-none">
-              <p className={darkMode ? 'text-gray-300' : ''}>
-                At AcademicHub, we are committed to showcasing groundbreaking research across all disciplines. The recent breakthroughs in quantum computing represent a significant leap forward in computational capabilities, with researchers demonstrating quantum supremacy in solving complex optimization problems.
-              </p>
-
-              <p className={darkMode ? 'text-gray-300' : ''}>
-                This year's research findings, published in Nature Computational Science, detail how a team of physicists and computer scientists developed a 72-qubit quantum processor that can perform calculations in minutes that would take classical supercomputers thousands of years. The implications for fields ranging from cryptography to drug discovery are profound.
-              </p>
-
-              <blockquote className={`border-l-4 pl-5 italic my-6 ${darkMode ? 'border-teal-300 text-teal-300' : 'border-teal-500 text-teal-700'}`}>
-                "What makes this breakthrough particularly exciting is its potential for real-world applications in materials science and molecular modeling," explained Professor Michael Chen, one of the lead researchers. "We're not just proving theoretical concepts—we're building tools that will transform scientific discovery."
-              </blockquote>
-
-              <div className={`p-6 rounded-lg my-8 ${darkMode ? 'bg-gray-800' : 'bg-teal-50'}`}>
-                <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-teal-300' : 'text-teal-800'}`}>Key Findings from the Research</h3>
-                <p className={darkMode ? 'text-gray-300' : ''}>
-                  The study demonstrates error correction techniques that maintain quantum coherence for unprecedented durations, a new quantum algorithm for simulating molecular interactions, and the successful integration of classical and quantum computing architectures.
-                </p>
-              </div>
-
-              <p className={darkMode ? 'text-gray-300' : ''}>
-                The research team, comprising scientists from multiple universities, has made their quantum computing framework available to academic institutions worldwide. This open-source approach is expected to accelerate innovation across the field, with early adopters already reporting significant progress in their own quantum computing initiatives.
-              </p>
-            </div>
-
-            <div className="mt-8">
-              <a href="/inside-blog" className="text-teal-500 font-semibold hover:underline" style={{ color: primaryColor, borderColor: darkMode ? '#374151' : '#e5e7eb' }}>
-                Read Full Blog →
-              </a>
-            </div>
+            )}
           </article>
 
           {/* Sidebar */}
-          <div className="lg:w-80 space-y-8" >
+          <div className="lg:w-80 space-y-8">
             <Sidebar />
             <SearchForm/>
           </div>
@@ -134,36 +202,56 @@ const Home = () => {
       {/* Featured Research Section */}
       <section className={`py-16 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
         <div className="container mx-auto px-4 md:px-20">
-          <h2 className={`text-3xl font-bold mb-4 relative pb-4 fade-in ${darkMode ? 'text-white' : ''}`}>
-            Featured Research
+          <h2 className={`text-3xl font-bold mb-4 relative pb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+            Trending Research
             <span className="absolute bottom-0 left-0 w-16 h-1" style={{ backgroundColor: primaryColor }}></span>
           </h2>
-          <p className={`text-xl mb-8 fade-in ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            Explore groundbreaking academic work across disciplines
+          <p className={`text-xl mb-8 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            Explore the most popular academic work this week
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 fade-in">
-            {featuredResearch.map(research => (
-              <a 
-                key={research.id} 
-                href="/inside-blog" 
-                className="group relative rounded-lg overflow-hidden h-48"
+          {featuredBlogs.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+              {featuredBlogs.map((blog) => (
+                <BlogLink key={blog.id} blog={blog}>
+                  <div className="group relative rounded-lg overflow-hidden h-48">
+                    <div
+                      className={`w-full h-full bg-cover bg-center ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}
+                      style={{
+                        backgroundImage: `url('${getThumbnailUrl(blog)}')`
+                      }}
+                      aria-label={blog.title || 'Blog thumbnail'}
+                    />
+                    <div className={`absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${darkMode ? 'from-black/90' : 'from-black/80'}`} />
+                    <div className="absolute bottom-0 left-0 w-full p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                      <h3 className="text-white text-lg font-semibold mb-1 line-clamp-2">
+                        {blog.title || 'Untitled Blog'}
+                      </h3>
+                      <div className="flex items-center text-sm text-white">
+                        <i className="fas fa-arrow-up mr-1"></i>
+                        <span>{blog.upvotes?.length || 0}</span>
+                        <span className="mx-2">•</span>
+                        <span>{formatDate(blog.published_at || blog.created_at)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </BlogLink>
+              ))}
+            </div>
+          ) : (
+            <div className={`text-center py-8 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              <p>No trending research available</p>
+              <button
+                onClick={fetchPopularBlogs}
+                className="mt-4 px-4 py-2 rounded-md hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: primaryColor, color: 'white' }}
               >
-                <img 
-                  src={research.image} 
-                  alt={research.title} 
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <h3 className="absolute bottom-0 left-0 w-full p-4 text-white text-lg font-semibold translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                  {research.title}
-                </h3>
-              </a>
-            ))}
-          </div>
+                Refresh
+              </button>
+            </div>
+          )}
         </div>
       </section>
-
       <Footer />
     </div>
   );

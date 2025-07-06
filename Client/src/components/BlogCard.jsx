@@ -1,7 +1,7 @@
 // src/components/BlogCard.jsx
 import { Link } from 'react-router-dom';
-import { useTheme } from '../context/ThemeContext';
-import { getThumbnailUrl, formatDate, calculateReadTime } from '../utils/blogUtils';
+import { useTheme } from '../context/ThemeContext.jsx';
+import { getThumbnailUrl, formatDate, calculateReadTime } from '../utils/blogUtils.js';
 
 const BlogCard = ({ blog }) => {
   const { primaryColor, darkMode } = useTheme();

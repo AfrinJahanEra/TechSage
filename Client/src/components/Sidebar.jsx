@@ -6,6 +6,7 @@ import ContributorCard from './ContributorCard';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 
+
 const Sidebar = ({ type = 'default', currentBlogId = null }) => {
   const [showJobs, setShowJobs] = useState(false);
   const [relatedBlogs, setRelatedBlogs] = useState([]);
@@ -20,22 +21,21 @@ const Sidebar = ({ type = 'default', currentBlogId = null }) => {
     const fetchBlogs = async () => {
       try {
         setLoading(true);
-        
-        // Fetch newest blogs (top 5)
+
         const newestResponse = await api.get('/published-blogs/?limit=5&sort=-published_at');
         setNewestBlogs(newestResponse.data.blogs || []);
         
-        // Fetch recent blogs for all cases
+  
         const recentResponse = await api.get('/published-blogs/?limit=5&sort=-published_at');
         setRecentBlogs(recentResponse.data.blogs || []);
         
-        // If inside a blog page, fetch related blogs and featured blogs
+    
         if (type === 'inside-blog' && currentBlogId) {
           const currentBlogResponse = await api.get(`/blogs/${currentBlogId}`);
           const currentCategories = currentBlogResponse.data.categories || [];
           
           if (currentCategories.length > 0) {
-            // Fetch related blogs (same category)
+ 
             const relatedResponse = await api.get(
               `/published-blogs/?category=${currentCategories[0]}&limit=4`
             );
@@ -45,7 +45,7 @@ const Sidebar = ({ type = 'default', currentBlogId = null }) => {
                 .slice(0, 3)
             );
             
-            // Fetch featured blogs (same category, top 5)
+
             const featuredResponse = await api.get(
               `/published-blogs/?category=${currentCategories[0]}&limit=5&sort=-published_at`
             );
