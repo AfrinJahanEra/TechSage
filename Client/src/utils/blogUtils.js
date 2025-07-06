@@ -64,7 +64,7 @@ export const getThumbnailUrl = (blog) => {
   return '../assets/placeholder.png';
 };
 
-export const getContentPreview = (content) => {
+export const getContentPreview = (content, path = '') => {
   if (!content) return 'No content available';
   
   try {
@@ -74,7 +74,14 @@ export const getContentPreview = (content) => {
     let plainText = temp.textContent || temp.innerText || '';
     plainText = plainText.replace(/\s+/g, ' ').trim();
     
-    return plainText.length > 100 ? `${plainText.substring(0, 100)}...` : plainText;
+    // Split into words and limit based on path
+    const words = plainText.split(' ');
+    const maxWords = path.toLowerCase() === '/home' ? 500 : 10;
+    
+    if (words.length > maxWords) {
+      return words.slice(0, maxWords).join(' ') + '...';
+    }
+    return plainText;
   } catch (e) {
     console.error('Error parsing content:', e);
     return 'Content preview unavailable';

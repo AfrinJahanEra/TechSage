@@ -217,7 +217,7 @@ useEffect(() => {
             {blog.authors?.map(author => (
               <div key={author.username} className={`flex flex-col md:flex-row gap-5 p-6 rounded-lg my-8 ${darkMode ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-800'}`}>
                 <img
-                  src={user?.avatar_url || "https://randomuser.me/api/portraits/women/44.jpg"}
+                  src={author?.avatar_url || "https://randomuser.me/api/portraits/women/44.jpg"}
                   alt="Profile"
                   className="w-20 h-20 rounded-full border-4 object-cover mr-0 md:mr-6 mb-4 md:mb-0"
                   style={{ borderColor: primaryColor }}

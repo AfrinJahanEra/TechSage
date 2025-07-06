@@ -5,7 +5,7 @@ import Sidebar from '../components/Sidebar.jsx';
 import SearchForm from '../components/SearchForm.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
-import { normalizeBlog, getThumbnailUrl, formatDate, calculateReadTime } from '../utils/blogUtils';
+import { normalizeBlog, getThumbnailUrl, formatDate, calculateReadTime, getContentPreview } from '../utils/blogUtils';
 import BlogLink from '../components/BlogLink';
 
 const Home = () => {
@@ -16,11 +16,9 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Generate color variants
   const primaryDark = shadeColor(primaryColor, -20);
   const primaryLight = shadeColor(primaryColor, 20);
 
-  // Dynamic style variables for theme colors
   const themeStyles = {
     '--primary-color': primaryColor,
     '--primary-dark': primaryDark,
@@ -32,16 +30,13 @@ const Home = () => {
       setLoading(true);
       setError(null);
 
-      // Fetch published blogs from API
       const response = await api.get('/published-blogs/');
       if (!response.data || !response.data.blogs) {
         throw new Error('Invalid response format');
       }
 
-      // Normalize and sort blogs
       let blogs = response.data.blogs.map(blog => normalizeBlog(blog));
       
-      // Sort by upvotes (descending) and then by published date (descending)
       blogs.sort((a, b) => {
         const aUpvotes = a.upvotes?.length || 0;
         const bUpvotes = b.upvotes?.length || 0;
@@ -50,10 +45,7 @@ const Home = () => {
         return new Date(b.published_at || b.created_at) - new Date(a.published_at || a.created_at);
       });
 
-      // Set most popular blog (first in sorted array)
       setMostPopularBlog(blogs[0] || null);
-
-      // Set featured blogs (next 5 in sorted array)
       setFeaturedBlogs(blogs.length > 1 ? blogs.slice(1, 10) : []);
       
     } catch (err) {
@@ -161,7 +153,7 @@ const Home = () => {
 
                 <div className="prose max-w-none">
                   <div 
-                    dangerouslySetInnerHTML={{ __html: mostPopularBlog.content }} 
+                    dangerouslySetInnerHTML={{ __html: getContentPreview(mostPopularBlog.content, '/home') }} 
                     className={`${darkMode ? 'text-gray-300' : 'text-gray-800'}`}
                   />
                 </div>
@@ -212,31 +204,37 @@ const Home = () => {
 
           {featuredBlogs.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-              {featuredBlogs.map((blog) => (
-                <BlogLink key={blog.id} blog={blog}>
-                  <div className="group relative rounded-lg overflow-hidden h-48">
-                    <div
-                      className={`w-full h-full bg-cover bg-center ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}
-                      style={{
-                        backgroundImage: `url('${getThumbnailUrl(blog)}')`
-                      }}
-                      aria-label={blog.title || 'Blog thumbnail'}
-                    />
-                    <div className={`absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${darkMode ? 'from-black/90' : 'from-black/80'}`} />
-                    <div className="absolute bottom-0 left-0 w-full p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                      <h3 className="text-white text-lg font-semibold mb-1 line-clamp-2">
-                        {blog.title || 'Untitled Blog'}
-                      </h3>
-                      <div className="flex items-center text-sm text-white">
-                        <i className="fas fa-arrow-up mr-1"></i>
-                        <span>{blog.upvotes?.length || 0}</span>
-                        <span className="mx-2">•</span>
-                        <span>{formatDate(blog.published_at || blog.created_at)}</span>
+              {featuredBlogs.map((blog) => {
+                const preview = getContentPreview(blog.content, '/home');
+                return (
+                  <BlogLink key={blog.id} blog={blog}>
+                    <div className="group relative rounded-lg overflow-hidden h-48">
+                      <div
+                        className={`w-full h-full bg-cover bg-center ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}
+                        style={{
+                          backgroundImage: `url('${getThumbnailUrl(blog)}')`
+                        }}
+                        aria-label={blog.title || 'Blog thumbnail'}
+                      />
+                      <div className={`absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${darkMode ? 'from-black/90' : 'from-black/80'}`} />
+                      <div className="absolute bottom-0 left-0 w-full p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                        <h3 className="text-white text-lg font-semibold mb-1 line-clamp-2">
+                          {blog.title || 'Untitled Blog'}
+                        </h3>
+                        <p className="text-white text-sm mb-2 line-clamp-2">
+                          {preview}
+                        </p>
+                        <div className="flex items-center text-sm text-white">
+                          <i className="fas fa-arrow-up mr-1"></i>
+                          <span>{blog.upvotes?.length || 0}</span>
+                          <span className="mx-2">•</span>
+                          <span>{formatDate(blog.published_at || blog.created_at)}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </BlogLink>
-              ))}
+                  </BlogLink>
+                );
+              })}
             </div>
           ) : (
             <div className={`text-center py-8 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
