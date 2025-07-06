@@ -35,6 +35,7 @@ function AppRoutes() {
       <Route path="/login" element={<LoginForm />} />
       {/* Updated blog creation routes */}
       <Route path="/create-blog" element={<CreateBlogs />} />
+      <Route path="/login" element={<LoginForm />} />
 
 
       <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />

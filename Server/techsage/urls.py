@@ -13,7 +13,7 @@ from blogs.views import (
     RevertBlogVersion, DeleteBlog,
     ModeratorDeleteBlog, VoteBlog, 
     BlogSearch, PublishBlog, UnpublishBlog,
-    SaveAsDraft, RestoreBlog, AddAuthorToBlog
+    SaveAsDraft, RestoreBlog, AddAuthorToBlog,JobBlogs
 )
 
 urlpatterns = [
@@ -43,6 +43,10 @@ urlpatterns = [
     path('blogs/delete/<str:blog_id>/', DeleteBlog.as_view()),
     path('blogs/mod/delete/<str:blog_id>/', ModeratorDeleteBlog.as_view()),
     
+
+    path('blogs/', ListBlogs.as_view()),  
+    path('jobs/', JobBlogs.as_view()),
+
     path('blogs/vote/<str:blog_id>/', VoteBlog.as_view()),
     
     path('blogs/<str:blog_id>/', GetBlog.as_view()),

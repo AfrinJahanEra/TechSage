@@ -1,12 +1,14 @@
+
+from datetime import datetime
+import pytz
+
+from datetime import datetime
+import pytz
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Blog
 from users.models import User
-from datetime import datetime
-import cloudinary.uploader
-from mongoengine.errors import ValidationError, DoesNotExist
-
 class CreateBlog(APIView):
     def post(self, request):
         data = request.data
@@ -62,39 +64,125 @@ class CreateBlog(APIView):
 
 # In your views.py
 
+
 class ListBlogs(APIView):
     def get(self, request):
+        dhaka_tz = pytz.timezone('Asia/Dhaka')
         status_filter = request.GET.get('status', None)
-        author_filter = request.GET.get('author', None)
+        author_filter = request.GET.get('author', None)  # Changed from 'author' to 'authors'
+        category_filter = request.GET.get('category', None)
         
+        # Base query
         query = Blog.objects.all()
         
+        # Status filters
         if status_filter == 'draft':
-            query = query.filter(is_draft=True, is_published=False)
+            query = query.filter(is_draft=True, is_published=False, is_deleted=False)
         elif status_filter == 'published':
-            query = query.filter(is_published=True)
+            query = query.filter(is_published=True, is_deleted=False)
         elif status_filter == 'trash':
             query = query.filter(is_deleted=True)
-            
-        if author_filter:
-            author = User.objects(username=author_filter).first()
-            if author:
-                query = query.filter(authors__in=[author])
+        else:  # Default case (all active blogs)
+            query = query.filter(is_deleted=False)
         
-        # Add proper error handling
+        # Author filter - corrected to use 'authors'
+        if author_filter:
+            try:
+                author = User.objects.get(username=author_filter)
+                query = query.filter(authors__in=[author])  # Using authors__in
+            except User.DoesNotExist:
+                return Response({"error": "Author not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Category filter
+        if category_filter:
+            query = query.filter(categories__in=[category_filter])
+        
         try:
             blogs = query.order_by('-created_at')
             blogs_list = []
             for blog in blogs:
+                # Convert times to Bangladesh time
+                created_at_dhaka = blog.created_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)
+                updated_at_dhaka = blog.updated_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)
+                published_at_dhaka = blog.published_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz) if blog.published_at else None
+                
                 blog_data = {
                     "id": str(blog.id),
                     "title": blog.title,
-                    # include other fields
+                    "content": blog.content,
+                    "authors": [{
+                        "username": author.username,
+                        "avatar": getattr(author, 'avatar_url', None)
+                    } for author in blog.authors],
+                    "thumbnail_url": blog.thumbnail_url,
+                    "categories": blog.categories,
+                    "tags": blog.tags,
+                    "created_at": created_at_dhaka.isoformat(),
+                    "updated_at": updated_at_dhaka.isoformat(),
+                    "status": "draft" if blog.is_draft else "published" if blog.is_published else "deleted",
+                    "stats": {
+                        "upvotes": len(blog.upvotes),
+                        "downvotes": len(blog.downvotes)
+                    },
+                    "version": blog.current_version,
+                    "published_at": published_at_dhaka.isoformat() if published_at_dhaka else None,
+                    "timezone": "Asia/Dhaka (UTC+6)"
                 }
                 blogs_list.append(blog_data)
-            return Response(blogs_list)
+            
+            return Response({
+                "count": len(blogs_list),
+                "results": blogs_list
+            })
+            
         except Exception as e:
-            return Response({"error": str(e)}, status=500)
+            return Response({
+                "error": "Failed to fetch blogs",
+                "details": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class JobBlogs(APIView):
+    def get(self, request):
+        dhaka_tz = pytz.timezone('Asia/Dhaka')
+        try:
+            # Get only published job blogs
+            blogs = Blog.objects(
+                categories__in=["job"],
+                is_published=True,
+                is_deleted=False
+            ).order_by('-created_at')
+            
+            blogs_list = []
+            for blog in blogs:
+                created_at_dhaka = blog.created_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)
+                updated_at_dhaka = blog.updated_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)
+                
+                blog_data = {
+                    "id": str(blog.id),
+                    "title": blog.title,
+                    "content": blog.content,
+                    "authors": [{
+                        "username": author.username,
+                        "avatar": getattr(author, 'avatar_url', None)
+                    } for author in blog.authors],
+                    "thumbnail_url": blog.thumbnail_url,
+                    "tags": blog.tags,
+                    "created_at": created_at_dhaka.isoformat(),
+                    "updated_at": updated_at_dhaka.isoformat(),
+                    "timezone": "Asia/Dhaka (UTC+6)"
+                }
+                blogs_list.append(blog_data)
+            
+            return Response({
+                "count": len(blogs_list),
+                "results": blogs_list
+            })
+            
+        except Exception as e:
+            return Response({
+                "error": "Failed to fetch job blogs",
+                "details": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class GetBlog(APIView):
     def get(self, request, blog_id):
