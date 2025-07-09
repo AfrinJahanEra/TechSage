@@ -44,37 +44,37 @@ const InsideBlog = () => {
   };
 
 
-useEffect(() => {
+  useEffect(() => {
 
-  if (location.state?.blog) {
-    setBlog(location.state.blog);
-    setLoading(false);
+    if (location.state?.blog) {
+      setBlog(location.state.blog);
+      setLoading(false);
 
-    const fetchFreshData = async () => {
-      try {
-        const response = await api.get(`/blogs/${id}`);
-        setBlog(response.data);
-      } catch (err) {
-        console.error('Error fetching fresh blog data:', err);
-      }
-    };
-    fetchFreshData();
-  } else {
+      const fetchFreshData = async () => {
+        try {
+          const response = await api.get(`/blogs/${id}`);
+          setBlog(response.data);
+        } catch (err) {
+          console.error('Error fetching fresh blog data:', err);
+        }
+      };
+      fetchFreshData();
+    } else {
 
-    const fetchBlog = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get(`/blogs/${id}`);
-        setBlog(response.data);
-        setLoading(false);
-      } catch (err) {
-        setError(err.response?.data?.error || 'Failed to fetch blog');
-        setLoading(false);
-      }
-    };
-    fetchBlog();
-  }
-}, [id, api, location.state]);
+      const fetchBlog = async () => {
+        try {
+          setLoading(true);
+          const response = await api.get(`/blogs/${id}`);
+          setBlog(response.data);
+          setLoading(false);
+        } catch (err) {
+          setError(err.response?.data?.error || 'Failed to fetch blog');
+          setLoading(false);
+        }
+      };
+      fetchBlog();
+    }
+  }, [id, api, location.state]);
 
   useEffect(() => {
     if (blog && blog.categories && blog.categories.length > 0) {
@@ -143,7 +143,9 @@ useEffect(() => {
       <main className="container mx-auto px-4 md:px-20 py-20 pt-28">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Content */}
+          {/* Main Content */}
           <article className="flex-1">
+            {/* Article Header */}
             <header className={`border-b pb-6 mb-8 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
               <h1 className={`text-3xl md:text-4xl font-bold leading-tight mb-3 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                 {blog.title}
@@ -192,18 +194,16 @@ useEffect(() => {
               </div>
             </header>
 
-            <div className="flex flex-col lg:flex-row gap-8">
-              {/* Blog content with floating sidebar */}
-              <div className="prose max-w-none lg:w-[calc(100%-200px)]">
-                <div
-                  className={`float-left mr-6 mb-4 w-48 h-48 bg-cover bg-center rounded-md ${darkMode ? 'bg-gray-800' : 'bg-gray-200'}`}
-                  style={{ backgroundImage: `url('${getThumbnailUrl(blog)}')` }}
-                ></div>
-
-                <div dangerouslySetInnerHTML={{ __html: blog.content }} />
-              </div>
+            {/* Blog Content with Floating Thumbnail */}
+            <div className="prose max-w-none">
+              <div
+                className={`float-left mt-15 mr-5 mb-10 w-80 h-50 bg-cover bg-center rounded-md ${darkMode ? 'bg-gray-800' : 'bg-gray-200'}`}
+                style={{ backgroundImage: `url('${getThumbnailUrl(blog)}')` }}
+              ></div>
+              <div dangerouslySetInnerHTML={{ __html: blog.content }} />
             </div>
 
+            {/* Blog Actions */}
             <BlogActions
               upvotes={blog.upvotes?.length || 0}
               downvotes={blog.downvotes?.length || 0}
@@ -211,7 +211,6 @@ useEffect(() => {
               blogId={blog.id}
               blogTitle={blog.title}
             />
-
 
             {/* Author Bio */}
             {blog.authors?.map(author => (
