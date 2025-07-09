@@ -15,6 +15,7 @@ DEBUG = True
 ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.contenttypes',
     'rest_framework',
     'corsheaders',
