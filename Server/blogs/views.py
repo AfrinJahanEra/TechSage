@@ -4,7 +4,6 @@ from rest_framework.response import Response
 from rest_framework import status
 from mongoengine import ValidationError
 import cloudinary.uploader
-import json
 from .models import Blog
 from users.models import User
 import pytz
@@ -13,8 +12,7 @@ class CreateBlog(APIView):
     def post(self, request):
         data = request.data
         username = data.get('username')
-        
-        # Validate required fields
+
         if not username:
             return Response({"error": "username is required"}, status=status.HTTP_400_BAD_REQUEST)
         if not data.get('title'):
@@ -24,8 +22,6 @@ class CreateBlog(APIView):
 
         try:
             user = User.objects.get(username=username)
-            
-            # Parse categories and tags
             categories = []
             if 'categories[]' in data:
                 if isinstance(data['categories[]'], list):
@@ -40,17 +36,14 @@ class CreateBlog(APIView):
                 else:
                     tags = [data['tags[]']]
             
-            # Handle thumbnail upload
             thumbnail_url = None
             if 'thumbnail' in request.FILES:
                 upload_result = cloudinary.uploader.upload(request.FILES['thumbnail'])
                 thumbnail_url = upload_result['secure_url']
             
-            # Determine status
             is_draft = str(data.get('is_draft', 'true')).lower() == 'true'
             is_deleted = str(data.get('is_deleted', 'false')).lower() == 'true'
             
-            # Create blog
             blog = Blog(
                 title=data['title'],
                 content=data['content'],
@@ -63,7 +56,6 @@ class CreateBlog(APIView):
                 is_published=False
             )
             
-            # Handle special cases
             if is_deleted:
                 blog.soft_delete(username)
             elif not is_draft:
@@ -71,7 +63,6 @@ class CreateBlog(APIView):
             
             blog.save()
             
-            # Prepare response
             response_data = {
                 "id": str(blog.id),
                 "title": blog.title,
@@ -99,31 +90,30 @@ class ListBlogs(APIView):
     def get(self, request):
         dhaka_tz = pytz.timezone('Asia/Dhaka')
         status_filter = request.GET.get('status', None)
-        author_filter = request.GET.get('author', None)  # Changed from 'author' to 'authors'
+        author_filter = request.GET.get('author', None) 
         category_filter = request.GET.get('category', None)
-        
-        # Base query
+
         query = Blog.objects.all()
         
-        # Status filters
+
         if status_filter == 'draft':
             query = query.filter(is_draft=True, is_published=False, is_deleted=False)
         elif status_filter == 'published':
             query = query.filter(is_published=True, is_deleted=False)
         elif status_filter == 'trash':
             query = query.filter(is_deleted=True)
-        else:  # Default case (all active blogs)
+        else: 
             query = query.filter(is_deleted=False)
         
-        # Author filter - corrected to use 'authors'
+ 
         if author_filter:
             try:
                 author = User.objects.get(username=author_filter)
-                query = query.filter(authors__in=[author])  # Using authors__in
+                query = query.filter(authors__in=[author]) 
             except User.DoesNotExist:
                 return Response({"error": "Author not found"}, status=status.HTTP_404_NOT_FOUND)
         
-        # Category filter
+
         if category_filter:
             query = query.filter(categories__in=[category_filter])
         
@@ -131,7 +121,7 @@ class ListBlogs(APIView):
             blogs = query.order_by('-created_at')
             blogs_list = []
             for blog in blogs:
-                # Convert times to Bangladesh time
+        
                 created_at_dhaka = blog.created_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)
                 updated_at_dhaka = blog.updated_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)
                 published_at_dhaka = blog.published_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz) if blog.published_at else None
@@ -175,7 +165,7 @@ class JobBlogs(APIView):
     def get(self, request):
         dhaka_tz = pytz.timezone('Asia/Dhaka')
         try:
-            # Get only published job blogs
+  
             blogs = Blog.objects(
                 categories__in=["job"],
                 is_published=True,
@@ -255,15 +245,12 @@ class UpdateBlog(APIView):
             if not user:
                 return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
             
-            # Check if user is an author
             if user not in blog.authors:
                 return Response({"error": "You are not authorized to edit this blog"}, 
                                status=status.HTTP_403_FORBIDDEN)
             
-            # Save current version before making changes
             blog.save_version(username)
             
-            # Handle thumbnail update
             if 'thumbnail' in request.FILES:
                 if blog.thumbnail_url:
                     public_id = blog.thumbnail_url.split('/')[-1].split('.')[0]
@@ -271,14 +258,13 @@ class UpdateBlog(APIView):
                 upload_result = cloudinary.uploader.upload(request.FILES['thumbnail'])
                 blog.thumbnail_url = upload_result['secure_url']
             
-            # Update fields
+ 
             blog.title = data.get('title', blog.title)
             blog.content = data.get('content', blog.content)
             blog.categories = data.get('categories', blog.categories)
             blog.tags = data.get('tags', blog.tags)
             blog.updated_at = datetime.utcnow()
             
-            # Handle status changes
             if 'is_published' in data:
                 if data['is_published']:
                     blog.publish(username)
@@ -466,8 +452,7 @@ class DeleteBlog(APIView):
             user = User.objects(username=username).first()
             if not user:
                 return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-            
-            # Only authors or admins can delete
+
             if user not in blog.authors:
                 return Response({"error": "You can only delete your own blogs"}, 
                                status=status.HTTP_403_FORBIDDEN)
@@ -495,7 +480,7 @@ class RestoreBlog(APIView):
             if not user:
                 return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
             
-            # Only authors or admins can restore
+    
             if user not in blog.authors:
                 return Response({"error": "You can only restore your own blogs"}, 
                                status=status.HTTP_403_FORBIDDEN)
@@ -571,7 +556,6 @@ class BlogSearch(APIView):
         try:
             from mongoengine.queryset.visitor import Q
             
-            # Base query
             search_query = (
                 Q(title__icontains=query) |
                 Q(content__icontains=query) |
@@ -579,7 +563,6 @@ class BlogSearch(APIView):
                 Q(categories__icontains=query)
             ) & Q(is_deleted=False)
             
-            # Apply status filter if provided
             if status_filter == 'published':
                 search_query &= Q(is_published=True, is_draft=False)
             elif status_filter == 'draft':
@@ -623,12 +606,10 @@ class AddAuthorToBlog(APIView):
             if not user or not new_author:
                 return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
                 
-            # Only existing authors can add new authors
             if user not in blog.authors:
                 return Response({"error": "You are not authorized to add authors to this blog"}, 
                                status=status.HTTP_403_FORBIDDEN)
                                
-            # Check if new author is already an author
             if new_author in blog.authors:
                 return Response({"error": "User is already an author of this blog"}, 
                               status=status.HTTP_400_BAD_REQUEST)
@@ -658,14 +639,12 @@ class PublishedBlogs(APIView):
         dhaka_tz = pytz.timezone('Asia/Dhaka')
         
         try:
-            # Base query for published blogs only
             query = Blog.objects(
                 is_published=True,
                 is_draft=False,
                 is_deleted=False
             )
             
-            # Apply filters if provided
             category = request.GET.get('category')
             if category:
                 query = query.filter(categories__in=[category])
@@ -674,14 +653,12 @@ class PublishedBlogs(APIView):
             if author_username:
                 query = query.filter(authors__username=author_username)
             
-            # Apply ordering and optional limit
             blogs = query.order_by('-published_at')
             
             limit = request.GET.get('limit')
             if limit and limit.isdigit():
                 blogs = blogs[:int(limit)]
             
-            # Prepare response data
             blogs_list = []
             for blog in blogs:
                 published_at_dhaka = blog.published_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)
@@ -700,13 +677,13 @@ class PublishedBlogs(APIView):
                     "tags": blog.tags,
                     "published_at": published_at_dhaka.isoformat(),
                     "updated_at": updated_at_dhaka.isoformat(),
-                    "read_time": f"{max(1, len(blog.content.split()) // 200)} min read",  # Approximate read time
+                    "read_time": f"{max(1, len(blog.content.split()) // 200)} min read", 
                     "stats": {
                         "upvotes": len(blog.upvotes),
                         "downvotes": len(blog.downvotes),
-                        "comments": getattr(blog, 'comment_count', 0)  # Assuming you might add this later
+                        "comments": getattr(blog, 'comment_count', 0)  
                     },
-                    "url_slug": getattr(blog, 'slug', None)  # Optional slug field for SEO-friendly URLs
+                    "url_slug": getattr(blog, 'slug', None) 
                 }
                 blogs_list.append(blog_data)
             

@@ -21,23 +21,15 @@ class Blog(Document):
     updated_at = fields.DateTimeField(default=datetime.utcnow)
     versions = fields.ListField(fields.EmbeddedDocumentField(BlogVersion))
     current_version = fields.IntField(default=1)
-    
-    # Status fields
     is_draft = fields.BooleanField(default=True)
     is_published = fields.BooleanField(default=False)
     published_at = fields.DateTimeField()
     published_by = fields.StringField()
-    
-    # Deletion fields
     is_deleted = fields.BooleanField(default=False)
     deleted_at = fields.DateTimeField()
     deleted_by = fields.StringField()
-    
-    # Voting fields
     upvotes = fields.ListField(fields.ReferenceField(User))
     downvotes = fields.ListField(fields.ReferenceField(User))
-    
-    # Draft history
     draft_history = fields.ListField(fields.DateTimeField())
 
     meta = {
@@ -57,7 +49,6 @@ class Blog(Document):
         if self.is_draft and self.is_published:
             raise ValidationError("A blog cannot be both published and a draft")
         
-        # Validate required fields for published blogs
         if self.is_published:
             if not self.title or not self.content:
                 raise ValidationError("Title and content are required for publishing")
