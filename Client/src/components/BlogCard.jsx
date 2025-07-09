@@ -9,7 +9,7 @@ const BlogCard = ({ blog }) => {
   return (
     <Link to={`/blog/${blog.id}`} className="group">
       <div className={`flex gap-4 pb-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} group-hover:opacity-90 transition-opacity`}>
-        <div className={`w-20 h-20 min-w-20 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} rounded-md overflow-hidden`}>
+        <div className={`w-30 h-20 min-w-20 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} rounded-md overflow-hidden`}>
           <div 
             className="w-full h-full bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
             style={{ backgroundImage: `url('${getThumbnailUrl(blog)}')` }}
