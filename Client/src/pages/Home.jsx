@@ -46,7 +46,7 @@ const Home = () => {
       });
 
       setMostPopularBlog(blogs[0] || null);
-      setFeaturedBlogs(blogs.length > 1 ? blogs.slice(1, 10) : []);
+      setFeaturedBlogs(blogs.length > 1 ? blogs.slice(1, 6) : []);
       
     } catch (err) {
       console.error('Error fetching popular blogs:', err);
