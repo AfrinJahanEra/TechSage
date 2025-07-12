@@ -7,6 +7,8 @@ import cloudinary.uploader
 from .models import Blog
 from users.models import User
 import pytz
+from django.core.paginator import Paginator, EmptyPage
+from rest_framework import status
 
 class CreateBlog(APIView):
     def post(self, request):
@@ -629,44 +631,56 @@ class AddAuthorToBlog(APIView):
         
 
 
-class PublishedBlogs(APIView):
 
+class PublishedBlogs(APIView):
     def get(self, request):
         """
-        Get ALL published blogs (non-draft, non-deleted) including both reviewed and unreviewed
-        Optional filters:
-        - category: filter by category
-        - author: filter by author username
-        - limit: limit number of results
+        Get ALL published blogs with pagination
+        Query Parameters:
+        - page: Page number (default: 1)
+        - per_page: Items per page (default: 10)
+        - category: Filter by category
+        - author: Filter by author username
+        - reviewed: Filter by review status (true/false)
         """
-        dhaka_tz = pytz.timezone('Asia/Dhaka')
-        
         try:
-            # Base query - get all published, non-draft, non-deleted blogs
+            # Base query
             query = Blog.objects(
                 is_published=True,
                 is_draft=False,
                 is_deleted=False
             ).order_by('-published_at')
-            
-            # Apply filters if provided
+
+            # Apply filters
             category = request.GET.get('category')
             if category:
-                if isinstance(category, str):
-                    query = query.filter(categories__in=[category])
-            
+                query = query.filter(categories__in=[category])
+
             author = request.GET.get('author')
             if author:
                 query = query.filter(authors__username=author)
-            
-            limit = request.GET.get('limit')
-            if limit and limit.isdigit():
-                query = query[:int(limit)]
-            
+
+            reviewed = request.GET.get('reviewed')
+            if reviewed is not None:
+                query = query.filter(is_reviewed=(reviewed.lower() == 'true'))
+
+            # Pagination setup
+            page_number = int(request.GET.get('page', 1))
+            per_page = int(request.GET.get('per_page', 10))
+            paginator = Paginator(query, per_page)
+
+            try:
+                current_page = paginator.page(page_number)
+            except EmptyPage:
+                return Response({
+                    "success": False,
+                    "error": "Page not found"
+                }, status=status.HTTP_404_NOT_FOUND)
+
             # Prepare response data
+            dhaka_tz = pytz.timezone('Asia/Dhaka')
             blogs_list = []
-            for blog in query:
-                # Convert timezone for display
+            for blog in current_page:
                 published_at_dhaka = blog.published_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)
                 updated_at_dhaka = blog.updated_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)
                 
@@ -674,7 +688,6 @@ class PublishedBlogs(APIView):
                     "id": str(blog.id),
                     "title": blog.title,
                     "excerpt": blog.content[:200] + "..." if len(blog.content) > 200 else blog.content,
-                    "content": blog.content,
                     "authors": [{
                         "username": author.username,
                         "avatar": getattr(author, 'avatar_url', None)
@@ -693,24 +706,33 @@ class PublishedBlogs(APIView):
                     }
                 }
                 blogs_list.append(blog_data)
-            
+
             return Response({
                 "success": True,
-                "count": len(blogs_list),
                 "blogs": blogs_list,
+                "pagination": {
+                    "current_page": page_number,
+                    "per_page": per_page,
+                    "total_pages": paginator.num_pages,
+                    "total_blogs": paginator.count,
+                    "has_next": current_page.has_next(),
+                    "has_previous": current_page.has_previous(),
+                    "next_page": current_page.next_page_number() if current_page.has_next() else None,
+                    "previous_page": current_page.previous_page_number() if current_page.has_previous() else None
+                },
                 "filters": {
                     "applied_category": category,
                     "applied_author": author,
-                    "result_limit": limit
+                    "applied_reviewed": reviewed
                 }
             })
-            
+
         except Exception as e:
             return Response({
                 "success": False,
                 "error": "Failed to fetch published blogs",
                 "details": str(e)
-            }, status=500)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
 class ReviewBlog(APIView):
