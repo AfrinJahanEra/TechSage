@@ -70,7 +70,7 @@ class DeleteComment(View):
             return JsonResponse({'error': 'Invalid comment or user'}, status=400)
 
         # Only allow author or admin to delete
-        if comment.author.username != user.username and user.role != 'admin':
+        if comment.author.username != user.username and user.role != 'moderator':
             return JsonResponse({'error': 'Unauthorized'}, status=403)
 
         comment.is_deleted = True

@@ -192,7 +192,7 @@ const ModeratorDashboard = () => {
                     label: 'Yes',
                     onClick: async () => {
                         try {
-                            await api.delete(`/comments/${commentId}/delete/`);
+                            await api.delete(`/comments/${commentId}/delete`);
                             fetchComments();
                             alert('Comment deleted successfully');
                         } catch (error) {
