@@ -53,7 +53,9 @@ class CreateBlog(APIView):
                 tags=tags,
                 is_draft=is_draft,
                 is_deleted=is_deleted,
-                is_published=False
+                is_published=False,
+                is_reviewed = False,
+                reviewed_by = None  
             )
             
             if is_deleted:
@@ -628,10 +630,11 @@ class AddAuthorToBlog(APIView):
 
 
 class PublishedBlogs(APIView):
+
     def get(self, request):
         """
-        Get all published blogs (non-draft, non-deleted)
-        Optional query parameters:
+        Get ALL published blogs (non-draft, non-deleted) including both reviewed and unreviewed
+        Optional filters:
         - category: filter by category
         - author: filter by author username
         - limit: limit number of results
@@ -639,28 +642,31 @@ class PublishedBlogs(APIView):
         dhaka_tz = pytz.timezone('Asia/Dhaka')
         
         try:
+            # Base query - get all published, non-draft, non-deleted blogs
             query = Blog.objects(
                 is_published=True,
                 is_draft=False,
                 is_deleted=False
-            )
+            ).order_by('-published_at')
             
+            # Apply filters if provided
             category = request.GET.get('category')
             if category:
-                query = query.filter(categories__in=[category])
+                if isinstance(category, str):
+                    query = query.filter(categories__in=[category])
             
-            author_username = request.GET.get('author')
-            if author_username:
-                query = query.filter(authors__username=author_username)
-            
-            blogs = query.order_by('-published_at')
+            author = request.GET.get('author')
+            if author:
+                query = query.filter(authors__username=author)
             
             limit = request.GET.get('limit')
             if limit and limit.isdigit():
-                blogs = blogs[:int(limit)]
+                query = query[:int(limit)]
             
+            # Prepare response data
             blogs_list = []
-            for blog in blogs:
+            for blog in query:
+                # Convert timezone for display
                 published_at_dhaka = blog.published_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)
                 updated_at_dhaka = blog.updated_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)
                 
@@ -668,6 +674,7 @@ class PublishedBlogs(APIView):
                     "id": str(blog.id),
                     "title": blog.title,
                     "excerpt": blog.content[:200] + "..." if len(blog.content) > 200 else blog.content,
+                    "content": blog.content,
                     "authors": [{
                         "username": author.username,
                         "avatar": getattr(author, 'avatar_url', None)
@@ -677,13 +684,13 @@ class PublishedBlogs(APIView):
                     "tags": blog.tags,
                     "published_at": published_at_dhaka.isoformat(),
                     "updated_at": updated_at_dhaka.isoformat(),
-                    "read_time": f"{max(1, len(blog.content.split()) // 200)} min read", 
+                    "is_reviewed": blog.is_reviewed,
+                    "reviewed_by": blog.reviewed_by.username if blog.reviewed_by else None,
+                    "read_time": f"{max(1, len(blog.content.split()) // 200)} min read",
                     "stats": {
                         "upvotes": len(blog.upvotes),
-                        "downvotes": len(blog.downvotes),
-                        "comments": getattr(blog, 'comment_count', 0)  
-                    },
-                    "url_slug": getattr(blog, 'slug', None) 
+                        "downvotes": len(blog.downvotes)
+                    }
                 }
                 blogs_list.append(blog_data)
             
@@ -693,7 +700,7 @@ class PublishedBlogs(APIView):
                 "blogs": blogs_list,
                 "filters": {
                     "applied_category": category,
-                    "applied_author": author_username,
+                    "applied_author": author,
                     "result_limit": limit
                 }
             })
@@ -703,4 +710,27 @@ class PublishedBlogs(APIView):
                 "success": False,
                 "error": "Failed to fetch published blogs",
                 "details": str(e)
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            }, status=500)
+        
+
+class ReviewBlog(APIView):
+    def post(self, request, blog_id):
+        try:
+            blog = Blog.objects.get(id=blog_id)
+            reviewer = User.objects.get(username=request.data.get('username'))
+            
+            blog.is_reviewed = True
+            blog.reviewed_by = reviewer
+            blog.save()
+            
+            return Response({
+                "success": True,
+                "message": "Blog reviewed and approved",
+                "reviewed_by": reviewer.username,
+                "reviewed_at": datetime.utcnow().isoformat()
+            })
+            
+        except Blog.DoesNotExist:
+            return Response({"error": "Blog not found"}, status=404)
+        except User.DoesNotExist:
+            return Response({"error": "Reviewer not found"}, status=404)

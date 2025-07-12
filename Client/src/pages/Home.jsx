@@ -5,8 +5,8 @@ import Sidebar from '../components/Sidebar.jsx';
 import SearchForm from '../components/SearchForm.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
-import { normalizeBlog, getThumbnailUrl, formatDate, calculateReadTime, getContentPreview } from '../utils/blogUtils';
-import BlogLink from '../components/BlogLink';
+import { normalizeBlog, getThumbnailUrl, formatDate, calculateReadTime, getContentPreview } from '../utils/blogUtils.js';
+import BlogLink from '../components/BlogLink.jsx';
 
 const Home = () => {
   const { darkMode, primaryColor, shadeColor } = useTheme();
@@ -46,7 +46,7 @@ const Home = () => {
       });
 
       setMostPopularBlog(blogs[0] || null);
-      setFeaturedBlogs(blogs.length > 1 ? blogs.slice(1, 6) : []);
+      setFeaturedBlogs(blogs.length > 1 ? blogs.slice(1, 10) : []);
       
     } catch (err) {
       console.error('Error fetching popular blogs:', err);

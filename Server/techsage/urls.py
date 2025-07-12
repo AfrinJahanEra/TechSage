@@ -13,7 +13,8 @@ from blogs.views import (
     RevertBlogVersion, DeleteBlog,
     ModeratorDeleteBlog, VoteBlog, 
     BlogSearch, PublishBlog, UnpublishBlog,
-    SaveAsDraft, RestoreBlog, AddAuthorToBlog,JobBlogs,PublishedBlogs 
+    SaveAsDraft, RestoreBlog, AddAuthorToBlog,JobBlogs,
+    PublishedBlogs,ReviewBlog
 )
 
 urlpatterns = [
@@ -51,6 +52,7 @@ urlpatterns = [
     
     path('blogs/<str:blog_id>/', GetBlog.as_view()),
     path('published-blogs/', PublishedBlogs.as_view(), name='published_blogs'),#for all blogs of all ids
+    path('blogs/review/<str:blog_id>/', ReviewBlog.as_view(), name='review-blog'),
 
     
 

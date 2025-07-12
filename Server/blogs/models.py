@@ -31,6 +31,8 @@ class Blog(Document):
     upvotes = fields.ListField(fields.ReferenceField(User))
     downvotes = fields.ListField(fields.ReferenceField(User))
     draft_history = fields.ListField(fields.DateTimeField())
+    is_reviewed = fields.BooleanField(default=False)
+    reviewed_by = fields.ReferenceField(User, null=True)
 
     meta = {
         'collection': 'blogs',
@@ -40,6 +42,7 @@ class Blog(Document):
             'is_published',
             'is_deleted',
             'tags',
+            'is_reviewed',
             'categories'
         ]
     }
@@ -109,5 +112,4 @@ class Blog(Document):
             public_id = self.thumbnail_url.split('/')[-1].split('.')[0]
             cloudinary.uploader.destroy(public_id)
         self.delete()
-
 
