@@ -13,9 +13,16 @@ class Comment(me.Document):
     likes = me.ListField(me.ReferenceField(User))
     dislikes = me.ListField(me.ReferenceField(User))
     is_deleted = me.BooleanField(default=False)
+    is_reviewed = me.BooleanField(default=False)  # New field
+    reviewed_by = me.ReferenceField(User, null=True)  # New field
 
     meta = {
-        'ordering': ['-created_at']
+        'ordering': ['-created_at'],
+        'indexes': [
+            'is_reviewed',
+            'blog',
+            'author'
+        ]
     }
 
     def to_json(self):
@@ -32,5 +39,7 @@ class Comment(me.Document):
             "updated_at": self.updated_at.isoformat(),
             "likes": len(self.likes),
             "dislikes": len(self.dislikes),
-            "is_deleted": self.is_deleted
+            "is_deleted": self.is_deleted,
+            "is_reviewed": self.is_reviewed,  # New field in response
+            "reviewed_by": self.reviewed_by.username if self.reviewed_by else None  # New field in response
         }

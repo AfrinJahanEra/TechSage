@@ -15,6 +15,7 @@ DEBUG = True
 ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.contenttypes',
     'rest_framework',
     'corsheaders',
@@ -53,8 +54,14 @@ CHANNEL_LAYERS = {
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [],
+    'DEFAULT_PERMISSION_CLASSES': [],
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
     'UNAUTHENTICATED_USER': None,
 }
+
+
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'

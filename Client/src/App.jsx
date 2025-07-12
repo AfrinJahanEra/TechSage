@@ -19,7 +19,6 @@ import ModeratorDashboard from './pages/Moderator.jsx';
 import SearchForm from './components/SearchForm.jsx';
 import { ThemeProvider } from './context/ThemeContext';
 
-
 function AppRoutes() {
   const { firstVisit } = useAuth();
 
@@ -27,18 +26,16 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={firstVisit ? <WelcomePage /> : <Navigate to="/home" />} />
       <Route path="/home" element={<Home />} />
-      <Route path="/inside-blog" element={<InsideBlog />} />
+      <Route path="/blog/:id" element={<InsideBlog />} />
       <Route path="/top-contributors" element={<TopContributors />} />
       <Route path="/all-blogs" element={<AllBlogs />} />
       <Route path="/other-dashboard" element={<OtherDashboard />} />
       <Route path="/signup" element={<SignupForm />} />
       <Route path="/login" element={<LoginForm />} />
-      {/* Updated blog creation routes */}
       <Route path="/create-blog" element={<CreateBlogs />} />
-
-
-      <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
+      <Route path="/login" element={<LoginForm />} />
       <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+      <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
       <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />
       <Route path="/moderator" element={<PrivateRoute><ModeratorDashboard /></PrivateRoute>} />
       <Route path="/user/:username" element={<OtherDashboard />} />
@@ -53,11 +50,9 @@ function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-
         <Router>
           <AppRoutes />
         </Router>
-
       </ThemeProvider>
     </AuthProvider>
   );

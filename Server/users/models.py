@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Configure Cloudinary
 cloudinary.config(
     cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
     api_key=os.getenv('CLOUDINARY_API_KEY'),
@@ -14,35 +13,24 @@ cloudinary.config(
 )
 
 class User(me.Document):
-    # Authentication
     username = me.StringField(required=True, unique=True)
     email = me.EmailField(required=True, unique=True)
     password = me.StringField(required=True)
-    
-    # Role management
     is_user = me.BooleanField(default=True)
     is_admin = me.BooleanField(default=False)
     is_reviewer = me.BooleanField(default=False)
     role = me.StringField(default='user', choices=['user', 'moderator', 'admin'])
-    
-    # Profile
     avatar_public_id = me.StringField()
     avatar_url = me.StringField()
     job_title = me.StringField(default='User')
     university = me.StringField()
     bio = me.StringField(max_length=500, default='')
     is_verified = me.BooleanField(default=False)
-    
-    # Statistics
     points = me.IntField(default=0)
     total_publications = me.IntField(default=0)
     followers = me.IntField(default=0)
-    
-    # Additional
     source = me.StringField()
     saved_blogs = me.ListField(me.StringField())
-    
-    # Timestamps
     created_at = me.DateTimeField(default=datetime.datetime.now)
     updated_at = me.DateTimeField(default=datetime.datetime.now)
 
@@ -52,7 +40,6 @@ class User(me.Document):
     }
 
     def clean(self):
-        # Role validation
         if self.role == 'admin':
             self.is_admin = True
             self.is_user = False
@@ -69,11 +56,9 @@ class User(me.Document):
     def upload_avatar(self, file):
         """Handle avatar upload to Cloudinary"""
         try:
-            # Delete old avatar if exists
             if self.avatar_public_id:
                 cloudinary.uploader.destroy(self.avatar_public_id)
             
-            # Upload new avatar
             upload_result = cloudinary.uploader.upload(
                 file,
                 folder="techsage/avatars",

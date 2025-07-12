@@ -6,6 +6,12 @@ import json
 from .models import Comment
 from blogs.models import Blog
 from users.models import User
+from django.http import JsonResponse
+from django.views import View
+from .models import Comment
+from django.core.paginator import Paginator
+
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class PostComment(View):
@@ -64,9 +70,77 @@ class DeleteComment(View):
             return JsonResponse({'error': 'Invalid comment or user'}, status=400)
 
         # Only allow author or admin to delete
-        if comment.author.username != user.username and user.role != 'admin':
+        if comment.author.username != user.username and user.role != 'moderator':
             return JsonResponse({'error': 'Unauthorized'}, status=403)
 
         comment.is_deleted = True
         comment.save()
         return JsonResponse({'message': 'Comment marked as deleted'})
+    
+
+class GetAllComments(View):
+    def get(self, request):
+        try:
+            # Get query parameters
+            page = request.GET.get('page', 1)
+            per_page = request.GET.get('per_page', 20)
+            reviewed = request.GET.get('reviewed')
+            
+            # Base query
+            query = Comment.objects(is_deleted=False)
+            
+            # Filter by review status if provided
+            if reviewed is not None:
+                query = query.filter(is_reviewed=(reviewed.lower() == 'true'))
+            
+            # Pagination
+            paginator = Paginator(query, per_page)
+            comments_page = paginator.page(page)
+            
+            # Prepare response
+            comments_data = [c.to_json() for c in comments_page]
+            
+            return JsonResponse({
+                'success': True,
+                'comments': comments_data,
+                'pagination': {
+                    'page': page,
+                    'per_page': per_page,
+                    'total_pages': paginator.num_pages,
+                    'total_comments': paginator.count
+                }
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=500)
+        
+
+@method_decorator(csrf_exempt, name='dispatch')
+class ReviewComment(View):
+    def post(self, request, comment_id):
+        try:
+            data = json.loads(request.body)
+            reviewer = User.objects(username=data['reviewer']).first()
+            comment = Comment.objects(id=comment_id).first()
+            
+            if not comment or not reviewer:
+                return JsonResponse({'error': 'Invalid comment or reviewer'}, status=400)
+                
+            comment.is_reviewed = True
+            comment.reviewed_by = reviewer
+            comment.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Comment reviewed successfully',
+                'comment': comment.to_json()
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=500)
