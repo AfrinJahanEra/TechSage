@@ -10,6 +10,7 @@ import { formatDate } from '../utils/blogUtils';
 import axios from 'axios';
 import { confirmAlert } from 'react-confirm-alert';
 import 'react-confirm-alert/src/react-confirm-alert.css';
+import ModeratorReports from '../components/ModeratorReports';
 
 const ModeratorDashboard = () => {
     const performanceChartRef = useRef(null);
@@ -362,6 +363,16 @@ const ModeratorDashboard = () => {
                                     All Comments
                                 </button>
                             </li>
+                            <li>
+                                <button
+                                    onClick={() => setActiveSection('reports')}
+                                    className={`w-full text-left px-4 py-3 rounded-lg flex items-center ${activeSection === 'reports' ? 'bg-teal-50 text-teal-600 border-l-4 border-teal-500' : 'hover:bg-gray-100'
+                                        }`}
+                                >
+                                    <i className="fas fa-flag mr-3 text-teal-500"></i>
+                                    Content Reports
+                                </button>
+                            </li>
                         </ul>
                     </div>
 
@@ -560,6 +571,8 @@ const ModeratorDashboard = () => {
                                 </div>
                             </div>
                         )}
+
+                        {activeSection === 'reports' && <ModeratorReports />}
 
                         {/* Profile Section */}
                         {activeSection === 'profile' && (

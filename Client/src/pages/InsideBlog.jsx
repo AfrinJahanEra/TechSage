@@ -97,10 +97,28 @@ const InsideBlog = () => {
   }, [blog, api]);
 
 
-  const handleReportSubmit = (e) => {
+  // InsideBlog.jsx - Add this to your existing code
+  const handleReportSubmit = async (e) => {
     e.preventDefault();
-    console.log('Report submitted:', { reason: reportReason, details: reportDetails });
-    setReportSubmitted(true);
+
+    if (!user) {
+      alert('Please login to report content');
+      return;
+    }
+
+    try {
+      const response = await api.post('/reports/submit/', {
+        blog_id: id,
+        user_id: user.id,
+        reason: reportReason,
+        details: reportDetails
+      });
+
+      setReportSubmitted(true);
+    } catch (error) {
+      console.error('Failed to submit report:', error);
+      alert('Failed to submit report. Please try again.');
+    }
   };
 
   if (loading) {
