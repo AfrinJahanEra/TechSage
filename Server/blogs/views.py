@@ -739,7 +739,7 @@ class ReviewBlog(APIView):
     def post(self, request, blog_id):
         try:
             blog = Blog.objects.get(id=blog_id)
-            reviewer = User.objects.get(username=request.data.get('username'))
+            reviewer = User.objects.get(username=request.data.get('reviewer'))
             
             blog.is_reviewed = True
             blog.reviewed_by = reviewer
@@ -756,3 +756,5 @@ class ReviewBlog(APIView):
             return Response({"error": "Blog not found"}, status=404)
         except User.DoesNotExist:
             return Response({"error": "Reviewer not found"}, status=404)
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)

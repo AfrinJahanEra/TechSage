@@ -24,7 +24,7 @@ const ModeratorDashboard = () => {
     const [blogs, setBlogs] = useState([]);
     const [comments, setComments] = useState([]);
     const [loading, setLoading] = useState(false);
-    
+
     const navigate = useNavigate();
 
     // Fetch all blogs
@@ -78,31 +78,21 @@ const ModeratorDashboard = () => {
 
     // Approve blog handler
     const handleApproveBlog = async (blogId) => {
-        confirmAlert({
-            title: 'Approve Blog',
-            message: 'Are you sure you want to approve this blog?',
-            buttons: [
-                {
-                    label: 'Yes',
-                    onClick: async () => {
-                        try {
-                            await api.post(`/blogs/review/${blogId}/`, {
-                                reviewer: user.username
-                            });
-                            fetchBlogs();
-                            alert('Blog approved successfully');
-                        } catch (error) {
-                            console.error('Error approving blog:', error);
-                            alert('Failed to approve blog');
-                        }
-                    }
-                },
-                {
-                    label: 'No',
-                    onClick: () => {}
-                }
-            ]
-        });
+        try {
+            const response = await api.post(`/blogs/review/${blogId}/`, {
+                reviewer: user.username
+            });
+
+            if (response.data.success) {
+                fetchBlogs();
+                alert('Blog approved successfully');
+            } else {
+                alert(`Approval failed: ${response.data.error || 'Unknown error'}`);
+            }
+        } catch (error) {
+            console.error('Approval error:', error);
+            alert(`Approval failed: ${error.response?.data?.error || error.message}`);
+        }
     };
 
     // Reject blog handler
@@ -126,7 +116,7 @@ const ModeratorDashboard = () => {
                 },
                 {
                     label: 'No',
-                    onClick: () => {}
+                    onClick: () => { }
                 }
             ]
         });
@@ -155,7 +145,7 @@ const ModeratorDashboard = () => {
                 },
                 {
                     label: 'No',
-                    onClick: () => {}
+                    onClick: () => { }
                 }
             ]
         });
@@ -182,7 +172,7 @@ const ModeratorDashboard = () => {
                 },
                 {
                     label: 'No',
-                    onClick: () => {}
+                    onClick: () => { }
                 }
             ]
         });
@@ -298,7 +288,7 @@ const ModeratorDashboard = () => {
         <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-800'}`}>
             {/* Navbar */}
             <Navbar activePage="dashboard" onProfileClick={toggleProfilePanel} />
-            
+
             {/* Dashboard Content */}
             <div className="pt-20 min-h-screen">
                 <div className="flex flex-col md:flex-row">
@@ -376,7 +366,7 @@ const ModeratorDashboard = () => {
                                                     onClick={() => handleBlogClick(blog.id)}
                                                 ></div>
                                                 <div>
-                                                    <h3 
+                                                    <h3
                                                         className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'} cursor-pointer hover:text-teal-500`}
                                                         onClick={() => handleBlogClick(blog.id)}
                                                     >
@@ -387,13 +377,13 @@ const ModeratorDashboard = () => {
                                                         <span>{blog.read_time}</span>
                                                     </div>
                                                     <div className="flex space-x-4 mt-3">
-                                                        <button 
+                                                        <button
                                                             className="text-green-500 text-sm flex items-center hover:opacity-80"
                                                             onClick={() => handleApproveBlog(blog.id)}
                                                         >
                                                             <i className="fas fa-check mr-1"></i> Approve
                                                         </button>
-                                                        <button 
+                                                        <button
                                                             className="text-red-500 text-sm flex items-center hover:opacity-80"
                                                             onClick={() => handleRejectBlog(blog.id)}
                                                         >
@@ -431,7 +421,7 @@ const ModeratorDashboard = () => {
                                                     onClick={() => handleBlogClick(blog.id)}
                                                 ></div>
                                                 <div>
-                                                    <h3 
+                                                    <h3
                                                         className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'} cursor-pointer hover:text-teal-500`}
                                                         onClick={() => handleBlogClick(blog.id)}
                                                     >
@@ -445,7 +435,7 @@ const ModeratorDashboard = () => {
                                                         <span>{blog.read_time}</span>
                                                     </div>
                                                     <div className="flex space-x-4 mt-3">
-                                                        <button 
+                                                        <button
                                                             className={`flex items-center text-sm ${darkMode ? 'text-gray-400 hover:text-teal-500' : 'text-gray-500 hover:text-teal-500'}`}
                                                         >
                                                             <i className="fas fa-eye mr-1"></i> {blog.stats?.upvotes || 0}
@@ -477,9 +467,9 @@ const ModeratorDashboard = () => {
                                         comments.map(comment => (
                                             <div key={comment.id} className={`p-4 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-gray-50'} mb-4`}>
                                                 <div className="flex items-start mb-3">
-                                                    <img 
-                                                        src={comment.author.avatar_url || "https://randomuser.me/api/portraits/men/32.jpg"} 
-                                                        alt={comment.author.username} 
+                                                    <img
+                                                        src={comment.author.avatar_url || "https://randomuser.me/api/portraits/men/32.jpg"}
+                                                        alt={comment.author.username}
                                                         className="w-10 h-10 rounded-full mr-3"
                                                     />
                                                     <div>
@@ -502,13 +492,13 @@ const ModeratorDashboard = () => {
                                                 <div className="flex space-x-4">
                                                     {!comment.is_reviewed && (
                                                         <>
-                                                            <button 
+                                                            <button
                                                                 className="text-green-500 text-sm flex items-center hover:opacity-80"
                                                                 onClick={() => handleApproveComment(comment.id)}
                                                             >
                                                                 <i className="fas fa-check mr-1"></i> Approve
                                                             </button>
-                                                            <button 
+                                                            <button
                                                                 className="text-red-500 text-sm flex items-center hover:opacity-80"
                                                                 onClick={() => handleRejectComment(comment.id)}
                                                             >
@@ -517,7 +507,7 @@ const ModeratorDashboard = () => {
                                                         </>
                                                     )}
                                                     {comment.is_reviewed && (
-                                                        <button 
+                                                        <button
                                                             className="text-red-500 text-sm flex items-center hover:opacity-80"
                                                             onClick={() => handleRejectComment(comment.id)}
                                                         >
