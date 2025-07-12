@@ -77,23 +77,54 @@ const ModeratorDashboard = () => {
     }, [activeSection]);
 
     // Approve blog handler
+    // In your handleApproveBlog function
     const handleApproveBlog = async (blogId) => {
-        try {
-            const response = await api.post(`/blogs/review/${blogId}/`, {
-                reviewer: user.username
-            });
+        confirmAlert({
+            title: 'Approve Blog',
+            message: 'Are you sure you want to approve this blog?',
+            buttons: [
+                {
+                    label: 'Yes',
+                    onClick: async () => {
+                        try {
+                            // Optimistically update the UI first
+                            setBlogs(prevBlogs =>
+                                prevBlogs.map(blog =>
+                                    blog.id === blogId
+                                        ? { ...blog, is_reviewed: true, reviewed_by: user.username }
+                                        : blog
+                                )
+                                    .sort((a, b) => {
+                                        // Move approved blogs to bottom
+                                        if (a.is_reviewed && !b.is_reviewed) return 1;
+                                        if (!a.is_reviewed && b.is_reviewed) return -1;
+                                        return 0;
+                                    })
+                            );
 
-            if (response.data.success) {
-                fetchBlogs();
-                alert('Blog approved successfully');
-            } else {
-                alert(`Approval failed: ${response.data.error || 'Unknown error'}`);
-            }
-        } catch (error) {
-            console.error('Approval error:', error);
-            alert(`Approval failed: ${error.response?.data?.error || error.message}`);
-        }
+                            // Then make the API call
+                            await api.post(`/blogs/review/${blogId}/`, {
+                                reviewer: user.username
+                            });
+
+                            // Refresh data to ensure consistency
+                            fetchBlogs();
+                        } catch (error) {
+                            console.error('Error approving blog:', error);
+                            alert('Failed to approve blog');
+                            // Revert UI if API call fails
+                            fetchBlogs();
+                        }
+                    }
+                },
+                {
+                    label: 'No',
+                    onClick: () => { }
+                }
+            ]
+        });
     };
+
 
     // Reject blog handler
     const handleRejectBlog = async (blogId) => {
@@ -377,18 +408,26 @@ const ModeratorDashboard = () => {
                                                         <span>{blog.read_time}</span>
                                                     </div>
                                                     <div className="flex space-x-4 mt-3">
-                                                        <button
-                                                            className="text-green-500 text-sm flex items-center hover:opacity-80"
-                                                            onClick={() => handleApproveBlog(blog.id)}
-                                                        >
-                                                            <i className="fas fa-check mr-1"></i> Approve
-                                                        </button>
-                                                        <button
-                                                            className="text-red-500 text-sm flex items-center hover:opacity-80"
-                                                            onClick={() => handleRejectBlog(blog.id)}
-                                                        >
-                                                            <i className="fas fa-trash mr-1"></i> Delete
-                                                        </button>
+                                                        {blog.is_reviewed ? (
+                                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                                <i className="fas fa-check mr-1"></i> Approved
+                                                            </span>
+                                                        ) : (
+                                                            <>
+                                                                <button
+                                                                    className="text-green-500 text-sm flex items-center hover:opacity-80"
+                                                                    onClick={() => handleApproveBlog(blog.id)}
+                                                                >
+                                                                    <i className="fas fa-check mr-1"></i> Approve
+                                                                </button>
+                                                                <button
+                                                                    className="text-red-500 text-sm flex items-center hover:opacity-80"
+                                                                    onClick={() => handleRejectBlog(blog.id)}
+                                                                >
+                                                                    <i className="fas fa-trash mr-1"></i> Delete
+                                                                </button>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
