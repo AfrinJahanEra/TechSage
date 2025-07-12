@@ -44,7 +44,9 @@ class CommentConsumer(AsyncWebsocketConsumer):
             blog=blog,
             author=author,
             content=data['content'],
-            parent=parent
+            parent=parent,
+            is_reviewed=False,  # New comments start as unreviewed
+            reviewed_by=None  
         )
         comment.save()
 
