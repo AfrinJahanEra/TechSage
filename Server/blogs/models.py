@@ -112,4 +112,3 @@ class Blog(Document):
             public_id = self.thumbnail_url.split('/')[-1].split('.')[0]
             cloudinary.uploader.destroy(public_id)
         self.delete()
-
