@@ -28,73 +28,51 @@ const ModeratorReports = () => {
     fetchReports();
   }, [filter]);
 
-  const handleApprove = (reportId, blogId) => {
-    confirmAlert({
-      title: 'Confirm Approval',
-      message: 'What action would you like to take?',
-      buttons: [
-        {
-          label: 'Review Blog',
-          onClick: () => navigate(`/blog/${blogId}`)
-        },
-        {
-          label: 'Approve Report',
-          onClick: async () => {
-            try {
-              await api.post(`/reports/${reportId}/approve/`, {
-                reviewer_id: user.id
-              });
-              fetchReports();
-            } catch (error) {
-              console.error('Error approving report:', error);
-            }
-          }
-        },
-        {
-          label: 'Cancel',
-          onClick: () => {}
-        }
-      ]
-    });
+  const handleReviewBlog = (blogId) => {
+    navigate(`/blog/${blogId}`);
   };
 
-  const handleReject = (reportId, blogId) => {
+  const handleDeleteBlog = async (reportId, blogId) => {
+    try {
+      // First update the report status
+      await api.post(`/reports/${reportId}/approve/`, {
+        reviewer_id: user.id,
+        action: 'delete'
+      });
+      
+      // Then delete the blog
+      await api.delete(`/blogs/mod/delete/${blogId}/`);
+      
+      // Show notification
+      confirmAlert({
+        title: 'Blog Deleted',
+        message: 'The blog has been permanently deleted and the reporter has been notified.',
+        buttons: [{
+          label: 'OK',
+          onClick: () => fetchReports()
+        }]
+      });
+    } catch (error) {
+      console.error('Error deleting blog:', error);
+      alert('Failed to delete blog');
+    }
+  };
+
+  const handleApproveReport = (reportId) => {
     confirmAlert({
-      title: 'Confirm Rejection',
+      title: 'Approve Report',
       message: 'What action would you like to take?',
       buttons: [
         {
           label: 'Review Blog',
-          onClick: () => navigate(`/blog/${blogId}`)
+          onClick: () => handleReviewBlog(reports.find(r => r.id === reportId).blog.id)
         },
         {
           label: 'Delete Blog',
-          onClick: async () => {
-            try {
-              // First reject the report
-              await api.post(`/reports/${reportId}/reject/`, {
-                reviewer_id: user.id
-              });
-              // Then delete the blog
-              await api.delete(`/blogs/mod/delete/${blogId}/`);
-              fetchReports();
-            } catch (error) {
-              console.error('Error deleting blog:', error);
-            }
-          }
-        },
-        {
-          label: 'Just Reject Report',
-          onClick: async () => {
-            try {
-              await api.post(`/reports/${reportId}/reject/`, {
-                reviewer_id: user.id
-              });
-              fetchReports();
-            } catch (error) {
-              console.error('Error rejecting report:', error);
-            }
-          }
+          onClick: () => handleDeleteBlog(
+            reportId, 
+            reports.find(r => r.id === reportId).blog.id
+          )
         },
         {
           label: 'Cancel',
@@ -104,8 +82,32 @@ const ModeratorReports = () => {
     });
   };
 
-  const handleBlogClick = (blogId) => {
-    navigate(`/blog/${blogId}`);
+  const handleRejectReport = async (reportId) => {
+    confirmAlert({
+      title: 'Reject Report',
+      message: 'Are you sure you want to reject this report?',
+      buttons: [
+        {
+          label: 'Yes',
+          onClick: async () => {
+            try {
+              await api.post(`/reports/${reportId}/reject/`, {
+                reviewer_id: user.id
+              });
+              fetchReports();
+              alert('Report has been rejected');
+            } catch (error) {
+              console.error('Error rejecting report:', error);
+              alert('Failed to reject report');
+            }
+          }
+        },
+        {
+          label: 'No',
+          onClick: () => {}
+        }
+      ]
+    });
   };
 
   if (loading) {
@@ -142,7 +144,7 @@ const ModeratorReports = () => {
               <div>
                 <h3 
                   className="font-bold text-lg cursor-pointer hover:text-teal-600"
-                  onClick={() => handleBlogClick(report.blog.id)}
+                  onClick={() => handleReviewBlog(report.blog.id)}
                 >
                   {report.blog.title}
                 </h3>
@@ -151,11 +153,13 @@ const ModeratorReports = () => {
                 </p>
               </div>
               <span className={`px-2 py-1 text-xs rounded-full ${
+                !report.is_reviewed ? 'bg-gray-100 text-gray-800' :
                 report.action_taken === 'approved' ? 'bg-green-100 text-green-800' :
                 report.action_taken === 'rejected' ? 'bg-red-100 text-red-800' :
                 'bg-yellow-100 text-yellow-800'
               }`}>
-                {report.action_taken || 'pending'}
+                {!report.is_reviewed ? 'Pending' : 
+                 report.action_taken === 'approved' ? 'Approved' : 'Rejected'}
               </span>
             </div>
 
@@ -173,13 +177,13 @@ const ModeratorReports = () => {
             {filter === 'pending' && (
               <div className="flex space-x-4 mt-4">
                 <button
-                  onClick={() => handleApprove(report.id, report.blog.id)}
+                  onClick={() => handleApproveReport(report.id)}
                   className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
                 >
                   Approve
                 </button>
                 <button
-                  onClick={() => handleReject(report.id, report.blog.id)}
+                  onClick={() => handleRejectReport(report.id)}
                   className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
                 >
                   Reject

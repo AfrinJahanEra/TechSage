@@ -221,6 +221,8 @@ const InsideBlog = () => {
               <div dangerouslySetInnerHTML={{ __html: blog.content }} />
             </div>
 
+
+
             {/* Blog Actions */}
             <BlogActions
               upvotes={blog.upvotes?.length || 0}
