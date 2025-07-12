@@ -71,7 +71,8 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Your React app's URL
+    "https://tech-sage-5poh.vercel.app"
+    "http://localhost:5173",  
 ]
 cloudinary.config(
     cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
