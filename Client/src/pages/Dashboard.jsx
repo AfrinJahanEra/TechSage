@@ -1,17 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, navigate } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useNavigate } from 'react-router-dom';
 import { Chart } from 'chart.js/auto';
 import Footer from '../components/Footer.jsx';
 import Navbar from '../components/Navbar.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
 import BlogCard from '../components/BlogCardDash.jsx';
-import { 
-  normalizeBlog, 
-  getBadge 
+import {
+    normalizeBlog,
+    getBadge
 } from '../utils/blogUtils.js';
 
 const Dashboard = () => {
     const { user, api } = useAuth();
+    const navigate = useNavigate();
     const { darkMode, primaryColor, shadeColor } = useTheme();
     const [activeSection, setActiveSection] = useState('profile');
     const [blogs, setBlogs] = useState([]);
@@ -79,7 +81,7 @@ const Dashboard = () => {
 
     const sortedBlogs = () => {
         if (!blogs || blogs.length === 0) return [];
-        
+
         return [...blogs].sort((a, b) => {
             switch (sortOption) {
                 case 'popular':
@@ -140,6 +142,16 @@ const Dashboard = () => {
             setError(err.response?.data?.error || 'Failed to permanently delete blog');
         }
     };
+    const handleEditDraft = (draft) => {
+        // Navigate to the create blog page with draft data
+        navigate('/create-blog', {
+            state: {
+                draftData: draft,
+                isEditing: true
+            }
+        });
+    };
+
 
     useEffect(() => {
         const ctx = document.getElementById('performanceChart');
@@ -152,7 +164,7 @@ const Dashboard = () => {
                         label: 'Blog Views',
                         data: [1200, 1900, 1500, 2200, 1800, 2500],
                         borderColor: primaryColor,
-                        backgroundColor: darkMode 
+                        backgroundColor: darkMode
                             ? `${primaryColor}20`
                             : `${primaryColor}10`,
                         tension: 0.3,
@@ -161,8 +173,8 @@ const Dashboard = () => {
                         label: 'Engagement Rate',
                         data: [65, 59, 70, 72, 75, 78],
                         borderColor: primaryDark,
-                        backgroundColor: darkMode 
-                            ? `${primaryDark}20` 
+                        backgroundColor: darkMode
+                            ? `${primaryDark}20`
                             : `${primaryDark}10`,
                         tension: 0.3,
                         fill: true
@@ -214,7 +226,7 @@ const Dashboard = () => {
     };
 
     const renderSectionTitle = (title) => (
-        <h1 
+        <h1
             className="text-2xl font-bold mb-6 pb-2 border-b-2 inline-block"
             style={{ borderColor: primaryColor }}
         >
@@ -229,7 +241,7 @@ const Dashboard = () => {
     );
 
     return (
-        <div 
+        <div
             className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'}`}
             style={themeStyles}
         >
@@ -244,33 +256,31 @@ const Dashboard = () => {
                                 <li key={section}>
                                     <button
                                         onClick={() => setActiveSection(section)}
-                                        className={`w-full text-left px-4 py-3 rounded-lg flex items-center transition-colors duration-200 ${
-                                            activeSection === section 
+                                        className={`w-full text-left px-4 py-3 rounded-lg flex items-center transition-colors duration-200 ${activeSection === section
                                                 ? `${darkMode ? 'bg-gray-700 border-[var(--primary-color)]' : 'bg-[var(--primary-light)] border-[var(--primary-color)]'}`
                                                 : `${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`
-                                        } border-l-4`}
-                                        style={{ 
-                                            color: activeSection === section 
-                                                ? darkMode 
-                                                    ? primaryColor 
-                                                    : primaryDark 
+                                            } border-l-4`}
+                                        style={{
+                                            color: activeSection === section
+                                                ? darkMode
+                                                    ? primaryColor
+                                                    : primaryDark
                                                 : 'inherit',
                                             borderColor: activeSection === section ? primaryColor : 'transparent'
                                         }}
                                     >
-                                        <i 
-                                            className={`fas fa-${
-                                                section === 'profile' ? 'user' :
-                                                section === 'blogs' ? 'newspaper' :
-                                                section === 'drafts' ? 'file-alt' :
-                                                section === 'trash' ? 'trash' : 'bookmark'
-                                            } mr-3`}
+                                        <i
+                                            className={`fas fa-${section === 'profile' ? 'user' :
+                                                    section === 'blogs' ? 'newspaper' :
+                                                        section === 'drafts' ? 'file-alt' :
+                                                            section === 'trash' ? 'trash' : 'bookmark'
+                                                } mr-3`}
                                             style={{ color: activeSection === section ? primaryColor : primaryColor }}
                                         ></i>
                                         {section === 'profile' ? 'My Profile' :
-                                         section === 'blogs' ? 'My Blogs' :
-                                         section === 'drafts' ? 'Draft Blogs' :
-                                         section === 'trash' ? 'Trash' : 'Saved Blogs'}
+                                            section === 'blogs' ? 'My Blogs' :
+                                                section === 'drafts' ? 'Draft Blogs' :
+                                                    section === 'trash' ? 'Trash' : 'Saved Blogs'}
                                     </button>
                                 </li>
                             ))}
@@ -308,7 +318,7 @@ const Dashboard = () => {
                                                 <h2 className="text-xl font-bold">{user?.username || 'User'}</h2>
                                                 <p className={`mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{user?.job_title || 'Member'}</p>
                                                 <div className="flex justify-center md:justify-start space-x-2">
-                                                    <span 
+                                                    <span
                                                         className="px-3 py-1 rounded-full text-xs text-white"
                                                         style={{ backgroundColor: primaryColor }}
                                                     >
@@ -331,13 +341,13 @@ const Dashboard = () => {
                                                 {user?.bio || 'No bio provided yet.'}
                                             </p>
                                             <div className="flex space-x-4">
-                                                <button 
+                                                <button
                                                     className="flex items-center"
                                                     style={{ color: primaryColor }}
                                                 >
                                                     <i className="fas fa-envelope mr-1"></i> Contact
                                                 </button>
-                                                <button 
+                                                <button
                                                     className="flex items-center"
                                                     style={{ color: primaryColor }}
                                                 >
@@ -355,7 +365,7 @@ const Dashboard = () => {
                                             { value: getBadge(user?.points), label: 'Badge' }
                                         ].map((item, index) => (
                                             <div key={index} className={`rounded-lg p-4 shadow-sm text-center transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
-                                                <div 
+                                                <div
                                                     className="text-3xl font-bold mb-1"
                                                     style={{ color: primaryColor }}
                                                 >
@@ -375,13 +385,13 @@ const Dashboard = () => {
 
                                 <div>
                                     <div className="flex justify-between items-center mb-4">
-                                        <h2 
+                                        <h2
                                             className="text-xl font-bold pb-2 border-b-2 inline-block"
                                             style={{ borderColor: primaryColor }}
                                         >
                                             Recent Blogs
                                         </h2>
-                                        <button 
+                                        <button
                                             onClick={() => setActiveSection('blogs')}
                                             className="px-4 py-2 rounded-md"
                                             style={{ backgroundColor: primaryColor, color: 'white' }}
@@ -412,7 +422,7 @@ const Dashboard = () => {
                                 {renderSectionTitle('My Blogs')}
 
                                 <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                                    <select 
+                                    <select
                                         className={`border rounded px-3 py-2 w-full md:w-64 transition-colors duration-300 ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white border-gray-300 text-gray-800'}`}
                                         value={sortOption}
                                         onChange={(e) => setSortOption(e.target.value)}
@@ -457,8 +467,10 @@ const Dashboard = () => {
                                                 primaryDark={primaryDark}
                                                 onDelete={handleDelete}
                                                 onPublish={handlePublish}
+                                                onEdit={handleEditDraft}
                                                 showDelete={true}
                                                 showPublish={true}
+                                                showEdit={true}
                                             />
                                         ))}
                                     </div>

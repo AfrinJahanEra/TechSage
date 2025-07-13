@@ -9,6 +9,9 @@ class BlogVersion(EmbeddedDocument):
     thumbnail_url = fields.StringField()
     updated_at = fields.DateTimeField(default=datetime.utcnow)
     updated_by = fields.StringField()
+    is_draft = fields.BooleanField(default=True)
+    categories = fields.ListField(fields.StringField())
+    tags = fields.ListField(fields.StringField())
 
 class Blog(Document):
     title = fields.StringField(required=True)
@@ -33,6 +36,7 @@ class Blog(Document):
     draft_history = fields.ListField(fields.DateTimeField())
     is_reviewed = fields.BooleanField(default=False)
     reviewed_by = fields.ReferenceField(User, null=True)
+    
 
     meta = {
         'collection': 'blogs',
@@ -112,3 +116,38 @@ class Blog(Document):
             public_id = self.thumbnail_url.split('/')[-1].split('.')[0]
             cloudinary.uploader.destroy(public_id)
         self.delete()
+
+    
+    def add_author(self, user):
+        """Add an author to the blog if not already present"""
+        if user not in self.authors:
+            self.authors.append(user)
+            self.save()
+            return True
+        return False
+    
+    def create_draft(self, username):
+        """Create a minimal draft blog with just required fields"""
+        self.title = "Untitled Draft"
+        self.content = ""
+        self.authors = [username]
+        self.is_draft = True
+        self.is_published = False
+        self.is_deleted = False
+        self.save()
+        self.save_version(username)
+        return self
+
+    def update_draft(self, data, username):
+        """Update draft with additional fields"""
+        if 'title' in data:
+            self.title = data['title']
+        if 'content' in data:
+            self.content = data['content']
+        if 'categories[]' in data:
+            self.categories = data['categories[]'] if isinstance(data['categories[]'], list) else [data['categories[]']]
+        if 'tags[]' in data:
+            self.tags = data['tags[]'] if isinstance(data['tags[]'], list) else [data['tags[]']]
+        self.save()
+        self.save_version(username)
+        return self

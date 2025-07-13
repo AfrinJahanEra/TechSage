@@ -4,11 +4,12 @@ import { useTheme } from '../context/ThemeContext';
 import axios from 'axios';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { toast } from 'react-hot-toast';
 
 const Settings = () => {
   const { user, api, logout, updateUser } = useAuth();
   const { primaryColor, darkMode, changeThemeColor, toggleDarkMode, shadeColor } = useTheme();
-  
+
   const [activeSection, setActiveSection] = useState('edit-profile');
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -16,6 +17,8 @@ const Settings = () => {
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [collaborationRequests, setCollaborationRequests] = useState([]);
+  const [loadingRequests, setLoadingRequests] = useState(false);
 
   const [profileData, setProfileData] = useState({
     username: '',
@@ -58,6 +61,48 @@ const Settings = () => {
     }
   }, [user]);
 
+  // Fetch collaboration requests
+  useEffect(() => {
+    if (activeSection === 'collaboration-request') {
+      fetchCollaborationRequests();
+    }
+  }, [activeSection]);
+
+  // Update the fetchCollaborationRequests function
+  const fetchCollaborationRequests = async () => {
+    try {
+      setLoadingRequests(true);
+      const response = await api.get(`/collaboration-request/author-requests/${user.username}/`);
+      setCollaborationRequests(response.data.requests || response.data); // Handle both response formats
+    } catch (error) {
+      console.error('Failed to fetch requests:', error);
+      toast.error('Failed to load collaboration requests');
+    } finally {
+      setLoadingRequests(false);
+    }
+  };
+
+  // Update the respondToRequest function
+  const respondToRequest = async (requestId, accept) => {
+    try {
+      const response = await api.post(`/collaboration-request/respond-to-request/${requestId}/`, {
+        username: user.username,
+        response: accept ? 'accept' : 'reject'
+      });
+
+      fetchCollaborationRequests(); // Refresh the list
+      toast.success(`Request ${accept ? 'accepted' : 'rejected'}`);
+
+      // If accepted, update the user's blogs list or other relevant state
+      if (accept && response.data.blog) {
+        // You might want to update your global state or navigation here
+      }
+    } catch (error) {
+      console.error('Failed to respond:', error);
+      toast.error(error.response?.data?.error || 'Failed to respond');
+    }
+  };
+
   // Check password strength
   const checkPasswordStrength = (password) => {
     let strength = 0;
@@ -96,11 +141,11 @@ const Settings = () => {
         ...prev,
         avatar_url: updatedUser.avatar_url
       }));
-      
+
       updateUser(updatedUser);
     } catch (error) {
       console.error('Avatar upload failed:', error);
-      alert('Failed to upload avatar');
+      toast.error('Failed to upload avatar');
     } finally {
       setIsUploading(false);
     }
@@ -114,14 +159,14 @@ const Settings = () => {
         job_title: profileData.job_title,
         bio: profileData.bio
       });
-      
+
       const updatedUser = response.data;
       setProfileData(updatedUser);
       updateUser(updatedUser);
-      alert('Profile updated successfully!');
+      toast.success('Profile updated successfully!');
     } catch (error) {
       console.error('Profile update failed:', error);
-      alert('Failed to update profile');
+      toast.error('Failed to update profile');
     }
   };
 
@@ -129,17 +174,17 @@ const Settings = () => {
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert("Passwords don't match!");
+      toast.error("Passwords don't match!");
       return;
     }
-    
+
     try {
       await api.put(`/user/${user.username}/change-password/`, {
         current_password: passwordData.currentPassword,
         new_password: passwordData.newPassword
       });
-      
-      alert('Password changed successfully!');
+
+      toast.success('Password changed successfully!');
       setPasswordModalOpen(false);
       setPasswordData({
         currentPassword: '',
@@ -148,7 +193,7 @@ const Settings = () => {
       });
     } catch (error) {
       console.error('Password change failed:', error);
-      alert(error.response?.data?.error || 'Failed to change password');
+      toast.error(error.response?.data?.error || 'Failed to change password');
     }
   };
 
@@ -157,11 +202,11 @@ const Settings = () => {
     try {
       await api.delete(`/user/${user.username}/`);
       logout();
-      alert('Account deleted successfully');
+      toast.success('Account deleted successfully');
       window.location.href = '/';
     } catch (error) {
       console.error('Account deletion failed:', error);
-      alert('Failed to delete account');
+      toast.error('Failed to delete account');
     }
   };
 
@@ -169,7 +214,7 @@ const Settings = () => {
   const renderPasswordStrength = () => {
     const strengthText = passwordStrength >= 6 ? 'Strong' : passwordStrength >= 4 ? 'Medium' : 'Weak';
     const strengthColor = passwordStrength >= 6 ? 'bg-green-500' : passwordStrength >= 4 ? 'bg-yellow-500' : 'bg-red-500';
-    
+
     return (
       <div className="mt-1">
         <div className={`h-1 rounded-full overflow-hidden ${darkMode ? 'bg-gray-600' : 'bg-gray-200'}`}>
@@ -186,7 +231,7 @@ const Settings = () => {
   };
 
   return (
-    <div 
+    <div
       className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'}`}
       style={themeStyles}
     >
@@ -200,11 +245,10 @@ const Settings = () => {
             <li>
               <button
                 onClick={() => setActiveSection('edit-profile')}
-                className={`w-full text-left px-4 py-3 rounded-lg flex items-center transition-colors duration-200 ${
-                  activeSection === 'edit-profile' 
+                className={`w-full text-left px-4 py-3 rounded-lg flex items-center transition-colors duration-200 ${activeSection === 'edit-profile'
                     ? `${darkMode ? 'bg-gray-700' : 'bg-[var(--primary-light)]'} border-l-4`
                     : `${darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`
-                }`}
+                  }`}
                 style={{
                   borderColor: activeSection === 'edit-profile' ? primaryColor : 'transparent',
                   color: activeSection === 'edit-profile' ? primaryColor : 'inherit'
@@ -214,16 +258,15 @@ const Settings = () => {
                 Edit Profile
               </button>
             </li>
-            
+
             {user?.role === 'user' && (
               <li>
                 <button
                   onClick={() => setActiveSection('collaboration-request')}
-                  className={`w-full text-left px-4 py-3 rounded-lg flex items-center transition-colors duration-200 ${
-                    activeSection === 'collaboration-request' 
+                  className={`w-full text-left px-4 py-3 rounded-lg flex items-center transition-colors duration-200 ${activeSection === 'collaboration-request'
                       ? `${darkMode ? 'bg-gray-700' : 'bg-[var(--primary-light)]'} border-l-4`
                       : `${darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`
-                  }`}
+                    }`}
                   style={{
                     borderColor: activeSection === 'collaboration-request' ? primaryColor : 'transparent',
                     color: activeSection === 'collaboration-request' ? primaryColor : 'inherit'
@@ -234,15 +277,14 @@ const Settings = () => {
                 </button>
               </li>
             )}
-            
+
             <li>
               <button
                 onClick={() => setActiveSection('settings')}
-                className={`w-full text-left px-4 py-3 rounded-lg flex items-center transition-colors duration-200 ${
-                  activeSection === 'settings' 
+                className={`w-full text-left px-4 py-3 rounded-lg flex items-center transition-colors duration-200 ${activeSection === 'settings'
                     ? `${darkMode ? 'bg-gray-700' : 'bg-[var(--primary-light)]'} border-l-4`
                     : `${darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`
-                }`}
+                  }`}
                 style={{
                   borderColor: activeSection === 'settings' ? primaryColor : 'transparent',
                   color: activeSection === 'settings' ? primaryColor : 'inherit'
@@ -252,7 +294,7 @@ const Settings = () => {
                 Settings
               </button>
             </li>
-            
+
             <li>
               <button
                 onClick={() => setLogoutModalOpen(true)}
@@ -292,7 +334,7 @@ const Settings = () => {
                   </div>
                   <div>
                     <label className="block mb-2">
-                      <span 
+                      <span
                         className="px-4 py-2 rounded-md cursor-pointer hover:opacity-90 transition-colors duration-200 text-white"
                         style={{ backgroundColor: primaryColor }}
                       >
@@ -361,7 +403,7 @@ const Settings = () => {
                   <input
                     type="text"
                     value={profileData.job_title}
-                    onChange={(e) => setProfileData({...profileData, job_title: e.target.value})}
+                    onChange={(e) => setProfileData({ ...profileData, job_title: e.target.value })}
                     className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${darkMode ? 'bg-gray-800 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-700'}`}
                     style={{ '--tw-ring-color': primaryColor }}
                   />
@@ -372,7 +414,7 @@ const Settings = () => {
                   <label className={`block mb-2 font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Bio</label>
                   <textarea
                     value={profileData.bio}
-                    onChange={(e) => setProfileData({...profileData, bio: e.target.value})}
+                    onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
                     rows="4"
                     className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${darkMode ? 'bg-gray-800 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-700'}`}
                     style={{ '--tw-ring-color': primaryColor }}
@@ -411,16 +453,64 @@ const Settings = () => {
             </div>
           )}
 
-          {/* Collaboration Request Section (only for regular users) */}
+          {/* Collaboration Request Section */}
           {activeSection === 'collaboration-request' && user?.role === 'user' && (
             <div>
               <h1 className={`text-2xl font-bold mb-6 pb-2 border-b-2 inline-block ${darkMode ? 'text-gray-100' : 'text-gray-800'}`} style={{ borderColor: primaryColor }}>
                 Collaboration Requests
               </h1>
-              <div className="p-8 text-center">
-                <i className={`fas fa-handshake text-5xl mb-4 ${darkMode ? 'text-gray-600' : 'text-gray-300'}`}></i>
-                <p className={darkMode ? 'text-gray-400' : 'text-gray-500'}>No collaboration requests yet</p>
-              </div>
+
+              {loadingRequests ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2"
+                    style={{ borderColor: primaryColor }}></div>
+                </div>
+              ) : collaborationRequests.length === 0 ? (
+                <div className="p-8 text-center">
+                  <i className={`fas fa-handshake text-5xl mb-4 ${darkMode ? 'text-gray-600' : 'text-gray-300'}`}></i>
+                  <p className={darkMode ? 'text-gray-400' : 'text-gray-500'}>
+                    No collaboration requests yet
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {collaborationRequests.map((request) => (
+                    <div
+                      key={request.request_id || request.id} // Handle both field names
+                      className={`p-4 rounded-lg border ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h3 className={`font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                            {request.blog_title || request.blog?.title}
+                          </h3>
+                          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            Requested by {request.requesting_author || request.requesting_author?.username}
+                          </p>
+                        </div>
+                        <span className={`text-xs px-2 py-1 rounded ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
+                          {new Date(request.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+
+                      <div className="flex space-x-3">
+                        <button
+                          onClick={() => respondToRequest(request.request_id || request.id, true)}
+                          className="flex-1 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+                        >
+                          Accept
+                        </button>
+                        <button
+                          onClick={() => respondToRequest(request.request_id || request.id, false)}
+                          className="flex-1 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -451,7 +541,7 @@ const Settings = () => {
                           onChange={toggleDarkMode}
                           className="sr-only peer"
                         />
-                        <div 
+                        <div
                           className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600"
                           style={{ backgroundColor: darkMode ? primaryColor : 'rgb(229, 231, 235)' }}
                         ></div>
@@ -472,26 +562,25 @@ const Settings = () => {
                         <button
                           key={color}
                           onClick={() => changeThemeColor(color)}
-                          className={`flex flex-col items-center p-2 rounded-md transition-colors duration-200 ${
-                            primaryColor === color 
-                              ? 'ring-2' 
+                          className={`flex flex-col items-center p-2 rounded-md transition-colors duration-200 ${primaryColor === color
+                              ? 'ring-2'
                               : `${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`
-                          }`}
+                            }`}
                           style={{
                             ringColor: primaryColor,
                             backgroundColor: primaryColor === color ? (darkMode ? 'rgba(156, 163, 175, 0.3)' : 'rgba(243, 244, 246, 1)') : 'transparent'
                           }}
                         >
-                          <div 
+                          <div
                             className="w-12 h-12 rounded-full mb-1"
                             style={{ backgroundColor: color }}
                           ></div>
                           <span className={`text-sm capitalize ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                             {color === '#1abc9c' ? 'Teal' :
-                             color === '#3498db' ? 'Blue' :
-                             color === '#9b59b6' ? 'Purple' :
-                             color === '#e74c3c' ? 'Red' :
-                             color === '#e67e22' ? 'Orange' : 'Yellow'}
+                              color === '#3498db' ? 'Blue' :
+                                color === '#9b59b6' ? 'Purple' :
+                                  color === '#e74c3c' ? 'Red' :
+                                    color === '#e67e22' ? 'Orange' : 'Yellow'}
                           </span>
                         </button>
                       ))}
@@ -511,7 +600,7 @@ const Settings = () => {
                           Permanently remove your account and all data
                         </div>
                       </div>
-                      <button 
+                      <button
                         onClick={() => setDeleteModalOpen(true)}
                         className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-200"
                       >
@@ -546,7 +635,7 @@ const Settings = () => {
                 <input
                   type="password"
                   value={passwordData.currentPassword}
-                  onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                  onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
                   className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-[var(--primary-color)]' : 'bg-white border-gray-300 text-gray-700 focus:border-[var(--primary-color)]'}`}
                   required
                   style={{ '--tw-ring-color': primaryColor }}
@@ -559,7 +648,7 @@ const Settings = () => {
                   type="password"
                   value={passwordData.newPassword}
                   onChange={(e) => {
-                    setPasswordData({...passwordData, newPassword: e.target.value});
+                    setPasswordData({ ...passwordData, newPassword: e.target.value });
                     checkPasswordStrength(e.target.value);
                   }}
                   className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-[var(--primary-color)]' : 'bg-white border-gray-300 text-gray-700 focus:border-[var(--primary-color)]'}`}
@@ -574,7 +663,7 @@ const Settings = () => {
                 <input
                   type="password"
                   value={passwordData.confirmPassword}
-                  onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
                   className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-[var(--primary-color)]' : 'bg-white border-gray-300 text-gray-700 focus:border-[var(--primary-color)]'}`}
                   required
                   style={{ '--tw-ring-color': primaryColor }}
