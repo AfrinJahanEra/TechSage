@@ -125,7 +125,7 @@ const CreateBlogPage = () => {
     }
     
     try {
-      const response = await api.get(`/user/search/?q=${query.trim()}`);
+      const response = await api.get(`search/?q=${query.trim()}`);
       setSearchResults(response.data);
       setShowSearchResults(true);
     } catch (error) {
