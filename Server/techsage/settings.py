@@ -4,6 +4,9 @@ from dotenv import load_dotenv
 from mongoengine import connect
 import cloudinary
 
+# .\venv\Scripts\activate
+
+
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,6 +27,7 @@ INSTALLED_APPS = [
     'comments',
     'channels',
     'reports',
+    'collab',
 ]
 
 MIDDLEWARE = [
