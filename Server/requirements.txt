@@ -1,0 +1,25 @@
+# Core
+Django==5.2.1
+daphne==4.1.2
+
+# WebSockets via Channels
+channels==4.1.0
+channels_redis==4.2.0
+
+# MongoDB via MongoEngine
+mongoengine==0.27.0
+dnspython==2.4.2
+
+# CORS (if frontend is hosted separately)
+django-cors-headers==4.3.1
+
+# Cloudinary
+cloudinary==1.41.0
+
+# Environment variables
+python-dotenv==1.0.1
+
+# REST framework
+djangorestframework==3.14.0
+
+pymongo==3.12.1
