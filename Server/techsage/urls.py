@@ -61,4 +61,8 @@ urlpatterns = [
 
     path('comments/', include('comments.urls')),
     path('reports/', include('reports.urls')),
+
+
+
+    path("collab/", include("collab.urls")),
 ]
