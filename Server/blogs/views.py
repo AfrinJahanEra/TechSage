@@ -758,3 +758,61 @@ class ReviewBlog(APIView):
             return Response({"error": "Reviewer not found"}, status=404)
         except Exception as e:
             return Response({"error": str(e)}, status=400)
+        
+class CreateDraft(APIView):
+    def post(self, request):
+        try:
+            username = request.data.get('username')
+            if not username:
+                return Response({"error": "username is required"}, status=400)
+            
+            user = User.objects.get(username=username)
+            blog = Blog().create_draft(user)
+            
+            return Response({
+                "id": str(blog.id),
+                "title": blog.title,
+                "status": "draft",
+                "is_draft": True,
+                "is_published": False,
+                "created_at": blog.created_at.isoformat(),
+                "version": blog.current_version
+            }, status=201)
+            
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+class UpdateDraft(APIView):
+    def put(self, request, blog_id):
+        try:
+            blog = Blog.objects.get(id=blog_id, is_draft=True)
+            username = request.data.get('username')
+            
+            if not username:
+                return Response({"error": "username is required"}, status=400)
+                
+            user = User.objects.get(username=username)
+            if user not in blog.authors:
+                return Response({"error": "Not authorized"}, status=403)
+            
+            blog = blog.update_draft(request.data, username)
+            
+            if 'thumbnail' in request.FILES:
+                upload_result = cloudinary.uploader.upload(request.FILES['thumbnail'])
+                blog.thumbnail_url = upload_result['secure_url']
+                blog.save()
+            
+            return Response({
+                "id": str(blog.id),
+                "title": blog.title,
+                "content": blog.content,
+                "thumbnail_url": blog.thumbnail_url,
+                "categories": blog.categories,
+                "tags": blog.tags,
+                "version": blog.current_version
+            })
+            
+        except Blog.DoesNotExist:
+            return Response({"error": "Draft not found"}, status=404)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)

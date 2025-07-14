@@ -14,7 +14,7 @@ from blogs.views import (
     ModeratorDeleteBlog, VoteBlog, 
     BlogSearch, PublishBlog, UnpublishBlog,
     SaveAsDraft, RestoreBlog, AddAuthorToBlog,JobBlogs,
-    PublishedBlogs,ReviewBlog
+    PublishedBlogs,ReviewBlog, CreateDraft, UpdateDraft
 )
 
 urlpatterns = [
@@ -40,6 +40,8 @@ urlpatterns = [
     path('blogs/revert/<str:blog_id>/<int:version_number>/', RevertBlogVersion.as_view()),
     
     path('blogs/update/<str:blog_id>/', UpdateBlog.as_view()),
+    path('blogs/create-draft/', CreateDraft.as_view(), name='create-draft'),
+    path('blogs/update-draft/<str:blog_id>/', UpdateDraft.as_view(), name='update-draft'),
     
     path('blogs/delete/<str:blog_id>/', DeleteBlog.as_view()),
     path('blogs/mod/delete/<str:blog_id>/', ModeratorDeleteBlog.as_view()),
@@ -54,10 +56,11 @@ urlpatterns = [
     path('published-blogs/', PublishedBlogs.as_view(), name='published_blogs'),#for all blogs of all ids
     path('blogs/review/<str:blog_id>/', ReviewBlog.as_view(), name='review-blog'),
 
-    
 
     
 
+    path('collaboration-request/',include('CollborationReq.urls')),
+    path('checker/',include('checker.urls')),
 
     path('comments/', include('comments.urls')),
     

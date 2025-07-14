@@ -99,7 +99,7 @@ const Home = () => {
           <article className="flex-1">
             {mostPopularBlog ? (
               <>
-                <header className={`border-b pb-6 mb-8 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                <header className={`border-b pb-10 mb-10 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                   <h1 className="text-3xl md:text-4xl font-bold leading-tight mb-3">
                     {mostPopularBlog.title}
                   </h1>

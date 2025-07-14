@@ -103,7 +103,7 @@ export const getContentPreview = (content, path = '') => {
     
     // Split into words and limit based on path
     const words = plainText.split(' ');
-    const maxWords = path.toLowerCase() === '/home' ? 500 : 10;
+    const maxWords = path.toLowerCase() === '/home' ? 100 : 10;
     
     if (words.length > maxWords) {
       return words.slice(0, maxWords).join(' ') + '...';
