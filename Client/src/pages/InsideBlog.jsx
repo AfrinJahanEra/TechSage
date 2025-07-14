@@ -229,7 +229,7 @@ const InsideBlog = () => {
               downvotes={blog.downvotes?.length || 0}
               onReport={() => setShowReportModal(true)}
               blogId={blog.id}
-              blogTitle={blog.title}
+              blogTitle={blog.title}z
             />
 
             {/* Author Bio */}

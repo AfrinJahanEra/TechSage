@@ -56,10 +56,11 @@ urlpatterns = [
     path('published-blogs/', PublishedBlogs.as_view(), name='published_blogs'),#for all blogs of all ids
     path('blogs/review/<str:blog_id>/', ReviewBlog.as_view(), name='review-blog'),
 
+
     
 
     path('collaboration-request/',include('CollborationReq.urls')),
-
+    path('checker/',include('checker.urls')),
 
     path('comments/', include('comments.urls')),
     path('reports/', include('reports.urls')),

@@ -1,7 +1,7 @@
-// src/components/BlogActions.jsx
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTheme } from '../context/ThemeContext';
+
 
 const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle }) => {
   const [votes, setVotes] = useState({
@@ -10,8 +10,30 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle }) => {
     userVote: null
   });
   const [showShareOptions, setShowShareOptions] = useState(false);
-  const { user } = useAuth();
+  const [plagiarismResult, setPlagiarismResult] = useState(null);
+  const [loadingPlagiarism, setLoadingPlagiarism] = useState(false);
+  const [error, setError] = useState(null);
+  const { user, api } = useAuth();
   const { primaryColor, darkMode } = useTheme();
+
+
+  // Add this function to handle plagiarism check
+  const handlePlagiarismCheck = async () => {
+    try {
+      setLoadingPlagiarism(true);
+      setError(null);
+      
+      const response = await api.post(`/checker/plagiarism/${blogId}/`);
+      setPlagiarismResult(response.data);
+      
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to check plagiarism');
+      console.error('Plagiarism check error:', err);
+    } finally {
+      setLoadingPlagiarism(false);
+    }
+  };
+
 
   const handleVote = (type) => {
     if (!user) {
@@ -182,14 +204,63 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle }) => {
 
       {(user?.role === 'moderator' || user?.role === 'admin') && (
         <div className={`flex space-x-4 mt-6 pt-6 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-          <button className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
-            <i className="fas fa-search"></i>
-            <span>Check Plagiarism</span>
+          <button 
+            onClick={handlePlagiarismCheck}
+            disabled={loadingPlagiarism}
+            className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors disabled:opacity-50"
+          >
+            {loadingPlagiarism ? (
+              <>
+                <i className="fas fa-spinner fa-spin"></i>
+                <span>Checking...</span>
+              </>
+            ) : (
+              <>
+                <i className="fas fa-search"></i>
+                <span>Check Plagiarism</span>
+              </>
+            )}
           </button>
-          <button className="flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors">
-            <i className="fas fa-trash"></i>
-            <span>Delete Blog</span>
-          </button>
+          {/* ... (keep delete button) */}
+        </div>
+      )}
+
+      {/* Plagiarism Result Display */}
+      {plagiarismResult && (
+        <div className={`mt-4 p-4 rounded-md ${darkMode ? 'bg-gray-800' : 'bg-blue-50'}`}>
+          <h3 className="font-bold mb-2 flex items-center">
+            <i className="fas fa-search mr-2"></i>
+            Plagiarism Check Results
+          </h3>
+          <p className="mb-2">
+            <span className="font-semibold">Score:</span> {plagiarismResult.plagiarism_score}%
+          </p>
+          
+          {plagiarismResult.sources && plagiarismResult.sources.length > 0 && (
+            <div className="mt-3">
+              <h4 className="font-semibold mb-1">Potential Sources:</h4>
+              <ul className="space-y-2">
+                {plagiarismResult.sources.map((source, index) => (
+                  <li key={index} className="text-sm">
+                    <a 
+                      href={source.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:underline"
+                    >
+                      {source.title}
+                    </a> ({source.plagiarismWords} matching words)
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {error && (
+        <div className={`mt-4 p-4 rounded-md ${darkMode ? 'bg-red-900/30' : 'bg-red-100'} text-red-600`}>
+          <p>{error}</p>
         </div>
       )}
     </div>
