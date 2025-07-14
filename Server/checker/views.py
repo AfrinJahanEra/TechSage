@@ -51,3 +51,4 @@ def check_plagiarism(request, blog_id):
             "success": False,
             "error": str(e)
         }, status=500)
+

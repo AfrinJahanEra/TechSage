@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'comments',
     'channels',
     'reports',
+    'checker',
 ]
 
 MIDDLEWARE = [

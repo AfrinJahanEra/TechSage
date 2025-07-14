@@ -63,5 +63,8 @@ urlpatterns = [
     path('checker/',include('checker.urls')),
 
     path('comments/', include('comments.urls')),
+    
     path('reports/', include('reports.urls')),
+
+    path('', include('checker.urls')),
 ]
