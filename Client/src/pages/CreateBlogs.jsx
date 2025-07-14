@@ -61,7 +61,7 @@ const CreateBlogPage = () => {
   // Initialize editor content
   useEffect(() => {
     if (editorRef.current && !content) {
-      editorRef.current.innerHTML = 
+      editorRef.current.innerHTML =
         `<p class="${darkMode ? 'text-gray-400' : 'text-gray-400'}">Start writing your blog post here...</p>`;
     } else if (editorRef.current && content) {
       editorRef.current.innerHTML = content;
@@ -123,7 +123,7 @@ const CreateBlogPage = () => {
       setSearchResults([]);
       return;
     }
-    
+
     try {
       const response = await api.get(`search/?q=${query.trim()}`);
       setSearchResults(response.data);
@@ -141,7 +141,7 @@ const CreateBlogPage = () => {
       try {
         const newBlogId = await createDraft();
         setBlogId(newBlogId);
-        
+
         // Now send the request with the new blogId
         await sendCollaborationRequest(newBlogId, username);
       } catch (error) {
@@ -162,7 +162,7 @@ const CreateBlogPage = () => {
         requested_username: username,
         blog_id: blogId
       });
-      
+
       toast.success('Collaboration request sent successfully');
       setSearchQuery('');
       setSearchResults([]);
@@ -235,7 +235,7 @@ const CreateBlogPage = () => {
   const createDraft = async () => {
     try {
       setIsSubmitting(true);
-      
+
       const response = await api.post('/blogs/create-draft/', {
         username: user.username,
         title: title || "Untitled Draft",
@@ -260,7 +260,7 @@ const CreateBlogPage = () => {
   const saveAsDraft = async () => {
     try {
       setIsSubmitting(true);
-      
+
       // If we don't have a blogId yet, create a new draft first
       let currentBlogId = blogId;
       if (!currentBlogId) {
@@ -271,11 +271,11 @@ const CreateBlogPage = () => {
       formData.append('title', title);
       formData.append('content', content);
       formData.append('username', user.username);
-      
+
       // Append categories and tags
       categories.forEach(cat => formData.append('categories[]', cat));
       tags.forEach(tag => formData.append('tags[]', tag));
-      
+
       if (thumbnailFile) {
         formData.append('thumbnail', thumbnailFile);
       }
@@ -319,7 +319,7 @@ const CreateBlogPage = () => {
 
     try {
       setIsSubmitting(true);
-      
+
       // If we don't have a blogId yet, create a new draft first
       let currentBlogId = blogId;
       if (!currentBlogId) {
@@ -331,15 +331,15 @@ const CreateBlogPage = () => {
       formData.append('content', content);
       formData.append('username', user.username);
       formData.append('is_published', true);
-      
+
       categories.forEach(cat => formData.append('categories[]', cat));
       tags.forEach(tag => formData.append('tags[]', tag));
-      
+
       if (thumbnailFile) {
         formData.append('thumbnail', thumbnailFile);
       }
 
-      const response = await api.put(`/blogs/update-draft/${currentBlogId}/`, formData, {
+      const response = await api.post('/blogs/create/', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -361,7 +361,7 @@ const CreateBlogPage = () => {
     if (window.confirm('Are you sure you want to discard this blog? It will be moved to trash.')) {
       try {
         setIsSubmitting(true);
-        
+
         if (!blogId) {
           // If we haven't saved the draft yet, just navigate away
           navigate('/blogs/drafts');
@@ -386,10 +386,10 @@ const CreateBlogPage = () => {
   // Format last saved time
   const formatLastSaved = () => {
     if (!lastSaved) return 'Not saved yet';
-    
+
     const now = new Date();
     const diffInSeconds = Math.floor((now - new Date(lastSaved)) / 1000);
-    
+
     if (diffInSeconds < 60) return 'Just now';
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
@@ -409,8 +409,8 @@ const CreateBlogPage = () => {
 
   return (
     <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-50 text-gray-800'}`}>
-      <Navbar/>
-      
+      <Navbar />
+
       <div className="flex flex-1 pt-16">
         {/* Main Content */}
         <main className="flex-1 p-6 overflow-auto">
@@ -430,11 +430,10 @@ const CreateBlogPage = () => {
                 </label>
                 <input
                   type="text"
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition-colors ${
-                    darkMode
-                      ? 'bg-gray-700 border-gray-600 text-white focus:ring-[var(--primary-color)]'
-                      : 'border-gray-300 focus:ring-[var(--primary-color)]'
-                  }`}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition-colors ${darkMode
+                    ? 'bg-gray-700 border-gray-600 text-white focus:ring-[var(--primary-color)]'
+                    : 'border-gray-300 focus:ring-[var(--primary-color)]'
+                    }`}
                   placeholder="Enter your blog title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
@@ -448,11 +447,10 @@ const CreateBlogPage = () => {
                   Thumbnail Image
                 </label>
                 <div
-                  className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                    thumbnail
-                      ? darkMode ? 'border-gray-700' : 'border-gray-200'
-                      : darkMode ? 'border-gray-700 hover:border-[var(--primary-color)]' : 'border-gray-300 hover:border-[var(--primary-color)]'
-                  }`}
+                  className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${thumbnail
+                    ? darkMode ? 'border-gray-700' : 'border-gray-200'
+                    : darkMode ? 'border-gray-700 hover:border-[var(--primary-color)]' : 'border-gray-300 hover:border-[var(--primary-color)]'
+                    }`}
                   onClick={() => fileInputRef.current.click()}
                 >
                   {thumbnail ? (
@@ -505,13 +503,12 @@ const CreateBlogPage = () => {
                     <button
                       key={cat}
                       type="button"
-                      className={`px-4 py-2 rounded-full border text-sm font-medium flex items-center transition-colors duration-200 ${
-                        categories.includes(cat)
-                          ? 'text-white border-[var(--primary-color)]'
-                          : darkMode
-                            ? 'bg-gray-700 text-gray-200 border-gray-600 hover:text-white hover:border-[var(--primary-color)]'
-                            : 'bg-white text-gray-700 border-gray-300 hover:text-white hover:border-[var(--primary-color)]'
-                      }`}
+                      className={`px-4 py-2 rounded-full border text-sm font-medium flex items-center transition-colors duration-200 ${categories.includes(cat)
+                        ? 'text-white border-[var(--primary-color)]'
+                        : darkMode
+                          ? 'bg-gray-700 text-gray-200 border-gray-600 hover:text-white hover:border-[var(--primary-color)]'
+                          : 'bg-white text-gray-700 border-gray-300 hover:text-white hover:border-[var(--primary-color)]'
+                        }`}
                       style={{
                         backgroundColor: categories.includes(cat) ? primaryColor : ''
                       }}
@@ -532,9 +529,8 @@ const CreateBlogPage = () => {
                   {tags.map((tag) => (
                     <div
                       key={tag}
-                      className={`px-3 py-1 rounded-full text-sm flex items-center ${
-                        darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'
-                      }`}
+                      className={`px-3 py-1 rounded-full text-sm flex items-center ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'
+                        }`}
                     >
                       {tag}
                       <button
@@ -552,11 +548,10 @@ const CreateBlogPage = () => {
                     type="text"
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
-                    className={`flex-1 px-3 py-2 border text-sm rounded-l-lg focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)] ${
-                      darkMode
-                        ? 'bg-gray-700 border-gray-600 text-white'
-                        : 'border-gray-300'
-                    }`}
+                    className={`flex-1 px-3 py-2 border text-sm rounded-l-lg focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)] ${darkMode
+                      ? 'bg-gray-700 border-gray-600 text-white'
+                      : 'border-gray-300'
+                      }`}
                     placeholder="Add tags (press Enter)"
                   />
                   <button
@@ -569,11 +564,11 @@ const CreateBlogPage = () => {
                 </form>
               </div>
 
+
+
               {/* Blog Content Editor */}
               <div className="mb-8">
-                <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Blog Content
-                </label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Blog Content</label>
 
                 <BlogEditorToolbar editorRef={editorRef} />
 
@@ -584,13 +579,12 @@ const CreateBlogPage = () => {
                   onFocus={handleFocus}
                   onBlur={handleBlur}
                   onInput={handleInput}
-                  className={`min-h-[300px] border rounded-lg p-4 prose max-w-none focus:outline-none focus:ring-2 ${
-                    darkMode
-                      ? 'bg-gray-700 border-gray-600 focus:ring-[var(--primary-color)]'
-                      : 'border-gray-300 focus:ring-[var(--primary-color)]'
-                  }`}
+                  className="min-h-[300px] border border-gray-300 rounded-lg p-4 prose max-w-none focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
+
               </div>
+
+
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-8">
@@ -612,11 +606,10 @@ const CreateBlogPage = () => {
                   <button
                     type="button"
                     disabled={isSubmitting}
-                    className={`px-6 py-2 border rounded-lg transition-colors w-full sm:w-auto flex items-center justify-center gap-2 ${
-                      darkMode
-                        ? 'border-gray-600 text-gray-200 hover:bg-gray-700'
-                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
+                    className={`px-6 py-2 border rounded-lg transition-colors w-full sm:w-auto flex items-center justify-center gap-2 ${darkMode
+                      ? 'border-gray-600 text-gray-200 hover:bg-gray-700'
+                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
                     onClick={discardBlog}
                   >
                     <FiTrash2 />
@@ -648,18 +641,16 @@ const CreateBlogPage = () => {
         </main>
 
         {/* Sidebar */}
-        <aside className={`hidden lg:block w-80 border-l p-6 overflow-y-auto ${
-          darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
-        }`}>
+        <aside className={`hidden lg:block w-80 border-l p-6 overflow-y-auto ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
+          }`}>
           {/* Collaborators Section */}
           <div className="mb-8">
-            <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${
-              darkMode ? 'text-white' : 'text-gray-800'
-            }`}>
+            <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'
+              }`}>
               <FiUsers className="text-[var(--primary-color)]" />
               Collaborators
             </h3>
-            
+
             {/* Current user and collaborators */}
             {user && (
               <div className="space-y-3">
@@ -682,11 +673,10 @@ const CreateBlogPage = () => {
 
                 {/* Collaborators */}
                 {blog?.authors?.filter(author => author.username !== user.username).map((author) => (
-                  <div 
+                  <div
                     key={author.username}
-                    className={`flex justify-between items-center p-3 rounded-lg ${
-                      darkMode ? 'bg-gray-700 hover:shadow-md' : 'bg-white hover:shadow-sm'
-                    }`}
+                    className={`flex justify-between items-center p-3 rounded-lg ${darkMode ? 'bg-gray-700 hover:shadow-md' : 'bg-white hover:shadow-sm'
+                      }`}
                   >
                     <div className="flex items-center">
                       <img
@@ -705,9 +695,8 @@ const CreateBlogPage = () => {
                     </div>
                     {user.username === blog.authors[0].username && ( // Only primary author can remove
                       <button
-                        className={`transition-colors ${
-                          darkMode ? 'text-gray-400 hover:text-red-400' : 'text-gray-400 hover:text-red-500'
-                        }`}
+                        className={`transition-colors ${darkMode ? 'text-gray-400 hover:text-red-400' : 'text-gray-400 hover:text-red-500'
+                          }`}
                         onClick={() => removeCollaborator(author.username)}
                       >
                         <FiX />
@@ -729,11 +718,10 @@ const CreateBlogPage = () => {
                     searchUsers(e.target.value);
                   }}
                   onFocus={() => setShowSearchResults(true)}
-                  className={`flex-1 px-3 py-2 border text-sm rounded-l-lg focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)] ${
-                    darkMode
-                      ? 'bg-gray-700 border-gray-600 text-white'
-                      : 'border-gray-300'
-                  }`}
+                  className={`flex-1 px-3 py-2 border text-sm rounded-l-lg focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)] ${darkMode
+                    ? 'bg-gray-700 border-gray-600 text-white'
+                    : 'border-gray-300'
+                    }`}
                   placeholder="Search users to collaborate"
                 />
                 <button
@@ -746,15 +734,13 @@ const CreateBlogPage = () => {
 
               {/* Search results dropdown */}
               {showSearchResults && searchResults.length > 0 && (
-                <div className={`absolute z-10 mt-1 w-full rounded-lg shadow-lg py-1 ${
-                  darkMode ? 'bg-gray-700' : 'bg-white'
-                }`}>
+                <div className={`absolute z-10 mt-1 w-full rounded-lg shadow-lg py-1 ${darkMode ? 'bg-gray-700' : 'bg-white'
+                  }`}>
                   {searchResults.map((user) => (
                     <div
                       key={user._id}
-                      className={`px-4 py-2 text-sm cursor-pointer flex items-center justify-between ${
-                        darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-100'
-                      }`}
+                      className={`px-4 py-2 text-sm cursor-pointer flex items-center justify-between ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-100'
+                        }`}
                     >
                       <div className="flex items-center">
                         <img
@@ -767,9 +753,8 @@ const CreateBlogPage = () => {
                         </span>
                       </div>
                       <button
-                        className={`p-1 rounded-full ${
-                          darkMode ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-500 hover:bg-gray-200'
-                        }`}
+                        className={`p-1 rounded-full ${darkMode ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-500 hover:bg-gray-200'
+                          }`}
                         onClick={(e) => {
                           e.stopPropagation();
                           sendAuthorRequest(user.username);
@@ -792,9 +777,8 @@ const CreateBlogPage = () => {
 
           {/* Blog Status */}
           <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-white'}`}>
-            <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${
-              darkMode ? 'text-white' : 'text-gray-800'
-            }`}>
+            <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'
+              }`}>
               <FiInfo className="text-[var(--primary-color)]" />
               Blog Status
             </h3>
@@ -816,7 +800,7 @@ const CreateBlogPage = () => {
         </aside>
       </div>
 
-      <Footer/>
+      <Footer />
     </div>
   );
 };
