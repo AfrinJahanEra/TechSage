@@ -1,7 +1,13 @@
+from django.urls import path, include
 from django.urls import path
-from .views import SendCollabRequest, GetCollabRequests
-
+from .models import AuthorRequest
+from .views import (
+    RequestAuthor,
+    RespondToAuthorRequest,
+    GetAuthorRequests
+)
 urlpatterns = [
-    path("send/", SendCollabRequest.as_view()),
-    path("inbox/<str:username>/", GetCollabRequests.as_view()),
+    path('request-author/', RequestAuthor.as_view(), name='request-author'),
+    path('respond-to-request/<str:request_id>/', RespondToAuthorRequest.as_view(), name='respond-to-author-request'),
+    path('author-requests/<str:username>/', GetAuthorRequests.as_view(), name='get-author-requests'),
 ]

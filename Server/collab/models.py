@@ -1,24 +1,23 @@
-import mongoengine as me
-import datetime
+from django.db import models
+from datetime import datetime
+from mongoengine import Document, fields
 from users.models import User
 from blogs.models import Blog
 
-class CollaborationRequest(me.Document):
-    sender = me.ReferenceField(User, required=True)
-    receiver = me.ReferenceField(User, required=True)
-    blog = me.ReferenceField(Blog, required=True)
-    message = me.StringField()
-    status = me.StringField(choices=["pending", "accepted", "rejected"], default="pending")
-    created_at = me.DateTimeField(default=datetime.datetime.utcnow)
+class AuthorRequest(Document):
+    blog = fields.ReferenceField(Blog, required=True)
+    requested_author = fields.ReferenceField(User, required=True)  # The user being requested to become an author
+    requesting_author = fields.ReferenceField(User, required=True)  # The user who made the request
+    status = fields.StringField(default='pending', choices=['pending', 'accepted', 'rejected'])
+    created_at = fields.DateTimeField(default=datetime.utcnow)
+    updated_at = fields.DateTimeField(default=datetime.utcnow)
 
-    def to_json(self):
-        return {
-            "id": str(self.id),
-            "sender": self.sender.username,
-            "receiver": self.receiver.username,
-            "blog_id": str(self.blog.id),
-            "blog_title": self.blog.title,
-            "message": self.message,
-            "status": self.status,
-            "created_at": self.created_at.isoformat()
-        }
+    meta = {
+        'collection': 'author_requests',
+        'indexes': [
+            'blog',
+            'requested_author',
+            'requesting_author',
+            'status'
+        ]
+    }
