@@ -34,12 +34,22 @@ const CreateBlogPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  const [popup, setPopup] = useState({ show: false, message: '', type: 'info' });
+ const [popup, setPopup] = useState({ show: false, message: '', type: 'success' });
+  const popupTimerRef = useRef(null);
 
-const showPopup = (message, type = 'info') => {
-  setPopup({ show: true, message, type });
-  setTimeout(() => setPopup({ ...popup, show: false }), 4000); // auto-hide after 4s
-};
+  const showPopup = (message, type = 'success', duration = 3000) => {
+    clearTimeout(popupTimerRef.current);
+    setPopup({ show: true, message, type });
+    
+    popupTimerRef.current = setTimeout(() => {
+      setPopup(prev => ({ ...prev, show: false }));
+    }, duration);
+  };
+
+  useEffect(() => {
+    return () => clearTimeout(popupTimerRef.current);
+  }, []);
+
 
 
   // Available categories
@@ -246,7 +256,7 @@ const handleInput = () => {
       setBlogId(response.data.id);
       setStatus('draft');
       setLastSaved(new Date());
-      showPopup('Draft created successfully', 'success');
+      //showPopup('Draft created successfully', 'success');
       return response.data.id;
     } catch (error) {
       console.error('Error creating draft:', error);
@@ -328,7 +338,8 @@ const handleInput = () => {
     // If we don't have a blogId yet, create a new draft first
     let currentBlogId = blogId;
     if (!currentBlogId) {
-      currentBlogId = await createDraft();
+      currentBlogId = await createDraft(true); // suppress draft popup when publishing
+
     }
 
     const formData = new FormData();
@@ -352,10 +363,12 @@ const handleInput = () => {
 
     setStatus('published');
     showPopup('Blog published successfully', 'success');
-    navigate(`/blogs/${currentBlogId}`);
+    // Wait 3 seconds before navigating
+    setTimeout(() => {
+      navigate(`/blogs/${currentBlogId}`);
+    }, 3000);
   } catch (error) {
-    console.error('Error publishing blog:', error);
-    showPopup(error.response?.data?.error || 'Failed to publish blog', 'error');
+    showPopup(error.response?.data?.error || 'Failed to publish', 'error');
   } finally {
     setIsSubmitting(false);
   }
@@ -419,11 +432,11 @@ const handleInput = () => {
     <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-50 text-gray-800'}`}>
       <Navbar />
 <PopupModal
-  show={popup.show}
-  message={popup.message}
-  type={popup.type}
-  onClose={() => setPopup({ ...popup, show: false })}
-/>
+        show={popup.show}
+        message={popup.message}
+        type={popup.type}
+        onClose={() => setPopup({ ...popup, show: false })}
+      />
 
       <div className="flex flex-1 pt-16">
         {/* Main Content */}
@@ -648,6 +661,7 @@ const handleInput = () => {
                     <FiSave />
                     {isEditing ? 'Update Draft' : 'Save Draft'}
                   </button>
+                  
                   <button
                     type="button"
                     disabled={isSubmitting || !title || !content || !categories.length}
