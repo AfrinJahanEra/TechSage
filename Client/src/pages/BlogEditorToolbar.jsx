@@ -178,9 +178,32 @@ const BlogEditorToolbar = ({ editorRef }) => {
   };
 
   const insertLink = () => {
-    const url = prompt('Enter the URL:');
-    if (url) formatText('createLink', url);
-  };
+  const url = prompt('Enter the URL:');
+  if (!url || !editorRef.current) return;
+
+  editorRef.current.focus();
+
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return;
+
+  const range = selection.getRangeAt(0);
+  const selectedText = selection.toString() || url;
+
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.textContent = selectedText;
+  anchor.target = '_blank';
+  anchor.rel = 'noopener noreferrer';
+
+  range.deleteContents();
+  range.insertNode(anchor);
+
+  range.setStartAfter(anchor);
+  range.setEndAfter(anchor);
+  selection.removeAllRanges();
+  selection.addRange(range);
+};
+
 
   const insertCode = () => {
     formatText('formatBlock', '<pre>');
@@ -290,7 +313,12 @@ const BlogEditorToolbar = ({ editorRef }) => {
     { icon: <FiAlignCenter />, command: 'justifyCenter', name: 'Align Center', action: () => formatText('justifyCenter') },
     { icon: <FiAlignRight />, command: 'justifyRight', name: 'Align Right', action: () => formatText('justifyRight') },
     { icon: <FiAlignJustify />, command: 'justifyFull', name: 'Justify', action: () => formatText('justifyFull') },
-    { icon: <FiLink />, command: 'createLink', name: 'Insert Link', action: insertLink },
+    {
+  name: 'Insert Link',
+  command: 'insertLink',
+  icon: <FiLink />,
+  action: insertLink
+},
     { icon: <FiImage />, command: 'insertImage', name: 'Upload Image', action: insertImage },
     { icon: <FiCode />, command: 'formatBlock', name: 'Insert Code', action: insertCode },
     {
@@ -351,6 +379,26 @@ const BlogEditorToolbar = ({ editorRef }) => {
       setLatexPreview(`<span style="color: red; font-size: 0.875rem;">Invalid LaTeX syntax</span>`);
     }
   }, [latexInput]);
+
+  useEffect(() => {
+  const editor = editorRef.current;
+  if (!editor) return;
+
+  const handleLinkClick = (e) => {
+    const target = e.target;
+    if (target.tagName === 'A' && target.href) {
+      e.preventDefault(); // Prevent placing cursor
+      window.open(target.href, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  editor.addEventListener('click', handleLinkClick);
+
+  return () => {
+    editor.removeEventListener('click', handleLinkClick);
+  };
+}, [editorRef]);
+
 
   return (
     <div
