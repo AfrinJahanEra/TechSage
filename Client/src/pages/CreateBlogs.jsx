@@ -1,11 +1,12 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FiUpload, FiX, FiPlus, FiCheck, FiUsers, FiClock, FiInfo, FiSave, FiTrash2, FiSearch } from 'react-icons/fi';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import { toast } from 'react-hot-toast';
 import BlogEditorToolbar from './BlogEditorToolbar';
 import Footer from '../components/Footer';
+import PopupModal from '../components/PopupModal';
 import Navbar from '../components/Navbar';
 
 
@@ -32,6 +33,14 @@ const CreateBlogPage = () => {
   const [lastSaved, setLastSaved] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+
+  const [popup, setPopup] = useState({ show: false, message: '', type: 'info' });
+
+const showPopup = (message, type = 'info') => {
+  setPopup({ show: true, message, type });
+  setTimeout(() => setPopup({ ...popup, show: false }), 4000); // auto-hide after 4s
+};
+
 
   // Available categories
   const availableCategories = [
@@ -125,7 +134,7 @@ const CreateBlogPage = () => {
       setShowSearchResults(true);
     } catch (error) {
       console.error('Error searching users:', error);
-      toast.error('Failed to search users');
+      showPopup('Failed to search users', 'error');
     }
   };
 
@@ -141,7 +150,7 @@ const CreateBlogPage = () => {
         await sendCollaborationRequest(newBlogId, username);
       } catch (error) {
         console.error('Error creating draft before sending request:', error);
-        toast.error('Failed to create draft before sending request');
+        showPopup('Failed to create draft before sending request', 'error');
       }
     } else {
       // If we already have a blogId, just send the request
@@ -158,20 +167,20 @@ const CreateBlogPage = () => {
         blog_id: blogId
       });
 
-      toast.success('Collaboration request sent successfully');
+      showPopup('Collaboration request sent successfully', 'success');
       setSearchQuery('');
       setSearchResults([]);
       setShowSearchResults(false);
     } catch (error) {
       console.error('Error sending author request:', error);
-      toast.error(error.response?.data?.error || 'Failed to send request');
+      showPopup(error.response?.data?.error || 'Failed to send request', 'error');
     }
   };
 
   // Remove collaborator
   const removeCollaborator = async (username) => {
     if (!blogId) {
-      toast.error('No blog selected');
+      showPopup('No blog selected', 'error');
       return;
     }
 
@@ -189,11 +198,11 @@ const CreateBlogPage = () => {
           ...prev,
           authors: prev.authors.filter(a => a.username !== username)
         }));
-        toast.success('Collaborator removed successfully');
+        showPopup('Collaborator removed successfully', 'success');
       }
     } catch (error) {
       console.error('Error removing collaborator:', error);
-      toast.error(error.response?.data?.error || 'Failed to remove collaborator');
+      showPopup(error.response?.data?.error || 'Failed to remove collaborator', 'error');
     }
   };
 
@@ -237,11 +246,11 @@ const handleInput = () => {
       setBlogId(response.data.id);
       setStatus('draft');
       setLastSaved(new Date());
-      toast.success('Draft created successfully');
+      showPopup('Draft created successfully', 'success');
       return response.data.id;
     } catch (error) {
       console.error('Error creating draft:', error);
-      toast.error(error.response?.data?.error || 'Failed to create draft');
+      showPopup(error.response?.data?.error || 'Failed to create draft', 'error');
       throw error;
     } finally {
       setIsSubmitting(false);
@@ -283,10 +292,10 @@ const handleInput = () => {
       }
       setStatus('draft');
       setLastSaved(new Date());
-      toast.success('Draft saved successfully');
+      showPopup('Draft saved successfully', 'success');
     } catch (error) {
       console.error('Error saving draft:', error);
-      toast.error(error.response?.data?.error || 'Failed to save draft');
+      showPopup(error.response?.data?.error || 'Failed to save draft', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -294,59 +303,63 @@ const handleInput = () => {
 
   // Publish blog
   const publishBlog = async () => {
-    if (!title.trim()) {
-      toast.error('Please enter a blog title');
-      return;
+  if (!title.trim()) {
+    showPopup('Please enter a blog title', 'error');
+    return;
+  }
+
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = content;
+  const textOnly = tempDiv.textContent.trim();
+
+  if (!textOnly) {
+    showPopup('Please add some content to your blog', 'error');
+    return;
+  }
+
+  if (categories.length === 0) {
+    showPopup('Please select at least one category', 'error');
+    return;
+  }
+
+  try {
+    setIsSubmitting(true);
+
+    // If we don't have a blogId yet, create a new draft first
+    let currentBlogId = blogId;
+    if (!currentBlogId) {
+      currentBlogId = await createDraft();
     }
 
-    if (!content.trim() || content === '<p>Start writing your blog post here...</p>') {
-      toast.error('Please add some content to your blog');
-      return;
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('content', content);
+    formData.append('username', user.username);
+    formData.append('is_published', true);
+
+    categories.forEach(cat => formData.append('categories[]', cat));
+    tags.forEach(tag => formData.append('tags[]', tag));
+
+    if (thumbnailFile) {
+      formData.append('thumbnail', thumbnailFile);
     }
 
-    if (categories.length === 0) {
-      toast.error('Please select at least one category');
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-
-      // If we don't have a blogId yet, create a new draft first
-      let currentBlogId = blogId;
-      if (!currentBlogId) {
-        currentBlogId = await createDraft();
+    await api.post('/blogs/create/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
       }
+    });
 
-      const formData = new FormData();
-      formData.append('title', title);
-      formData.append('content', content);
-      formData.append('username', user.username);
-      formData.append('is_published', true);
-
-      categories.forEach(cat => formData.append('categories[]', cat));
-      tags.forEach(tag => formData.append('tags[]', tag));
-
-      if (thumbnailFile) {
-        formData.append('thumbnail', thumbnailFile);
-      }
-
-      const response = await api.post('/blogs/create/', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-
-      setStatus('published');
-      toast.success('Blog published successfully');
-      navigate(`/blogs/${currentBlogId}`);
-    } catch (error) {
-      console.error('Error publishing blog:', error);
-      toast.error(error.response?.data?.error || 'Failed to publish blog');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    setStatus('published');
+    showPopup('Blog published successfully', 'success');
+    navigate(`/blogs/${currentBlogId}`);
+  } catch (error) {
+    console.error('Error publishing blog:', error);
+    showPopup(error.response?.data?.error || 'Failed to publish blog', 'error');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   // Discard blog (move to trash)
   const discardBlog = async () => {
@@ -364,11 +377,11 @@ const handleInput = () => {
           username: user.username
         });
 
-        toast.success('Blog moved to trash');
+        showPopup('Blog moved to trash', 'success');
         navigate('/blogs/drafts');
       } catch (error) {
         console.error('Error discarding blog:', error);
-        toast.error(error.response?.data?.error || 'Failed to discard blog');
+        showPopup(error.response?.data?.error || 'Failed to discard blog', 'error');
       } finally {
         setIsSubmitting(false);
       }
@@ -405,6 +418,12 @@ const handleInput = () => {
   return (
     <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-50 text-gray-800'}`}>
       <Navbar />
+<PopupModal
+  show={popup.show}
+  message={popup.message}
+  type={popup.type}
+  onClose={() => setPopup({ ...popup, show: false })}
+/>
 
       <div className="flex flex-1 pt-16">
         {/* Main Content */}
@@ -572,6 +591,7 @@ const handleInput = () => {
   onFocus={handleFocus}
   onBlur={handleBlur}
   onInput={handleInput}
+  onKeyUp={handleInput}
   data-placeholder="Start writing your blog post here..."
   className={`
     relative min-h-[300px] border border-gray-300 rounded-lg p-4 prose max-w-none focus:outline-none focus:ring-2 focus:ring-teal-500
@@ -582,6 +602,7 @@ const handleInput = () => {
     ${content ? 'before:hidden' : ''}
   `}
 />
+
 
 
 
