@@ -663,15 +663,15 @@ const handleInput = () => {
                   </button>
                   
                   <button
-                    type="button"
-                    disabled={isSubmitting || !title || !content || !categories.length}
-                    className="px-6 py-2 text-white rounded-lg hover:opacity-90 transition-colors w-full sm:w-auto flex items-center justify-center gap-2"
-                    style={{ backgroundColor: primaryColor }}
-                    onClick={publishBlog}
-                  >
-                    <FiCheck />
-                    Publish
-                  </button>
+  type="button"
+  disabled={isSubmitting} // ✅ Only disable on submitting
+  className="px-6 py-2 text-white rounded-lg hover:opacity-90 transition-colors w-full sm:w-auto flex items-center justify-center gap-2"
+  style={{ backgroundColor: primaryColor }}
+  onClick={publishBlog}
+>
+  <FiCheck />
+  Publish
+</button>
                 </div>
               </div>
             </div>
