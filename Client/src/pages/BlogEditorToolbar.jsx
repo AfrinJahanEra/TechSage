@@ -30,19 +30,51 @@ const BlogEditorToolbar = ({ editorRef }) => {
 const [codeInput, setCodeInput] = useState('');
 const [codeLanguage, setCodeLanguage] = useState('javascript');
 
+const [isEditingCodeBlock, setIsEditingCodeBlock] = useState(false);
+const [selectedCodeBlock, setSelectedCodeBlock] = useState(null);
+
+
 const insertCode = () => {
   setShowCodeModal(true);
 };
+
+
+useEffect(() => {
+  const editor = editorRef.current;
+  if (!editor) return;
+
+  const handleCodeClick = (e) => {
+    const pre = e.target.closest('pre.code-block');
+    if (!pre || !editor.contains(pre)) return;
+
+    const codeElement = pre.querySelector('code');
+    const codeContent = codeElement?.textContent || '';
+    const langClass = codeElement?.className || 'language-javascript';
+    const language = langClass.replace('language-', '') || 'javascript';
+
+    setCodeInput(codeContent);
+    setCodeLanguage(language);
+    setIsEditingCodeBlock(true);
+    setSelectedCodeBlock(pre);
+    setShowCodeModal(true);
+  };
+
+  editor.addEventListener('click', handleCodeClick);
+  return () => {
+    editor.removeEventListener('click', handleCodeClick);
+  };
+}, [editorRef]);
+
 const handleInsertCodeBlock = () => {
   if (!codeInput.trim()) return;
 
   const pre = document.createElement('pre');
   const code = document.createElement('code');
 
-  pre.contentEditable = 'false';
   code.textContent = codeInput;
   code.className = `language-${codeLanguage}`;
   pre.className = 'code-block';
+  pre.contentEditable = 'false';
   pre.appendChild(code);
 
   pre.style.padding = '1em';
@@ -54,19 +86,25 @@ const handleInsertCodeBlock = () => {
   pre.style.fontSize = '0.875rem';
   pre.style.fontFamily = 'monospace';
 
-  const selection = window.getSelection();
-  const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-
-  if (range && editorRef.current.contains(range.startContainer)) {
-    range.deleteContents();
-    range.insertNode(pre);
+  if (isEditingCodeBlock && selectedCodeBlock) {
+    selectedCodeBlock.replaceWith(pre);
   } else {
-    editorRef.current.appendChild(pre);
+    const selection = window.getSelection();
+    const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+
+    if (range && editorRef.current.contains(range.startContainer)) {
+      range.deleteContents();
+      range.insertNode(pre);
+    } else {
+      editorRef.current.appendChild(pre);
+    }
   }
 
   setShowCodeModal(false);
   setCodeInput('');
   setCodeLanguage('javascript');
+  setSelectedCodeBlock(null);
+  setIsEditingCodeBlock(false);
   editorRef.current.focus();
 };
 
@@ -673,7 +711,8 @@ anchor.style.cursor = 'pointer';
           className="px-4 py-2 text-white rounded"
           style={{ backgroundColor: primaryColor }}
         >
-          Insert
+          {isEditingCodeBlock ? 'Update Code' : 'Insert'}
+
         </button>
       </div>
     </div>
