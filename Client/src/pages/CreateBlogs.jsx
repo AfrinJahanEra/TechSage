@@ -8,6 +8,7 @@ import BlogEditorToolbar from './BlogEditorToolbar';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
 
+
 const CreateBlogPage = () => {
   const { primaryColor, darkMode } = useTheme();
   const { user, api } = useAuth();
@@ -58,15 +59,9 @@ const CreateBlogPage = () => {
     }
   }, [location.state]);
 
-  // Initialize editor content
-  useEffect(() => {
-    if (editorRef.current && !content) {
-      editorRef.current.innerHTML =
-        `<p class="${darkMode ? 'text-gray-400' : 'text-gray-400'}">Start writing your blog post here...</p>`;
-    } else if (editorRef.current && content) {
-      editorRef.current.innerHTML = content;
-    }
-  }, [darkMode, content]);
+  
+
+
 
   // Close search results when clicking outside
   useEffect(() => {
@@ -213,23 +208,20 @@ const CreateBlogPage = () => {
   };
 
   const handleBlur = () => {
-    if (editorRef.current.textContent.trim() === '') {
-      editorRef.current.innerHTML = `<p class="${darkMode ? 'text-gray-400' : 'text-gray-400'}">Start writing your blog post here...</p>`;
-      editorRef.current.classList.add(darkMode ? 'text-gray-400' : 'text-gray-400');
-      editorRef.current.classList.remove(darkMode ? 'text-gray-200' : 'text-gray-800');
+    if (editorRef.current && editorRef.current.textContent.trim() === '') {
+      editorRef.current.innerHTML = `<p class="text-gray-400">Start writing your blog post here...</p>`;
     }
   };
 
-  const handleInput = () => {
-    const text = editorRef.current.textContent.trim();
-    setContent(editorRef.current.innerHTML);
 
-    // Ensure gray class is removed if real input begins
-    if (text !== '' && text !== 'Start writing your blog post here...') {
-      editorRef.current.classList.remove('text-gray-400');
-      editorRef.current.classList.add(darkMode ? 'text-gray-200' : 'text-gray-800');
-    }
-  };
+
+const handleInput = () => {
+  if (editorRef.current) {
+    const html = editorRef.current.innerHTML.trim();
+    setContent(html);
+  }
+};
+
 
   // Create a new draft
   const createDraft = async () => {
@@ -407,6 +399,9 @@ const CreateBlogPage = () => {
     return () => clearTimeout(timer);
   }, [title, content, categories, tags, thumbnail]);
 
+
+  
+
   return (
     <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-50 text-gray-800'}`}>
       <Navbar />
@@ -571,16 +566,24 @@ const CreateBlogPage = () => {
                 <label className="block text-sm font-bold text-gray-700 mb-2">Blog Content</label>
 
                 <BlogEditorToolbar editorRef={editorRef} />
+<div
+  ref={editorRef}
+  contentEditable
+  onFocus={handleFocus}
+  onBlur={handleBlur}
+  onInput={handleInput}
+  data-placeholder="Start writing your blog post here..."
+  className={`
+    relative min-h-[300px] border border-gray-300 rounded-lg p-4 prose max-w-none focus:outline-none focus:ring-2 focus:ring-teal-500
+    ${darkMode ? 'text-gray-200' : 'text-gray-800'}
+    before:content-[attr(data-placeholder)]
+    before:absolute before:text-gray-400 before:pointer-events-none before:select-none before:italic
+    before:whitespace-pre-wrap before:top-4 before:left-4
+    ${content ? 'before:hidden' : ''}
+  `}
+/>
 
-                <div
-                  ref={editorRef}
-                  contentEditable
-                  dir="ltr"
-                  onFocus={handleFocus}
-                  onBlur={handleBlur}
-                  onInput={handleInput}
-                  className="min-h-[300px] border border-gray-300 rounded-lg p-4 prose max-w-none focus:outline-none focus:ring-2 focus:ring-teal-500"
-                />
+
 
               </div>
 
