@@ -195,7 +195,8 @@ const BlogEditorToolbar = ({ editorRef }) => {
   anchor.target = '_blank';
   anchor.rel = 'noopener noreferrer';
   anchor.style.textDecoration = 'underline';
-anchor.style.color = '#2563eb';
+anchor.style.color = '#6b98faff';
+anchor.style.cursor = 'pointer';
 
   range.deleteContents();
   range.insertNode(anchor);
