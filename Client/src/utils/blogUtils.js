@@ -115,6 +115,46 @@ export const getContentPreview = (content, path = '') => {
   }
 };
 
+export const getContentPreviewhome = (content, path = '') => {
+  if (!content) return 'No content available';
+  
+  try {
+    const temp = document.createElement('div');
+    temp.innerHTML = content;
+    
+    // Get all paragraphs and line breaks
+    const paragraphs = Array.from(temp.querySelectorAll('p, br'));
+    let lines = [];
+    
+    // Extract text content up to 500 lines
+    paragraphs.some((element, index) => {
+      if (index >= 500) return true; // Stop after 500 lines
+      
+      if (element.tagName === 'P') {
+        lines.push(element.textContent);
+      } else if (element.tagName === 'BR') {
+        lines.push('\n');
+      }
+      return false;
+    });
+    
+    // Join the lines with proper spacing
+    let preview = lines.join('\n').trim();
+    
+    // If we still need more content (for non-paragraph content)
+    if (lines.length < 500) {
+      const remainingContent = temp.textContent || temp.innerText || '';
+      preview += '\n' + remainingContent;
+    }
+    
+    // Limit to approximately 500 lines (about 25,000 characters)
+    return preview.slice(0, 25000) + (preview.length > 25000 ? '...' : '');
+  } catch (e) {
+    console.error('Error parsing content:', e);
+    return 'Content preview unavailable';
+  }
+};
+
 export const calculateReadTime = (content) => {
   if (!content) return '0 min read';
   

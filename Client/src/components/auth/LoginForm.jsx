@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { auth, provider, signInWithPopup } from '../../firebase.js'; // adjust path if needed
 
 const LoginForm = () => {
   const [formData, setFormData] = useState({
@@ -50,9 +51,35 @@ const LoginForm = () => {
     }
   };
 
-  const handleGoogleLogin = () => {
-    alert('Google login would be implemented here');
-  };
+const handleGoogleLogin = async () => {
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+
+    const username = user.displayName.replace(/\s+/g, '').toLowerCase();
+
+    const loginData = {
+      username,
+      password: user.uid + "_google",  // dummy password must match what you used at signup
+    };
+
+    console.log("Data sent to login backend:", loginData);
+
+    await login(loginData);  // your login API call
+
+    navigate('/home');
+  } catch (error) {
+    console.error("Google Login Error:", error);
+    if (error.error) {
+      setErrors({ api: error.error });
+    } else if (error.response && error.response.data) {
+      setErrors({ api: error.response.data.error || 'Login failed' });
+    } else {
+      setErrors({ api: error.message || 'Google login failed' });
+    }
+  }
+};
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">

@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import Navbar from '../components/Navbar.jsx';
 import Footer from '../components/Footer.jsx';
-import Sidebar from '../components/Sidebar.jsx';
+import HomeSidebar from '../components/HomeSidebar.jsx';
 import SearchForm from '../components/SearchForm.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
-import { normalizeBlog, getThumbnailUrl, formatDate, calculateReadTime, getContentPreview } from '../utils/blogUtils.js';
+import { normalizeBlog, getThumbnailUrl, formatDate, calculateReadTime, getContentPreview, getContentPreviewhome } from '../utils/blogUtils.js';
 import BlogLink from '../components/BlogLink.jsx';
 
 const Home = () => {
@@ -46,7 +46,7 @@ const Home = () => {
       });
 
       setMostPopularBlog(blogs[0] || null);
-      setFeaturedBlogs(blogs.length > 1 ? blogs.slice(1, 10) : []);
+      setFeaturedBlogs(blogs.length > 1 ? blogs.slice(0, 5) : []);
       
     } catch (err) {
       console.error('Error fetching popular blogs:', err);
@@ -153,7 +153,7 @@ const Home = () => {
 
                 <div className="prose max-w-none">
                   <div 
-                    dangerouslySetInnerHTML={{ __html: getContentPreview(mostPopularBlog.content, '/home') }} 
+                    dangerouslySetInnerHTML={{ __html: getContentPreviewhome(mostPopularBlog.content, '/home') }} 
                     className={`${darkMode ? 'text-gray-300' : 'text-gray-800'}`}
                   />
                 </div>
@@ -185,8 +185,7 @@ const Home = () => {
 
           {/* Sidebar */}
           <div className="lg:w-80 space-y-8">
-            <Sidebar />
-            <SearchForm/>
+            <HomeSidebar />
           </div>
         </div>
       </main>

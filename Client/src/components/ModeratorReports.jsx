@@ -28,74 +28,56 @@ const ModeratorReports = () => {
     fetchReports();
   }, [filter]);
 
-  const handleReviewBlog = (blogId) => {
+  const handleViewBlog = (blogId) => {
+    if (!blogId) {
+      alert('This blog has been deleted');
+      return;
+    }
     navigate(`/blog/${blogId}`);
   };
 
-  const handleDeleteBlog = async (reportId, blogId) => {
-    try {
-      // First update the report status
-      await api.post(`/reports/${reportId}/approve/`, {
-        reviewer_id: user.id,
-        action: 'delete'
-      });
-      
-      // Then delete the blog
-      await api.delete(`/blogs/mod/delete/${blogId}/`);
-      
-      // Show notification
-      confirmAlert({
-        title: 'Blog Deleted',
-        message: 'The blog has been permanently deleted and the reporter has been notified.',
-        buttons: [{
-          label: 'OK',
-          onClick: () => fetchReports()
-        }]
-      });
-    } catch (error) {
-      console.error('Error deleting blog:', error);
-      alert('Failed to delete blog');
-    }
-  };
-
-  const handleApproveReport = (reportId) => {
+  const handleRejectReport = async (reportId) => {
     confirmAlert({
-      title: 'Approve Report',
-      message: 'What action would you like to take?',
+      title: 'Confirm Approval',
+      message: 'Are you sure you want to accept this report?',
       buttons: [
         {
-          label: 'Review Blog',
-          onClick: () => handleReviewBlog(reports.find(r => r.id === reportId).blog.id)
+          label: 'Yes',
+          onClick: async () => {
+            try {
+              await api.post(`/reports/${reportId}/approve/`, {
+                reviewer_id: user.id
+              });
+              fetchReports();
+              alert('Report accepted successfully');
+            } catch (error) {
+              console.error('Error approving report:', error);
+              alert('Failed to accept report');
+            }
+          }
         },
         {
-          label: 'Delete Blog',
-          onClick: () => handleDeleteBlog(
-            reportId, 
-            reports.find(r => r.id === reportId).blog.id
-          )
-        },
-        {
-          label: 'Cancel',
+          label: 'No',
           onClick: () => {}
         }
       ]
     });
   };
 
-  const handleRejectReport = async (reportId) => {
+  const handleApproveReport = async (reportId, blogId) => {
     confirmAlert({
-      title: 'Reject Report',
-      message: 'Are you sure you want to reject this report?',
+      title: 'Confirm Rejection',
+      message: 'Are you sure you want to reject this report and delete the blog?',
       buttons: [
         {
-          label: 'Yes',
+          label: 'Yes, Reject',
           onClick: async () => {
             try {
               await api.post(`/reports/${reportId}/reject/`, {
                 reviewer_id: user.id
               });
               fetchReports();
-              alert('Report has been rejected');
+              alert('Report rejected and blog deleted');
             } catch (error) {
               console.error('Error rejecting report:', error);
               alert('Failed to reject report');
@@ -103,7 +85,7 @@ const ModeratorReports = () => {
           }
         },
         {
-          label: 'No',
+          label: 'Cancel',
           onClick: () => {}
         }
       ]
@@ -128,7 +110,7 @@ const ModeratorReports = () => {
           className="border rounded px-3 py-2"
         >
           <option value="pending">Pending</option>
-          <option value="approved">Approved</option>
+          <option value="accepted">Accepted</option>
           <option value="rejected">Rejected</option>
         </select>
       </div>
@@ -139,27 +121,28 @@ const ModeratorReports = () => {
         </div>
       ) : (
         reports.map((report) => (
-          <div key={report.id} className="border rounded-lg p-4">
+          <div key={report.id} className="border rounded-lg p-4 mb-4">
             <div className="flex justify-between items-start mb-3">
               <div>
                 <h3 
-                  className="font-bold text-lg cursor-pointer hover:text-teal-600"
-                  onClick={() => handleReviewBlog(report.blog.id)}
+                  className={`font-bold text-lg cursor-pointer hover:text-teal-600 ${
+                    !report.blog ? 'text-gray-500' : ''
+                  }`}
+                  onClick={() => handleViewBlog(report.blog?.id)}
                 >
-                  {report.blog.title}
+                  {report.blog?.title || 'Deleted Blog'}
                 </h3>
                 <p className="text-sm text-gray-500">
-                  Reported by {report.reported_by.username} on {formatDate(report.created_at)}
+                  Reported by {report.reported_by?.username || 'Unknown'} on {formatDate(report.created_at)}
                 </p>
               </div>
               <span className={`px-2 py-1 text-xs rounded-full ${
-                !report.is_reviewed ? 'bg-gray-100 text-gray-800' :
-                report.action_taken === 'approved' ? 'bg-green-100 text-green-800' :
-                report.action_taken === 'rejected' ? 'bg-red-100 text-red-800' :
-                'bg-yellow-100 text-yellow-800'
+                report.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                report.status === 'accepted' ? 'bg-green-100 text-green-800' :
+                'bg-red-100 text-red-800'
               }`}>
-                {!report.is_reviewed ? 'Pending' : 
-                 report.action_taken === 'approved' ? 'Approved' : 'Rejected'}
+                {report.status === 'pending' ? 'Pending' : 
+                 report.status === 'accepted' ? 'Accepted' : 'Rejected'}
               </span>
             </div>
 
@@ -170,7 +153,7 @@ const ModeratorReports = () => {
 
             {report.reviewed_by && (
               <p className="text-sm text-gray-500">
-                {report.action_taken} by {report.reviewed_by.username} on {formatDate(report.reviewed_at)}
+                {report.status} by {report.reviewed_by.username} on {formatDate(report.reviewed_at)}
               </p>
             )}
 
@@ -180,14 +163,22 @@ const ModeratorReports = () => {
                   onClick={() => handleApproveReport(report.id)}
                   className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
                 >
-                  Approve
+                  Accept
                 </button>
                 <button
-                  onClick={() => handleRejectReport(report.id)}
+                  onClick={() => handleRejectReport(report.id, report.blog?.id)}
                   className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
                 >
                   Reject
                 </button>
+                {report.blog && (
+                  <button
+                    onClick={() => handleViewBlog(report.blog.id)}
+                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                  >
+                    View Blog
+                  </button>
+                )}
               </div>
             )}
           </div>

@@ -16,6 +16,7 @@ import {
   normalizeBlog
 } from '../utils/blogUtils.js';
 import BlogLink from '../components/BlogLink';
+import TopContributor from '../components/TopContributor.jsx';
 
 const InsideBlog = () => {
   const { id } = useParams();
@@ -232,7 +233,7 @@ const InsideBlog = () => {
               blogTitle={blog.title}z
             />
 
-            {/* Author Bio */}
+            {/* Author Bio
             {blog.authors?.map(author => (
               <div key={author.username} className={`flex flex-col md:flex-row gap-5 p-6 rounded-lg my-8 ${darkMode ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-800'}`}>
                 <img
@@ -265,7 +266,7 @@ const InsideBlog = () => {
                   </div>
                 </div>
               </div>
-            ))}
+            ))} */}
 
             <CommentSection blogId={id} />
           </article>
@@ -273,6 +274,7 @@ const InsideBlog = () => {
           {/* Sidebar */}
           <div className="lg:w-80 space-y-8" >
             <Sidebar />
+            <TopContributor/>
             <SearchForm />
           </div>
         </div>
