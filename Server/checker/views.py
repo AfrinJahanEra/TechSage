@@ -13,7 +13,7 @@ def check_plagiarism(request, blog_id):
         # API configuration
         api_url = "https://api.gowinston.ai/v2/plagiarism"
         headers = {
-            "Authorization": "Bearer pFhOrzHXFLSzXCIlUqPIoS9GWfLU89HVnekiqyBJ271782d1",  # Replace with your token
+            "Authorization": "Bearer QYzfumAWrxP4SYGnSZh8y7hY5HxLpBVIzKXB5Jhbb5b2cee6", 
             "Content-Type": "application/json",
         }
         payload = {
