@@ -6,13 +6,10 @@ import ContributorCard from './ContributorCard';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 
-
-const Sidebar = ({ type = 'default', currentBlogId = null }) => {
+const HomeSidebar = ({ type = 'default', currentBlogId = null }) => {
   const [showJobs, setShowJobs] = useState(false);
   const [relatedBlogs, setRelatedBlogs] = useState([]);
   const [recentBlogs, setRecentBlogs] = useState([]);
-  const [newestBlogs, setNewestBlogs] = useState([]);
-  const [featuredBlogs, setFeaturedBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const { primaryColor, darkMode } = useTheme();
   const { api } = useAuth();
@@ -21,36 +18,24 @@ const Sidebar = ({ type = 'default', currentBlogId = null }) => {
     const fetchBlogs = async () => {
       try {
         setLoading(true);
-
-        const newestResponse = await api.get('/published-blogs/?limit=5&sort=-published_at');
-        setNewestBlogs(newestResponse.data.blogs || []);
         
-  
-        const recentResponse = await api.get('/published-blogs/?limit=5&sort=-published_at');
-        setRecentBlogs(recentResponse.data.blogs || []);
+        // Fetch only 3 recent blogs
+        const recentResponse = await api.get('/published-blogs/?limit=3&sort=-published_at');
+        setRecentBlogs(recentResponse.data.blogs?.slice(0, 3) || []);
         
-    
         if (type === 'inside-blog' && currentBlogId) {
           const currentBlogResponse = await api.get(`/blogs/${currentBlogId}`);
           const currentCategories = currentBlogResponse.data.categories || [];
           
           if (currentCategories.length > 0) {
- 
+            // Fetch only 3 related blogs
             const relatedResponse = await api.get(
-              `/published-blogs/?category=${currentCategories[0]}&limit=4`
+              `/published-blogs/?category=${currentCategories[0]}&limit=3`
             );
             setRelatedBlogs(
               (relatedResponse.data.blogs || [])
                 .filter(blog => blog.id !== currentBlogId)
                 .slice(0, 3)
-            );
-            
-
-            const featuredResponse = await api.get(
-              `/published-blogs/?category=${currentCategories[0]}&limit=5&sort=-published_at`
-            );
-            setFeaturedBlogs(
-              featuredResponse.data.blogs || []
             );
           }
         }
@@ -65,55 +50,8 @@ const Sidebar = ({ type = 'default', currentBlogId = null }) => {
     fetchBlogs();
   }, [type, currentBlogId, api]);
 
-  const topContributors = [
-    {
-      id: 1,
-      image: 'https://randomuser.me/api/portraits/women/44.jpg',
-      name: 'Ramisa Anan Rahman',
-      blogs: '15 research blogs'
-    },
-    {
-      id: 2,
-      image: 'https://randomuser.me/api/portraits/men/32.jpg',
-      name: 'Ridika Naznin',
-      blogs: '12 research blogs'
-    },
-    {
-      id: 3,
-      image: 'https://randomuser.me/api/portraits/women/68.jpg',
-      name: 'Afrin Jahan Era',
-      blogs: '9 research blogs'
-    }
-  ];
-
-  const jobOpportunities = [
-    {
-      id: 1,
-      title: 'Research Scientist - Quantum Computing',
-      company: 'TechSage Labs',
-      location: 'San Francisco, CA',
-      description: 'Lead research in quantum algorithms and error correction techniques.',
-      posted: '2 days ago'
-    },
-    {
-      id: 2,
-      title: 'Machine Learning Engineer',
-      company: 'AI Research Institute',
-      location: 'Remote',
-      description: 'Develop novel ML models for scientific applications.',
-      posted: '1 week ago'
-    },
-    {
-      id: 3,
-      title: 'Biotechnology Researcher',
-      company: 'BioTech Innovations',
-      location: 'Boston, MA',
-      description: 'CRISPR-based gene editing research position.',
-      posted: '3 days ago'
-    }
-  ];
-
-  return (
+  
+    return (
     <aside className="w-full md:max-w-xs space-y-8">
       {loading ? (
         <div className="flex justify-center">
@@ -250,4 +188,4 @@ const Sidebar = ({ type = 'default', currentBlogId = null }) => {
   );
 };
 
-export default Sidebar;
+export default HomeSidebar;

@@ -56,7 +56,7 @@ const CommentSection = ({ blogId }) => {
   }, [formatDate, generateKey]);
 
   // Handle new comments from WebSocket or API
-  const handleNewComment = useCallback((comment) => {
+  const handleNewComment = useCallback((comment, isFromCurrentUser = false) => {
     setComments(prev => {
       const formattedComment = {
         ...comment,
@@ -65,12 +65,35 @@ const CommentSection = ({ blogId }) => {
         key: generateKey(comment)
       };
 
-      // Check if comment already exists
+      // Check if comment already exists (including optimistic updates)
       const exists = prev.some(c => c.id === comment.id) || 
                    prev.some(c => c.replies.some(r => r.id === comment.id));
       
       if (exists) return prev;
+
+      // If this is from the current user and we have an optimistic update, replace it
+      if (isFromCurrentUser) {
+        if (comment.parent) {
+          return prev.map(c => 
+            c.id === comment.parent 
+              ? { 
+                  ...c, 
+                  replies: [
+                    ...c.replies.filter(r => !r.isOptimistic || r.author?.username !== user?.username),
+                    formattedComment
+                  ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                } 
+              : c
+          );
+        } else {
+          return [
+            formattedComment,
+            ...prev.filter(c => !c.isOptimistic || c.author?.username !== user?.username)
+          ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        }
+      }
       
+      // For comments from other users, just add them normally
       if (comment.parent) {
         return prev.map(c => 
           c.id === comment.parent 
@@ -84,13 +107,13 @@ const CommentSection = ({ blogId }) => {
             : c
         );
       } else {
-                return [
+        return [
           formattedComment,
           ...prev.filter(c => c.id !== comment.id)
         ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       }
     });
-  }, [formatDate, generateKey]);
+  }, [formatDate, generateKey, user]);
 
   // Handle comment updates (likes)
   const handleUpdatedComment = useCallback((updatedComment) => {
@@ -139,9 +162,11 @@ const CommentSection = ({ blogId }) => {
 
   // WebSocket message handler
   const handleWebSocketMessage = useCallback((data) => {
+    const isFromCurrentUser = data.comment?.author?.username === user?.username;
+    
     switch (data.action) {
       case 'new_comment':
-        handleNewComment(data.comment);
+        handleNewComment(data.comment, isFromCurrentUser);
         break;
       case 'update_comment':
         handleUpdatedComment(data.comment);
@@ -152,7 +177,7 @@ const CommentSection = ({ blogId }) => {
       default:
         console.warn('Unknown WebSocket action:', data.action);
     }
-  }, [handleNewComment, handleUpdatedComment, handleDeletedComment]);
+  }, [handleNewComment, handleUpdatedComment, handleDeletedComment, user]);
 
   // Initialize WebSocket connection
   useEffect(() => {
@@ -222,12 +247,13 @@ const CommentSection = ({ blogId }) => {
     
     setIsSubmitting(true);
     const tempId = `temp-${Date.now()}`;
+    const commentContent = comment.trim();
     
     // Optimistic update
     const optimisticComment = {
       id: tempId,
       author: { username: user.username, avatar_url: user.avatar },
-      content: comment,
+      content: commentContent,
       date: 'Just now',
       likes: 0,
       replies: [],
@@ -244,17 +270,18 @@ const CommentSection = ({ blogId }) => {
           action: 'new_comment',
           blog_id: blogId,
           author: user.username,
-          content: comment
+          content: commentContent
         }));
+        // Don't remove optimistic update here - let WebSocket response handle it
       } else {
         const response = await api.post('/comments/post/', {
           blog_id: blogId,
           author: user.username,
-          content: comment
+          content: commentContent
         });
         // Replace optimistic update with real data
         setComments(prev => prev.map(c => 
-          c.id === tempId ? response.data : c
+          c.id === tempId ? { ...response.data, date: formatDate(response.data.created_at), replies: [] } : c
         ));
       }
     } catch (err) {
@@ -273,12 +300,13 @@ const CommentSection = ({ blogId }) => {
     
     setIsSubmitting(true);
     const tempId = `temp-reply-${Date.now()}`;
+    const replyContentTrimmed = replyContent.trim();
     
     // Optimistic update
     const optimisticReply = {
       id: tempId,
       author: { username: user.username, avatar_url: user.avatar },
-      content: replyContent,
+      content: replyContentTrimmed,
       date: 'Just now',
       likes: 0,
       created_at: new Date().toISOString(),
@@ -299,14 +327,15 @@ const CommentSection = ({ blogId }) => {
           action: 'new_comment',
           blog_id: blogId,
           author: user.username,
-          content: replyContent,
+          content: replyContentTrimmed,
           parent_id: commentId
         }));
+        // Don't remove optimistic update here - let WebSocket response handle it
       } else {
         const response = await api.post('/comments/post/', {
           blog_id: blogId,
           author: user.username,
-          content: replyContent,
+          content: replyContentTrimmed,
           parent_id: commentId
         });
         // Replace optimistic update with real data
@@ -315,7 +344,7 @@ const CommentSection = ({ blogId }) => {
             ? { 
                 ...c, 
                 replies: c.replies.map(r => 
-                  r.id === tempId ? response.data : r
+                  r.id === tempId ? { ...response.data, date: formatDate(response.data.created_at) } : r
                 ) 
               }
             : c
@@ -342,7 +371,6 @@ const CommentSection = ({ blogId }) => {
     }
 
     const targetId = isReply ? replyId : commentId;
-    const likeAction = isReply ? 'like_reply' : 'like_comment';
     
     // Optimistic update
     setComments(prev => {

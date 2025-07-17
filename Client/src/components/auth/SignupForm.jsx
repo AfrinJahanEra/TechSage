@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { auth, provider, signInWithPopup } from '../../firebase.js'; // adjust path accordingly
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
+
 
 const SignupForm = () => {
   const [formData, setFormData] = useState({
@@ -108,9 +110,39 @@ const SignupForm = () => {
     }
   };
 
-  const handleGoogleSignup = () => {
-    alert('Google signup would be implemented here');
-  };
+  const handleGoogleSignup = async () => {
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+
+    const username = user.displayName.replace(/\s+/g, '').toLowerCase();
+
+    const userData = {
+      username,
+      email: user.email,
+      password: user.uid + "_google",   // dummy password
+      university: "unknown",            // or prompt later
+      role: 'user'
+    };
+
+    console.log("📦 Data sent to register:", userData);
+
+    await register(userData); // Your backend should accept this format
+
+    navigate('/home');
+  } catch (error) {
+    console.error("Google Sign-in Error:", error);
+    if (error.response && error.response.data) {
+      console.error("Backend response:", error.response.data);
+      setErrors({ api: error.response.data.error || 'Registration failed' });
+    } else {
+      setErrors({ api: error.message || 'Google sign-in failed' });
+    }
+  }
+};
+
+
+
 
   return (
     <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">

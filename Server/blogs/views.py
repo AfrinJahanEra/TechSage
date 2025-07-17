@@ -9,6 +9,7 @@ from users.models import User
 import pytz
 from django.core.paginator import Paginator, EmptyPage
 from rest_framework import status
+from mongoengine import DoesNotExist
 
 class CreateBlog(APIView):
     def post(self, request):
@@ -53,16 +54,14 @@ class CreateBlog(APIView):
                 thumbnail_url=thumbnail_url,
                 categories=categories,
                 tags=tags,
-                is_draft=is_draft,
-                is_deleted=is_deleted,
-                is_published=False,
+                is_draft=False,
+                is_deleted=False,
+                is_published=True,
                 is_reviewed = False,
                 reviewed_by = None  
             )
             
-            if is_deleted:
-                blog.soft_delete(username)
-            elif not is_draft:
+            if not is_draft:
                 blog.publish(username)
             
             blog.save()
@@ -292,31 +291,72 @@ class UpdateBlog(APIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class PublishBlog(APIView):
-    def post(self, request, blog_id):
+    def get(self, request):
+        """
+        Completely isolated published blogs endpoint - no MongoEngine imports
+        """
         try:
-            blog = Blog.objects.get(id=blog_id, is_deleted=False)
-            username = request.data.get('username')
+            from mongoengine.connection import get_db
             
-            if not username:
-                return Response({"error": "username is required"}, status=status.HTTP_400_BAD_REQUEST)
+            db = get_db()
+            collection = db['blogs']
+            user_collection = db['user']
+            
+            # Base query
+            query = {
+                'is_published': True,
+                'is_deleted': False
+            }
+            
+            # Get documents
+            cursor = collection.find(query).sort('published_at', -1).limit(10)
+            docs = list(cursor)
+            
+            # Format response
+            blogs = []
+            for doc in docs:
+                # Get authors
+                authors = []
+                for author_id in doc.get('authors', []):
+                    author = user_collection.find_one({'_id': author_id})
+                    if author:
+                        authors.append({
+                            'username': author.get('username'),
+                            'avatar': author.get('avatar_url')
+                        })
                 
-            user = User.objects(username=username).first()
-            if not user:
-                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-                
-            if user not in blog.authors:
-                return Response({"error": "You are not authorized to publish this blog"}, 
-                               status=status.HTTP_403_FORBIDDEN)
-                
-            blog.publish(username)
+                content = doc.get('content', '')
+                blogs.append({
+                    "id": str(doc['_id']),
+                    "title": doc.get('title', ''),
+                    "excerpt": content[:200] + "..." if len(content) > 200 else content,
+                    "content": content,  # Full content for 200-word preview
+                    "authors": authors,
+                    "thumbnail_url": doc.get('thumbnail_url'),
+                    "categories": doc.get('categories', []),
+                    "tags": doc.get('tags', []),
+                    "published_at": doc.get('published_at').isoformat() if doc.get('published_at') else None,
+                    "stats": {
+                        "upvotes": len(doc.get('upvotes', [])),
+                        "downvotes": len(doc.get('downvotes', []))
+                    }
+                })
+            
+            total = collection.count_documents(query)
+            
             return Response({
-                "message": "Blog published successfully",
-                "published_at": blog.published_at.isoformat()
+                "success": True,
+                "blogs": blogs,
+                "total": total
             })
-        except DoesNotExist:
-            return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
-        except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            import traceback
+            return Response({
+                "success": False,
+                "error": str(e),
+                "traceback": traceback.format_exc()
+            }, status=500)
 
 class UnpublishBlog(APIView):
     def post(self, request, blog_id):

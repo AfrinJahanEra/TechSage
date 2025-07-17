@@ -54,7 +54,7 @@ const CreateBlogPage = () => {
 
   // Available categories
   const availableCategories = [
-    'Technology', 'Science', 'Programming', 'AI', 'Web Development', 'Mobile'
+    'Technology', 'Science', 'Programming', 'AI', 'Web Development', 'Mobile', 'Job'
   ];
 
   // Refs
@@ -311,8 +311,8 @@ const handleInput = () => {
     }
   };
 
-  // Publish blog
-  const publishBlog = async () => {
+
+const publishBlog = async () => {
   if (!title.trim()) {
     showPopup('Please enter a blog title', 'error');
     return;
@@ -335,19 +335,12 @@ const handleInput = () => {
   try {
     setIsSubmitting(true);
 
-    // If we don't have a blogId yet, create a new draft first
-    let currentBlogId = blogId;
-    if (!currentBlogId) {
-      currentBlogId = await createDraft(true); // suppress draft popup when publishing
-
-    }
-
     const formData = new FormData();
     formData.append('title', title);
     formData.append('content', content);
     formData.append('username', user.username);
     formData.append('is_published', true);
-
+    
     categories.forEach(cat => formData.append('categories[]', cat));
     tags.forEach(tag => formData.append('tags[]', tag));
 
@@ -355,20 +348,23 @@ const handleInput = () => {
       formData.append('thumbnail', thumbnailFile);
     }
 
-    await api.post('/blogs/create/', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
+    let response;
+      response = await api.post('/blogs/create/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
 
     setStatus('published');
     showPopup('Blog published successfully', 'success');
-    // Wait 3 seconds before navigating
+    
+    // Navigate to the published blog after a short delay
     setTimeout(() => {
-      navigate(`/blogs/${currentBlogId}`);
-    }, 3000);
+      navigate(`/blogs/${response.data.id || blogId}`);
+    }, 2000);
   } catch (error) {
-    showPopup(error.response?.data?.error || 'Failed to publish', 'error');
+    console.error('Publish error:', error);
+    showPopup(error.response?.data?.error || 'Failed to publish blog', 'error');
   } finally {
     setIsSubmitting(false);
   }
