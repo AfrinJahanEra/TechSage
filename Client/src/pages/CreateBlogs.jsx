@@ -1,12 +1,14 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FiUpload, FiX, FiPlus, FiCheck, FiUsers, FiClock, FiInfo, FiSave, FiTrash2, FiSearch } from 'react-icons/fi';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import { toast } from 'react-hot-toast';
 import BlogEditorToolbar from './BlogEditorToolbar';
 import Footer from '../components/Footer';
+import PopupModal from '../components/PopupModal';
 import Navbar from '../components/Navbar';
+
 
 const CreateBlogPage = () => {
   const { primaryColor, darkMode } = useTheme();
@@ -31,6 +33,24 @@ const CreateBlogPage = () => {
   const [lastSaved, setLastSaved] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+
+ const [popup, setPopup] = useState({ show: false, message: '', type: 'success' });
+  const popupTimerRef = useRef(null);
+
+  const showPopup = (message, type = 'success', duration = 3000) => {
+    clearTimeout(popupTimerRef.current);
+    setPopup({ show: true, message, type });
+    
+    popupTimerRef.current = setTimeout(() => {
+      setPopup(prev => ({ ...prev, show: false }));
+    }, duration);
+  };
+
+  useEffect(() => {
+    return () => clearTimeout(popupTimerRef.current);
+  }, []);
+
+
 
   // Available categories
   const availableCategories = [
@@ -58,15 +78,9 @@ const CreateBlogPage = () => {
     }
   }, [location.state]);
 
-  // Initialize editor content
-  useEffect(() => {
-    if (editorRef.current && !content) {
-      editorRef.current.innerHTML =
-        `<p class="${darkMode ? 'text-gray-400' : 'text-gray-400'}">Start writing your blog post here...</p>`;
-    } else if (editorRef.current && content) {
-      editorRef.current.innerHTML = content;
-    }
-  }, [darkMode, content]);
+  
+
+
 
   // Close search results when clicking outside
   useEffect(() => {
@@ -130,7 +144,7 @@ const CreateBlogPage = () => {
       setShowSearchResults(true);
     } catch (error) {
       console.error('Error searching users:', error);
-      toast.error('Failed to search users');
+      showPopup('Failed to search users', 'error');
     }
   };
 
@@ -146,7 +160,7 @@ const CreateBlogPage = () => {
         await sendCollaborationRequest(newBlogId, username);
       } catch (error) {
         console.error('Error creating draft before sending request:', error);
-        toast.error('Failed to create draft before sending request');
+        showPopup('Failed to create draft before sending request', 'error');
       }
     } else {
       // If we already have a blogId, just send the request
@@ -163,20 +177,20 @@ const CreateBlogPage = () => {
         blog_id: blogId
       });
 
-      toast.success('Collaboration request sent successfully');
+      showPopup('Collaboration request sent successfully', 'success');
       setSearchQuery('');
       setSearchResults([]);
       setShowSearchResults(false);
     } catch (error) {
       console.error('Error sending author request:', error);
-      toast.error(error.response?.data?.error || 'Failed to send request');
+      showPopup(error.response?.data?.error || 'Failed to send request', 'error');
     }
   };
 
   // Remove collaborator
   const removeCollaborator = async (username) => {
     if (!blogId) {
-      toast.error('No blog selected');
+      showPopup('No blog selected', 'error');
       return;
     }
 
@@ -194,11 +208,11 @@ const CreateBlogPage = () => {
           ...prev,
           authors: prev.authors.filter(a => a.username !== username)
         }));
-        toast.success('Collaborator removed successfully');
+        showPopup('Collaborator removed successfully', 'success');
       }
     } catch (error) {
       console.error('Error removing collaborator:', error);
-      toast.error(error.response?.data?.error || 'Failed to remove collaborator');
+      showPopup(error.response?.data?.error || 'Failed to remove collaborator', 'error');
     }
   };
 
@@ -213,23 +227,20 @@ const CreateBlogPage = () => {
   };
 
   const handleBlur = () => {
-    if (editorRef.current.textContent.trim() === '') {
-      editorRef.current.innerHTML = `<p class="${darkMode ? 'text-gray-400' : 'text-gray-400'}">Start writing your blog post here...</p>`;
-      editorRef.current.classList.add(darkMode ? 'text-gray-400' : 'text-gray-400');
-      editorRef.current.classList.remove(darkMode ? 'text-gray-200' : 'text-gray-800');
+    if (editorRef.current && editorRef.current.textContent.trim() === '') {
+      editorRef.current.innerHTML = `<p class="text-gray-400">Start writing your blog post here...</p>`;
     }
   };
 
-  const handleInput = () => {
-    const text = editorRef.current.textContent.trim();
-    setContent(editorRef.current.innerHTML);
 
-    // Ensure gray class is removed if real input begins
-    if (text !== '' && text !== 'Start writing your blog post here...') {
-      editorRef.current.classList.remove('text-gray-400');
-      editorRef.current.classList.add(darkMode ? 'text-gray-200' : 'text-gray-800');
-    }
-  };
+
+const handleInput = () => {
+  if (editorRef.current) {
+    const html = editorRef.current.innerHTML.trim();
+    setContent(html);
+  }
+};
+
 
   // Create a new draft
   const createDraft = async () => {
@@ -245,11 +256,11 @@ const CreateBlogPage = () => {
       setBlogId(response.data.id);
       setStatus('draft');
       setLastSaved(new Date());
-      toast.success('Draft created successfully');
+      //showPopup('Draft created successfully', 'success');
       return response.data.id;
     } catch (error) {
       console.error('Error creating draft:', error);
-      toast.error(error.response?.data?.error || 'Failed to create draft');
+      showPopup(error.response?.data?.error || 'Failed to create draft', 'error');
       throw error;
     } finally {
       setIsSubmitting(false);
@@ -291,10 +302,10 @@ const CreateBlogPage = () => {
       }
       setStatus('draft');
       setLastSaved(new Date());
-      toast.success('Draft saved successfully');
+      showPopup('Draft saved successfully', 'success');
     } catch (error) {
       console.error('Error saving draft:', error);
-      toast.error(error.response?.data?.error || 'Failed to save draft');
+      showPopup(error.response?.data?.error || 'Failed to save draft', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -302,59 +313,66 @@ const CreateBlogPage = () => {
 
   // Publish blog
   const publishBlog = async () => {
-    if (!title.trim()) {
-      toast.error('Please enter a blog title');
-      return;
+  if (!title.trim()) {
+    showPopup('Please enter a blog title', 'error');
+    return;
+  }
+
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = content;
+  const textOnly = tempDiv.textContent.trim();
+
+  if (!textOnly) {
+    showPopup('Please add some content to your blog', 'error');
+    return;
+  }
+
+  if (categories.length === 0) {
+    showPopup('Please select at least one category', 'error');
+    return;
+  }
+
+  try {
+    setIsSubmitting(true);
+
+    // If we don't have a blogId yet, create a new draft first
+    let currentBlogId = blogId;
+    if (!currentBlogId) {
+      currentBlogId = await createDraft(true); // suppress draft popup when publishing
+
     }
 
-    if (!content.trim() || content === '<p>Start writing your blog post here...</p>') {
-      toast.error('Please add some content to your blog');
-      return;
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('content', content);
+    formData.append('username', user.username);
+    formData.append('is_published', true);
+
+    categories.forEach(cat => formData.append('categories[]', cat));
+    tags.forEach(tag => formData.append('tags[]', tag));
+
+    if (thumbnailFile) {
+      formData.append('thumbnail', thumbnailFile);
     }
 
-    if (categories.length === 0) {
-      toast.error('Please select at least one category');
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-
-      // If we don't have a blogId yet, create a new draft first
-      let currentBlogId = blogId;
-      if (!currentBlogId) {
-        currentBlogId = await createDraft();
+    await api.post('/blogs/create/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
       }
+    });
 
-      const formData = new FormData();
-      formData.append('title', title);
-      formData.append('content', content);
-      formData.append('username', user.username);
-      formData.append('is_published', true);
-
-      categories.forEach(cat => formData.append('categories[]', cat));
-      tags.forEach(tag => formData.append('tags[]', tag));
-
-      if (thumbnailFile) {
-        formData.append('thumbnail', thumbnailFile);
-      }
-
-      const response = await api.post('/blogs/create/', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-
-      setStatus('published');
-      toast.success('Blog published successfully');
+    setStatus('published');
+    showPopup('Blog published successfully', 'success');
+    // Wait 3 seconds before navigating
+    setTimeout(() => {
       navigate(`/blogs/${currentBlogId}`);
-    } catch (error) {
-      console.error('Error publishing blog:', error);
-      toast.error(error.response?.data?.error || 'Failed to publish blog');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    }, 3000);
+  } catch (error) {
+    showPopup(error.response?.data?.error || 'Failed to publish', 'error');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   // Discard blog (move to trash)
   const discardBlog = async () => {
@@ -372,11 +390,11 @@ const CreateBlogPage = () => {
           username: user.username
         });
 
-        toast.success('Blog moved to trash');
+        showPopup('Blog moved to trash', 'success');
         navigate('/blogs/drafts');
       } catch (error) {
         console.error('Error discarding blog:', error);
-        toast.error(error.response?.data?.error || 'Failed to discard blog');
+        showPopup(error.response?.data?.error || 'Failed to discard blog', 'error');
       } finally {
         setIsSubmitting(false);
       }
@@ -407,9 +425,18 @@ const CreateBlogPage = () => {
     return () => clearTimeout(timer);
   }, [title, content, categories, tags, thumbnail]);
 
+
+  
+
   return (
     <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-50 text-gray-800'}`}>
       <Navbar />
+<PopupModal
+        show={popup.show}
+        message={popup.message}
+        type={popup.type}
+        onClose={() => setPopup({ ...popup, show: false })}
+      />
 
       <div className="flex flex-1 pt-16">
         {/* Main Content */}
@@ -571,16 +598,26 @@ const CreateBlogPage = () => {
                 <label className="block text-sm font-bold text-gray-700 mb-2">Blog Content</label>
 
                 <BlogEditorToolbar editorRef={editorRef} />
+<div
+  ref={editorRef}
+  contentEditable
+  onFocus={handleFocus}
+  onBlur={handleBlur}
+  onInput={handleInput}
+  onKeyUp={handleInput}
+  data-placeholder="Start writing your blog post here..."
+  className={`
+    relative min-h-[300px] border border-gray-300 rounded-lg p-4 prose max-w-none focus:outline-none focus:ring-2 focus:ring-teal-500
+    ${darkMode ? 'text-gray-200' : 'text-gray-800'}
+    before:content-[attr(data-placeholder)]
+    before:absolute before:text-gray-400 before:pointer-events-none before:select-none before:italic
+    before:whitespace-pre-wrap before:top-4 before:left-4
+    ${content ? 'before:hidden' : ''}
+  `}
+/>
 
-                <div
-                  ref={editorRef}
-                  contentEditable
-                  dir="ltr"
-                  onFocus={handleFocus}
-                  onBlur={handleBlur}
-                  onInput={handleInput}
-                  className="min-h-[300px] border border-gray-300 rounded-lg p-4 prose max-w-none focus:outline-none focus:ring-2 focus:ring-teal-500"
-                />
+
+
 
               </div>
 
@@ -624,16 +661,17 @@ const CreateBlogPage = () => {
                     <FiSave />
                     {isEditing ? 'Update Draft' : 'Save Draft'}
                   </button>
+                  
                   <button
-                    type="button"
-                    disabled={isSubmitting || !title || !content || !categories.length}
-                    className="px-6 py-2 text-white rounded-lg hover:opacity-90 transition-colors w-full sm:w-auto flex items-center justify-center gap-2"
-                    style={{ backgroundColor: primaryColor }}
-                    onClick={publishBlog}
-                  >
-                    <FiCheck />
-                    Publish
-                  </button>
+  type="button"
+  disabled={isSubmitting} // ✅ Only disable on submitting
+  className="px-6 py-2 text-white rounded-lg hover:opacity-90 transition-colors w-full sm:w-auto flex items-center justify-center gap-2"
+  style={{ backgroundColor: primaryColor }}
+  onClick={publishBlog}
+>
+  <FiCheck />
+  Publish
+</button>
                 </div>
               </div>
             </div>

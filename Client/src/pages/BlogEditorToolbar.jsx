@@ -26,6 +26,89 @@ const BlogEditorToolbar = ({ editorRef }) => {
   const [matrixRows, setMatrixRows] = useState(2);
   const [matrixCols, setMatrixCols] = useState(2);
 
+  const [showCodeModal, setShowCodeModal] = useState(false);
+const [codeInput, setCodeInput] = useState('');
+const [codeLanguage, setCodeLanguage] = useState('javascript');
+
+const [isEditingCodeBlock, setIsEditingCodeBlock] = useState(false);
+const [selectedCodeBlock, setSelectedCodeBlock] = useState(null);
+
+
+const insertCode = () => {
+  setShowCodeModal(true);
+};
+
+
+useEffect(() => {
+  const editor = editorRef.current;
+  if (!editor) return;
+
+  const handleCodeClick = (e) => {
+    const pre = e.target.closest('pre.code-block');
+    if (!pre || !editor.contains(pre)) return;
+
+    const codeElement = pre.querySelector('code');
+    const codeContent = codeElement?.textContent || '';
+    const langClass = codeElement?.className || 'language-javascript';
+    const language = langClass.replace('language-', '') || 'javascript';
+
+    setCodeInput(codeContent);
+    setCodeLanguage(language);
+    setIsEditingCodeBlock(true);
+    setSelectedCodeBlock(pre);
+    setShowCodeModal(true);
+  };
+
+  editor.addEventListener('click', handleCodeClick);
+  return () => {
+    editor.removeEventListener('click', handleCodeClick);
+  };
+}, [editorRef]);
+
+const handleInsertCodeBlock = () => {
+  if (!codeInput.trim()) return;
+
+  const pre = document.createElement('pre');
+  const code = document.createElement('code');
+
+  code.textContent = codeInput;
+  code.className = `language-${codeLanguage}`;
+  pre.className = 'code-block';
+  pre.contentEditable = 'false';
+  pre.appendChild(code);
+
+  pre.style.padding = '1em';
+  pre.style.borderRadius = '8px';
+  pre.style.overflowX = 'auto';
+  pre.style.background = darkMode ? '#1e293b' : '#f3f4f6';
+  pre.style.color = darkMode ? '#e2e8f0' : '#1e293b';
+  pre.style.margin = '1em 0';
+  pre.style.fontSize = '0.875rem';
+  pre.style.fontFamily = 'monospace';
+
+  if (isEditingCodeBlock && selectedCodeBlock) {
+    selectedCodeBlock.replaceWith(pre);
+  } else {
+    const selection = window.getSelection();
+    const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+
+    if (range && editorRef.current.contains(range.startContainer)) {
+      range.deleteContents();
+      range.insertNode(pre);
+    } else {
+      editorRef.current.appendChild(pre);
+    }
+  }
+
+  setShowCodeModal(false);
+  setCodeInput('');
+  setCodeLanguage('javascript');
+  setSelectedCodeBlock(null);
+  setIsEditingCodeBlock(false);
+  editorRef.current.focus();
+};
+
+
   // LaTeX templates organized by category
   const latexTemplates = [
     {
@@ -178,13 +261,37 @@ const BlogEditorToolbar = ({ editorRef }) => {
   };
 
   const insertLink = () => {
-    const url = prompt('Enter the URL:');
-    if (url) formatText('createLink', url);
-  };
+  const url = prompt('Enter the URL:');
+  if (!url || !editorRef.current) return;
 
-  const insertCode = () => {
-    formatText('formatBlock', '<pre>');
-  };
+  editorRef.current.focus();
+
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return;
+
+  const range = selection.getRangeAt(0);
+  const selectedText = selection.toString() || url;
+
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.textContent = selectedText;
+  anchor.target = '_blank';
+  anchor.rel = 'noopener noreferrer';
+  anchor.style.textDecoration = 'underline';
+anchor.style.color = '#6b98faff';
+anchor.style.cursor = 'pointer';
+
+  range.deleteContents();
+  range.insertNode(anchor);
+
+  range.setStartAfter(anchor);
+  range.setEndAfter(anchor);
+  selection.removeAllRanges();
+  selection.addRange(range);
+};
+
+
+ 
 
   const handleLatexButtonClick = () => {
     const selection = window.getSelection();
@@ -232,9 +339,12 @@ const BlogEditorToolbar = ({ editorRef }) => {
 
     const editor = editorRef.current;
     const selection = window.getSelection();
-    const range = selection.getRangeAt(0);
-    
-    if (!editor.contains(range.startContainer)) {
+    const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+
+
+
+    // Insert the LaTeX span
+    if (!range || !editor.contains(range.startContainer)) {
       editor.appendChild(latexSpan);
     } else {
       range.deleteContents();
@@ -244,10 +354,12 @@ const BlogEditorToolbar = ({ editorRef }) => {
     const newRange = document.createRange();
     newRange.setStartAfter(latexSpan);
     newRange.collapse(true);
-    
+
     selection.removeAllRanges();
     selection.addRange(newRange);
     editor.focus();
+
+    
 
     setShowLatexModal(false);
     setLatexInput('');
@@ -285,7 +397,12 @@ const BlogEditorToolbar = ({ editorRef }) => {
     { icon: <FiAlignCenter />, command: 'justifyCenter', name: 'Align Center', action: () => formatText('justifyCenter') },
     { icon: <FiAlignRight />, command: 'justifyRight', name: 'Align Right', action: () => formatText('justifyRight') },
     { icon: <FiAlignJustify />, command: 'justifyFull', name: 'Justify', action: () => formatText('justifyFull') },
-    { icon: <FiLink />, command: 'createLink', name: 'Insert Link', action: insertLink },
+    {
+  name: 'Insert Link',
+  command: 'insertLink',
+  icon: <FiLink />,
+  action: insertLink
+},
     { icon: <FiImage />, command: 'insertImage', name: 'Upload Image', action: insertImage },
     { icon: <FiCode />, command: 'formatBlock', name: 'Insert Code', action: insertCode },
     {
@@ -347,11 +464,30 @@ const BlogEditorToolbar = ({ editorRef }) => {
     }
   }, [latexInput]);
 
+  useEffect(() => {
+  const editor = editorRef.current;
+  if (!editor) return;
+
+  const handleLinkClick = (e) => {
+    const target = e.target;
+    if (target.tagName === 'A' && target.href) {
+      e.preventDefault(); // Prevent placing cursor
+      window.open(target.href, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  editor.addEventListener('click', handleLinkClick);
+
+  return () => {
+    editor.removeEventListener('click', handleLinkClick);
+  };
+}, [editorRef]);
+
+
   return (
-    <div 
-      className={`flex items-center gap-1 mb-3 p-2 rounded-lg border ${
-        darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
-      }`}
+    <div
+      className={`flex items-center gap-1 mb-3 p-2 rounded-lg border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
+        }`}
     >
       {buttons.map((button) => (
         <React.Fragment key={button.command}>
@@ -362,7 +498,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
                 p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold
                 ${activeFormats.includes(button.command)
                   ? 'text-white'
-                  : darkMode 
+                  : darkMode
                     ? 'text-gray-200 hover:text-white'
                     : 'text-gray-800 hover:text-white'}
               `}
@@ -385,9 +521,8 @@ const BlogEditorToolbar = ({ editorRef }) => {
             </button>
 
             {tooltip === button.name && (
-              <div className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${
-                darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'
-              }`}>
+              <div className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'
+                }`}>
                 {button.name}
               </div>
             )}
@@ -403,7 +538,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
                     p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold
                     ${activeFormats.includes('insertUnorderedList')
                       ? 'text-white'
-                      : darkMode 
+                      : darkMode
                         ? 'text-gray-200 hover:text-white'
                         : 'text-gray-800 hover:text-white'}
                   `}
@@ -425,21 +560,18 @@ const BlogEditorToolbar = ({ editorRef }) => {
                 </button>
 
                 {tooltip === 'Bullet List' && (
-                  <div className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${
-                    darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'
-                  }`}>
+                  <div className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'
+                    }`}>
                     Bullet List
                   </div>
                 )}
 
                 {showBulletDropdown && (
-                  <div className={`absolute z-20 left-0 mt-1 w-40 rounded-md border shadow-md ${
-                    darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
-                  }`}>
+                  <div className={`absolute z-20 left-0 mt-1 w-40 rounded-md border shadow-md ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
+                    }`}>
                     <button
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
-                        darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
-                      }`}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
+                        }`}
                       onClick={() => {
                         formatText('insertUnorderedList');
                         setShowBulletDropdown(false);
@@ -448,9 +580,8 @@ const BlogEditorToolbar = ({ editorRef }) => {
                       • Bulleted List
                     </button>
                     <button
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
-                        darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
-                      }`}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
+                        }`}
                       onClick={() => {
                         formatText('insertHTML', '<ul><li>☐ Item 1</li><li>☐ Item 2</li></ul>');
                         setShowBulletDropdown(false);
@@ -470,7 +601,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
                     p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold
                     ${activeFormats.includes('insertOrderedList')
                       ? 'text-white'
-                      : darkMode 
+                      : darkMode
                         ? 'text-gray-200 hover:text-white'
                         : 'text-gray-800 hover:text-white'}
                   `}
@@ -492,21 +623,18 @@ const BlogEditorToolbar = ({ editorRef }) => {
                 </button>
 
                 {tooltip === 'Numbered List' && (
-                  <div className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${
-                    darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'
-                  }`}>
+                  <div className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'
+                    }`}>
                     Numbered List
                   </div>
                 )}
 
                 {showNumberDropdown && (
-                  <div className={`absolute z-20 left-0 mt-1 w-44 rounded-md border shadow-md ${
-                    darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
-                  }`}>
+                  <div className={`absolute z-20 left-0 mt-1 w-44 rounded-md border shadow-md ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
+                    }`}>
                     <button
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
-                        darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
-                      }`}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
+                        }`}
                       onClick={() => {
                         formatText('insertOrderedList');
                         setShowNumberDropdown(false);
@@ -515,9 +643,8 @@ const BlogEditorToolbar = ({ editorRef }) => {
                       1. Numbered List
                     </button>
                     <button
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
-                        darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
-                      }`}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
+                        }`}
                       onClick={() => {
                         formatText('insertHTML', '<ol type="i"><li>First</li><li>Second</li></ol>');
                         setShowNumberDropdown(false);
@@ -533,6 +660,66 @@ const BlogEditorToolbar = ({ editorRef }) => {
         </React.Fragment>
       ))}
 
+      {showCodeModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+    <div className={`rounded-xl p-6 w-full max-w-2xl bg-white border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Insert Code Snippet</h3>
+        <button onClick={() => setShowCodeModal(false)} className={`${darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-black'}`}>
+          <FiX size={20} />
+        </button>
+      </div>
+
+      <div className="mb-4">
+        <label className={`text-sm font-semibold block mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Language</label>
+        <select
+          value={codeLanguage}
+          onChange={(e) => setCodeLanguage(e.target.value)}
+          className={`w-full border rounded px-3 py-2 text-sm ${darkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'}`}
+        >
+          <option value="javascript">JavaScript</option>
+          <option value="python">Python</option>
+          <option value="html">HTML</option>
+          <option value="css">CSS</option>
+          <option value="java">Java</option>
+          <option value="c">C</option>
+          <option value="cpp">C++</option>
+          <option value="bash">Bash</option>
+          <option value="json">JSON</option>
+        </select>
+      </div>
+
+      <div className="mb-4">
+        <label className={`text-sm font-semibold block mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Code</label>
+        <textarea
+          value={codeInput}
+          onChange={(e) => setCodeInput(e.target.value)}
+          className={`w-full h-40 border rounded px-3 py-2 font-mono text-sm ${darkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'}`}
+          placeholder="Enter your code here..."
+        />
+      </div>
+
+      <div className="flex justify-end space-x-2">
+        <button
+          onClick={() => setShowCodeModal(false)}
+          className={`px-4 py-2 rounded ${darkMode ? 'bg-gray-600 text-white' : 'bg-gray-200 text-gray-800'}`}
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleInsertCodeBlock}
+          className="px-4 py-2 text-white rounded"
+          style={{ backgroundColor: primaryColor }}
+        >
+          {isEditingCodeBlock ? 'Update Code' : 'Insert'}
+
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
       {showLatexModal && (
         <div
           className="fixed inset-0 flex items-center justify-center z-50"
@@ -543,25 +730,22 @@ const BlogEditorToolbar = ({ editorRef }) => {
           }}
         >
           <div
-            className={`rounded-xl p-6 w-full max-w-3xl h-[550px] overflow-hidden flex flex-col shadow-xl ${
-              darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-            }`}
+            className={`rounded-xl p-6 w-full max-w-3xl h-[550px] overflow-hidden flex flex-col shadow-xl ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+              }`}
             style={{
               border: '1px solid rgba(0, 0, 0, 0.12)',
               boxShadow: '0 12px 30px rgba(0,0,0,0.2)',
             }}
           >
             <div className="flex items-center justify-between mb-4">
-              <h4 className={`text-sm font-semibold ${
-                darkMode ? 'text-gray-300' : 'text-gray-700'
-              }`}>
+              <h4 className={`text-sm font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
                 LaTeX Templates
               </h4>
 
               <div className="relative flex-1 text-center">
-                <h3 className={`text-xl font-bold ${
-                  darkMode ? 'text-white' : 'text-gray-800'
-                }`}>
+                <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'
+                  }`}>
                   {isLatexSelected ? 'Edit LaTeX Equation' : 'Insert LaTeX Equation'}
                 </h3>
                 <button
@@ -569,9 +753,8 @@ const BlogEditorToolbar = ({ editorRef }) => {
                     setShowLatexModal(false);
                     setLatexInput('');
                   }}
-                  className={`absolute right-0 top-1/2 -translate-y-1/2 ${
-                    darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
-                  }`}
+                  className={`absolute right-0 top-1/2 -translate-y-1/2 ${darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
+                    }`}
                 >
                   <FiX size={20} />
                 </button>
@@ -589,13 +772,12 @@ const BlogEditorToolbar = ({ editorRef }) => {
                         onClick={() =>
                           setOpenTemplateCategory(isOpen ? null : category.category)
                         }
-                        className={`w-full flex justify-between items-center px-4 py-2 rounded-md border text-sm font-medium transition-colors duration-200 ${
-                          isOpen
+                        className={`w-full flex justify-between items-center px-4 py-2 rounded-md border text-sm font-medium transition-colors duration-200 ${isOpen
                             ? 'text-white'
                             : darkMode
                               ? 'text-gray-200 hover:text-white'
                               : 'text-gray-800 hover:text-white'
-                        }`}
+                          }`}
                         style={{
                           backgroundColor: isOpen ? primaryColor : darkMode ? '#374151' : 'white',
                           borderColor: isOpen ? primaryColor : darkMode ? '#4b5563' : '#e5e7eb'
@@ -606,9 +788,8 @@ const BlogEditorToolbar = ({ editorRef }) => {
                       </button>
 
                       {isOpen && (
-                        <div className={`mt-1 border rounded-md shadow-sm overflow-hidden ${
-                          darkMode ? 'border-gray-600' : 'border-gray-200'
-                        }`}>
+                        <div className={`mt-1 border rounded-md shadow-sm overflow-hidden ${darkMode ? 'border-gray-600' : 'border-gray-200'
+                          }`}>
                           {'subcategories' in category ? (
                             category.subcategories.map((subcat) => {
                               const isSubOpen = openFunctionSubcategory === subcat.name;
@@ -619,13 +800,12 @@ const BlogEditorToolbar = ({ editorRef }) => {
                                     onClick={() =>
                                       setOpenFunctionSubcategory(isSubOpen ? null : subcat.name)
                                     }
-                                    className={`w-full flex justify-between items-center px-4 py-2 text-sm font-medium transition-colors duration-200 ${
-                                      isSubOpen
+                                    className={`w-full flex justify-between items-center px-4 py-2 text-sm font-medium transition-colors duration-200 ${isSubOpen
                                         ? 'text-white'
                                         : darkMode
                                           ? 'text-gray-200 hover:text-white'
                                           : 'text-gray-800 hover:text-white'
-                                    }`}
+                                      }`}
                                     style={{
                                       backgroundColor: isSubOpen ? primaryColor : darkMode ? '#4b5563' : '#f9fafb'
                                     }}
@@ -635,15 +815,13 @@ const BlogEditorToolbar = ({ editorRef }) => {
                                   </button>
 
                                   {isSubOpen && (
-                                    <div className={`pl-4 ${
-                                      darkMode ? 'bg-gray-700' : 'bg-white'
-                                    }`}>
+                                    <div className={`pl-4 ${darkMode ? 'bg-gray-700' : 'bg-white'
+                                      }`}>
                                       {subcat.items.map((item) => (
                                         <button
                                           key={item.name}
-                                          className={`w-full text-left px-4 py-1 text-sm transition-colors duration-200 ${
-                                            darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
-                                          }`}
+                                          className={`w-full text-left px-4 py-1 text-sm transition-colors duration-200 ${darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
+                                            }`}
                                           onClick={() => insertLatexTemplate(item.template)}
                                         >
                                           {item.name}
@@ -658,9 +836,8 @@ const BlogEditorToolbar = ({ editorRef }) => {
                             category.items.map((item) => (
                               <button
                                 key={item.name}
-                                className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
-                                  darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
-                                }`}
+                                className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
+                                  }`}
                                 onClick={() => insertLatexTemplate(item.template)}
                               >
                                 {item.name}
@@ -676,18 +853,15 @@ const BlogEditorToolbar = ({ editorRef }) => {
 
               <div className="w-full md:w-2/3">
                 {showMatrixInput && (
-                  <div className={`mb-4 border p-3 rounded ${
-                    darkMode ? 'bg-gray-700 border-gray-600' : 'bg-teal-50 border-teal-200'
-                  }`}>
-                    <h4 className={`text-sm font-semibold mb-2 ${
-                      darkMode ? 'text-gray-300' : 'text-gray-800'
+                  <div className={`mb-4 border p-3 rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-teal-50 border-teal-200'
                     }`}>
+                    <h4 className={`text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-800'
+                      }`}>
                       Custom Matrix Size
                     </h4>
                     <div className="flex gap-4 items-center mb-2">
-                      <label className={`text-sm ${
-                        darkMode ? 'text-gray-300' : 'text-gray-700'
-                      }`}>
+                      <label className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'
+                        }`}>
                         Rows:
                         <input
                           type="number"
@@ -695,14 +869,12 @@ const BlogEditorToolbar = ({ editorRef }) => {
                           max="10"
                           value={matrixRows}
                           onChange={(e) => setMatrixRows(Number(e.target.value))}
-                          className={`ml-2 w-16 border rounded px-2 py-1 text-sm ${
-                            darkMode ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-300'
-                          }`}
+                          className={`ml-2 w-16 border rounded px-2 py-1 text-sm ${darkMode ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-300'
+                            }`}
                         />
                       </label>
-                      <label className={`text-sm ${
-                        darkMode ? 'text-gray-300' : 'text-gray-700'
-                      }`}>
+                      <label className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'
+                        }`}>
                         Columns:
                         <input
                           type="number"
@@ -710,9 +882,8 @@ const BlogEditorToolbar = ({ editorRef }) => {
                           max="10"
                           value={matrixCols}
                           onChange={(e) => setMatrixCols(Number(e.target.value))}
-                          className={`ml-2 w-16 border rounded px-2 py-1 text-sm ${
-                            darkMode ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-300'
-                          }`}
+                          className={`ml-2 w-16 border rounded px-2 py-1 text-sm ${darkMode ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-300'
+                            }`}
                         />
                       </label>
                       <button
@@ -739,27 +910,23 @@ const BlogEditorToolbar = ({ editorRef }) => {
                   </div>
                 )}
                 <textarea
-                  className={`w-full h-32 p-2 border rounded mb-4 font-mono text-sm ${
-                    darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
-                  }`}
+                  className={`latex-textarea w-full h-32 p-2 border rounded mb-4 font-mono text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
+                    }`}
                   placeholder="Enter LaTeX code (e.g., \frac{a}{b} or x^2 + y^2 = z^2)"
                   value={latexInput}
                   onChange={(e) => setLatexInput(e.target.value)}
                   autoFocus
                 />
 
-                <div className={`text-xs mb-4 ${
-                  darkMode ? 'text-gray-400' : 'text-gray-500'
-                }`}>
+                <div className={`text-xs mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'
+                  }`}>
                   Tip: Use standard LaTeX syntax. Your equation will be rendered when published.
                 </div>
 
-                <div className={`border p-3 rounded mb-4 ${
-                  darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'
-                }`}>
-                  <div className={`text-xs mb-1 ${
-                    darkMode ? 'text-gray-400' : 'text-gray-500'
+                <div className={`border p-3 rounded mb-4 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'
                   }`}>
+                  <div className={`text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
                     Live Preview:
                   </div>
                   <div
@@ -770,9 +937,8 @@ const BlogEditorToolbar = ({ editorRef }) => {
 
                 <div className="flex justify-end space-x-2">
                   <button
-                    className={`px-4 py-2 rounded hover:opacity-90 transition-colors duration-200 ${
-                      darkMode ? 'bg-gray-600 text-white' : 'bg-gray-200 text-gray-800'
-                    }`}
+                    className={`px-4 py-2 rounded hover:opacity-90 transition-colors duration-200 ${darkMode ? 'bg-gray-600 text-white' : 'bg-gray-200 text-gray-800'
+                      }`}
                     onClick={() => {
                       setShowLatexModal(false);
                       setLatexInput('');
