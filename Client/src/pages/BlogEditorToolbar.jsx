@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   FiBold, FiItalic, FiUnderline, FiList, FiAlignLeft, FiAlignCenter, FiAlignRight,
   FiAlignJustify, FiLink, FiImage, FiCode, FiRotateCcw, FiRotateCw, FiX
@@ -8,7 +8,6 @@ import { PiMathOperationsFill } from 'react-icons/pi';
 import { useTheme } from '../context/ThemeContext';
 import LatexModal from '../components/LatexModal';
 import LinkModal from '../components/LinkModal';
-import ImageModal from '../components/ImageModal';
 
 const BlogEditorToolbar = ({ editorRef }) => {
   const { primaryColor, darkMode } = useTheme();
@@ -26,7 +25,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
   const [latexInput, setLatexInput] = useState('');
   const [isLatexSelected, setIsLatexSelected] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
-  const [showImageModal, setShowImageModal] = useState(false);
+  const fileInputRef = useRef(null);
 
   const insertCode = () => {
     setShowCodeModal(true);
@@ -119,7 +118,64 @@ const BlogEditorToolbar = ({ editorRef }) => {
   };
 
   const handleImageButtonClick = () => {
-    setShowImageModal(true);
+    fileInputRef.current.click();
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const imgElement = document.createElement('img');
+    imgElement.className = 'inserted-image';
+    imgElement.src = URL.createObjectURL(file);
+    imgElement.contentEditable = 'false';
+    imgElement.style.display = 'block';
+    imgElement.style.margin = '1em auto';
+    imgElement.style.borderRadius = '3px';
+    imgElement.style.maxWidth = '500px';
+    imgElement.style.width = '300px'; // Initial width
+    imgElement.style.cursor = 'pointer';
+    imgElement.style.border = '2px solid transparent';
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'image-wrapper';
+    wrapper.contentEditable = 'false';
+    wrapper.style.position = 'relative';
+    wrapper.style.display = 'inline-block';
+    wrapper.style.margin = '1em auto';
+    wrapper.appendChild(imgElement);
+
+    const resizeHandle = document.createElement('div');
+    resizeHandle.className = 'resize-handle';
+    resizeHandle.style.position = 'absolute';
+    resizeHandle.style.bottom = '0';
+    resizeHandle.style.right = '0';
+    resizeHandle.style.width = '10px';
+    resizeHandle.style.height = '10px';
+    resizeHandle.style.backgroundColor = primaryColor;
+    resizeHandle.style.cursor = 'se-resize';
+    wrapper.appendChild(resizeHandle);
+
+    const editor = editorRef.current;
+    const selection = window.getSelection();
+    const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+
+    if (!range || !editor.contains(range.startContainer)) {
+      editor.appendChild(wrapper);
+    } else {
+      range.deleteContents();
+      range.insertNode(wrapper);
+    }
+
+    const newRange = document.createRange();
+    newRange.setStartAfter(wrapper);
+    newRange.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(newRange);
+    editor.focus();
+
+    // Clear file input
+    fileInputRef.current.value = '';
   };
 
   const handleLatexButtonClick = () => {
@@ -189,26 +245,54 @@ const BlogEditorToolbar = ({ editorRef }) => {
       }
     };
 
-    const handleImageResize = (e) => {
+    const handleImageClick = (e) => {
       const target = e.target;
-      if (target.classList.contains('inserted-image') && target.classList.contains('selected')) {
+      if (target.classList.contains('inserted-image')) {
         e.preventDefault();
-        const currentWidth = parseInt(target.style.width) || 300;
-        if (e.key === '+') {
-          target.style.width = `${Math.min(currentWidth + 20, 500)}px`; // Max 500px
-        } else if (e.key === '-') {
-          target.style.width = `${Math.max(currentWidth - 20, 100)}px`; // Min 100px
+        const prevSelected = document.querySelector('.inserted-image.selected');
+        if (prevSelected && prevSelected !== target) {
+          prevSelected.style.border = '2px solid transparent';
+          prevSelected.classList.remove('selected');
         }
+        target.classList.toggle('selected');
+        target.style.border = target.classList.contains('selected')
+          ? `2px solid ${primaryColor}`
+          : '2px solid transparent';
+      }
+    };
+
+    const handleMouseDown = (e) => {
+      if (e.target.classList.contains('resize-handle')) {
+        e.preventDefault();
+        const wrapper = e.target.parentElement;
+        const img = wrapper.querySelector('.inserted-image');
+        const startX = e.clientX;
+        const startWidth = parseInt(img.style.width) || 300;
+
+        const handleMouseMove = (moveEvent) => {
+          const newWidth = Math.min(Math.max(startWidth + (moveEvent.clientX - startX), 100), 500);
+          img.style.width = `${newWidth}px`;
+        };
+
+        const handleMouseUp = () => {
+          document.removeEventListener('mousemove', handleMouseMove);
+          document.removeEventListener('mouseup', handleMouseUp);
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
       }
     };
 
     editor.addEventListener('click', handleLinkClick);
-    editor.addEventListener('keydown', handleImageResize);
+    editor.addEventListener('click', handleImageClick);
+    editor.addEventListener('mousedown', handleMouseDown);
     return () => {
       editor.removeEventListener('click', handleLinkClick);
-      editor.removeEventListener('keydown', handleImageResize);
+      editor.removeEventListener('click', handleImageClick);
+      editor.removeEventListener('mousedown', handleMouseDown);
     };
-  }, [editorRef]);
+  }, [editorRef, primaryColor]);
 
   const buttons = [
     { icon: <FiBold />, command: 'bold', name: 'Bold', action: () => formatText('bold') },
@@ -227,204 +311,239 @@ const BlogEditorToolbar = ({ editorRef }) => {
   ];
 
   return (
-    <div
-      className={`flex items-center gap-1 mb-3 p-2 rounded-lg border ${
-        darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
-      }`}
-    >
-      {buttons.map((button) => (
-        <React.Fragment key={button.command}>
-          <div className="relative">
-            <button
-              type="button"
-              className={`
-                p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold
-                ${
-                  activeFormats.includes(button.command)
-                    ? 'text-white'
-                    : darkMode
-                    ? 'text-gray-200 hover:text-white'
-                    : 'text-gray-800 hover:text-white'
-                }
-              `}
-              onClick={button.action}
-              onMouseEnter={() => {
-                setTooltip(button.name);
-                setHoveredIcon(button.command);
-              }}
-              onMouseLeave={() => {
-                setTooltip('');
-                setHoveredIcon(null);
-              }}
-              style={{
-                backgroundColor: activeFormats.includes(button.command) ? primaryColor : darkMode ? '#374151' : 'white',
-                borderColor: activeFormats.includes(button.command) ? primaryColor : darkMode ? '#4b5563' : '#e5e7eb',
-                '--tw-ring-color': primaryColor
-              }}
-            >
-              {React.cloneElement(button.icon, { className: 'font-bold' })}
-            </button>
-
-            {tooltip === button.name && (
-              <div
-                className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${
-                  darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'
-                }`}
+    <>
+      <style>
+        {`
+          .inserted-image:hover {
+            cursor: pointer !important;
+          }
+          .inserted-image.selected {
+            border: 2px solid ${primaryColor} !important;
+          }
+          .image-wrapper {
+            position: relative;
+            display: inline-block;
+          }
+          .resize-handle {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 10px;
+            height: 10px;
+            background-color: ${primaryColor};
+            cursor: se-resize;
+          }
+          .resize-handle:hover {
+            opacity: 0.8;
+          }
+        `}
+      </style>
+      <div
+        className={`flex items-center gap-1 mb-3 p-2 rounded-lg border ${
+          darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
+        }`}
+      >
+        {buttons.map((button) => (
+          <React.Fragment key={button.command}>
+            <div className="relative">
+              <button
+                type="button"
+                className={`
+                  p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold
+                  ${
+                    activeFormats.includes(button.command)
+                      ? 'text-white'
+                      : darkMode
+                      ? 'text-gray-200 hover:text-white'
+                      : 'text-gray-800 hover:text-white'
+                  }
+                `}
+                onClick={button.action}
+                onMouseEnter={() => {
+                  setTooltip(button.name);
+                  setHoveredIcon(button.command);
+                }}
+                onMouseLeave={() => {
+                  setTooltip('');
+                  setHoveredIcon(null);
+                }}
+                style={{
+                  backgroundColor: activeFormats.includes(button.command) ? primaryColor : darkMode ? '#374151' : 'white',
+                  borderColor: activeFormats.includes(button.command) ? primaryColor : darkMode ? '#4b5563' : '#e5e7eb',
+                  '--tw-ring-color': primaryColor
+                }}
               >
-                {button.name}
-              </div>
+                {React.cloneElement(button.icon, { className: 'font-bold' })}
+              </button>
+
+              {tooltip === button.name && (
+                <div
+                  className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${
+                    darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'
+                  }`}
+                >
+                  {button.name}
+                </div>
+              )}
+            </div>
+
+            {button.command === 'underline' && (
+              <>
+                <div className="relative">
+                  <button
+                    type="button"
+                    className={`
+                      p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold
+                      ${
+                        activeFormats.includes('insertUnorderedList')
+                          ? 'text-white'
+                          : darkMode
+                          ? 'text-gray-200 hover:text-white'
+                          : 'text-gray-800 hover:text-white'
+                      }
+                    `}
+                    onClick={() => setShowBulletDropdown(!showBulletDropdown)}
+                    onMouseEnter={() => {
+                      setTooltip('Bullet List');
+                      setHoveredIcon('insertUnorderedList');
+                    }}
+                    onMouseLeave={() => {
+                      setTooltip('');
+                      setHoveredIcon(null);
+                    }}
+                    style={{
+                      backgroundColor: activeFormats.includes('insertUnorderedList') ? primaryColor : darkMode ? '#374151' : 'white',
+                      borderColor: activeFormats.includes('insertUnorderedList') ? primaryColor : darkMode ? '#4b5563' : '#e5e7eb'
+                    }}
+                  >
+                    <FiList />
+                  </button>
+
+                  {tooltip === 'Bullet List' && (
+                    <div
+                      className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${
+                        darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'
+                      }`}
+                    >
+                      Bullet List
+                    </div>
+                  )}
+
+                  {showBulletDropdown && (
+                    <div
+                      className={`absolute z-20 left-0 mt-1 w-40 rounded-md border shadow-md ${
+                        darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
+                      }`}
+                    >
+                      <button
+                        className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
+                          darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
+                        }`}
+                        onClick={() => {
+                          formatText('insertUnorderedList');
+                          setShowBulletDropdown(false);
+                        }}
+                      >
+                        • Bulleted List
+                      </button>
+                      <button
+                        className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
+                          darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
+                        }`}
+                        onClick={() => {
+                          formatText('insertHTML', '<ul><li>☐ Item 1</li><li>☐ Item 2</li></ul>');
+                          setShowBulletDropdown(false);
+                        }}
+                      >
+                        ☐ Checklist
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    className={`
+                      p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold
+                      ${
+                        activeFormats.includes('insertOrderedList')
+                          ? 'text-white'
+                          : darkMode
+                          ? 'text-gray-200 hover:text-white'
+                          : 'text-gray-800 hover:text-white'
+                      }
+                    `}
+                    onClick={() => setShowNumberDropdown(!showNumberDropdown)}
+                    onMouseEnter={() => {
+                      setTooltip('Numbered List');
+                      setHoveredIcon('insertOrderedList');
+                    }}
+                    onMouseLeave={() => {
+                      setTooltip('');
+                      setHoveredIcon(null);
+                    }}
+                    style={{
+                      backgroundColor: activeFormats.includes('insertOrderedList') ? primaryColor : darkMode ? '#374151' : 'white',
+                      borderColor: activeFormats.includes('insertOrderedList') ? primaryColor : darkMode ? '#4b5563' : '#e5e7eb'
+                    }}
+                  >
+                    <MdFormatListNumbered />
+                  </button>
+
+                  {tooltip === 'Numbered List' && (
+                    <div
+                      className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${
+                        darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'
+                      }`}
+                    >
+                      Numbered List
+                    </div>
+                  )}
+
+                  {showNumberDropdown && (
+                    <div
+                      className={`absolute z-20 left-0 mt-1 w-44 rounded-md border shadow-md ${
+                        darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
+                      }`}
+                    >
+                      <button
+                        className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
+                          darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
+                        }`}
+                        onClick={() => {
+                          formatText('insertOrderedList');
+                          setShowNumberDropdown(false);
+                        }}
+                      >
+                        1. Numbered List
+                      </button>
+                      <button
+                        className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
+                          darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
+                        }`}
+                        onClick={() => {
+                          formatText('insertHTML', '<ol type="i"><li>First</li><li>Second</li></ol>');
+                          setShowNumberDropdown(false);
+                        }}
+                      >
+                        i. Roman List
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
             )}
-          </div>
-
-          {button.command === 'underline' && (
-            <>
-              <div className="relative">
-                <button
-                  type="button"
-                  className={`
-                    p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold
-                    ${
-                      activeFormats.includes('insertUnorderedList')
-                        ? 'text-white'
-                        : darkMode
-                        ? 'text-gray-200 hover:text-white'
-                        : 'text-gray-800 hover:text-white'
-                    }
-                  `}
-                  onClick={() => setShowBulletDropdown(!showBulletDropdown)}
-                  onMouseEnter={() => {
-                    setTooltip('Bullet List');
-                    setHoveredIcon('insertUnorderedList');
-                  }}
-                  onMouseLeave={() => {
-                    setTooltip('');
-                    setHoveredIcon(null);
-                  }}
-                  style={{
-                    backgroundColor: activeFormats.includes('insertUnorderedList') ? primaryColor : darkMode ? '#374151' : 'white',
-                    borderColor: activeFormats.includes('insertUnorderedList') ? primaryColor : darkMode ? '#4b5563' : '#e5e7eb'
-                  }}
-                >
-                  <FiList />
-                </button>
-
-                {tooltip === 'Bullet List' && (
-                  <div
-                    className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${
-                      darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'
-                    }`}
-                  >
-                    Bullet List
-                  </div>
-                )}
-
-                {showBulletDropdown && (
-                  <div
-                    className={`absolute z-20 left-0 mt-1 w-40 rounded-md border shadow-md ${
-                      darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
-                    }`}
-                  >
-                    <button
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
-                        darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
-                      }`}
-                      onClick={() => {
-                        formatText('insertUnorderedList');
-                        setShowBulletDropdown(false);
-                      }}
-                    >
-                      • Bulleted List
-                    </button>
-                    <button
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
-                        darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
-                      }`}
-                      onClick={() => {
-                        formatText('insertHTML', '<ul><li>☐ Item 1</li><li>☐ Item 2</li></ul>');
-                        setShowBulletDropdown(false);
-                      }}
-                    >
-                      ☐ Checklist
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div className="relative">
-                <button
-                  type="button"
-                  className={`
-                    p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold
-                    ${
-                      activeFormats.includes('insertOrderedList')
-                        ? 'text-white'
-                        : darkMode
-                        ? 'text-gray-200 hover:text-white'
-                        : 'text-gray-800 hover:text-white'
-                    }
-                  `}
-                  onClick={() => setShowNumberDropdown(!showNumberDropdown)}
-                  onMouseEnter={() => {
-                    setTooltip('Numbered List');
-                    setHoveredIcon('insertOrderedList');
-                  }}
-                  onMouseLeave={() => {
-                    setTooltip('');
-                    setHoveredIcon(null);
-                  }}
-                  style={{
-                    backgroundColor: activeFormats.includes('insertOrderedList') ? primaryColor : darkMode ? '#374151' : 'white',
-                    borderColor: activeFormats.includes('insertOrderedList') ? primaryColor : darkMode ? '#4b5563' : '#e5e7eb'
-                  }}
-                >
-                  <MdFormatListNumbered />
-                </button>
-
-                {tooltip === 'Numbered List' && (
-                  <div
-                    className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${
-                      darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'
-                    }`}
-                  >
-                    Numbered List
-                  </div>
-                )}
-
-                {showNumberDropdown && (
-                  <div
-                    className={`absolute z-20 left-0 mt-1 w-44 rounded-md border shadow-md ${
-                      darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
-                    }`}
-                  >
-                    <button
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
-                        darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
-                      }`}
-                      onClick={() => {
-                        formatText('insertOrderedList');
-                        setShowNumberDropdown(false);
-                      }}
-                    >
-                      1. Numbered List
-                    </button>
-                    <button
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
-                        darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
-                      }`}
-                      onClick={() => {
-                        formatText('insertHTML', '<ol type="i"><li>First</li><li>Second</li></ol>');
-                        setShowNumberDropdown(false);
-                      }}
-                    >
-                      i. Roman List
-                    </button>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </React.Fragment>
-      ))}
+          </React.Fragment>
+        ))}
+        <input
+          type="file"
+          accept="image/*"
+          ref={fileInputRef}
+          style={{ display: 'none' }}
+          onChange={handleFileChange}
+        />
+      </div>
 
       {showCodeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
@@ -504,16 +623,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
           primaryColor={primaryColor}
         />
       )}
-
-      {showImageModal && (
-        <ImageModal
-          editorRef={editorRef}
-          setShowImageModal={setShowImageModal}
-          darkMode={darkMode}
-          primaryColor={primaryColor}
-        />
-      )}
-    </div>
+    </>
   );
 };
 
