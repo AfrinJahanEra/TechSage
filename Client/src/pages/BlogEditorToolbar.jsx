@@ -253,11 +253,17 @@ const BlogEditorToolbar = ({ editorRef }) => {
         if (prevSelected && prevSelected !== target) {
           prevSelected.style.border = '2px solid transparent';
           prevSelected.classList.remove('selected');
+          const prevWrapper = prevSelected.parentElement;
+          const prevHandle = prevWrapper.querySelector('.resize-handle');
+          if (prevHandle) prevHandle.style.display = 'none';
         }
         target.classList.toggle('selected');
         target.style.border = target.classList.contains('selected')
           ? `2px solid ${primaryColor}`
           : '2px solid transparent';
+        const wrapper = target.parentElement;
+        const handle = wrapper.querySelector('.resize-handle');
+        if (handle) handle.style.display = target.classList.contains('selected') ? 'block' : 'none';
       }
     };
 
@@ -272,6 +278,8 @@ const BlogEditorToolbar = ({ editorRef }) => {
         const handleMouseMove = (moveEvent) => {
           const newWidth = Math.min(Math.max(startWidth + (moveEvent.clientX - startX), 100), 500);
           img.style.width = `${newWidth}px`;
+          e.target.style.bottom = '0';
+          e.target.style.right = '0';
         };
 
         const handleMouseUp = () => {
@@ -332,6 +340,10 @@ const BlogEditorToolbar = ({ editorRef }) => {
             height: 10px;
             background-color: ${primaryColor};
             cursor: se-resize;
+            display: none;
+          }
+          .image-wrapper .inserted-image.selected ~ .resize-handle {
+            display: block;
           }
           .resize-handle:hover {
             opacity: 0.8;
