@@ -148,8 +148,8 @@ const BlogEditorToolbar = ({ editorRef }) => {
     const resizeHandle = document.createElement('div');
     resizeHandle.className = 'resize-handle';
     resizeHandle.style.position = 'absolute';
-    resizeHandle.style.bottom = '0';
-    resizeHandle.style.right = '0';
+    resizeHandle.style.bottom = '-2px'; // Offset for 2px border
+    resizeHandle.style.right = '-2px';  // Offset for 2px border
     resizeHandle.style.width = '10px';
     resizeHandle.style.height = '10px';
     resizeHandle.style.backgroundColor = primaryColor;
@@ -278,8 +278,8 @@ const BlogEditorToolbar = ({ editorRef }) => {
         const handleMouseMove = (moveEvent) => {
           const newWidth = Math.min(Math.max(startWidth + (moveEvent.clientX - startX), 100), 500);
           img.style.width = `${newWidth}px`;
-          e.target.style.bottom = '0';
-          e.target.style.right = '0';
+          e.target.style.bottom = '-2px'; // Keep aligned with border
+          e.target.style.right = '-2px';  // Keep aligned with border
         };
 
         const handleMouseUp = () => {
@@ -334,8 +334,8 @@ const BlogEditorToolbar = ({ editorRef }) => {
           }
           .resize-handle {
             position: absolute;
-            bottom: 0;
-            right: 0;
+            bottom: -2px; /* Align with outer edge of 2px border */
+            right: -2px;  /* Align with outer edge of 2px border */
             width: 10px;
             height: 10px;
             background-color: ${primaryColor};
