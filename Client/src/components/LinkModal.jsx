@@ -16,8 +16,6 @@ const LinkModal = ({ editorRef, setShowLinkModal, darkMode, primaryColor }) => {
     linkElement.style.padding = '0.2em 0.4em';
     linkElement.style.margin = '0 0.1em';
     linkElement.style.borderRadius = '3px';
-    linkElement.style.fontFamily = 'monospace';
-    linkElement.style.fontSize = '0.9em';
     linkElement.style.color = darkMode ? '#2dd4bf' : '#0d9488'; // Teal for visibility in both modes
     linkElement.style.textDecoration = 'underline';
     linkElement.style.cursor = 'pointer';
@@ -73,7 +71,7 @@ const LinkModal = ({ editorRef, setShowLinkModal, darkMode, primaryColor }) => {
         }}
       >
         <div
-          className={`rounded-xl p-6 w-full max-w-3xl h-[300px] overflow-hidden flex flex-col shadow-xl ${
+          className={`rounded-xl p-6 w-full max-w-md h-[300px] overflow-hidden flex flex-col shadow-xl ${
             darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
           }`}
           style={{
