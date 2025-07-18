@@ -267,6 +267,17 @@ const BlogEditorToolbar = ({ editorRef }) => {
       }
     };
 
+    const handleClickOutside = (e) => {
+      const selectedImage = document.querySelector('.inserted-image.selected');
+      if (selectedImage && !selectedImage.contains(e.target) && !e.target.classList.contains('resize-handle')) {
+        selectedImage.style.border = '2px solid transparent';
+        selectedImage.classList.remove('selected');
+        const wrapper = selectedImage.parentElement;
+        const handle = wrapper.querySelector('.resize-handle');
+        if (handle) handle.style.display = 'none';
+      }
+    };
+
     const handleMouseDown = (e) => {
       if (e.target.classList.contains('resize-handle')) {
         e.preventDefault();
@@ -294,10 +305,12 @@ const BlogEditorToolbar = ({ editorRef }) => {
 
     editor.addEventListener('click', handleLinkClick);
     editor.addEventListener('click', handleImageClick);
+    document.addEventListener('click', handleClickOutside);
     editor.addEventListener('mousedown', handleMouseDown);
     return () => {
       editor.removeEventListener('click', handleLinkClick);
       editor.removeEventListener('click', handleImageClick);
+      document.removeEventListener('click', handleClickOutside);
       editor.removeEventListener('mousedown', handleMouseDown);
     };
   }, [editorRef, primaryColor]);
