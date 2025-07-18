@@ -231,227 +231,254 @@ const LatexModal = ({ editorRef, latexInput, setLatexInput, isLatexSelected, set
   };
 
   return (
-    <div
-      className="fixed inset-0 flex items-center justify-center z-50"
-      style={{
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        backdropFilter: 'blur(4px)',
-        WebkitBackdropFilter: 'blur(4px)',
-      }}
-    >
+    <>
+      <style>
+        {`
+          .template-button:hover {
+            background-color: ${primaryColor} !important;
+            color: white !important;
+          }
+          .subcategory-button:hover {
+            background-color: ${primaryColor} !important;
+            color: white !important;
+            border-color: ${primaryColor} !important;
+          }
+          .item-button:hover {
+            background-color: ${primaryColor} !important;
+            color: white !important;
+            border-color: ${primaryColor} !important;
+          }
+        `}
+      </style>
       <div
-        className={`rounded-xl p-6 w-full max-w-3xl h-[550px] overflow-hidden flex flex-col shadow-xl ${
-          darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-        }`}
+        className="fixed inset-0 flex items-center justify-center z-50"
         style={{
-          border: '1px solid rgba(0, 0, 0, 0.12)',
-          boxShadow: '0 12px 30px rgba(0,0,0,0.2)',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          backdropFilter: 'blur(4px)',
+          WebkitBackdropFilter: 'blur(4px)',
         }}
       >
-        <div className="flex items-center justify-between mb-4">
-          <h4 className={`text-sm font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-            LaTeX Templates
-          </h4>
+        <div
+          className={`rounded-xl p-6 w-full max-w-3xl h-[550px] overflow-hidden flex flex-col shadow-xl ${
+            darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+          }`}
+          style={{
+            border: '1px solid rgba(0, 0, 0, 0.12)',
+            boxShadow: '0 12px 30px rgba(0,0,0,0.2)',
+          }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h4 className={`text-sm font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              LaTeX Templates
+            </h4>
 
-          <div className="relative flex-1 text-center">
-            <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-              {isLatexSelected ? 'Edit LaTeX Equation' : 'Insert LaTeX Equation'}
-            </h3>
-            <button
-              onClick={() => {
-                setShowLatexModal(false);
-                setLatexInput('');
-              }}
-              className={`absolute right-0 top-1/2 -translate-y-1/2 ${
-                darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <FiX size={20} />
-            </button>
-          </div>
-        </div>
-
-        <div className="flex flex-1 gap-6 overflow-hidden">
-          <div className="w-full md:w-1/3 h-full overflow-y-auto pr-2 space-y-2">
-            {latexTemplates.map((category) => {
-              const isOpen = openTemplateCategory === category.category;
-
-              return (
-                <div key={category.category} className="shrink-0">
-                  <button
-                    onClick={() => setOpenTemplateCategory(isOpen ? null : category.category)}
-                    className={`w-full flex justify-between items-center px-4 py-2 rounded-md border text-sm font-medium transition-colors duration-200 ${
-                      isOpen ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'
-                    }`}
-                    style={{
-                      backgroundColor: isOpen ? primaryColor : darkMode ? '#374151' : 'white',
-                      borderColor: isOpen ? primaryColor : darkMode ? '#4b5563' : '#e5e7eb'
-                    }}
-                  >
-                    {category.category}
-                    <span className="ml-2">{isOpen ? '▲' : '▼'}</span>
-                  </button>
-
-                  {isOpen && (
-                    <div className={`mt-1 border rounded-md shadow-sm overflow-hidden ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
-                      {'subcategories' in category ? (
-                        category.subcategories.map((subcat) => {
-                          const isSubOpen = openFunctionSubcategory === subcat.name;
-
-                          return (
-                            <div key={subcat.name}>
-                              <button
-                                onClick={() => setOpenFunctionSubcategory(isSubOpen ? null : subcat.name)}
-                                className={`w-full flex justify-between items-center px-4 py-2 text-sm font-medium transition-colors duration-200 ${
-                                  isSubOpen ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'
-                                }`}
-                                style={{
-                                  backgroundColor: isSubOpen ? primaryColor : darkMode ? '#4b5563' : '#f9fafb'
-                                }}
-                              >
-                                {subcat.name}
-                                <span>{isSubOpen ? '▲' : '▼'}</span>
-                              </button>
-
-                              {isSubOpen && (
-                                <div className={`pl-4 ${darkMode ? 'bg-gray-700' : 'bg-white'}`}>
-                                  {subcat.items.map((item) => (
-                                    <button
-                                      key={item.name}
-                                      className={`w-full text-left px-4 py-1 text-sm transition-colors duration-200 ${
-                                        darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
-                                      }`}
-                                      onClick={() => insertLatexTemplate(item.template)}
-                                    >
-                                      {item.name}
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })
-                      ) : (
-                        category.items.map((item) => (
-                          <button
-                            key={item.name}
-                            className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
-                              darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
-                            }`}
-                            onClick={() => insertLatexTemplate(item.template)}
-                          >
-                            {item.name}
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="w-full md:w-2/3">
-            {showMatrixInput && (
-              <div className={`mb-4 border p-3 rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-teal-50 border-teal-200'}`}>
-                <h4 className={`text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-800'}`}>
-                  Custom Matrix Size
-                </h4>
-                <div className="flex gap-4 items-center mb-2">
-                  <label className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                    Rows:
-                    <input
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={matrixRows}
-                      onChange={(e) => setMatrixRows(Number(e.target.value))}
-                      className={`ml-2 w-16 border rounded px-2 py-1 text-sm ${
-                        darkMode ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-300'
-                      }`}
-                    />
-                  </label>
-                  <label className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                    Columns:
-                    <input
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={matrixCols}
-                      onChange={(e) => setMatrixCols(Number(e.target.value))}
-                      className={`ml-2 w-16 border rounded px-2 py-1 text-sm ${
-                        darkMode ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-300'
-                      }`}
-                    />
-                  </label>
-                  <button
-                    className="ml-auto px-3 py-1 text-white text-sm rounded hover:opacity-90 transition-colors duration-200"
-                    style={{ backgroundColor: primaryColor }}
-                    onClick={() => {
-                      let matrix = '\\left| \\begin{matrix}\n';
-                      for (let i = 0; i < matrixRows; i++) {
-                        let row = [];
-                        for (let j = 0; j < matrixCols; j++) {
-                          row.push(`a_{${i + 1}${j + 1}}`);
-                        }
-                        matrix += row.join(' & ');
-                        if (i < matrixRows - 1) matrix += ' \\\\\n';
-                      }
-                      matrix += '\n\\end{matrix} \\right|';
-                      insertLatexTemplate(matrix);
-                      setShowMatrixInput(false);
-                    }}
-                  >
-                    Insert
-                  </button>
-                </div>
-              </div>
-            )}
-            <textarea
-              className={`latex-textarea w-full h-32 p-2 border rounded mb-4 font-mono text-sm ${
-                darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
-              }`}
-              placeholder="Enter LaTeX code (e.g., \frac{a}{b} or x^2 + y^2 = z^2)"
-              value={latexInput}
-              onChange={(e) => setLatexInput(e.target.value)}
-              autoFocus
-            />
-
-            <div className={`text-xs mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              Tip: Use standard LaTeX syntax. Your equation will be rendered when published.
-            </div>
-
-            <div className={`border p-3 rounded mb-4 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'}`}>
-              <div className={`text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                Live Preview:
-              </div>
-              <div className="text-sm" dangerouslySetInnerHTML={{ __html: latexPreview }} />
-            </div>
-
-            <div className="flex justify-end space-x-2">
+            <div className="relative flex-1 text-center">
+              <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                {isLatexSelected ? 'Edit LaTeX Equation' : 'Insert LaTeX Equation'}
+              </h3>
               <button
-                className={`px-4 py-2 rounded hover:opacity-90 transition-colors duration-200 ${
-                  darkMode ? 'bg-gray-600 text-white' : 'bg-gray-200 text-gray-800'
-                }`}
                 onClick={() => {
                   setShowLatexModal(false);
                   setLatexInput('');
                 }}
+                className={`absolute right-0 top-1/2 -translate-y-1/2 ${
+                  darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
+                }`}
               >
-                Cancel
+                <FiX size={20} />
               </button>
-              <button
-                className="px-4 py-2 text-white rounded hover:opacity-90 transition-colors duration-200"
-                style={{ backgroundColor: primaryColor }}
-                onClick={insertLatex}
-              >
-                {isLatexSelected ? 'Update Equation' : 'Insert Equation'}
-              </button>
+            </div>
+          </div>
+
+          <div className="flex flex-1 gap-6 overflow-hidden">
+            <div className="w-full md:w-1/3 h-full overflow-y-auto pr-2 space-y-2">
+              {latexTemplates.map((category) => {
+                const isOpen = openTemplateCategory === category.category;
+
+                return (
+                  <div key={category.category} className="shrink-0">
+                    <button
+                      onClick={() => setOpenTemplateCategory(isOpen ? null : category.category)}
+                      className={`template-button w-full flex justify-between items-center px-4 py-2 rounded-md border text-sm font-medium transition-colors duration-200 ${
+                        isOpen ? 'text-white' : darkMode ? 'text-gray-200' : 'text-gray-800'
+                      }`}
+                      style={{
+                        backgroundColor: isOpen ? primaryColor : darkMode ? '#374151' : 'white',
+                        borderColor: isOpen ? primaryColor : darkMode ? '#4b5563' : '#e5e7eb',
+                      }}
+                    >
+                      {category.category}
+                      <span className="ml-2">{isOpen ? '▲' : '▼'}</span>
+                    </button>
+
+                    {isOpen && (
+                      <div className={`mt-1 border rounded-md shadow-sm overflow-hidden ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                        {'subcategories' in category ? (
+                          category.subcategories.map((subcat) => {
+                            const isSubOpen = openFunctionSubcategory === subcat.name;
+
+                            return (
+                              <div key={subcat.name}>
+                                <button
+                                  onClick={() => setOpenFunctionSubcategory(isSubOpen ? null : subcat.name)}
+                                  className={`subcategory-button w-full flex justify-between items-center px-4 py-2 text-sm font-medium transition-colors duration-200 ${
+                                    isSubOpen ? 'text-white' : darkMode ? 'text-gray-200' : 'text-gray-800'
+                                  }`}
+                                  style={{
+                                    backgroundColor: isSubOpen ? primaryColor : darkMode ? '#4b5563' : '#f9fafb',
+                                    borderColor: isSubOpen ? primaryColor : 'transparent',
+                                  }}
+                                >
+                                  {subcat.name}
+                                  <span>{isSubOpen ? '▲' : '▼'}</span>
+                                </button>
+
+                                {isSubOpen && (
+                                  <div className={`pl-4 ${darkMode ? 'bg-gray-700' : 'bg-white'}`}>
+                                    {subcat.items.map((item) => (
+                                      <button
+                                        key={item.name}
+                                        className={`item-button w-full text-left px-4 py-1 text-sm transition-colors duration-200 ${
+                                          darkMode ? 'text-white' : 'text-gray-800'
+                                        }`}
+                                        style={{
+                                          borderColor: 'transparent',
+                                        }}
+                                        onClick={() => insertLatexTemplate(item.template)}
+                                      >
+                                        {item.name}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })
+                        ) : (
+                          category.items.map((item) => (
+                            <button
+                              key={item.name}
+                              className={`item-button w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
+                                darkMode ? 'text-white' : 'text-gray-800'
+                              }`}
+                              style={{
+                                borderColor: 'transparent',
+                              }}
+                              onClick={() => insertLatexTemplate(item.template)}
+                            >
+                              {item.name}
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="w-full md:w-2/3">
+              {showMatrixInput && (
+                <div className={`mb-4 border p-3 rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-teal-50 border-teal-200'}`}>
+                  <h4 className={`text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-800'}`}>
+                    Custom Matrix Size
+                  </h4>
+                  <div className="flex gap-4 items-center mb-2">
+                    <label className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      Rows:
+                      <input
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={matrixRows}
+                        onChange={(e) => setMatrixRows(Number(e.target.value))}
+                        className={`ml-2 w-16 border rounded px-2 py-1 text-sm ${
+                          darkMode ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-300'
+                        }`}
+                      />
+                    </label>
+                    <label className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      Columns:
+                      <input
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={matrixCols}
+                        onChange={(e) => setMatrixCols(Number(e.target.value))}
+                        className={`ml-2 w-16 border rounded px-2 py-1 text-sm ${
+                          darkMode ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-300'
+                        }`}
+                      />
+                    </label>
+                    <button
+                      className="ml-auto px-3 py-1 text-white text-sm rounded hover:opacity-90 transition-colors duration-200"
+                      style={{ backgroundColor: primaryColor }}
+                      onClick={() => {
+                        let matrix = '\\left| \\begin{matrix}\n';
+                        for (let i = 0; i < matrixRows; i++) {
+                          let row = [];
+                          for (let j = 0; j < matrixCols; j++) {
+                            row.push(`a_{${i + 1}${j + 1}}`);
+                          }
+                          matrix += row.join(' & ');
+                          if (i < matrixRows - 1) matrix += ' \\\\\n';
+                        }
+                        matrix += '\n\\end{matrix} \\right|';
+                        insertLatexTemplate(matrix);
+                        setShowMatrixInput(false);
+                      }}
+                    >
+                      Insert
+                    </button>
+                  </div>
+                </div>
+              )}
+              <textarea
+                className={`latex-textarea w-full h-32 p-2 border rounded mb-4 font-mono text-sm ${
+                  darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
+                }`}
+                placeholder="Enter LaTeX code (e.g., \frac{a}{b} or x^2 + y^2 = z^2)"
+                value={latexInput}
+                onChange={(e) => setLatexInput(e.target.value)}
+                autoFocus
+              />
+
+              <div className={`text-xs mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                Tip: Use standard LaTeX syntax. Your equation will be rendered when published.
+              </div>
+
+              <div className={`border p-3 rounded mb-4 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'}`}>
+                <div className={`text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Live Preview:
+                </div>
+                <div className="text-sm" dangerouslySetInnerHTML={{ __html: latexPreview }} />
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <button
+                  className={`px-4 py-2 rounded hover:opacity-90 transition-colors duration-200 ${
+                    darkMode ? 'bg-gray-600 text-white' : 'bg-gray-200 text-gray-800'
+                  }`}
+                  onClick={() => {
+                    setShowLatexModal(false);
+                    setLatexInput('');
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-4 py-2 text-white rounded hover:opacity-90 transition-colors duration-200"
+                  style={{ backgroundColor: primaryColor }}
+                  onClick={insertLatex}
+                >
+                  {isLatexSelected ? 'Update Equation' : 'Insert Equation'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
