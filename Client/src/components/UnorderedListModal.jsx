@@ -3,11 +3,11 @@ import { FiX } from 'react-icons/fi';
 
 const UnorderedListModal = ({ editorRef, setShowUnorderedListModal, darkMode, primaryColor }) => {
   const bulletStyles = [
-    { name: 'Circle', value: 'circle', style: 'list-style-type: circle;' },
-    { name: 'Square', value: 'square', style: 'list-style-type: square;' },
-    { name: 'Star', value: 'star', style: 'list-style-type: none; padding-left: 20px;', liStyle: 'content: "★ ";' },
-    { name: 'Arrow', value: 'arrow', style: 'list-style-type: none; padding-left: 20px;', liStyle: 'content: "➔ ";' },
-    { name: 'Checklist', value: 'checklist', style: 'list-style-type: none; padding-left: 20px;', liStyle: 'content: "☐ ";' },
+    { name: 'Circle', value: 'circle', style: 'list-style-type: circle; padding-left: 30px;', liStyle: '' },
+    { name: 'Square', value: 'square', style: 'list-style-type: square; padding-left: 30px;', liStyle: '' },
+    { name: 'Star', value: 'star', style: 'list-style-type: none; padding-left: 30px;', liStyle: 'content: "★ ";' },
+    { name: 'Arrow', value: 'arrow', style: 'list-style-type: none; padding-left: 30px;', liStyle: 'content: "➔ ";' },
+    { name: 'Checklist', value: 'checklist', style: 'list-style-type: none; padding-left: 30px;', liStyle: 'content: "☐ ";' },
   ];
 
   const handleSelectBulletStyle = (value, style, liStyle) => {
@@ -125,17 +125,23 @@ const UnorderedListModal = ({ editorRef, setShowUnorderedListModal, darkMode, pr
         const parentUl = currentLi.parentElement;
         if (parentUl.tagName !== 'UL') return;
 
-        if (currentLi.textContent === '' && parentUl.children.length === 1) {
+        if (currentLi.textContent === '') {
           e.preventDefault();
-          parentUl.remove();
-          document.execCommand('insertParagraph', false, null);
-          editor.focus();
-        } else if (currentLi.textContent === '' && currentLi.previousElementSibling) {
-          e.preventDefault();
-          currentLi.remove();
-          const prevLi = currentLi.previousElementSibling;
+          const textNode = document.createTextNode('');
+          const p = document.createElement('p');
+          p.appendChild(textNode);
+
+          // Replace the <ul> with a <p> if it's the only <li>, or remove the empty <li>
+          if (parentUl.children.length === 1) {
+            parentUl.replaceWith(p);
+          } else {
+            currentLi.remove();
+            parentUl.insertAdjacentElement('afterend', p);
+          }
+
+          // Move cursor to the new <p>
           const newRange = document.createRange();
-          newRange.setStart(prevLi, prevLi.childNodes.length);
+          newRange.setStart(textNode, 0);
           newRange.collapse(true);
           selection.removeAllRanges();
           selection.addRange(newRange);
@@ -161,7 +167,7 @@ const UnorderedListModal = ({ editorRef, setShowUnorderedListModal, darkMode, pr
           }
           li::before {
             position: absolute;
-            left: -20px;
+            left: -25px;
           }
         `}
       </style>
@@ -207,7 +213,7 @@ const UnorderedListModal = ({ editorRef, setShowUnorderedListModal, darkMode, pr
                 }}
                 onClick={() => handleSelectBulletStyle(style.value, style.style, style.liStyle)}
               >
-                <span style={{ display: 'inline-block', width: '20px', textAlign: 'center' }}>
+                <span style={{ display: 'inline-block', width: '25px', textAlign: 'center' }}>
                   {style.value === 'checklist' ? '☐' : style.value === 'star' ? '★' : style.value === 'arrow' ? '➔' : '•'}
                 </span>
                 {style.name}
