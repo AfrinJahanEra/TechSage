@@ -3,11 +3,11 @@ import { FiX } from 'react-icons/fi';
 
 const UnorderedListModal = ({ editorRef, setShowUnorderedListModal, darkMode, primaryColor }) => {
   const bulletStyles = [
-    { name: 'Circle', value: 'circle', style: 'list-style-type: circle; padding-left: 30px;', liStyle: '' },
-    { name: 'Square', value: 'square', style: 'list-style-type: square; padding-left: 30px;', liStyle: '' },
-    { name: 'Star', value: 'star', style: 'list-style-type: none; padding-left: 30px;', liStyle: 'content: "★ ";' },
-    { name: 'Arrow', value: 'arrow', style: 'list-style-type: none; padding-left: 30px;', liStyle: 'content: "➔ ";' },
-    { name: 'Checklist', value: 'checklist', style: 'list-style-type: none; padding-left: 30px;', liStyle: 'content: "☐ ";' },
+    { name: 'Circle', value: 'circle', style: 'list-style-type: circle; padding-left: 30px; margin: 0;', liStyle: '' },
+    { name: 'Square', value: 'square', style: 'list-style-type: square; padding-left: 30px; margin: 0;', liStyle: '' },
+    { name: 'Star', value: 'star', style: 'list-style-type: none; padding-left: 30px; margin: 0;', liStyle: 'content: "★ ";' },
+    { name: 'Arrow', value: 'arrow', style: 'list-style-type: none; padding-left: 30px; margin: 0;', liStyle: 'content: "➔ ";' },
+    { name: 'Checklist', value: 'checklist', style: 'list-style-type: none; padding-left: 30px; margin: 0;', liStyle: 'content: "☐ ";' },
   ];
 
   const handleSelectBulletStyle = (value, style, liStyle) => {
@@ -17,53 +17,81 @@ const UnorderedListModal = ({ editorRef, setShowUnorderedListModal, darkMode, pr
     const selection = window.getSelection();
     const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
 
-    // Check if selection spans multiple lines
     if (range && !range.collapsed) {
-      const selectedText = range.toString();
-      const lines = selectedText.split('\n').filter(line => line.trim() !== '');
+      // Clone the range to preserve original content
+      const clonedRange = range.cloneRange();
+      const fragment = clonedRange.cloneContents();
+      const tempDiv = document.createElement('div');
+      tempDiv.appendChild(fragment);
 
-      if (lines.length > 0) {
-        // Create a new <ul> for selected lines
-        const ul = document.createElement('ul');
-        ul.style.cssText = style;
-        lines.forEach(line => {
-          const li = document.createElement('li');
-          if (liStyle) li.style.cssText = `position: relative; ${liStyle}`;
-          li.textContent = line;
-          ul.appendChild(li);
-        });
-
-        // Check if we're inside an existing <ul>
-        const commonAncestor = range.commonAncestorContainer;
-        const parentUl = commonAncestor.nodeType === Node.ELEMENT_NODE
-          ? commonAncestor.closest('ul')
-          : commonAncestor.parentElement.closest('ul');
-
-        if (parentUl && parentUl.parentElement === editor) {
-          // Replace existing <ul> with new one
-          parentUl.replaceWith(ul);
-        } else {
-          // Insert new <ul> at selection
-          range.deleteContents();
-          range.insertNode(ul);
+      // Collect lines based on block elements and text nodes
+      const lines = [];
+      const processNode = (node) => {
+        if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+          lines.push(node.textContent.trim());
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+          if (['P', 'DIV', 'LI'].includes(node.tagName)) {
+            node.childNodes.forEach(child => processNode(child));
+          } else if (node.tagName === 'BR') {
+            if (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
+          }
         }
+      };
+      tempDiv.childNodes.forEach(processNode);
 
-        // Move cursor to the last <li>
-        const lastLi = ul.querySelector('li:last-child');
-        if (lastLi) {
-          const newRange = document.createRange();
-          newRange.setStart(lastLi, lastLi.childNodes.length);
-          newRange.collapse(true);
-          selection.removeAllRanges();
-          selection.addRange(newRange);
-        }
-      }
-    } else {
-      // No selection or collapsed selection: insert new list
+      // Create new <ul> with fresh styles
       const ul = document.createElement('ul');
       ul.style.cssText = style;
+      ul.setAttribute('data-bullet-style', value);
+
+      lines.forEach(text => {
+        if (text.trim()) {
+          const li = document.createElement('li');
+          li.style.cssText = liStyle ? `position: relative; ${liStyle}` : 'position: relative;';
+          li.textContent = text;
+          ul.appendChild(li);
+        }
+      });
+
+      // Handle replacement or insertion
+      const commonAncestor = range.commonAncestorContainer;
+      const parentUl = commonAncestor.nodeType === Node.ELEMENT_NODE
+        ? commonAncestor.closest('ul')
+        : commonAncestor.parentElement?.closest('ul');
+
+      if (parentUl && parentUl.parentElement === editor) {
+        // Replace only the selected portion within the <ul>
+        const startContainer = range.startContainer;
+        const endContainer = range.endContainer;
+        const startOffset = range.startOffset;
+        const endOffset = range.endOffset;
+
+        const rangeToReplace = document.createRange();
+        rangeToReplace.setStart(startContainer, startOffset);
+        rangeToReplace.setEnd(endContainer, endOffset);
+        rangeToReplace.deleteContents();
+        rangeToReplace.insertNode(ul);
+      } else {
+        range.deleteContents();
+        range.insertNode(ul);
+      }
+
+      // Move cursor to the last <li>
+      const lastLi = ul.querySelector('li:last-child');
+      if (lastLi) {
+        const newRange = document.createRange();
+        newRange.setStart(lastLi, lastLi.childNodes.length);
+        newRange.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+      }
+    } else {
+      // Insert new list at cursor
+      const ul = document.createElement('ul');
+      ul.style.cssText = style;
+      ul.setAttribute('data-bullet-style', value);
       const li = document.createElement('li');
-      if (liStyle) li.style.cssText = `position: relative; ${liStyle}`;
+      li.style.cssText = liStyle ? `position: relative; ${liStyle}` : 'position: relative;';
       ul.appendChild(li);
 
       if (range && editor.contains(range.startContainer)) {
@@ -73,7 +101,6 @@ const UnorderedListModal = ({ editorRef, setShowUnorderedListModal, darkMode, pr
         editor.appendChild(ul);
       }
 
-      // Move cursor to the first <li>
       const firstLi = ul.querySelector('li');
       if (firstLi) {
         const newRange = document.createRange();
@@ -98,7 +125,7 @@ const UnorderedListModal = ({ editorRef, setShowUnorderedListModal, darkMode, pr
         const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
         if (!range || !editor.contains(range.startContainer)) return;
 
-        const currentLi = range.startContainer.closest ? range.startContainer.closest('li') : null;
+        const currentLi = range.startContainer.closest('li');
         if (!currentLi) return;
 
         const parentUl = currentLi.parentElement;
@@ -106,7 +133,7 @@ const UnorderedListModal = ({ editorRef, setShowUnorderedListModal, darkMode, pr
 
         e.preventDefault();
         const newLi = document.createElement('li');
-        newLi.style.cssText = currentLi.style.cssText; // Copy bullet style
+        newLi.style.cssText = currentLi.style.cssText;
         currentLi.parentElement.appendChild(newLi);
 
         const newRange = document.createRange();
@@ -119,7 +146,7 @@ const UnorderedListModal = ({ editorRef, setShowUnorderedListModal, darkMode, pr
         const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
         if (!range || !editor.contains(range.startContainer)) return;
 
-        const currentLi = range.startContainer.closest ? range.startContainer.closest('li') : null;
+        const currentLi = range.startContainer.closest('li');
         if (!currentLi) return;
 
         const parentUl = currentLi.parentElement;
@@ -131,7 +158,6 @@ const UnorderedListModal = ({ editorRef, setShowUnorderedListModal, darkMode, pr
           const p = document.createElement('p');
           p.appendChild(textNode);
 
-          // Replace the <ul> with a <p> if it's the only <li>, or remove the empty <li>
           if (parentUl.children.length === 1) {
             parentUl.replaceWith(p);
           } else {
@@ -139,7 +165,6 @@ const UnorderedListModal = ({ editorRef, setShowUnorderedListModal, darkMode, pr
             parentUl.insertAdjacentElement('afterend', p);
           }
 
-          // Move cursor to the new <p>
           const newRange = document.createRange();
           newRange.setStart(textNode, 0);
           newRange.collapse(true);
@@ -151,9 +176,7 @@ const UnorderedListModal = ({ editorRef, setShowUnorderedListModal, darkMode, pr
     };
 
     editor.addEventListener('keydown', handleKeyDown);
-    return () => {
-      editor.removeEventListener('keydown', handleKeyDown);
-    };
+    return () => editor.removeEventListener('keydown', handleKeyDown);
   }, [editorRef]);
 
   return (
@@ -183,10 +206,7 @@ const UnorderedListModal = ({ editorRef, setShowUnorderedListModal, darkMode, pr
           className={`rounded-xl p-6 w-full max-w-sm flex flex-col shadow-xl ${
             darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
           }`}
-          style={{
-            border: '1px solid rgba(0, 0, 0, 0.12)',
-            boxShadow: '0 12px 30px rgba(0,0,0,0.2)',
-          }}
+          style={{ border: '1px solid rgba(0, 0, 0, 0.12)', boxShadow: '0 12px 30px rgba(0,0,0,0.2)' }}
         >
           <div className="flex items-center justify-between mb-4">
             <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
@@ -194,9 +214,7 @@ const UnorderedListModal = ({ editorRef, setShowUnorderedListModal, darkMode, pr
             </h3>
             <button
               onClick={() => setShowUnorderedListModal(false)}
-              className={`${
-                darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className={`${darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'}`}
             >
               <FiX size={20} />
             </button>
@@ -208,9 +226,7 @@ const UnorderedListModal = ({ editorRef, setShowUnorderedListModal, darkMode, pr
                 className={`bullet-button w-full text-left px-4 py-2 text-sm font-medium transition-colors duration-200 rounded-md border ${
                   darkMode ? 'text-gray-200 bg-gray-700 border-gray-600' : 'text-gray-800 bg-white border-gray-200'
                 }`}
-                style={{
-                  borderColor: darkMode ? '#4b5563' : '#e5e7eb',
-                }}
+                style={{ borderColor: darkMode ? '#4b5563' : '#e5e7eb' }}
                 onClick={() => handleSelectBulletStyle(style.value, style.style, style.liStyle)}
               >
                 <span style={{ display: 'inline-block', width: '25px', textAlign: 'center' }}>
