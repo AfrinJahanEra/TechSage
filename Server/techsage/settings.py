@@ -12,6 +12,9 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 
 DEBUG = True
 
+STATIC_URL = '/static/'
+
+
 ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
@@ -25,6 +28,7 @@ INSTALLED_APPS = [
     'channels',
     'reports',
     'checker',
+    'version_control',
 ]
 
 MIDDLEWARE = [
