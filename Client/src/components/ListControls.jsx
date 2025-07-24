@@ -11,15 +11,15 @@ const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setAct
   const numberedButtonRef = useRef(null);
 
   const bulletStyles = [
-    { name: 'Empty Circle', type: 'unordered', value: 'circle', style: 'list-style-type: circle; padding-left: 20px; margin: 0;', liStyle: '' },
-    { name: 'Filled Circle', type: 'unordered', value: 'disc', style: 'list-style-type: disc; padding-left: 20px; margin: 0;', liStyle: '' },
-    { name: 'Square', type: 'unordered', value: 'square', style: 'list-style-type: square; padding-left: 20px; margin: 0;', liStyle: '' },
+    { name: 'Empty Circle', type: 'unordered', value: 'circle', style: 'list-style-type: circle; padding-left: 30px; margin: 0;', liStyle: '' },
+    { name: 'Filled Circle', type: 'unordered', value: 'disc', style: 'list-style-type: disc; padding-left: 30px; margin: 0;', liStyle: '' },
+    { name: 'Square', type: 'unordered', value: 'square', style: 'list-style-type: square; padding-left: 30px; margin: 0;', liStyle: '' },
   ];
 
   const numberedStyles = [
-    { name: 'Numbers', type: 'ordered', value: 'decimal', style: 'list-style-type: decimal; padding-left: 20px; margin: 0;', liStyle: '' },
-    { name: 'Letters', type: 'ordered', value: 'lower-alpha', style: 'list-style-type: lower-alpha; padding-left: 20px; margin: 0;', liStyle: '' },
-    { name: 'Roman Numerals', type: 'ordered', value: 'lower-roman', style: 'list-style-type: lower-roman; padding-left: 20px; margin: 0;', liStyle: '' },
+    { name: 'Numbers', type: 'ordered', value: 'decimal', style: 'list-style-type: decimal; padding-left: 30px; margin: 0;', liStyle: '' },
+    { name: 'Letters', type: 'ordered', value: 'lower-alpha', style: 'list-style-type: lower-alpha; padding-left: 30px; margin: 0;', liStyle: '' },
+    { name: 'Roman Numerals', type: 'ordered', value: 'lower-roman', style: 'list-style-type: lower-roman; padding-left: 30px; margin: 0;', liStyle: '' },
   ];
 
   const handleSelectListStyle = (styleObj) => {
