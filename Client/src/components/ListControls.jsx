@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { FiList } from 'react-icons/fi';
+import React, { useState, useEffect, useRef } from 'react';
+import { FiList, FiChevronDown } from 'react-icons/fi';
 import { MdFormatListNumbered } from 'react-icons/md';
 
 const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setActiveFormats }) => {
@@ -7,6 +7,8 @@ const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setAct
   const [showNumberedDropdown, setShowNumberedDropdown] = useState(false);
   const [tooltip, setTooltip] = useState('');
   const [hoveredIcon, setHoveredIcon] = useState(null);
+  const bulletButtonRef = useRef(null);
+  const numberedButtonRef = useRef(null);
 
   const bulletStyles = [
     { name: 'Empty Circle', type: 'unordered', value: 'circle', style: 'list-style-type: circle; padding-left: 20px; margin: 0;', liStyle: '' },
@@ -27,107 +29,109 @@ const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setAct
     const selection = window.getSelection();
     const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
 
-    if (range && !range.collapsed) {
-      const clonedRange = range.cloneRange();
-      const fragment = clonedRange.cloneContents();
-      const tempDiv = document.createElement('div');
-      tempDiv.appendChild(fragment);
+    try {
+      if (range && !range.collapsed) {
+        const clonedRange = range.cloneRange();
+        const fragment = clonedRange.cloneContents();
+        const tempDiv = document.createElement('div');
+        tempDiv.appendChild(fragment);
 
-      const lines = [];
-      const processNode = (node) => {
-        if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
-          lines.push(node.textContent.trim());
-        } else if (node.nodeType === Node.ELEMENT_NODE) {
-          if (['P', 'DIV', 'LI'].includes(node.tagName)) {
-            node.childNodes.forEach(child => processNode(child));
-          } else if (node.tagName === 'BR') {
-            if (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
+        const lines = [];
+        const processNode = (node) => {
+          if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+            lines.push(node.textContent.trim());
+          } else if (node.nodeType === Node.ELEMENT_NODE) {
+            if (['P', 'DIV', 'LI'].includes(node.tagName)) {
+              node.childNodes.forEach(child => processNode(child));
+            } else if (node.tagName === 'BR') {
+              if (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
+            }
           }
-        }
-      };
-      tempDiv.childNodes.forEach(processNode);
+        };
+        tempDiv.childNodes.forEach(processNode);
 
-      const listTag = styleObj.type === 'ordered' ? 'ol' : 'ul';
-      const list = document.createElement(listTag);
-      list.style.cssText = styleObj.style;
-      list.removeAttribute('style');
-      list.setAttribute('style', styleObj.style);
-      list.setAttribute('data-list-style', styleObj.value);
+        const listTag = styleObj.type === 'ordered' ? 'ol' : 'ul';
+        const list = document.createElement(listTag);
+        list.style.cssText = styleObj.style;
+        list.setAttribute('style', styleObj.style);
+        list.setAttribute('data-list-style', styleObj.value);
 
-      lines.forEach(text => {
-        if (text.trim()) {
-          const li = document.createElement('li');
-          li.style.cssText = '';
-          if (styleObj.liStyle) li.style.cssText = `position: relative; ${styleObj.liStyle}`;
-          li.textContent = text;
-          list.appendChild(li);
-        }
-      });
+        lines.forEach(text => {
+          if (text.trim()) {
+            const li = document.createElement('li');
+            li.style.cssText = styleObj.liStyle ? `position: relative; ${styleObj.liStyle}` : '';
+            li.textContent = text;
+            list.appendChild(li);
+          }
+        });
 
-      const commonAncestor = range.commonAncestorContainer;
-      const parentList = commonAncestor.nodeType === Node.ELEMENT_NODE
-        ? commonAncestor.closest('ul,ol')
-        : commonAncestor.parentElement?.closest('ul,ol');
+        const commonAncestor = range.commonAncestorContainer;
+        const parentList = commonAncestor.nodeType === Node.ELEMENT_NODE
+          ? commonAncestor.closest('ul,ol')
+          : commonAncestor.parentElement?.closest('ul,ol');
 
-      if (parentList && parentList.parentElement === editor) {
-        const startLi = range.startContainer.nodeType === Node.ELEMENT_NODE && range.startContainer.tagName === 'LI'
-          ? range.startContainer
-          : range.startContainer.closest('li');
-        const endLi = range.endContainer.nodeType === Node.ELEMENT_NODE && range.endContainer.tagName === 'LI'
-          ? range.endContainer
-          : range.endContainer.closest('li');
+        if (parentList && parentList.parentElement === editor) {
+          const startLi = range.startContainer.nodeType === Node.ELEMENT_NODE && range.startContainer.tagName === 'LI'
+            ? range.startContainer
+            : range.startContainer.closest('li');
+          const endLi = range.endContainer.nodeType === Node.ELEMENT_NODE && range.endContainer.tagName === 'LI'
+            ? range.endContainer
+            : range.endContainer.closest('li');
 
-        if (startLi && endLi && startLi.parentElement === parentList && endLi.parentElement === parentList) {
-          const rangeToReplace = document.createRange();
-          rangeToReplace.setStartBefore(startLi);
-          rangeToReplace.setEndAfter(endLi);
-          rangeToReplace.extractContents();
-          rangeToReplace.insertNode(list);
+          if (startLi && endLi && startLi.parentElement === parentList && endLi.parentElement === parentList) {
+            const rangeToReplace = document.createRange();
+            rangeToReplace.setStartBefore(startLi);
+            rangeToReplace.setEndAfter(endLi);
+            rangeToReplace.extractContents();
+            rangeToReplace.insertNode(list);
 
-          if (parentList.children.length === 0) {
-            parentList.remove();
+            if (parentList.children.length === 0) {
+              parentList.remove();
+            }
+          } else {
+            range.deleteContents();
+            range.insertNode(list);
           }
         } else {
           range.deleteContents();
           range.insertNode(list);
         }
+
+        const lastLi = list.querySelector('li:last-child');
+        if (lastLi) {
+          const newRange = document.createRange();
+          newRange.setStart(lastLi, lastLi.childNodes.length);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+        }
       } else {
-        range.deleteContents();
-        range.insertNode(list);
-      }
+        const listTag = styleObj.type === 'ordered' ? 'ol' : 'ul';
+        const list = document.createElement(listTag);
+        list.style.cssText = styleObj.style;
+        list.setAttribute('data-list-style', styleObj.value);
+        const li = document.createElement('li');
+        li.style.cssText = styleObj.liStyle ? `position: relative; ${styleObj.liStyle}` : 'position: relative;';
+        list.appendChild(li);
 
-      const lastLi = list.querySelector('li:last-child');
-      if (lastLi) {
-        const newRange = document.createRange();
-        newRange.setStart(lastLi, lastLi.childNodes.length);
-        newRange.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(newRange);
-      }
-    } else {
-      const listTag = styleObj.type === 'ordered' ? 'ol' : 'ul';
-      const list = document.createElement(listTag);
-      list.style.cssText = styleObj.style;
-      list.setAttribute('data-list-style', styleObj.value);
-      const li = document.createElement('li');
-      li.style.cssText = styleObj.liStyle ? `position: relative; ${styleObj.liStyle}` : 'position: relative;';
-      list.appendChild(li);
+        if (range && editor.contains(range.startContainer)) {
+          range.deleteContents();
+          range.insertNode(list);
+        } else {
+          editor.appendChild(list);
+        }
 
-      if (range && editor.contains(range.startContainer)) {
-        range.deleteContents();
-        range.insertNode(list);
-      } else {
-        editor.appendChild(list);
+        const firstLi = list.querySelector('li');
+        if (firstLi) {
+          const newRange = document.createRange();
+          newRange.setStart(firstLi, 0);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+        }
       }
-
-      const firstLi = list.querySelector('li');
-      if (firstLi) {
-        const newRange = document.createRange();
-        newRange.setStart(firstLi, 0);
-        newRange.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(newRange);
-      }
+    } catch (error) {
+      console.error('Error inserting list:', error);
     }
 
     setShowBulletDropdown(false);
@@ -154,7 +158,6 @@ const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setAct
 
         e.preventDefault();
         if (currentLi.textContent.trim() === '') {
-          // Exit list when pressing Enter in an empty <li>
           const p = document.createElement('p');
           p.appendChild(document.createTextNode(''));
 
@@ -172,7 +175,6 @@ const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setAct
           selection.addRange(newRange);
           editor.focus();
         } else {
-          // Continue list with new <li>
           const newLi = document.createElement('li');
           newLi.style.cssText = currentLi.style.cssText;
           currentLi.insertAdjacentElement('afterend', newLi);
@@ -246,13 +248,60 @@ const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setAct
     setActiveFormats(active);
   };
 
+  const getActiveListStyle = () => {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return null;
+    const range = selection.getRangeAt(0);
+    const parentList = range.startContainer.closest('ul,ol');
+    if (parentList) {
+      return parentList.getAttribute('data-list-style');
+    }
+    return null;
+  };
+
+  // Handle clicks outside dropdowns to close them
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        bulletButtonRef.current &&
+        numberedButtonRef.current &&
+        !bulletButtonRef.current.contains(e.target) &&
+        !numberedButtonRef.current.contains(e.target) &&
+        !e.target.closest('.list-dropdown')
+      ) {
+        setShowBulletDropdown(false);
+        setShowNumberedDropdown(false);
+        if (editorRef.current) {
+          editorRef.current.focus();
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [editorRef]);
+
   return (
     <>
-      <div className="relative">
+      <style>
+        {`
+          .list-item-button:hover {
+            background-color: ${primaryColor} !important;
+            color: white !important;
+            border-color: ${primaryColor} !important;
+          }
+          .list-item-button.active {
+            background-color: ${primaryColor} !important;
+            color: white !important;
+            border-color: ${primaryColor} !important;
+          }
+        `}
+      </style>
+      <div className="relative" ref={bulletButtonRef}>
         <button
           type="button"
           className={`
-            p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold
+            p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold flex items-center gap-1
             ${
               activeFormats.includes('insertUnorderedList')
                 ? 'text-white'
@@ -276,6 +325,7 @@ const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setAct
           }}
         >
           <FiList />
+          <FiChevronDown className="text-sm" />
         </button>
 
         {tooltip === 'Bullet List' && (
@@ -290,33 +340,41 @@ const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setAct
 
         {showBulletDropdown && (
           <div
-            className={`absolute z-20 left-0 mt-1 w-44 rounded-md border shadow-md ${
+            className={`list-dropdown absolute z-20 left-0 mt-1 w-44 rounded-md border shadow-md ${
               darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
             }`}
           >
-            {bulletStyles.map((style) => (
-              <button
-                key={style.value}
-                className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
-                  darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
-                }`}
-                onClick={() => handleSelectListStyle(style)}
-              >
-                <span style={{ display: 'inline-block', width: '25px', textAlign: 'center' }}>
-                  {style.value === 'circle' ? '○' : style.value === 'disc' ? '●' : '■'}
-                </span>
-                {style.name}
-              </button>
-            ))}
+            {bulletStyles.map((style) => {
+              const isActive = activeFormats.includes('insertUnorderedList') && getActiveListStyle() === style.value;
+              return (
+                <button
+                  key={style.value}
+                  className={`list-item-button w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
+                    isActive ? 'active' : darkMode ? 'text-white' : 'text-gray-800'
+                  }`}
+                  style={{
+                    backgroundColor: isActive ? primaryColor : 'transparent',
+                    color: isActive ? 'white' : darkMode ? 'white' : '#1f2937',
+                    borderColor: isActive ? primaryColor : 'transparent'
+                  }}
+                  onClick={() => handleSelectListStyle(style)}
+                >
+                  <span style={{ display: 'inline-block', width: '25px', textAlign: 'center' }}>
+                    {style.value === 'circle' ? '○' : style.value === 'disc' ? '●' : '■'}
+                  </span>
+                  {style.name}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
 
-      <div className="relative">
+      <div className="relative" ref={numberedButtonRef}>
         <button
           type="button"
           className={`
-            p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold
+            p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold flex items-center gap-1
             ${
               activeFormats.includes('insertOrderedList')
                 ? 'text-white'
@@ -340,6 +398,7 @@ const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setAct
           }}
         >
           <MdFormatListNumbered />
+          <FiChevronDown className="text-sm" />
         </button>
 
         {tooltip === 'Numbered List' && (
@@ -354,24 +413,32 @@ const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setAct
 
         {showNumberedDropdown && (
           <div
-            className={`absolute z-20 left-0 mt-1 w-44 rounded-md border shadow-md ${
+            className={`list-dropdown absolute z-20 left-0 mt-1 w-44 rounded-md border shadow-md ${
               darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
             }`}
           >
-            {numberedStyles.map((style) => (
-              <button
-                key={style.value}
-                className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
-                  darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
-                }`}
-                onClick={() => handleSelectListStyle(style)}
-              >
-                <span style={{ display: 'inline-block', width: '25px', textAlign: 'center' }}>
-                  {style.value === 'decimal' ? '1.' : style.value === 'lower-alpha' ? 'a.' : 'i.'}
-                </span>
-                {style.name}
-              </button>
-            ))}
+            {numberedStyles.map((style) => {
+              const isActive = activeFormats.includes('insertOrderedList') && getActiveListStyle() === style.value;
+              return (
+                <button
+                  key={style.value}
+                  className={`list-item-button w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
+                    isActive ? 'active' : darkMode ? 'text-white' : 'text-gray-800'
+                  }`}
+                  style={{
+                    backgroundColor: isActive ? primaryColor : 'transparent',
+                    color: isActive ? 'white' : darkMode ? 'white' : '#1f2937',
+                    borderColor: isActive ? primaryColor : 'transparent'
+                  }}
+                  onClick={() => handleSelectListStyle(style)}
+                >
+                  <span style={{ display: 'inline-block', width: '25px', textAlign: 'center' }}>
+                    {style.value === 'decimal' ? '1.' : style.value === 'lower-alpha' ? 'a.' : 'i.'}
+                  </span>
+                  {style.name}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
