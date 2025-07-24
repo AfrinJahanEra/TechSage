@@ -26,18 +26,17 @@ const BlogEditorToolbar = ({ editorRef }) => {
   const [isLatexSelected, setIsLatexSelected] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const fileInputRef = useRef(null);
-  const lastKeyPress = useRef(null);
 
   const bulletStyles = [
-    { name: 'Empty Circle', type: 'unordered', value: 'circle', style: 'list-style-type: circle; padding-left: 20px; margin: 0;', liStyle: '' },
-    { name: 'Filled Circle', type: 'unordered', value: 'disc', style: 'list-style-type: disc; padding-left: 20px; margin: 0;', liStyle: '' },
-    { name: 'Square', type: 'unordered', value: 'square', style: 'list-style-type: square; padding-left: 20px; margin: 0;', liStyle: '' },
+    { name: 'Empty Circle', type: 'unordered', value: 'circle', style: 'list-style-type: circle; padding-left: 30px; margin: 0;', liStyle: '' },
+    { name: 'Filled Circle', type: 'unordered', value: 'disc', style: 'list-style-type: disc; padding-left: 30px; margin: 0;', liStyle: '' },
+    { name: 'Square', type: 'unordered', value: 'square', style: 'list-style-type: square; padding-left: 30px; margin: 0;', liStyle: '' },
   ];
 
   const numberedStyles = [
-    { name: 'Numbers', type: 'ordered', value: 'decimal', style: 'list-style-type: decimal; padding-left: 20px; margin: 0;', liStyle: '' },
-    { name: 'Letters', type: 'ordered', value: 'lower-alpha', style: 'list-style-type: lower-alpha; padding-left: 20px; margin: 0;', liStyle: '' },
-    { name: 'Roman Numerals', type: 'ordered', value: 'lower-roman', style: 'list-style-type: lower-roman; padding-left: 20px; margin: 0;', liStyle: '' },
+    { name: 'Numbers', type: 'ordered', value: 'decimal', style: 'list-style-type: decimal; padding-left: 30px; margin: 0;', liStyle: '' },
+    { name: 'Letters', type: 'ordered', value: 'lower-alpha', style: 'list-style-type: lower-alpha; padding-left: 30px; margin: 0;', liStyle: '' },
+    { name: 'Roman Numerals', type: 'ordered', value: 'lower-roman', style: 'list-style-type: lower-roman; padding-left: 30px; margin: 0;', liStyle: '' },
   ];
 
   const handleSelectListStyle = (styleObj) => {
@@ -173,10 +172,10 @@ const BlogEditorToolbar = ({ editorRef }) => {
         if (!['UL', 'OL'].includes(parentList.tagName)) return;
 
         e.preventDefault();
-        if (currentLi.textContent === '' && lastKeyPress.current === 'Enter') {
-          const textNode = document.createTextNode('');
+        if (currentLi.textContent.trim() === '') {
+          // Exit list when pressing Enter in an empty <li>
           const p = document.createElement('p');
-          p.appendChild(textNode);
+          p.appendChild(document.createTextNode(''));
 
           if (parentList.children.length === 1) {
             parentList.replaceWith(p);
@@ -186,15 +185,16 @@ const BlogEditorToolbar = ({ editorRef }) => {
           }
 
           const newRange = document.createRange();
-          newRange.setStart(textNode, 0);
+          newRange.setStart(p, 0);
           newRange.collapse(true);
           selection.removeAllRanges();
           selection.addRange(newRange);
           editor.focus();
         } else {
+          // Continue list with new <li>
           const newLi = document.createElement('li');
           newLi.style.cssText = currentLi.style.cssText;
-          currentLi.parentElement.appendChild(newLi);
+          currentLi.insertAdjacentElement('afterend', newLi);
 
           const newRange = document.createRange();
           newRange.setStart(newLi, 0);
@@ -202,10 +202,6 @@ const BlogEditorToolbar = ({ editorRef }) => {
           selection.removeAllRanges();
           selection.addRange(newRange);
         }
-
-        lastKeyPress.current = 'Enter';
-      } else {
-        lastKeyPress.current = e.key;
       }
 
       if (e.key === 'Backspace') {
@@ -219,11 +215,10 @@ const BlogEditorToolbar = ({ editorRef }) => {
         const parentList = currentLi.parentElement;
         if (!['UL', 'OL'].includes(parentList.tagName)) return;
 
-        if (currentLi.textContent === '') {
+        if (currentLi.textContent.trim() === '') {
           e.preventDefault();
-          const textNode = document.createTextNode('');
           const p = document.createElement('p');
-          p.appendChild(textNode);
+          p.appendChild(document.createTextNode(''));
 
           if (parentList.children.length === 1) {
             parentList.replaceWith(p);
@@ -233,7 +228,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
           }
 
           const newRange = document.createRange();
-          newRange.setStart(textNode, 0);
+          newRange.setStart(p, 0);
           newRange.collapse(true);
           selection.removeAllRanges();
           selection.addRange(newRange);
