@@ -136,9 +136,7 @@ const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setAct
 
     setShowBulletDropdown(false);
     setShowNumberedDropdown(false);
-    if (editorRef.current) {
-      editorRef.current.focus();
-    }
+    editor.focus();
     updateActiveFormats();
   };
 
@@ -261,16 +259,16 @@ const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setAct
     return null;
   };
 
-  // Handle clicks outside dropdowns or on other toolbar buttons
+  // Handle clicks outside dropdowns to close them
   useEffect(() => {
     const handleClickOutside = (e) => {
-      const isOutsideBullet = bulletButtonRef.current && !bulletButtonRef.current.contains(e.target) && !e.target.closest('.bullet-dropdown');
-      const isOutsideNumbered = numberedButtonRef.current && !numberedButtonRef.current.contains(e.target) && !e.target.closest('.numbered-dropdown');
-      
-      // Check if the click is on another toolbar button
-      const isToolbarButton = e.target.closest('button:not(.list-item-button)') && !e.target.closest('.bullet-dropdown, .numbered-dropdown');
-      
-      if ((isOutsideBullet || isOutsideNumbered) || isToolbarButton) {
+      if (
+        bulletButtonRef.current &&
+        numberedButtonRef.current &&
+        !bulletButtonRef.current.contains(e.target) &&
+        !numberedButtonRef.current.contains(e.target) &&
+        !e.target.closest('.list-dropdown')
+      ) {
         setShowBulletDropdown(false);
         setShowNumberedDropdown(false);
         if (editorRef.current) {
@@ -342,7 +340,7 @@ const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setAct
 
         {showBulletDropdown && (
           <div
-            className={`bullet-dropdown absolute z-20 left-0 mt-1 w-44 rounded-md border shadow-md ${
+            className={`list-dropdown absolute z-20 left-0 mt-1 w-44 rounded-md border shadow-md ${
               darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
             }`}
           >
@@ -415,7 +413,7 @@ const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setAct
 
         {showNumberedDropdown && (
           <div
-            className={`numbered-dropdown absolute z-20 left-0 mt-1 w-44 rounded-md border shadow-md ${
+            className={`list-dropdown absolute z-20 left-0 mt-1 w-44 rounded-md border shadow-md ${
               darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
             }`}
           >
