@@ -8,15 +8,14 @@ import { PiMathOperationsFill } from 'react-icons/pi';
 import { useTheme } from '../context/ThemeContext';
 import LatexModal from '../components/LatexModal';
 import LinkModal from '../components/LinkModal';
-import UnorderedListModal from '../components/UnorderedListModal';
 
 const BlogEditorToolbar = ({ editorRef }) => {
   const { primaryColor, darkMode } = useTheme();
   const [tooltip, setTooltip] = useState('');
   const [hoveredIcon, setHoveredIcon] = useState(null);
   const [activeFormats, setActiveFormats] = useState([]);
-  const [showUnorderedListModal, setShowUnorderedListModal] = useState(false);
-  const [showNumberDropdown, setShowNumberDropdown] = useState(false);
+  const [showBulletDropdown, setShowBulletDropdown] = useState(false);
+  const [showNumberedDropdown, setShowNumberedDropdown] = useState(false);
   const [showCodeModal, setShowCodeModal] = useState(false);
   const [codeInput, setCodeInput] = useState('');
   const [codeLanguage, setCodeLanguage] = useState('javascript');
@@ -27,6 +26,225 @@ const BlogEditorToolbar = ({ editorRef }) => {
   const [isLatexSelected, setIsLatexSelected] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const fileInputRef = useRef(null);
+  const lastKeyPress = useRef(null);
+
+  const bulletStyles = [
+    { name: 'Empty Circle', type: 'unordered', value: 'circle', style: 'list-style-type: circle; padding-left: 20px; margin: 0;', liStyle: '' },
+    { name: 'Filled Circle', type: 'unordered', value: 'disc', style: 'list-style-type: disc; padding-left: 20px; margin: 0;', liStyle: '' },
+    { name: 'Square', type: 'unordered', value: 'square', style: 'list-style-type: square; padding-left: 20px; margin: 0;', liStyle: '' },
+  ];
+
+  const numberedStyles = [
+    { name: 'Numbers', type: 'ordered', value: 'decimal', style: 'list-style-type: decimal; padding-left: 20px; margin: 0;', liStyle: '' },
+    { name: 'Letters', type: 'ordered', value: 'lower-alpha', style: 'list-style-type: lower-alpha; padding-left: 20px; margin: 0;', liStyle: '' },
+    { name: 'Roman Numerals', type: 'ordered', value: 'lower-roman', style: 'list-style-type: lower-roman; padding-left: 20px; margin: 0;', liStyle: '' },
+  ];
+
+  const handleSelectListStyle = (styleObj) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const selection = window.getSelection();
+    const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+
+    if (range && !range.collapsed) {
+      const clonedRange = range.cloneRange();
+      const fragment = clonedRange.cloneContents();
+      const tempDiv = document.createElement('div');
+      tempDiv.appendChild(fragment);
+
+      const lines = [];
+      const processNode = (node) => {
+        if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+          lines.push(node.textContent.trim());
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+          if (['P', 'DIV', 'LI'].includes(node.tagName)) {
+            node.childNodes.forEach(child => processNode(child));
+          } else if (node.tagName === 'BR') {
+            if (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
+          }
+        }
+      };
+      tempDiv.childNodes.forEach(processNode);
+
+      const listTag = styleObj.type === 'ordered' ? 'ol' : 'ul';
+      const list = document.createElement(listTag);
+      list.style.cssText = styleObj.style;
+      list.removeAttribute('style');
+      list.setAttribute('style', styleObj.style);
+      list.setAttribute('data-list-style', styleObj.value);
+
+      lines.forEach(text => {
+        if (text.trim()) {
+          const li = document.createElement('li');
+          li.style.cssText = '';
+          if (styleObj.liStyle) li.style.cssText = `position: relative; ${styleObj.liStyle}`;
+          li.textContent = text;
+          list.appendChild(li);
+        }
+      });
+
+      const commonAncestor = range.commonAncestorContainer;
+      const parentList = commonAncestor.nodeType === Node.ELEMENT_NODE
+        ? commonAncestor.closest('ul,ol')
+        : commonAncestor.parentElement?.closest('ul,ol');
+
+      if (parentList && parentList.parentElement === editor) {
+        const startLi = range.startContainer.nodeType === Node.ELEMENT_NODE && range.startContainer.tagName === 'LI'
+          ? range.startContainer
+          : range.startContainer.closest('li');
+        const endLi = range.endContainer.nodeType === Node.ELEMENT_NODE && range.endContainer.tagName === 'LI'
+          ? range.endContainer
+          : range.endContainer.closest('li');
+
+        if (startLi && endLi && startLi.parentElement === parentList && endLi.parentElement === parentList) {
+          const rangeToReplace = document.createRange();
+          rangeToReplace.setStartBefore(startLi);
+          rangeToReplace.setEndAfter(endLi);
+          rangeToReplace.extractContents();
+          rangeToReplace.insertNode(list);
+
+          if (parentList.children.length === 0) {
+            parentList.remove();
+          }
+        } else {
+          range.deleteContents();
+          range.insertNode(list);
+        }
+      } else {
+        range.deleteContents();
+        range.insertNode(list);
+      }
+
+      const lastLi = list.querySelector('li:last-child');
+      if (lastLi) {
+        const newRange = document.createRange();
+        newRange.setStart(lastLi, lastLi.childNodes.length);
+        newRange.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+      }
+    } else {
+      const listTag = styleObj.type === 'ordered' ? 'ol' : 'ul';
+      const list = document.createElement(listTag);
+      list.style.cssText = styleObj.style;
+      list.setAttribute('data-list-style', styleObj.value);
+      const li = document.createElement('li');
+      li.style.cssText = styleObj.liStyle ? `position: relative; ${styleObj.liStyle}` : 'position: relative;';
+      list.appendChild(li);
+
+      if (range && editor.contains(range.startContainer)) {
+        range.deleteContents();
+        range.insertNode(list);
+      } else {
+        editor.appendChild(list);
+      }
+
+      const firstLi = list.querySelector('li');
+      if (firstLi) {
+        const newRange = document.createRange();
+        newRange.setStart(firstLi, 0);
+        newRange.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+      }
+    }
+
+    setShowBulletDropdown(false);
+    setShowNumberedDropdown(false);
+    editor.focus();
+    updateActiveFormats();
+  };
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Enter') {
+        const selection = window.getSelection();
+        const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+        if (!range || !editor.contains(range.startContainer)) return;
+
+        const currentLi = range.startContainer.closest('li');
+        if (!currentLi) return;
+
+        const parentList = currentLi.parentElement;
+        if (!['UL', 'OL'].includes(parentList.tagName)) return;
+
+        e.preventDefault();
+        if (currentLi.textContent === '' && lastKeyPress.current === 'Enter') {
+          const textNode = document.createTextNode('');
+          const p = document.createElement('p');
+          p.appendChild(textNode);
+
+          if (parentList.children.length === 1) {
+            parentList.replaceWith(p);
+          } else {
+            currentLi.remove();
+            parentList.insertAdjacentElement('afterend', p);
+          }
+
+          const newRange = document.createRange();
+          newRange.setStart(textNode, 0);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+          editor.focus();
+        } else {
+          const newLi = document.createElement('li');
+          newLi.style.cssText = currentLi.style.cssText;
+          currentLi.parentElement.appendChild(newLi);
+
+          const newRange = document.createRange();
+          newRange.setStart(newLi, 0);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+        }
+
+        lastKeyPress.current = 'Enter';
+      } else {
+        lastKeyPress.current = e.key;
+      }
+
+      if (e.key === 'Backspace') {
+        const selection = window.getSelection();
+        const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+        if (!range || !editor.contains(range.startContainer)) return;
+
+        const currentLi = range.startContainer.closest('li');
+        if (!currentLi) return;
+
+        const parentList = currentLi.parentElement;
+        if (!['UL', 'OL'].includes(parentList.tagName)) return;
+
+        if (currentLi.textContent === '') {
+          e.preventDefault();
+          const textNode = document.createTextNode('');
+          const p = document.createElement('p');
+          p.appendChild(textNode);
+
+          if (parentList.children.length === 1) {
+            parentList.replaceWith(p);
+          } else {
+            currentLi.remove();
+            parentList.insertAdjacentElement('afterend', p);
+          }
+
+          const newRange = document.createRange();
+          newRange.setStart(textNode, 0);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+          editor.focus();
+        }
+      }
+    };
+
+    editor.addEventListener('keydown', handleKeyDown);
+    return () => editor.removeEventListener('keydown', handleKeyDown);
+  }, [editorRef]);
 
   const insertCode = () => {
     setShowCodeModal(true);
@@ -80,7 +298,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
     pre.style.fontFamily = 'monospace';
 
     if (isEditingCodeBlock && selectedCodeBlock) {
-      selectedCodeBlock.find('.inserted-image').remove();
+      selectedCodeBlock.querySelector('.inserted-image')?.remove();
       selectedCodeBlock.replaceWith(pre);
     } else {
       const selection = window.getSelection();
@@ -428,7 +646,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
                           : 'text-gray-800 hover:text-white'
                       }
                     `}
-                    onClick={() => setShowUnorderedListModal(true)}
+                    onClick={() => setShowBulletDropdown(!showBulletDropdown)}
                     onMouseEnter={() => {
                       setTooltip('Bullet List');
                       setHoveredIcon('insertUnorderedList');
@@ -454,6 +672,29 @@ const BlogEditorToolbar = ({ editorRef }) => {
                       Bullet List
                     </div>
                   )}
+
+                  {showBulletDropdown && (
+                    <div
+                      className={`absolute z-20 left-0 mt-1 w-44 rounded-md border shadow-md ${
+                        darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
+                      }`}
+                    >
+                      {bulletStyles.map((style) => (
+                        <button
+                          key={style.value}
+                          className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
+                            darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
+                          }`}
+                          onClick={() => handleSelectListStyle(style)}
+                        >
+                          <span style={{ display: 'inline-block', width: '25px', textAlign: 'center' }}>
+                            {style.value === 'circle' ? '○' : style.value === 'disc' ? '●' : '■'}
+                          </span>
+                          {style.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="relative">
@@ -469,7 +710,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
                           : 'text-gray-800 hover:text-white'
                       }
                     `}
-                    onClick={() => setShowNumberDropdown(!showNumberDropdown)}
+                    onClick={() => setShowNumberedDropdown(!showNumberedDropdown)}
                     onMouseEnter={() => {
                       setTooltip('Numbered List');
                       setHoveredIcon('insertOrderedList');
@@ -496,34 +737,26 @@ const BlogEditorToolbar = ({ editorRef }) => {
                     </div>
                   )}
 
-                  {showNumberDropdown && (
+                  {showNumberedDropdown && (
                     <div
                       className={`absolute z-20 left-0 mt-1 w-44 rounded-md border shadow-md ${
                         darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
                       }`}
                     >
-                      <button
-                        className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
-                          darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
-                        }`}
-                        onClick={() => {
-                          formatText('insertOrderedList');
-                          setShowNumberDropdown(false);
-                        }}
-                      >
-                        1. Numbered List
-                      </button>
-                      <button
-                        className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
-                          darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
-                        }`}
-                        onClick={() => {
-                          formatText('insertHTML', '<ol type="i"><li>First</li><li>Second</li></ol>');
-                          setShowNumberDropdown(false);
-                        }}
-                      >
-                        i. Roman List
-                      </button>
+                      {numberedStyles.map((style) => (
+                        <button
+                          key={style.value}
+                          className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
+                            darkMode ? 'hover:bg-gray-600 text-white' : 'hover:bg-gray-100 text-gray-800'
+                          }`}
+                          onClick={() => handleSelectListStyle(style)}
+                        >
+                          <span style={{ display: 'inline-block', width: '25px', textAlign: 'center' }}>
+                            {style.value === 'decimal' ? '1.' : style.value === 'lower-alpha' ? 'a.' : 'i.'}
+                          </span>
+                          {style.name}
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -539,15 +772,6 @@ const BlogEditorToolbar = ({ editorRef }) => {
           onChange={handleFileChange}
         />
       </div>
-
-      {showUnorderedListModal && (
-        <UnorderedListModal
-          editorRef={editorRef}
-          setShowUnorderedListModal={setShowUnorderedListModal}
-          darkMode={darkMode}
-          primaryColor={primaryColor}
-        />
-      )}
 
       {showCodeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
