@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   FiBold, FiItalic, FiUnderline, FiAlignLeft, FiAlignCenter, FiAlignRight,
-  FiAlignJustify, FiLink, FiImage, FiCode, FiRotateCcw, FiRotateCw, FiX
+  FiAlignJustify, FiLink, FiImage,
+  FiCode, FiRotateCcw, FiRotateCw, FiX
 } from 'react-icons/fi';
 import { PiMathOperationsFill } from 'react-icons/pi';
 import { useTheme } from '../context/ThemeContext';
 import LatexModal from '../components/LatexModal';
 import LinkModal from '../components/LinkModal';
 import ListControls from '../components/ListControls';
-import CodeModal from '../components/CodeModal'; // Import the new CodeModal
+import CodeModal from '../components/CodeModal';
 
 const BlogEditorToolbar = ({ editorRef }) => {
   const { primaryColor, darkMode } = useTheme();
@@ -28,6 +29,10 @@ const BlogEditorToolbar = ({ editorRef }) => {
   const fileInputRef = useRef(null);
 
   const insertCode = () => {
+    const selection = window.getSelection();
+    const range = selection.rangeCount > 0 ? selection.getRangeAt(0).cloneRange() : null;
+    setSavedRange(range);
+    editorRef.current.focus(); // Ensure editor is focused
     setShowCodeModal(true);
   };
 
@@ -43,6 +48,11 @@ const BlogEditorToolbar = ({ editorRef }) => {
       const codeContent = codeElement?.textContent || '';
       const langClass = codeElement?.className || 'language-javascript';
       const language = langClass.replace('language-', '') || 'javascript';
+
+      // Save range before editing
+      const selection = window.getSelection();
+      const range = selection.rangeCount > 0 ? selection.getRangeAt(0).cloneRange() : null;
+      setSavedRange(range);
 
       setCodeInput(codeContent);
       setCodeLanguage(language);
@@ -120,7 +130,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
     if (!range || !editor.contains(range.startContainer)) {
       editor.appendChild(wrapper);
     } else {
-      pleurerange.deleteContents();
+      range.deleteContents();
       range.insertNode(wrapper);
     }
 
@@ -412,6 +422,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
           setSelectedCodeBlock={setSelectedCodeBlock}
           darkMode={darkMode}
           primaryColor={primaryColor}
+          savedRange={savedRange} // Pass savedRange to CodeModal
         />
       )}
 
