@@ -162,20 +162,24 @@ const CodeModal = ({
     }
 
     try {
+      // Debug darkMode and styles
+      console.log('darkMode:', darkMode, 'Applying background:', darkMode ? '#f3f4f6' : '#000000');
+
       // Create code block element
       const pre = document.createElement('pre');
       const code = document.createElement('code');
-      code.textContent = codeInput; // Preserve indentation, no trim()
+      code.textContent = codeInput; // Preserve indentation
       code.className = `language-${codeLanguage}`;
       pre.className = 'code-block';
       pre.contentEditable = 'false';
       pre.appendChild(code);
 
+      // Apply Google Docs-style background for light mode, grey for dark mode
+      pre.style.setProperty('background', darkMode ? '#f3f4f6' : '#000000', 'important');
+      pre.style.setProperty('color', darkMode ? '#e2e8f0' : '#ffffff', 'important');
       pre.style.padding = '1em';
       pre.style.borderRadius = '8px';
       pre.style.overflowX = 'auto';
-      pre.style.background = darkMode ? '#1e293b' : '#f3f4f6';
-      pre.style.color = darkMode ? '#e2e8f0' : '#1e293b';
       pre.style.margin = '1em 0';
       pre.style.fontSize = '0.875rem';
       pre.style.fontFamily = 'monospace';
@@ -221,6 +225,12 @@ const CodeModal = ({
       // Apply Prism.js highlighting to inserted code
       console.log('Applying Prism.js highlighting to inserted code');
       Prism.highlightElement(code);
+
+      // Log applied styles for debugging
+      console.log('Inserted pre styles:', {
+        background: pre.style.background,
+        color: pre.style.color,
+      });
 
       // Position cursor after code block
       const newRange = document.createRange();
@@ -378,10 +388,14 @@ const CodeModal = ({
               </div>
               <pre
                 ref={previewRef}
-                className={`flex-1 border rounded p-3 overflow-auto ${
-                  darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'
-                }`}
-                style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}
+                className={`flex-1 border rounded p-3 overflow-auto`}
+                style={{
+                  fontFamily: 'monospace',
+                  fontSize: '0.875rem',
+                  background: darkMode ? '#f3f4f6' : '#000000',
+                  color: darkMode ? '#e2e8f0' : '#ffffff',
+                  border: `1px solid ${darkMode ? '#4b5563' : '#d1d5db'}`,
+                }}
               >
                 <code className={`language-${codeLanguage}`}>
                   {codeInput || '// Enter your code here...'}
