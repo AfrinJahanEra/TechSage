@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  FiBold, FiItalic, FiUnderline, FiList, FiAlignLeft, FiAlignCenter, FiAlignRight,
+  FiBold, FiItalic, FiUnderline, FiAlignLeft, FiAlignCenter, FiAlignRight,
   FiAlignJustify, FiLink, FiImage, FiCode, FiRotateCcw, FiRotateCw, FiX
 } from 'react-icons/fi';
-import { MdFormatListNumbered } from 'react-icons/md';
 import { PiMathOperationsFill } from 'react-icons/pi';
 import { useTheme } from '../context/ThemeContext';
 import LatexModal from '../components/LatexModal';
 import LinkModal from '../components/LinkModal';
 import ListControls from '../components/ListControls';
+import CodeModal from '../components/CodeModal'; // Import the new CodeModal
 
 const BlogEditorToolbar = ({ editorRef }) => {
   const { primaryColor, darkMode } = useTheme();
@@ -24,12 +24,8 @@ const BlogEditorToolbar = ({ editorRef }) => {
   const [latexInput, setLatexInput] = useState('');
   const [isLatexSelected, setIsLatexSelected] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
-  const [savedRange, setSavedRange] = useState(null); // New state for selection range
+  const [savedRange, setSavedRange] = useState(null);
   const fileInputRef = useRef(null);
-
-
-
- 
 
   const insertCode = () => {
     setShowCodeModal(true);
@@ -60,50 +56,6 @@ const BlogEditorToolbar = ({ editorRef }) => {
       editor.removeEventListener('click', handleCodeClick);
     };
   }, [editorRef]);
-
-  const handleInsertCodeBlock = () => {
-    if (!codeInput.trim()) return;
-
-    const pre = document.createElement('pre');
-    const code = document.createElement('code');
-
-    code.textContent = codeInput;
-    code.className = `language-${codeLanguage}`;
-    pre.className = 'code-block';
-    pre.contentEditable = 'false';
-    pre.appendChild(code);
-
-    pre.style.padding = '1em';
-    pre.style.borderRadius = '8px';
-    pre.style.overflowX = 'auto';
-    pre.style.background = darkMode ? '#1e293b' : '#f3f4f6';
-    pre.style.color = darkMode ? '#e2e8f0' : '#1e293b';
-    pre.style.margin = '1em 0';
-    pre.style.fontSize = '0.875rem';
-    pre.style.fontFamily = 'monospace';
-
-    if (isEditingCodeBlock && selectedCodeBlock) {
-      selectedCodeBlock.querySelector('.inserted-image')?.remove();
-      selectedCodeBlock.replaceWith(pre);
-    } else {
-      const selection = window.getSelection();
-      const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-
-      if (range && editorRef.current.contains(range.startContainer)) {
-        range.deleteContents();
-        range.insertNode(pre);
-      } else {
-        editorRef.current.appendChild(pre);
-      }
-    }
-
-    setShowCodeModal(false);
-    setCodeInput('');
-    setCodeLanguage('javascript');
-    setSelectedCodeBlock(null);
-    setIsEditingCodeBlock(false);
-    editorRef.current.focus();
-  };
 
   const formatText = (command, value = null) => {
     const isActive = document.queryCommandState(command);
@@ -168,7 +120,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
     if (!range || !editor.contains(range.startContainer)) {
       editor.appendChild(wrapper);
     } else {
-      range.deleteContents();
+      pleurerange.deleteContents();
       range.insertNode(wrapper);
     }
 
@@ -204,7 +156,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
   const handleLinkButtonClick = () => {
     const selection = window.getSelection();
     const range = selection.rangeCount > 0 ? selection.getRangeAt(0).cloneRange() : null;
-    setSavedRange(range); // Save the range
+    setSavedRange(range);
     setShowLinkModal(true);
   };
 
@@ -368,6 +320,14 @@ const BlogEditorToolbar = ({ editorRef }) => {
           .resize-handle:hover {
             opacity: 0.8;
           }
+          .code-block {
+            position: relative;
+          }
+          .code-block code {
+            display: block;
+            white-space: pre;
+            overflow-x: auto;
+          }
         `}
       </style>
       <div
@@ -440,61 +400,19 @@ const BlogEditorToolbar = ({ editorRef }) => {
       </div>
 
       {showCodeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
-          <div className={`rounded-xl p-6 w-full max-w-2xl bg-white border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Insert Code Snippet</h3>
-              <button onClick={() => setShowCodeModal(false)} className={`${darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-black'}`}>
-                <FiX size={20} />
-              </button>
-            </div>
-
-            <div className="mb-4">
-              <label className={`text-sm font-semibold block mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Language</label>
-              <select
-                value={codeLanguage}
-                onChange={(e) => setCodeLanguage(e.target.value)}
-                className={`w-full border rounded px-3 py-2 text-sm ${darkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'}`}
-              >
-                <option value="javascript">JavaScript</option>
-                <option value="python">Python</option>
-                <option value="html">HTML</option>
-                <option value="css">CSS</option>
-                <option value="java">Java</option>
-                <option value="c">C</option>
-                <option value="cpp">C++</option>
-                <option value="bash">Bash</option>
-                <option value="json">JSON</option>
-              </select>
-            </div>
-
-            <div className="mb-4">
-              <label className={`text-sm font-semibold block mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Code</label>
-              <textarea
-                value={codeInput}
-                onChange={(e) => setCodeInput(e.target.value)}
-                className={`w-full h-40 border rounded px-3 py-2 font-mono text-sm ${darkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'}`}
-                placeholder="Enter your code here..."
-              />
-            </div>
-
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => setShowCodeModal(false)}
-                className={`px-4 py-2 rounded ${darkMode ? 'bg-gray-600 text-white' : 'bg-gray-200 text-gray-800'}`}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleInsertCodeBlock}
-                className="px-4 py-2 text-white rounded"
-                style={{ backgroundColor: primaryColor }}
-              >
-                {isEditingCodeBlock ? 'Update Code' : 'Insert'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <CodeModal
+          editorRef={editorRef}
+          codeInput={codeInput}
+          setCodeInput={setCodeInput}
+          codeLanguage={codeLanguage}
+          setCodeLanguage={setCodeLanguage}
+          isEditingCodeBlock={isEditingCodeBlock}
+          setShowCodeModal={setShowCodeModal}
+          setIsEditingCodeBlock={setIsEditingCodeBlock}
+          setSelectedCodeBlock={setSelectedCodeBlock}
+          darkMode={darkMode}
+          primaryColor={primaryColor}
+        />
       )}
 
       {showLatexModal && (
@@ -515,7 +433,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
           setShowLinkModal={setShowLinkModal}
           darkMode={darkMode}
           primaryColor={primaryColor}
-          savedRange={savedRange} // Pass saved range
+          savedRange={savedRange}
         />
       )}
     </>
@@ -523,4 +441,3 @@ const BlogEditorToolbar = ({ editorRef }) => {
 };
 
 export default BlogEditorToolbar;
-
