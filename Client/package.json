@@ -42,7 +42,8 @@
     "@codemirror/lang-css": "^6.0.0",
     "@codemirror/lang-java": "^6.0.0",
     "@codemirror/lang-cpp": "^6.0.0",
-    "@codemirror/lang-json": "^6.0.0"
+    "@codemirror/lang-json": "^6.0.0",
+    "prismjs": "^1.29.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
