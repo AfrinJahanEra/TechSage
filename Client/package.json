@@ -16,6 +16,7 @@
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@mui/material": "^7.1.1",
     "@tailwindcss/vite": "^4.1.10",
+    "ace-builds": "^1.43.2",
     "axios": "^1.10.0",
     "chart.js": "^4.5.0",
     "date-fns": "^4.1.0",
@@ -33,7 +34,15 @@
     "react-hot-toast": "^2.5.2",
     "react-icons": "^5.5.0",
     "react-router-dom": "^7.6.1",
-    "react-toastify": "^11.0.5"
+    "react-toastify": "^11.0.5",
+    "codemirror": "^6.0.0",
+    "@codemirror/lang-javascript": "^6.0.0",
+    "@codemirror/lang-python": "^6.0.0",
+    "@codemirror/lang-html": "^6.0.0",
+    "@codemirror/lang-css": "^6.0.0",
+    "@codemirror/lang-java": "^6.0.0",
+    "@codemirror/lang-cpp": "^6.0.0",
+    "@codemirror/lang-json": "^6.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
