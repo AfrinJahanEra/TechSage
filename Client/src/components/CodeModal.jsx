@@ -165,7 +165,7 @@ const CodeModal = ({
       // Create code block element
       const pre = document.createElement('pre');
       const code = document.createElement('code');
-      code.textContent = codeInput.trim();
+      code.textContent = codeInput; // Preserve indentation, no trim()
       code.className = `language-${codeLanguage}`;
       pre.className = 'code-block';
       pre.contentEditable = 'false';
@@ -217,6 +217,10 @@ const CodeModal = ({
         range.deleteContents();
         range.insertNode(pre);
       }
+
+      // Apply Prism.js highlighting to inserted code
+      console.log('Applying Prism.js highlighting to inserted code');
+      Prism.highlightElement(code);
 
       // Position cursor after code block
       const newRange = document.createRange();
