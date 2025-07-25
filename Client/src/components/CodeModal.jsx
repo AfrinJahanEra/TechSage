@@ -33,6 +33,7 @@ const CodeModal = ({
   setSelectedCodeBlock,
   darkMode,
   primaryColor,
+  savedRange,
 }) => {
   const editorContainerRef = useRef(null);
   const editorViewRef = useRef(null);
@@ -89,7 +90,7 @@ const CodeModal = ({
           }),
           EditorView.domEventHandlers({
             keydown(event, view) {
-              event.stopPropagation(); // Prevent key events from bubbling to contentEditable
+              event.stopPropagation();
               return false;
             },
           }),
@@ -101,7 +102,6 @@ const CodeModal = ({
         parent: editorContainerRef.current,
       });
 
-      // Auto-focus the CodeMirror editor
       editorViewRef.current.focus();
 
       return () => {
@@ -142,9 +142,9 @@ const CodeModal = ({
         setError('Failed to apply syntax highlighting');
       }
     }
-  }, [codeInput, codeLanguage]);
+  }, [codeInput, codeLanguage, darkMode]);
 
-  // Prevent clicks on backdrop from reaching contentEditable
+  // Prevent clicks on backdrop
   const handleBackdropClick = (e) => {
     e.stopPropagation();
   };
@@ -162,10 +162,10 @@ const CodeModal = ({
     }
 
     try {
+      // Create code block element
       const pre = document.createElement('pre');
       const code = document.createElement('code');
-
-      code.textContent = codeInput;
+      code.textContent = codeInput.trim();
       code.className = `language-${codeLanguage}`;
       pre.className = 'code-block';
       pre.contentEditable = 'false';
@@ -180,27 +180,60 @@ const CodeModal = ({
       pre.style.fontSize = '0.875rem';
       pre.style.fontFamily = 'monospace';
 
-      if (isEditingCodeBlock && editorRef.current.contains(document.querySelector('.code-block'))) {
-        const selectedCodeBlock = document.querySelector('.code-block');
-        selectedCodeBlock.replaceWith(pre);
-      } else {
-        const selection = window.getSelection();
-        const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+      const selection = window.getSelection();
+      let range = savedRange || (selection.rangeCount > 0 ? selection.getRangeAt(0) : null);
 
-        if (range && editorRef.current.contains(range.startContainer)) {
-          range.deleteContents();
-          range.insertNode(pre);
-        } else {
-          editorRef.current.appendChild(pre);
-        }
+      console.log('SavedRange:', savedRange, 'Selection:', selection, 'Range:', range, 'editorRef.current:', editorRef.current);
+
+      // Validate or create range
+      if (!range || !editorRef.current.contains(range.commonAncestorContainer)) {
+        console.log('Invalid range, creating new one');
+        range = document.createRange();
+        const targetNode = editorRef.current.lastChild || editorRef.current;
+        range.selectNodeContents(targetNode);
+        range.collapse(false); // End of content
+        selection.removeAllRanges();
+        selection.addRange(range);
+      } else if (savedRange) {
+        console.log('Restoring saved range');
+        selection.removeAllRanges();
+        selection.addRange(savedRange);
+        range = savedRange;
       }
 
+      // Handle editing mode
+      if (isEditingCodeBlock) {
+        const existingCodeBlock = editorRef.current.querySelector('.code-block');
+        if (existingCodeBlock) {
+          console.log('Replacing existing code block');
+          existingCodeBlock.replaceWith(pre);
+        } else {
+          console.log('Inserting new code block in edit mode');
+          range.deleteContents();
+          range.insertNode(pre);
+        }
+      } else {
+        console.log('Inserting new code block at cursor');
+        range.deleteContents();
+        range.insertNode(pre);
+      }
+
+      // Position cursor after code block
+      const newRange = document.createRange();
+      newRange.setStartAfter(pre);
+      newRange.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(newRange);
+
+      // Ensure focus
+      editorRef.current.focus();
+
+      // Close modal and reset state
       setShowCodeModal(false);
       setCodeInput('');
       setCodeLanguage('javascript');
       setSelectedCodeBlock(null);
       setIsEditingCodeBlock(false);
-      editorRef.current.focus();
     } catch (err) {
       console.error('Error inserting code block:', err);
       setError('Failed to insert code block');
