@@ -178,7 +178,7 @@ const CodeModal = ({
       pre.style.setProperty('background', darkMode ? '#f3f4f6' : '#000000', 'important');
       pre.style.setProperty('color', darkMode ? '#e2e8f0' : '#ffffff', 'important');
       pre.style.padding = '1em';
-      pre.style.borderRadius = '8px';
+      pre.style.borderRadius = '0'; // Sharp borders
       pre.style.overflowX = 'auto';
       pre.style.margin = '1em 0';
       pre.style.fontSize = '0.875rem';
@@ -230,6 +230,7 @@ const CodeModal = ({
       console.log('Inserted pre styles:', {
         background: pre.style.background,
         color: pre.style.color,
+        borderRadius: pre.style.borderRadius,
       });
 
       // Position cursor after code block
@@ -388,13 +389,14 @@ const CodeModal = ({
               </div>
               <pre
                 ref={previewRef}
-                className={`flex-1 border rounded p-3 overflow-auto`}
+                className={`flex-1 border p-3 overflow-auto`}
                 style={{
                   fontFamily: 'monospace',
                   fontSize: '0.875rem',
                   background: darkMode ? '#f3f4f6' : '#000000',
                   color: darkMode ? '#e2e8f0' : '#ffffff',
                   border: `1px solid ${darkMode ? '#4b5563' : '#d1d5db'}`,
+                  borderRadius: '0', // Sharp borders
                 }}
               >
                 <code className={`language-${codeLanguage}`}>
