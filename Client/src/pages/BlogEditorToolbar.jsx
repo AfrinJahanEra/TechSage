@@ -10,6 +10,7 @@ import LatexModal from '../components/LatexModal';
 import LinkModal from '../components/LinkModal';
 import ListControls from '../components/ListControls';
 import CodeModal from '../components/CodeModal';
+import BlockquoteControls from '../components/CreateBlogComponents/BlockquoteControls';
 
 const BlogEditorToolbar = ({ editorRef }) => {
   const { primaryColor, darkMode } = useTheme();
@@ -345,7 +346,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
           darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
         }`}
       >
-        {buttons.map((button) => (
+        {buttons.map((button, index) => (
           <React.Fragment key={button.command}>
             <div className="relative">
               <button
@@ -396,6 +397,15 @@ const BlogEditorToolbar = ({ editorRef }) => {
                 primaryColor={primaryColor}
                 activeFormats={activeFormats}
                 setActiveFormats={setActiveFormats}
+              />
+            )}
+            {index === 6 && ( // Insert BlockquoteControls before 'Insert Link' (index 7)
+              <BlockquoteControls
+                editorRef={editorRef}
+                darkMode={darkMode}
+                primaryColor={primaryColor}
+                activeFormats={activeFormats}
+                formatText={formatText}
               />
             )}
           </React.Fragment>
