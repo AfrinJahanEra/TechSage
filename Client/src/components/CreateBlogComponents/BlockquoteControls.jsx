@@ -12,21 +12,56 @@ const BlockquoteControls = ({ editorRef, darkMode, primaryColor, activeFormats, 
       : range.startContainer.closest('blockquote');
 
     if (parentBlockquote) {
-      // If inside a blockquote, exit by wrapping the current content in a paragraph
-      document.execCommand('formatBlock', false, 'p');
-      // Ensure the cursor is placed in a new paragraph after the blockquote
-      const newParagraph = document.createElement('p');
-      newParagraph.innerHTML = '<br>';
-      parentBlockquote.parentNode.insertBefore(newParagraph, parentBlockquote.nextSibling);
+      // Find the current paragraph or parent element within the blockquote
+      let currentNode = range.startContainer.nodeType === Node.TEXT_NODE
+        ? range.startContainer.parentNode
+        : range.startContainer;
+      let currentParagraph = currentNode.closest('p') || currentNode;
+
+      // If the current node is not a paragraph, wrap it in a <p> to standardize
+      if (currentParagraph.nodeName !== 'P') {
+        const p = document.createElement('p');
+        p.appendChild(range.extractContents());
+        range.insertNode(p);
+        currentParagraph = p;
+      }
+
+      // Move the current paragraph after the blockquote
+      if (parentBlockquote.nextSibling) {
+        parentBlockquote.parentNode.insertBefore(currentParagraph, parentBlockquote.nextSibling);
+      } else {
+        parentBlockquote.parentNode.appendChild(currentParagraph);
+      }
+
+      // Clean up empty paragraphs or <br> in the blockquote
+      const children = Array.from(parentBlockquote.childNodes);
+      children.forEach(child => {
+        if (
+          child.nodeName === 'P' &&
+          (child.innerHTML === '' || child.innerHTML === '<br>' || child.textContent.trim() === '')
+        ) {
+          child.remove();
+        }
+      });
+
+      // If the blockquote is empty after moving the content, remove it
+      if (parentBlockquote.childNodes.length === 0) {
+        parentBlockquote.remove();
+      }
+
+      // Normalize the paragraph to remove any blockquote-specific styling
+      currentParagraph.removeAttribute('style'); // Remove any inline styles
+      currentParagraph.classList.remove('blockquote'); // Remove any blockquote classes if applied
+
+      // Place the cursor at the end of the moved paragraph
       const newRange = document.createRange();
-      newRange.setStart(newParagraph, 0);
-      newRange.collapse(true);
+      newRange.selectNodeContents(currentParagraph);
+      newRange.collapse(false); // Place cursor at the end
       selection.removeAllRanges();
       selection.addRange(newRange);
     } else {
       // Apply blockquote to the selected content
       document.execCommand('formatBlock', false, 'blockquote');
-      // Ensure the blockquote contains paragraphs
       const blockquote = range.startContainer.nodeType === Node.TEXT_NODE
         ? range.startContainer.parentNode.closest('blockquote')
         : range.startContainer.closest('blockquote');
