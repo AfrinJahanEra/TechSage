@@ -308,6 +308,11 @@ const CodeModal = ({
           .action-button:hover {
             background-color: ${primaryColor} !important;
             color: white !important;
+            opacity: 0.9 !important;
+          }
+          .cancel-button:hover {
+            opacity: 0.9 !important;
+            transition: opacity 0.2s ease-in-out !important;
           }
           .template-button:hover {
             background-color: ${primaryColor} !important;
@@ -450,7 +455,7 @@ const CodeModal = ({
 
           <div className="flex justify-end space-x-2 mt-4">
             <button
-              className={`action-button px-4 py-2 rounded hover:opacity-90 transition-colors duration-200 ${
+              className={`cancel-button px-4 py-2 rounded transition-opacity duration-200 ${
                 darkMode ? 'bg-gray-600 text-white' : 'bg-gray-200 text-gray-800'
               }`}
               onClick={() => {
