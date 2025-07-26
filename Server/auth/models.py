@@ -1,39 +1,48 @@
 import random
-from django.db import models
+from mongoengine import Document, StringField, DateTimeField, BooleanField, IntField
 from django.utils import timezone
 from django.core.mail import send_mail
-from django.conf import settings
+from django.conf import settings  # Confirm this import is present
 from datetime import timedelta
 
-class OTP(models.Model):
-    email = models.EmailField()
-    otp_code = models.CharField(max_length=6)
-    created_at = models.DateTimeField(auto_now_add=True)
-    is_verified = models.BooleanField(default=False)
-    attempts = models.IntegerField(default=0)
-    last_attempt = models.DateTimeField(null=True, blank=True)
+class OTP(Document):
+    email = StringField(required=True, unique=False)
+    otp_code = StringField(max_length=6, required=True)
+    created_at = DateTimeField(default=timezone.now)
+    is_verified = BooleanField(default=False)
+    attempts = IntField(default=0)
+    last_attempt = DateTimeField(null=True)
+
+    meta = {
+        'collection': 'otps',
+        'indexes': [
+            {'fields': ['email'], 'unique': False},
+            {'fields': ['created_at'], 'expireAfterSeconds': settings.OTP_VALIDITY_MINUTES * 60}
+        ]
+    }
 
     @classmethod
     def generate_otp(cls, email):
-        # Check if recent OTP exists and is still valid
-        recent_otp = cls.objects.filter(
+        # Check for recent valid OTP
+        recent_otp = cls.objects(
             email=email,
             created_at__gte=timezone.now() - timedelta(minutes=settings.OTP_VALIDITY_MINUTES),
             is_verified=False
         ).first()
 
         if recent_otp:
-            return recent_otp  # Return existing OTP if still valid
+            return recent_otp
 
-        # Delete any existing OTPs for this email
-        cls.objects.filter(email=email).delete()
-        
+        # Delete expired or used OTPs for this email
+        cls.objects(email=email).delete()
+
         # Generate 6-digit OTP
         otp_code = str(random.randint(100000, 999999))
-        
-        # Create and save OTP record
-        otp = cls.objects.create(email=email, otp_code=otp_code)
-        
+
+        # Create and save OTP
+        otp = cls(email=email, otp_code=otp_code)
+        otp.save()
+
         # Send OTP via email
         try:
             send_mail(
@@ -46,7 +55,7 @@ class OTP(models.Model):
         except Exception as e:
             otp.delete()
             raise Exception(f"Failed to send email: {str(e)}")
-        
+
         return otp
 
     def is_valid(self):
@@ -61,14 +70,10 @@ class OTP(models.Model):
     def verify(self, submitted_code):
         if not self.is_valid():
             return False, "OTP expired or already verified"
-            
-        # Check attempt rate limiting (max 5 attempts)
         if self.attempts >= 5 and self.last_attempt and \
-           (timezone.now() - self.last_attempt).total_seconds() < 300:  # 5 minutes cooldown
+           (timezone.now() - self.last_attempt).total_seconds() < 300:
             return False, "Too many attempts. Please try again later."
-            
         self.record_attempt()
-        
         if self.otp_code == submitted_code:
             self.is_verified = True
             self.save()

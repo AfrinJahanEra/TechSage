@@ -1,5 +1,7 @@
 from django.urls import path, include
 from django.urls import path
+from django.contrib import admin
+from django.urls import path, include
 from users.views import (
     RegisterUser,
     LoginUser,
@@ -18,8 +20,7 @@ from blogs.views import (
     PublishedBlogs,ReviewBlog, CreateDraft, UpdateDraft
 )
 
-# from django.contrib import admin
-# from django.urls import path, include
+
 
 urlpatterns = [
     path('users/by-role/', UserListByRole.as_view(), name='users-by-role'),
@@ -57,8 +58,8 @@ urlpatterns = [
     path('blogs/', ListBlogs.as_view()),  
     path('jobs/', JobBlogs.as_view()),
 
-    # path('admin/', admin.site.urls),
-    # path('api/auth/', include('auth.urls')),
+    path('admin/', admin.site.urls),
+    path('api/auth/', include('auth.urls')),
 
     
     path('blogs/<str:blog_id>/', GetBlog.as_view()),
