@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTheme } from '../context/ThemeContext';
-import userImage from '../assets/user.jpg'
 
 const Navbar = ({ activePage }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -50,13 +49,13 @@ const Navbar = ({ activePage }) => {
   };
 
   return (
-    <nav
+    <nav 
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'h-16 shadow-md' : 'h-20 shadow-lg'}`}
       style={navbarStyle}
     >
       <div className="container mx-auto px-4 md:px-6 lg:px-8 h-full flex justify-between items-center">
-        <Link
-          to={user ? "/home" : "/"}
+        <Link 
+          to={user ? "/home" : "/"} 
           className="text-white font-bold text-2xl md:text-3xl font-orbitron tracking-wider"
         >
           <span className="text-white">Tech</span>Sage
@@ -66,8 +65,8 @@ const Navbar = ({ activePage }) => {
           {user ? (
             <>
               {user.role === 'user' && (
-                <Link
-                  to="/home"
+                <Link 
+                  to="/home" 
                   className={`text-white text-lg font-medium hover:underline ${activePage === 'home' ? 'font-bold' : ''}`}
                 >
                   Home
@@ -75,8 +74,8 @@ const Navbar = ({ activePage }) => {
               )}
 
               {user.role === 'user' && (
-                <Link
-                  to="/create-blog"
+                <Link 
+                  to="/create-blog" 
                   className={`text-white text-lg font-medium hover:underline ${activePage === 'create-blog' ? 'font-bold' : ''}`}
                 >
                   Create Blog
@@ -91,29 +90,29 @@ const Navbar = ({ activePage }) => {
               </Link>
 
               <div className="relative group">
-                <Link
-                  to="/settings"
+                <Link 
+                  to="/settings" 
                   className="w-10 h-10 rounded-full bg-white flex items-center justify-center font-bold overflow-hidden border-2 border-white hover:scale-105 transition-transform"
                   style={{ color: primaryColor }}
                 >
-                  <img
-                    src={user?.avatar_url || userImage}  // Fallback to imported image if avatar_url is missing
-                    alt="Profile"
-                    className="w-full h-full object-cover"
+                  <img 
+                    src={user.avatar_url || "https://randomuser.me/api/portraits/women/44.jpg"} 
+                    alt="Profile" 
+                    className="w-full h-full object-cover" 
                   />
                 </Link>
               </div>
             </>
           ) : (
             <>
-              <Link
-                to="/signup"
+              <Link 
+                to="/signup" 
                 className="text-white text-lg font-medium hover:underline"
               >
                 Create Account
               </Link>
-              <Link
-                to="/login"
+              <Link 
+                to="/login" 
                 className="px-4 py-2 bg-white rounded-full hover:bg-gray-100 transition-colors"
                 style={loginButtonStyle}
               >
@@ -137,7 +136,7 @@ const Navbar = ({ activePage }) => {
         </button>
       </div>
 
-      <div
+      <div 
         className={`md:hidden fixed top-20 left-0 w-full transition-all duration-300 ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'} pt-4 pb-8 shadow-lg`}
         style={mobileMenuStyle}
       >
@@ -145,8 +144,8 @@ const Navbar = ({ activePage }) => {
           {user ? (
             <>
               {user.role === 'user' && (
-                <Link
-                  to="/home"
+                <Link 
+                  to="/home" 
                   className="text-white text-lg font-medium hover:underline"
                   onClick={toggleMenu}
                 >
@@ -154,8 +153,8 @@ const Navbar = ({ activePage }) => {
                 </Link>
               )}
               {user.role === 'user' && (
-                <Link
-                  to="/create-blog"
+                <Link 
+                  to="/create-blog" 
                   className="text-white text-lg font-medium hover:underline"
                   onClick={toggleMenu}
                 >
@@ -169,14 +168,14 @@ const Navbar = ({ activePage }) => {
               >
                 {getDashboardText()}
               </Link>
-              <Link
-                to="/settings"
+              <Link 
+                to="/settings" 
                 className="text-white text-lg font-medium hover:underline"
                 onClick={toggleMenu}
               >
                 Settings
               </Link>
-              <button
+              <button 
                 onClick={() => {
                   logout();
                   toggleMenu();
@@ -188,15 +187,15 @@ const Navbar = ({ activePage }) => {
             </>
           ) : (
             <>
-              <Link
-                to="/signup"
+              <Link 
+                to="/signup" 
                 className="text-white text-lg font-medium hover:underline"
                 onClick={toggleMenu}
               >
                 Create Account
               </Link>
-              <Link
-                to="/login"
+              <Link 
+                to="/login" 
                 className="text-white text-lg font-medium hover:underline"
                 onClick={toggleMenu}
               >

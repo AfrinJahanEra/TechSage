@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { FiUpload, FiX, FiPlus, FiCheck, FiUsers, FiClock, FiInfo, FiSave, FiTrash2, FiSearch } from 'react-icons/fi';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import BlogEditorToolbar from './BlogEditorToolbar';
+import BlogEditorToolbar from '../components/CreateBlogComponents/BlogEditorToolbar';
 import Footer from '../components/Footer';
 import PopupModal from '../components/PopupModal';
 import Navbar from '../components/Navbar';
