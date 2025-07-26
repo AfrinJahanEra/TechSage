@@ -7,6 +7,8 @@ import { useTheme } from '../context/ThemeContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { normalizeBlog, getThumbnailUrl, formatDate, calculateReadTime, getContentPreview, getContentPreviewhome } from '../utils/blogUtils.js';
 import BlogLink from '../components/BlogLink.jsx';
+import TopContributor from '../components/TopContributor.jsx';
+import Sidebar from '../components/Sidebar.jsx';
 
 const Home = () => {
   const { darkMode, primaryColor, shadeColor } = useTheme();
@@ -185,7 +187,9 @@ const Home = () => {
 
           {/* Sidebar */}
           <div className="lg:w-80 space-y-8">
-            <HomeSidebar />
+            <Sidebar />
+            <TopContributor/>
+            <SearchForm />
           </div>
         </div>
       </main>
