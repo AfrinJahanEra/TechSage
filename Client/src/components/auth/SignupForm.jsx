@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { auth, provider, signInWithPopup } from '../../firebase.js'; // adjust path accordingly
+import { auth, provider, signInWithPopup } from '../../firebase.js'; // Adjust path
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
-
 
 const SignupForm = () => {
   const [formData, setFormData] = useState({
@@ -19,7 +18,7 @@ const SignupForm = () => {
   const [otp, setOtp] = useState('');
   const [otpVerified, setOtpVerified] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+  const { register, api } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -59,23 +58,42 @@ const SignupForm = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSendOtp = (e) => {
+  const handleSendOtp = async (e) => {
     e.preventDefault();
     if (validate()) {
       setLoading(true);
-      setTimeout(() => {
+      try {
+        const response = await api.post('/api/auth/send-otp/', { email: formData.email });
         setOtpSent(true);
+        setErrors({});
+      } catch (error) {
+        setErrors({
+          api: error.response?.data?.error || error.response?.data?.details || 'Failed to send OTP. Please try again.'
+        });
+      } finally {
         setLoading(false);
-      }, 1000);
+      }
     }
   };
 
-  const handleVerifyOtp = (e) => {
+  const handleVerifyOtp = async (e) => {
     e.preventDefault();
-    if (otp === '123456') {
-      setOtpVerified(true);
-    } else {
-      setErrors({ ...errors, otp: 'Invalid OTP' });
+    setLoading(true);
+    try {
+      const response = await api.post('/api/auth/verify-otp/', {
+        email: formData.email,
+        otp_code: otp
+      });
+      if (response.data.email_verified) {
+        setOtpVerified(true);
+        setErrors({});
+      }
+    } catch (error) {
+      setErrors({
+        otp: error.response?.data?.error || 'Invalid OTP. Please try again.'
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -90,11 +108,12 @@ const SignupForm = () => {
           email: formData.email,
           password: formData.password,
           university: formData.university,
-          role: formData.role
+          role: formData.role,
+          source: 'email'
         };
 
         await register(userData);
-        
+
         if (formData.role === 'admin') {
           navigate('/admin');
         } else if (formData.role === 'moderator') {
@@ -103,46 +122,44 @@ const SignupForm = () => {
           navigate('/home');
         }
       } catch (error) {
-        setErrors({ api: error.error || 'Registration failed' });
+        setErrors({
+          api: error.error || error.response?.data?.error || 'Registration failed. Please try again.'
+        });
       } finally {
         setLoading(false);
       }
+    } else if (!otpVerified) {
+      setErrors({ api: 'Please verify your email with OTP before registering.' });
     }
   };
 
   const handleGoogleSignup = async () => {
-  try {
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
 
-    const username = user.displayName.replace(/\s+/g, '').toLowerCase();
+      const username = user.displayName?.replace(/\s+/g, '').toLowerCase() || 'googleuser';
+      const userData = {
+        username,
+        email: user.email,
+        password: user.uid + '_google',
+        university: 'unknown',
+        role: 'user',
+        source: 'google'
+      };
 
-    const userData = {
-      username,
-      email: user.email,
-      password: user.uid + "_google",   // dummy password
-      university: "unknown",            // or prompt later
-      role: 'user'
-    };
+      console.log('📦 Data sent to register:', userData);
 
-    console.log("📦 Data sent to register:", userData);
+      await register(userData);
 
-    await register(userData); // Your backend should accept this format
-
-    navigate('/home');
-  } catch (error) {
-    console.error("Google Sign-in Error:", error);
-    if (error.response && error.response.data) {
-      console.error("Backend response:", error.response.data);
-      setErrors({ api: error.response.data.error || 'Registration failed' });
-    } else {
-      setErrors({ api: error.message || 'Google sign-in failed' });
+      navigate('/home');
+    } catch (error) {
+      console.error('Google Sign-in Error:', error);
+      setErrors({
+        api: error.response?.data?.error || error.message || 'Google sign-in failed'
+      });
     }
-  }
-};
-
-
-
+  };
 
   return (
     <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">

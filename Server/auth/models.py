@@ -2,13 +2,13 @@ import random
 from mongoengine import Document, StringField, DateTimeField, BooleanField, IntField
 from django.utils import timezone
 from django.core.mail import send_mail
-from django.conf import settings  # Confirm this import is present
+from django.conf import settings
 from datetime import timedelta
 
 class OTP(Document):
     email = StringField(required=True, unique=False)
     otp_code = StringField(max_length=6, required=True)
-    created_at = DateTimeField(default=timezone.now)
+    created_at = DateTimeField(default=timezone.now)  # Already timezone-aware
     is_verified = BooleanField(default=False)
     attempts = IntField(default=0)
     last_attempt = DateTimeField(null=True)
@@ -40,7 +40,7 @@ class OTP(Document):
         otp_code = str(random.randint(100000, 999999))
 
         # Create and save OTP
-        otp = cls(email=email, otp_code=otp_code)
+        otp = cls(email=email, otp_code=otp_code, created_at=timezone.now())
         otp.save()
 
         # Send OTP via email
@@ -59,12 +59,17 @@ class OTP(Document):
         return otp
 
     def is_valid(self):
-        time_elapsed = timezone.now() - self.created_at
+        # Ensure created_at is timezone-aware
+        created_at = self.created_at
+        if not created_at.tzinfo:
+            created_at = timezone.make_aware(created_at, timezone=timezone.get_current_timezone())
+        
+        time_elapsed = timezone.now() - created_at
         return (time_elapsed.total_seconds() < settings.OTP_VALIDITY_MINUTES * 60) and not self.is_verified
 
     def record_attempt(self):
         self.attempts += 1
-        self.last_attempt = timezone.now()
+        self.last_attempt = timezone.now()  # Set to timezone-aware datetime
         self.save()
 
     def verify(self, submitted_code):
