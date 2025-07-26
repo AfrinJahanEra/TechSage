@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiCornerUpLeft } from 'react-icons/fi';
+import { BiSolidQuoteRight } from 'react-icons/bi'; // Changed to BiSolidQuoteRight for closing quotation mark
 
 const BlockquoteControls = ({ editorRef, darkMode, primaryColor, activeFormats, formatText, updateActiveFormats }) => {
   const handleBlockquote = () => {
@@ -109,7 +109,7 @@ const BlockquoteControls = ({ editorRef, darkMode, primaryColor, activeFormats, 
           '--tw-ring-color': primaryColor
         }}
       >
-        <FiCornerUpLeft className="font-bold" />
+        <BiSolidQuoteRight className="font-bold" />
       </button>
     </div>
   );
