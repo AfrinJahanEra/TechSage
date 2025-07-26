@@ -15,7 +15,20 @@ cloudinary.config(
     api_key=os.getenv('CLOUDINARY_API_KEY'),
     api_secret=os.getenv('CLOUDINARY_API_SECRET')
 )
+# ...existing code...
 
+class UserListByRole(APIView):
+    def get(self, request):
+        role = request.GET.get('role', '').strip().lower()
+        if not role:
+            return Response({"error": "Role parameter is required"}, status=400)
+        try:
+            users = User.objects(role=role)
+            return Response([user.to_json() for user in users])
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+# ...existing code...
 class RegisterUser(APIView):
     def post(self, request):
         required_fields = ['username', 'email', 'password']

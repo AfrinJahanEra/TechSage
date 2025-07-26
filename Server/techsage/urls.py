@@ -5,7 +5,8 @@ from users.views import (
     LoginUser,
     UserProfile,
     UserSearch,
-    SavedBlogsAPI
+    SavedBlogsAPI,
+    UserListByRole
 )
 from blogs.views import (
     CreateBlog, ListBlogs, GetBlog, 
@@ -21,6 +22,7 @@ from blogs.views import (
 # from django.urls import path, include
 
 urlpatterns = [
+    path('users/by-role/', UserListByRole.as_view(), name='users-by-role'),
     path('register/', RegisterUser.as_view(), name='register'),
     path('login/', LoginUser.as_view(), name='login'),
     path('user/<str:username>/', UserProfile.as_view(), name='user-profile'),
