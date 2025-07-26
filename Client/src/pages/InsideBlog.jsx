@@ -216,7 +216,7 @@ const InsideBlog = () => {
             {/* Blog Content with Floating Thumbnail */}
             <div className="prose max-w-none">
               <div
-                className={`float-left mt-15 mr-5 mb-10 w-80 h-50 bg-cover bg-center rounded-md ${darkMode ? 'bg-gray-800' : 'bg-gray-200'}`}
+                className={`float-left mt-2 mr-5 mb-2 w-90 h-60 bg-cover bg-center rounded-md ${darkMode ? 'bg-gray-800' : 'bg-gray-200'}`}
                 style={{ backgroundImage: `url('${getThumbnailUrl(blog)}')` }}
               ></div>
               <div dangerouslySetInnerHTML={{ __html: blog.content }} />
