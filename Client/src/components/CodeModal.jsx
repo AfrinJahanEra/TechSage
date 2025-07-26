@@ -409,11 +409,7 @@ const CodeModal = ({
                           setDropdownOpen(false);
                         }}
                         className={`item-button cursor-pointer px-4 py-2 text-sm font-mono ${
-                          lang.value === codeLanguage
-                            ? `bg-[${primaryColor}] text-white`
-                            : darkMode
-                            ? 'text-gray-200'
-                            : 'text-gray-800'
+                          darkMode ? 'bg-[#374151] text-gray-200' : 'bg-white text-gray-800'
                         }`}
                       >
                         {lang.label}
