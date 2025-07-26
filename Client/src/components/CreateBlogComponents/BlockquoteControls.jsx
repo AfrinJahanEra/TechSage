@@ -1,18 +1,46 @@
 import React from 'react';
 import { FiCornerUpLeft } from 'react-icons/fi';
 
-const BlockquoteControls = ({ editorRef, darkMode, primaryColor, activeFormats, formatText }) => {
+const BlockquoteControls = ({ editorRef, darkMode, primaryColor, activeFormats, formatText, updateActiveFormats }) => {
   const handleBlockquote = () => {
-    const isActive = document.queryCommandState('formatBlock') && document.queryCommandValue('formatBlock') === 'blockquote';
     const selection = window.getSelection();
+    if (selection.rangeCount === 0) return;
 
-    if (selection.isCollapsed) {
-      document.execCommand('formatBlock', false, isActive ? 'p' : 'blockquote');
+    const range = selection.getRangeAt(0);
+    const parentBlockquote = range.startContainer.nodeType === Node.TEXT_NODE
+      ? range.startContainer.parentNode.closest('blockquote')
+      : range.startContainer.closest('blockquote');
+
+    if (parentBlockquote) {
+      // If inside a blockquote, exit by wrapping the current content in a paragraph
+      document.execCommand('formatBlock', false, 'p');
+      // Ensure the cursor is placed in a new paragraph after the blockquote
+      const newParagraph = document.createElement('p');
+      newParagraph.innerHTML = '<br>';
+      parentBlockquote.parentNode.insertBefore(newParagraph, parentBlockquote.nextSibling);
+      const newRange = document.createRange();
+      newRange.setStart(newParagraph, 0);
+      newRange.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(newRange);
     } else {
-      document.execCommand('formatBlock', false, isActive ? 'p' : 'blockquote');
+      // Apply blockquote to the selected content
+      document.execCommand('formatBlock', false, 'blockquote');
+      // Ensure the blockquote contains paragraphs
+      const blockquote = range.startContainer.nodeType === Node.TEXT_NODE
+        ? range.startContainer.parentNode.closest('blockquote')
+        : range.startContainer.closest('blockquote');
+      if (blockquote) {
+        const children = Array.from(blockquote.childNodes);
+        if (children.length === 0 || !children.every(child => child.nodeName === 'P')) {
+          const p = document.createElement('p');
+          p.appendChild(range.extractContents());
+          range.insertNode(p);
+        }
+      }
     }
     editorRef.current.focus();
-    formatText('formatBlock'); // Update active formats
+    updateActiveFormats();
   };
 
   return (

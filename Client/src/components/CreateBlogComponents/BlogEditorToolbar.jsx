@@ -33,7 +33,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
     const selection = window.getSelection();
     const range = selection.rangeCount > 0 ? selection.getRangeAt(0).cloneRange() : null;
     setSavedRange(range);
-    editorRef.current.focus(); // Ensure editor is focused
+    editorRef.current.focus();
     setShowCodeModal(true);
   };
 
@@ -50,7 +50,6 @@ const BlogEditorToolbar = ({ editorRef }) => {
       const langClass = codeElement?.className || 'language-javascript';
       const language = langClass.replace('language-', '') || 'javascript';
 
-      // Save range before editing
       const selection = window.getSelection();
       const range = selection.rangeCount > 0 ? selection.getRangeAt(0).cloneRange() : null;
       setSavedRange(range);
@@ -62,24 +61,44 @@ const BlogEditorToolbar = ({ editorRef }) => {
       setShowCodeModal(true);
     };
 
+    const handleKeyDown = (e) => {
+      if (e.key === 'Enter') {
+        const selection = window.getSelection();
+        if (selection.rangeCount === 0) return;
+
+        const range = selection.getRangeAt(0);
+        const parentBlockquote = range.startContainer.nodeType === Node.TEXT_NODE
+          ? range.startContainer.parentNode.closest('blockquote')
+          : range.startContainer.closest('blockquote');
+
+        if (parentBlockquote) {
+          e.preventDefault();
+          // Create a new paragraph inside the blockquote
+          const newParagraph = document.createElement('p');
+          newParagraph.innerHTML = '<br>';
+          range.deleteContents();
+          range.insertNode(newParagraph);
+          // Move cursor to the new paragraph
+          const newRange = document.createRange();
+          newRange.setStart(newParagraph, 0);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+          updateActiveFormats();
+        }
+      }
+    };
+
     editor.addEventListener('click', handleCodeClick);
+    editor.addEventListener('keydown', handleKeyDown);
     return () => {
       editor.removeEventListener('click', handleCodeClick);
+      editor.removeEventListener('keydown', handleKeyDown);
     };
   }, [editorRef]);
 
   const formatText = (command, value = null) => {
-    const isActive = document.queryCommandState(command);
     const selection = window.getSelection();
-
-    if (selection.isCollapsed) {
-      if (['bold', 'italic', 'underline'].includes(command)) {
-        document.execCommand(command, false, value);
-        updateActiveFormats();
-        editorRef.current.focus();
-        return;
-      }
-    }
     document.execCommand(command, false, value);
     editorRef.current.focus();
     updateActiveFormats();
@@ -189,9 +208,15 @@ const BlogEditorToolbar = ({ editorRef }) => {
       'justifyLeft',
       'justifyCenter',
       'justifyRight',
-      'justifyFull'
+      'justifyFull',
+      'formatBlock'
     ];
-    const active = formats.filter((cmd) => document.queryCommandState(cmd));
+    const active = formats.filter((cmd) => {
+      if (cmd === 'formatBlock') {
+        return document.queryCommandValue('formatBlock') === 'blockquote';
+      }
+      return document.queryCommandState(cmd);
+    });
     setActiveFormats(active);
   };
 
@@ -339,6 +364,14 @@ const BlogEditorToolbar = ({ editorRef }) => {
             white-space: pre;
             overflow-x: auto;
           }
+          blockquote {
+            border-left: 4px solid ${primaryColor};
+            padding-left: 1em;
+            margin: 1em 0;
+          }
+          blockquote p {
+            margin: 0;
+          }
         `}
       </style>
       <div
@@ -399,13 +432,14 @@ const BlogEditorToolbar = ({ editorRef }) => {
                 setActiveFormats={setActiveFormats}
               />
             )}
-            {index === 6 && ( // Insert BlockquoteControls before 'Insert Link' (index 7)
+            {index === 6 && (
               <BlockquoteControls
                 editorRef={editorRef}
                 darkMode={darkMode}
                 primaryColor={primaryColor}
                 activeFormats={activeFormats}
                 formatText={formatText}
+                updateActiveFormats={updateActiveFormats}
               />
             )}
           </React.Fragment>
@@ -432,7 +466,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
           setSelectedCodeBlock={setSelectedCodeBlock}
           darkMode={darkMode}
           primaryColor={primaryColor}
-          savedRange={savedRange} // Pass savedRange to CodeModal
+          savedRange={savedRange}
         />
       )}
 
