@@ -39,6 +39,7 @@ const CodeModal = ({
   const editorViewRef = useRef(null);
   const previewRef = useRef(null);
   const [error, setError] = useState(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const languages = [
     { value: 'javascript', label: 'JavaScript', extension: javascript() },
@@ -73,7 +74,7 @@ const CodeModal = ({
           }),
           EditorView.theme({
             '&': {
-              height: '8rem',
+              height: '12rem',
               border: `1px solid ${darkMode ? '#4b5563' : '#d1d5db'}`,
               borderRadius: '0.5rem',
               backgroundColor: darkMode ? '#1f2937' : '#fff',
@@ -94,7 +95,6 @@ const CodeModal = ({
               return false;
             },
             click(event, view) {
-              // Place cursor at clicked position
               const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
               if (pos !== null) {
                 view.dispatch({ selection: { anchor: pos, head: pos } });
@@ -112,7 +112,6 @@ const CodeModal = ({
         parent: editorContainerRef.current,
       });
 
-      // Focus editor and place cursor at the end of the content when modal opens
       editorViewRef.current.focus();
       if (isEditingCodeBlock) {
         const docLength = editorViewRef.current.state.doc.length;
@@ -164,6 +163,14 @@ const CodeModal = ({
     e.stopPropagation();
   };
 
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('.custom-dropdown')) setDropdownOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleInsertCodeBlock = () => {
     if (!codeInput.trim()) {
       setError('Code input cannot be empty');
@@ -177,16 +184,14 @@ const CodeModal = ({
     }
 
     try {
-      // Create code block element
       const pre = document.createElement('pre');
       const code = document.createElement('code');
-      code.textContent = codeInput; // Preserve indentation, no trim()
+      code.textContent = codeInput;
       code.className = `language-${codeLanguage}`;
       pre.className = 'code-block';
       pre.contentEditable = 'false';
       pre.appendChild(code);
 
-      // Match preview styles with sharp borders
       pre.className = `flex-1 border p-3 overflow-auto ${
         darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'
       }`;
@@ -194,7 +199,6 @@ const CodeModal = ({
       pre.style.fontSize = '0.875rem';
       pre.style.borderRadius = '0';
 
-      // Add click event to edit code block
       pre.addEventListener('click', () => {
         try {
           const codeElement = pre.querySelector('code');
@@ -214,56 +218,42 @@ const CodeModal = ({
       const selection = window.getSelection();
       let range = savedRange || (selection.rangeCount > 0 ? selection.getRangeAt(0) : null);
 
-      console.log('SavedRange:', savedRange, 'Selection:', selection, 'Range:', range, 'editorRef.current:', editorRef.current);
-
-      // Validate or create range
       if (!range || !editorRef.current.contains(range.commonAncestorContainer)) {
-        console.log('Invalid range, creating new one');
         range = document.createRange();
         const targetNode = editorRef.current.lastChild || editorRef.current;
         range.selectNodeContents(targetNode);
-        range.collapse(false); // End of content
+        range.collapse(false);
         selection.removeAllRanges();
         selection.addRange(range);
       } else if (savedRange) {
-        console.log('Restoring saved range');
         selection.removeAllRanges();
         selection.addRange(savedRange);
         range = savedRange;
       }
 
-      // Handle editing mode
       if (isEditingCodeBlock) {
         const existingCodeBlock = editorRef.current.querySelector('.code-block');
         if (existingCodeBlock) {
-          console.log('Replacing existing code block');
           existingCodeBlock.replaceWith(pre);
         } else {
-          console.log('Inserting new code block in edit mode');
           range.deleteContents();
           range.insertNode(pre);
         }
       } else {
-        console.log('Inserting new code block at cursor');
         range.deleteContents();
         range.insertNode(pre);
       }
 
-      // Apply Prism.js highlighting to inserted code
-      console.log('Applying Prism.js highlighting to inserted code');
       Prism.highlightElement(code);
 
-      // Position cursor after code block
       const newRange = document.createRange();
       newRange.setStartAfter(pre);
       newRange.collapse(true);
       selection.removeAllRanges();
       selection.addRange(newRange);
 
-      // Ensure focus
       editorRef.current.focus();
 
-      // Close modal and reset state
       setShowCodeModal(false);
       setCodeInput('');
       setCodeLanguage('javascript');
@@ -319,12 +309,13 @@ const CodeModal = ({
             background-color: ${primaryColor} !important;
             color: white !important;
           }
-          .select-input:hover {
-            border-color: ${primaryColor} !important;
+          .template-button:hover {
+            background-color: ${primaryColor} !important;
+            color: white !important;
           }
-          .select-input:focus {
-            border-color: ${primaryColor} !important;
-            box-shadow: 0 0 0 2px ${primaryColor}20 !important;
+          .item-button:hover {
+            background-color: ${primaryColor} !important;
+            color: white !important;
           }
           .modal-content::-webkit-scrollbar {
             width: 8px;
@@ -352,7 +343,7 @@ const CodeModal = ({
         onClick={handleBackdropClick}
       >
         <div
-          className={`modal-content rounded-xl p-6 w-full max-w-3xl h-[350px] overflow-y-auto flex flex-col shadow-xl ${
+          className={`modal-content rounded-xl p-6 w-full max-w-3xl h-[450px] overflow-y-auto flex flex-col shadow-xl ${
             darkMode ? 'bg-gray-800 border-gray-700 scrollbar-track-gray-700 scrollbar-thumb-gray-500' : 'bg-white border-gray-200 scrollbar-track-gray-100 scrollbar-thumb-gray-400'
           }`}
           style={{
@@ -389,22 +380,48 @@ const CodeModal = ({
               >
                 Language
               </label>
-              <select
-                value={codeLanguage}
-                onChange={(e) => setCodeLanguage(e.target.value)}
-                className={`select-input w-full border rounded px-3 py-2 text-sm font-mono transition-colors duration-200 mb-4 ${
-                  darkMode
-                    ? 'bg-gray-700 text-white border-gray-600'
-                    : 'bg-white text-gray-800 border-gray-300'
-                }`}
-                autoFocus
-              >
-                {languages.map((lang) => (
-                  <option key={lang.value} value={lang.value}>
-                    {lang.label}
-                  </option>
-                ))}
-              </select>
+              <div className="relative custom-dropdown">
+                <button
+                  onClick={() => setDropdownOpen((prev) => !prev)}
+                  className={`template-button w-full flex justify-between items-center px-4 py-2 rounded-md border text-sm font-mono text-left transition-colors duration-200 ${
+                    dropdownOpen ? 'text-white' : darkMode ? 'text-gray-200' : 'text-gray-800'
+                  }`}
+                  style={{
+                    backgroundColor: dropdownOpen ? primaryColor : darkMode ? '#374151' : 'white',
+                    borderColor: dropdownOpen ? primaryColor : darkMode ? '#4b5563' : '#e5e7eb',
+                  }}
+                >
+                  {languages.find((lang) => lang.value === codeLanguage)?.label || 'Select Language'}
+                  <span className="ml-2">{dropdownOpen ? '▲' : '▼'}</span>
+                </button>
+                {dropdownOpen && (
+                  <ul
+                    className={`absolute z-10 mt-1 w-full border rounded-md shadow-lg max-h-40 overflow-y-auto ${
+                      darkMode ? 'bg-gray-800 border-gray-600 text-white' : 'bg-white border-gray-300 text-black'
+                    }`}
+                    style={{ top: '100%' }}
+                  >
+                    {languages.map((lang) => (
+                      <li
+                        key={lang.value}
+                        onClick={() => {
+                          setCodeLanguage(lang.value);
+                          setDropdownOpen(false);
+                        }}
+                        className={`item-button cursor-pointer px-4 py-2 text-sm font-mono ${
+                          lang.value === codeLanguage
+                            ? `bg-[${primaryColor}] text-white`
+                            : darkMode
+                            ? 'text-gray-200'
+                            : 'text-gray-800'
+                        }`}
+                      >
+                        {lang.label}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
               <label
                 className={`text-sm font-semibold block mb-1 ${
                   darkMode ? 'text-gray-300' : 'text-gray-700'
