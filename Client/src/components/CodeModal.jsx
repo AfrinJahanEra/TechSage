@@ -93,6 +93,16 @@ const CodeModal = ({
               event.stopPropagation();
               return false;
             },
+            click(event, view) {
+              // Place cursor at clicked position
+              const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
+              if (pos !== null) {
+                view.dispatch({ selection: { anchor: pos, head: pos } });
+                view.focus();
+              }
+              event.stopPropagation();
+              return true;
+            },
           }),
         ],
       });
@@ -102,7 +112,12 @@ const CodeModal = ({
         parent: editorContainerRef.current,
       });
 
+      // Focus editor and place cursor at the end of the content when modal opens
       editorViewRef.current.focus();
+      if (isEditingCodeBlock) {
+        const docLength = editorViewRef.current.state.doc.length;
+        editorViewRef.current.dispatch({ selection: { anchor: docLength, head: docLength } });
+      }
 
       return () => {
         editorViewRef.current?.destroy();
@@ -112,7 +127,7 @@ const CodeModal = ({
       console.error('CodeMirror initialization failed:', err);
       setError('Failed to initialize code editor');
     }
-  }, [codeLanguage, darkMode]);
+  }, [codeLanguage, darkMode, isEditingCodeBlock]);
 
   // Update CodeMirror content
   useEffect(() => {
@@ -162,27 +177,39 @@ const CodeModal = ({
     }
 
     try {
-      // Debug darkMode and styles
-      console.log('darkMode:', darkMode, 'Applying background:', darkMode ? '#f3f4f6' : '#000000');
-
       // Create code block element
       const pre = document.createElement('pre');
       const code = document.createElement('code');
-      code.textContent = codeInput; // Preserve indentation
+      code.textContent = codeInput; // Preserve indentation, no trim()
       code.className = `language-${codeLanguage}`;
       pre.className = 'code-block';
       pre.contentEditable = 'false';
       pre.appendChild(code);
 
-      // Apply Google Docs-style background for light mode, grey for dark mode
-      pre.style.setProperty('background', darkMode ? '#f3f4f6' : '#000000', 'important');
-      pre.style.setProperty('color', darkMode ? '#e2e8f0' : '#ffffff', 'important');
-      pre.style.padding = '1em';
-      pre.style.borderRadius = '0'; // Sharp borders
-      pre.style.overflowX = 'auto';
-      pre.style.margin = '1em 0';
-      pre.style.fontSize = '0.875rem';
+      // Match preview styles with sharp borders
+      pre.className = `flex-1 border p-3 overflow-auto ${
+        darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'
+      }`;
       pre.style.fontFamily = 'monospace';
+      pre.style.fontSize = '0.875rem';
+      pre.style.borderRadius = '0';
+
+      // Add click event to edit code block
+      pre.addEventListener('click', () => {
+        try {
+          const codeElement = pre.querySelector('code');
+          const currentCode = codeElement.textContent;
+          const currentLanguage = codeElement.className.replace('language-', '') || 'javascript';
+          setCodeInput(currentCode);
+          setCodeLanguage(currentLanguage);
+          setIsEditingCodeBlock(true);
+          setSelectedCodeBlock(pre);
+          setShowCodeModal(true);
+        } catch (err) {
+          console.error('Error setting up code block for editing:', err);
+          setError('Failed to edit code block');
+        }
+      });
 
       const selection = window.getSelection();
       let range = savedRange || (selection.rangeCount > 0 ? selection.getRangeAt(0) : null);
@@ -225,13 +252,6 @@ const CodeModal = ({
       // Apply Prism.js highlighting to inserted code
       console.log('Applying Prism.js highlighting to inserted code');
       Prism.highlightElement(code);
-
-      // Log applied styles for debugging
-      console.log('Inserted pre styles:', {
-        background: pre.style.background,
-        color: pre.style.color,
-        borderRadius: pre.style.borderRadius,
-      });
 
       // Position cursor after code block
       const newRange = document.createRange();
@@ -306,6 +326,20 @@ const CodeModal = ({
             border-color: ${primaryColor} !important;
             box-shadow: 0 0 0 2px ${primaryColor}20 !important;
           }
+          .modal-content::-webkit-scrollbar {
+            width: 8px;
+          }
+          .modal-content::-webkit-scrollbar-track {
+            background: ${darkMode ? '#1f2937' : '#f3f4f6'};
+            border-radius: 4px;
+          }
+          .modal-content::-webkit-scrollbar-thumb {
+            background: ${darkMode ? '#6b7280' : '#d1d5db'};
+            border-radius: 4px;
+          }
+          .modal-content::-webkit-scrollbar-thumb:hover {
+            background: ${darkMode ? '#9ca3af' : '#9ca3af'};
+          }
         `}
       </style>
       <div
@@ -318,8 +352,8 @@ const CodeModal = ({
         onClick={handleBackdropClick}
       >
         <div
-          className={`rounded-xl p-6 w-full max-w-3xl h-[350px] overflow-hidden flex flex-col shadow-xl ${
-            darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+          className={`modal-content rounded-xl p-6 w-full max-w-3xl h-[350px] overflow-y-auto flex flex-col shadow-xl ${
+            darkMode ? 'bg-gray-800 border-gray-700 scrollbar-track-gray-700 scrollbar-thumb-gray-500' : 'bg-white border-gray-200 scrollbar-track-gray-100 scrollbar-thumb-gray-400'
           }`}
           style={{
             border: '1px solid rgba(0, 0, 0, 0.12)',
@@ -389,15 +423,10 @@ const CodeModal = ({
               </div>
               <pre
                 ref={previewRef}
-                className={`flex-1 border p-3 overflow-auto`}
-                style={{
-                  fontFamily: 'monospace',
-                  fontSize: '0.875rem',
-                  background: darkMode ? '#f3f4f6' : '#000000',
-                  color: darkMode ? '#e2e8f0' : '#ffffff',
-                  border: `1px solid ${darkMode ? '#4b5563' : '#d1d5db'}`,
-                  borderRadius: '0', // Sharp borders
-                }}
+                className={`flex-1 border p-3 overflow-auto ${
+                  darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'
+                }`}
+                style={{ fontFamily: 'monospace', fontSize: '0.875rem', borderRadius: '0' }}
               >
                 <code className={`language-${codeLanguage}`}>
                   {codeInput || '// Enter your code here...'}
