@@ -4,8 +4,8 @@ from rest_framework import status
 from .models import OTP
 from .serializers import OTPSendSerializer, OTPVerifySerializer
 import logging
-from django.conf import settings 
-from users.models import User  # Import User model
+from django.conf import settings
+from users.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,6 @@ class VerifyOTPView(APIView):
             
             is_valid, message = otp.verify(otp_code)
             if is_valid:
-                # Update or create User.is_verified
                 user = User.objects(email=email).first()
                 if user:
                     user.is_verified = True

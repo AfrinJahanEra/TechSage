@@ -8,7 +8,7 @@ from datetime import timedelta
 class OTP(Document):
     email = StringField(required=True, unique=False)
     otp_code = StringField(max_length=6, required=True)
-    created_at = DateTimeField(default=timezone.now)  # Already timezone-aware
+    created_at = DateTimeField(default=timezone.now)
     is_verified = BooleanField(default=False)
     attempts = IntField(default=0)
     last_attempt = DateTimeField(null=True)
@@ -46,10 +46,17 @@ class OTP(Document):
         # Send OTP via email
         try:
             send_mail(
-                'Your Verification OTP',
-                f'Your OTP code is: {otp_code}\nThis code will expire in {settings.OTP_VALIDITY_MINUTES} minutes.',
-                settings.DEFAULT_FROM_EMAIL,
-                [email],
+                subject='Your TechSage Verification OTP',
+                message=(
+                    f'Hello,\n\n'
+                    f'Your OTP code for TechSage account verification is: {otp_code}\n'
+                    f'This code will expire in {settings.OTP_VALIDITY_MINUTES} minutes.\n\n'
+                    f'Please do not reply to this email, as it is sent from an unmonitored address.\n'
+                    f'For support, visit https://techsage.com/support.\n\n'
+                    f'Thank you,\nTechSage Team'
+                ),
+                from_email=None,  # Use DEFAULT_FROM_EMAIL ('TechSage <noreply@techsage.com>')
+                recipient_list=[email],
                 fail_silently=False,
             )
         except Exception as e:
@@ -59,17 +66,15 @@ class OTP(Document):
         return otp
 
     def is_valid(self):
-        # Ensure created_at is timezone-aware
         created_at = self.created_at
         if not created_at.tzinfo:
             created_at = timezone.make_aware(created_at, timezone=timezone.get_current_timezone())
-        
         time_elapsed = timezone.now() - created_at
         return (time_elapsed.total_seconds() < settings.OTP_VALIDITY_MINUTES * 60) and not self.is_verified
 
     def record_attempt(self):
         self.attempts += 1
-        self.last_attempt = timezone.now()  # Set to timezone-aware datetime
+        self.last_attempt = timezone.now()
         self.save()
 
     def verify(self, submitted_code):
