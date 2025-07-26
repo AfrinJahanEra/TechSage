@@ -1,4 +1,3 @@
-// src/pages/InsideBlog.jsx
 import { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -33,20 +32,16 @@ const InsideBlog = () => {
   const [relatedBlogs, setRelatedBlogs] = useState([]);
   const [loadingRelated, setLoadingRelated] = useState(true);
 
-  // Generate color variants
   const primaryDark = shadeColor(primaryColor, -20);
   const primaryLight = shadeColor(primaryColor, 20);
 
-  // Dynamic style variables for theme colors
   const themeStyles = {
     '--primary-color': primaryColor,
     '--primary-dark': primaryDark,
     '--primary-light': primaryLight,
   };
 
-
   useEffect(() => {
-
     if (location.state?.blog) {
       setBlog(location.state.blog);
       setLoading(false);
@@ -61,7 +56,6 @@ const InsideBlog = () => {
       };
       fetchFreshData();
     } else {
-
       const fetchBlog = async () => {
         try {
           setLoading(true);
@@ -83,7 +77,6 @@ const InsideBlog = () => {
         try {
           setLoadingRelated(true);
           const response = await api.get(`/published-blogs/?category=${blog.categories[0]}&limit=5`);
-          // Filter out the current blog from the results
           const filteredBlogs = response.data.blogs.filter(b => b.id !== blog.id);
           setRelatedBlogs(filteredBlogs);
           setLoadingRelated(false);
@@ -97,16 +90,12 @@ const InsideBlog = () => {
     }
   }, [blog, api]);
 
-
-  // InsideBlog.jsx - Add this to your existing code
   const handleReportSubmit = async (e) => {
     e.preventDefault();
-
     if (!user) {
       alert('Please login to report content');
       return;
     }
-
     try {
       const response = await api.post('/reports/submit/', {
         blog_id: id,
@@ -114,7 +103,6 @@ const InsideBlog = () => {
         reason: reportReason,
         details: reportDetails
       });
-
       setReportSubmitted(true);
     } catch (error) {
       console.error('Failed to submit report:', error);
@@ -158,13 +146,9 @@ const InsideBlog = () => {
       style={themeStyles}
     >
       <Navbar activePage="home" />
-
       <main className="container mx-auto px-4 md:px-20 py-20 pt-28">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Main Content */}
-          {/* Main Content */}
           <article className="flex-1">
-            {/* Article Header */}
             <header className={`border-b pb-6 mb-8 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
               <h1 className={`text-3xl md:text-4xl font-bold leading-tight mb-3 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                 {blog.title}
@@ -213,7 +197,6 @@ const InsideBlog = () => {
               </div>
             </header>
 
-            {/* Blog Content with Floating Thumbnail */}
             <div className="prose max-w-none">
               <div
                 className={`float-left mt-2 mr-5 mb-2 w-90 h-60 bg-cover bg-center rounded-md ${darkMode ? 'bg-gray-800' : 'bg-gray-200'}`}
@@ -222,65 +205,26 @@ const InsideBlog = () => {
               <div dangerouslySetInnerHTML={{ __html: blog.content }} />
             </div>
 
-
-
-            {/* Blog Actions */}
             <BlogActions
               upvotes={blog.upvotes?.length || 0}
               downvotes={blog.downvotes?.length || 0}
               onReport={() => setShowReportModal(true)}
               blogId={blog.id}
-              blogTitle={blog.title}z
+              blogTitle={blog.title}
+              blog={blog}
             />
-
-            {/* Author Bio
-            {blog.authors?.map(author => (
-              <div key={author.username} className={`flex flex-col md:flex-row gap-5 p-6 rounded-lg my-8 ${darkMode ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-800'}`}>
-                <img
-                  src={author?.avatar_url || "https://randomuser.me/api/portraits/women/44.jpg"}
-                  alt="Profile"
-                  className="w-20 h-20 rounded-full border-4 object-cover mr-0 md:mr-6 mb-4 md:mb-0"
-                  style={{ borderColor: primaryColor }}
-                />
-                <div>
-                  <h3 className="text-xl font-semibold">{author.username}</h3>
-                  <p className="text-sm mb-3" style={{ color: primaryColor }}>
-                    {author.job_title || 'Author'} {author.university ? `at ${author.university}` : ''}
-                  </p>
-                  <p className="mb-4">
-                    {author.bio || 'No bio provided.'}
-                  </p>
-                  <div className="flex gap-4">
-                    <a href="#" className={`${darkMode ? 'text-gray-300 hover:text-teal-400' : 'text-gray-700 hover:text-teal-500'}`}>
-                      <i className="fab fa-twitter"></i>
-                    </a>
-                    <a href="#" className={`${darkMode ? 'text-gray-300 hover:text-teal-400' : 'text-gray-700 hover:text-teal-500'}`}>
-                      <i className="fab fa-linkedin-in"></i>
-                    </a>
-                    <a href="#" className={`${darkMode ? 'text-gray-300 hover:text-teal-400' : 'text-gray-700 hover:text-teal-500'}`}>
-                      <i className="fab fa-google-scholar"></i>
-                    </a>
-                    <a href="#" className={`${darkMode ? 'text-gray-300 hover:text-teal-400' : 'text-gray-700 hover:text-teal-500'}`}>
-                      <i className="fas fa-envelope"></i>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            ))} */}
 
             <CommentSection blogId={id} />
           </article>
 
-          {/* Sidebar */}
-          <div className="lg:w-80 space-y-8" >
+          <div className="lg:w-80 space-y-8">
             <Sidebar />
-            <TopContributor/>
+            <TopContributor />
             <SearchForm />
           </div>
         </div>
       </main>
 
-      {/* Latest Research Section */}
       <section className={`py-16 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
         <div className="container mx-auto px-4 md:px-20">
           <h2 className={`text-3xl font-bold mb-4 relative pb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
@@ -323,7 +267,6 @@ const InsideBlog = () => {
         </div>
       </section>
 
-      {/* Report Modal */}
       {showReportModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className={`p-6 rounded-lg w-full max-w-md relative ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
@@ -446,7 +389,6 @@ const InsideBlog = () => {
           </div>
         </div>
       )}
-
       <Footer />
     </div>
   );

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTheme } from '../context/ThemeContext';
+import Download from './Download.jsx';
 
-
-const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle }) => {
+const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog }) => {
   const [votes, setVotes] = useState({
     up: upvotes,
     down: downvotes,
@@ -16,8 +16,6 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle }) => {
   const { user, api } = useAuth();
   const { primaryColor, darkMode } = useTheme();
 
-
-  // Add this function to handle plagiarism check
   const handlePlagiarismCheck = async () => {
     try {
       setLoadingPlagiarism(true);
@@ -33,7 +31,6 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle }) => {
       setLoadingPlagiarism(false);
     }
   };
-
 
   const handleVote = (type) => {
     if (!user) {
@@ -140,6 +137,7 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle }) => {
         </div>
 
         <div className="flex space-x-4">
+          <Download blog={blog} />
           <div className="relative">
             <button 
               onClick={() => setShowShareOptions(!showShareOptions)}
@@ -221,11 +219,9 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle }) => {
               </>
             )}
           </button>
-          {/* ... (keep delete button) */}
         </div>
       )}
 
-      {/* Plagiarism Result Display */}
       {plagiarismResult && (
         <div className={`mt-4 p-4 rounded-md ${darkMode ? 'bg-gray-800' : 'bg-blue-50'}`}>
           <h3 className="font-bold mb-2 flex items-center">
