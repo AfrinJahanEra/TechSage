@@ -1,7 +1,9 @@
-import React from 'react';
-import { BiSolidQuoteRight } from 'react-icons/bi'; // Changed to BiSolidQuoteRight for closing quotation mark
+import React, { useState } from 'react';
+import { BiSolidQuoteRight } from 'react-icons/bi';
 
 const BlockquoteControls = ({ editorRef, darkMode, primaryColor, activeFormats, formatText, updateActiveFormats }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
   const handleBlockquote = () => {
     const selection = window.getSelection();
     if (selection.rangeCount === 0) return;
@@ -12,13 +14,11 @@ const BlockquoteControls = ({ editorRef, darkMode, primaryColor, activeFormats, 
       : range.startContainer.closest('blockquote');
 
     if (parentBlockquote) {
-      // Find the current paragraph or parent element within the blockquote
       let currentNode = range.startContainer.nodeType === Node.TEXT_NODE
         ? range.startContainer.parentNode
         : range.startContainer;
       let currentParagraph = currentNode.closest('p') || currentNode;
 
-      // If the current node is not a paragraph, wrap it in a <p> to standardize
       if (currentParagraph.nodeName !== 'P') {
         const p = document.createElement('p');
         p.appendChild(range.extractContents());
@@ -26,14 +26,12 @@ const BlockquoteControls = ({ editorRef, darkMode, primaryColor, activeFormats, 
         currentParagraph = p;
       }
 
-      // Move the current paragraph after the blockquote
       if (parentBlockquote.nextSibling) {
         parentBlockquote.parentNode.insertBefore(currentParagraph, parentBlockquote.nextSibling);
       } else {
         parentBlockquote.parentNode.appendChild(currentParagraph);
       }
 
-      // Clean up empty paragraphs or <br> in the blockquote
       const children = Array.from(parentBlockquote.childNodes);
       children.forEach(child => {
         if (
@@ -44,23 +42,19 @@ const BlockquoteControls = ({ editorRef, darkMode, primaryColor, activeFormats, 
         }
       });
 
-      // If the blockquote is empty after moving the content, remove it
       if (parentBlockquote.childNodes.length === 0) {
         parentBlockquote.remove();
       }
 
-      // Normalize the paragraph to remove any blockquote-specific styling
-      currentParagraph.removeAttribute('style'); // Remove any inline styles
-      currentParagraph.classList.remove('blockquote'); // Remove any blockquote classes if applied
+      currentParagraph.removeAttribute('style');
+      currentParagraph.classList.remove('blockquote');
 
-      // Place the cursor at the end of the moved paragraph
       const newRange = document.createRange();
       newRange.selectNodeContents(currentParagraph);
-      newRange.collapse(false); // Place cursor at the end
+      newRange.collapse(false);
       selection.removeAllRanges();
       selection.addRange(newRange);
     } else {
-      // Apply blockquote to the selected content
       document.execCommand('formatBlock', false, 'blockquote');
       const blockquote = range.startContainer.nodeType === Node.TEXT_NODE
         ? range.startContainer.parentNode.closest('blockquote')
@@ -93,9 +87,13 @@ const BlockquoteControls = ({ editorRef, darkMode, primaryColor, activeFormats, 
           }
         `}
         onClick={handleBlockquote}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         style={{
           backgroundColor:
             activeFormats.includes('formatBlock') && document.queryCommandValue('formatBlock') === 'blockquote'
+              ? primaryColor
+              : isHovered
               ? primaryColor
               : darkMode
               ? '#374151'
@@ -111,6 +109,15 @@ const BlockquoteControls = ({ editorRef, darkMode, primaryColor, activeFormats, 
       >
         <BiSolidQuoteRight className="font-bold" />
       </button>
+      {isHovered && (
+        <div
+          className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${
+            darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'
+          }`}
+        >
+          Blockquote
+        </div>
+      )}
     </div>
   );
 };

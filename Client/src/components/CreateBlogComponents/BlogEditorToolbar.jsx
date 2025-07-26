@@ -1,15 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   FiBold, FiItalic, FiUnderline, FiAlignLeft, FiAlignCenter, FiAlignRight,
-  FiAlignJustify, FiLink, FiImage,
-  FiCode, FiRotateCcw, FiRotateCw, FiX
+  FiAlignJustify, FiLink, FiImage, FiCode, FiRotateCcw, FiRotateCw, FiX
 } from 'react-icons/fi';
 import { PiMathOperationsFill } from 'react-icons/pi';
 import { useTheme } from '../../context/ThemeContext';
 import LatexModal from './LatexModal';
 import LinkModal from './LinkModal';
 import ListControls from './ListControls';
-import CodeModal from './CodeModal';
 import BlockquoteControls from './BlockquoteControls';
 
 const BlogEditorToolbar = ({ editorRef }) => {
@@ -73,12 +71,10 @@ const BlogEditorToolbar = ({ editorRef }) => {
 
         if (parentBlockquote) {
           e.preventDefault();
-          // Create a new paragraph inside the blockquote
           const newParagraph = document.createElement('p');
           newParagraph.innerHTML = '<br>';
           range.deleteContents();
           range.insertNode(newParagraph);
-          // Move cursor to the new paragraph
           const newRange = document.createRange();
           newRange.setStart(newParagraph, 0);
           newRange.collapse(true);
@@ -200,16 +196,8 @@ const BlogEditorToolbar = ({ editorRef }) => {
     }
 
     const formats = [
-      'bold',
-      'italic',
-      'underline',
-      'insertUnorderedList',
-      'insertOrderedList',
-      'justifyLeft',
-      'justifyCenter',
-      'justifyRight',
-      'justifyFull',
-      'formatBlock'
+      'bold', 'italic', 'underline', 'insertUnorderedList', 'insertOrderedList',
+      'justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull', 'formatBlock'
     ];
     const active = formats.filter((cmd) => {
       if (cmd === 'formatBlock') {
@@ -404,8 +392,18 @@ const BlogEditorToolbar = ({ editorRef }) => {
                   setHoveredIcon(null);
                 }}
                 style={{
-                  backgroundColor: activeFormats.includes(button.command) ? primaryColor : darkMode ? '#374151' : 'white',
-                  borderColor: activeFormats.includes(button.command) ? primaryColor : darkMode ? '#4b5563' : '#e5e7eb',
+                  backgroundColor: activeFormats.includes(button.command)
+                    ? primaryColor
+                    : hoveredIcon === button.command
+                    ? primaryColor
+                    : darkMode
+                    ? '#374151'
+                    : 'white',
+                  borderColor: activeFormats.includes(button.command)
+                    ? primaryColor
+                    : darkMode
+                    ? '#4b5563'
+                    : '#e5e7eb',
                   '--tw-ring-color': primaryColor
                 }}
               >

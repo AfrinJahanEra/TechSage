@@ -320,12 +320,21 @@ const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setAct
             setHoveredIcon(null);
           }}
           style={{
-            backgroundColor: activeFormats.includes('insertUnorderedList') ? primaryColor : darkMode ? '#374151' : 'white',
-            borderColor: activeFormats.includes('insertUnorderedList') ? primaryColor : darkMode ? '#4b5563' : '#e5e7eb'
+            backgroundColor: activeFormats.includes('insertUnorderedList') || hoveredIcon === 'insertUnorderedList'
+              ? primaryColor
+              : darkMode
+              ? '#374151'
+              : 'white',
+            borderColor: activeFormats.includes('insertUnorderedList') || hoveredIcon === 'insertUnorderedList'
+              ? primaryColor
+              : darkMode
+              ? '#4b5563'
+              : '#e5e7eb',
+            '--tw-ring-color': primaryColor
           }}
         >
-          <FiList />
-          <FiChevronDown className="text-sm" />
+          <FiList className="font-bold" />
+          <FiChevronDown className="font-bold" />
         </button>
 
         {tooltip === 'Bullet List' && (
@@ -393,12 +402,21 @@ const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setAct
             setHoveredIcon(null);
           }}
           style={{
-            backgroundColor: activeFormats.includes('insertOrderedList') ? primaryColor : darkMode ? '#374151' : 'white',
-            borderColor: activeFormats.includes('insertOrderedList') ? primaryColor : darkMode ? '#4b5563' : '#e5e7eb'
+            backgroundColor: activeFormats.includes('insertOrderedList') || hoveredIcon === 'insertOrderedList'
+              ? primaryColor
+              : darkMode
+              ? '#374151'
+              : 'white',
+            borderColor: activeFormats.includes('insertOrderedList') || hoveredIcon === 'insertOrderedList'
+              ? primaryColor
+              : darkMode
+              ? '#4b5563'
+              : '#e5e7eb',
+            '--tw-ring-color': primaryColor
           }}
         >
-          <MdFormatListNumbered />
-          <FiChevronDown className="text-sm" />
+          <MdFormatListNumbered className="font-bold" />
+          <FiChevronDown className="font-bold" />
         </button>
 
         {tooltip === 'Numbered List' && (
