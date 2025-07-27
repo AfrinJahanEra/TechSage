@@ -8,11 +8,11 @@ const HeadingControls = ({ editorRef, darkMode, primaryColor, activeFormats, set
   const headingButtonRef = useRef(null);
 
   const headingStyles = [
-    { name: 'Heading 1', tag: 'h1', style: 'font-size: 2em; font-weight: bold; margin: 0.67em 0; line-height: 1.2;' },
-    { name: 'Heading 2', tag: 'h2', style: 'font-size: 1.5em; font-weight: bold; margin: 0.83em 0; line-height: 1.3;' },
-    { name: 'Heading 3', tag: 'h3', style: 'font-size: 1.17em; font-weight: bold; margin: 1em 0; line-height: 1.4;' },
-    { name: 'Heading 4', tag: 'h4', style: 'font-size: 1em; font-weight: bold; margin: 1.33em 0; line-height: 1.5;' },
-    { name: 'Paragraph', tag: 'p', style: 'font-size: 1em; margin: 1em 0; line-height: 1.6;' },
+    { name: 'Heading 1', tag: 'h1', style: 'font-size: 28px; font-weight: bold; color: #000000; margin: 0.67em 0; line-height: 1.2;' },
+    { name: 'Heading 2', tag: 'h2', style: 'font-size: 24px; font-weight: bold; color: #000000; margin: 0.83em 0; line-height: 1.3;' },
+    { name: 'Heading 3', tag: 'h3', style: 'font-size: 20px; font-weight: bold; color: #5F6368; margin: 1em 0; line-height: 1.4;' },
+    { name: 'Heading 4', tag: 'h4', style: 'font-size: 18px; font-weight: bold; color: #80868B; margin: 1.33em 0; line-height: 1.5;' },
+    { name: 'Normal Text', tag: 'p', style: 'font-weight: normal;' },
   ];
 
   const handleSelectHeading = (styleObj) => {
@@ -25,20 +25,39 @@ const HeadingControls = ({ editorRef, darkMode, primaryColor, activeFormats, set
 
     try {
       let currentBlock;
+      let textContent = '';
+
       if (range && editor.contains(range.startContainer)) {
-        // Find the current block element
-        currentBlock = range.startContainer.nodeType === Node.ELEMENT_NODE
-          ? range.startContainer.closest('h1, h2, h3, h4, p, div')
-          : range.startContainer.parentNode.closest('h1, h2, h3, h4, p, div');
+        // Check if the selection is a text node directly in the editor
+        if (range.startContainer.nodeType === Node.TEXT_NODE && range.startContainer.parentNode === editor) {
+          // Wrap loose text in a <p> element
+          textContent = range.startContainer.textContent || '<br>';
+          const tempBlock = document.createElement('p');
+          tempBlock.innerHTML = textContent;
+          range.startContainer.parentNode.replaceChild(tempBlock, range.startContainer);
+          currentBlock = tempBlock;
+
+          // Update range to point to the new <p>
+          const newRange = document.createRange();
+          newRange.selectNodeContents(currentBlock);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+        } else {
+          // Find the current block element
+          currentBlock = range.startContainer.nodeType === Node.ELEMENT_NODE
+            ? range.startContainer.closest('h1, h2, h3, h4, p, div')
+            : range.startContainer.parentNode.closest('h1, h2, h3, h4, p, div');
+        }
 
         if (currentBlock && currentBlock !== editor) {
           // Replace the current block with the new heading tag
+          textContent = currentBlock.innerHTML || '<br>';
           const newBlock = document.createElement(styleObj.tag);
           newBlock.style.cssText = styleObj.style;
-          newBlock.innerHTML = currentBlock.innerHTML || '<br>';
+          newBlock.innerHTML = textContent;
 
-          // Preserve inline styles and formatting
-          const inlineStyles = ['font-weight', 'font-style', 'text-decoration'];
+          // Preserve inline styles, but reset font-weight for Normal Text
+          const inlineStyles = styleObj.tag === 'p' ? ['font-style', 'text-decoration'] : ['font-weight', 'font-style', 'text-decoration'];
           inlineStyles.forEach((style) => {
             const value = window.getComputedStyle(currentBlock)[style];
             if (value && value !== 'normal' && value !== 'none') {
@@ -51,17 +70,23 @@ const HeadingControls = ({ editorRef, darkMode, primaryColor, activeFormats, set
 
           // Restore selection
           const newRange = document.createRange();
-          newRange.setStart(range.startContainer, range.startOffset);
-          newRange.setEnd(range.endContainer, range.endOffset);
+          newRange.setStart(currentBlock, 0);
+          newRange.setEnd(currentBlock, currentBlock.childNodes.length);
           selection.removeAllRanges();
           selection.addRange(newRange);
         } else {
-          // If no valid block, create a new one
+          // If no valid block, create a new one with selected text
+          textContent = range ? range.toString() : '<br>';
           const newBlock = document.createElement(styleObj.tag);
           newBlock.style.cssText = styleObj.style;
-          newBlock.innerHTML = '<br>';
-          range.deleteContents();
-          range.insertNode(newBlock);
+          newBlock.innerHTML = textContent || '<br>';
+
+          if (range) {
+            range.deleteContents();
+            range.insertNode(newBlock);
+          } else {
+            editor.appendChild(newBlock);
+          }
           currentBlock = newBlock;
 
           const newRange = document.createRange();
@@ -93,6 +118,37 @@ const HeadingControls = ({ editorRef, darkMode, primaryColor, activeFormats, set
 
     setShowHeadingDropdown(false);
   };
+
+  // Handle Enter key to ensure new <p> elements have default styles
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Enter') {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        const currentBlock = range.startContainer.nodeType === Node.ELEMENT_NODE
+          ? range.startContainer.closest('h1, h2, h3, h4, p, div')
+          : range.startContainer.parentNode.closest('h1, h2, h3, h4, p, div');
+
+        if (currentBlock) {
+          // Allow browser to handle Enter, but ensure new <p> has no inline styles
+          setTimeout(() => {
+            const newBlock = editor.lastChild;
+            if (newBlock && newBlock.tagName.toLowerCase() === 'p') {
+              newBlock.style.cssText = 'font-weight: normal;';
+            }
+          }, 0);
+        }
+      }
+    };
+
+    editor.addEventListener('keydown', handleKeyDown);
+    return () => editor.removeEventListener('keydown', handleKeyDown);
+  }, [editorRef]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -136,12 +192,13 @@ const HeadingControls = ({ editorRef, darkMode, primaryColor, activeFormats, set
             color: white !important;
             border-color: ${primaryColor} !important;
           }
-          /* Ensure heading styles are applied */
-          [contenteditable] h1 { font-size: 2em; font-weight: bold; margin: 0.67em 0; line-height: 1.2; }
-          [contenteditable] h2 { font-size: 1.5em; font-weight: bold; margin: 0.83em 0; line-height: 1.3; }
-          [contenteditable] h3 { font-size: 1.17em; font-weight: bold; margin: 1em 0; line-height: 1.4; }
-          [contenteditable] h4 { font-size: 1em; font-weight: bold; margin: 1.33em 0; line-height: 1.5; }
-          [contenteditable] p { font-size: 1em; margin: 1em 0; line-height: 1.6; }
+          /* Google Docs-inspired heading styles */
+          [contenteditable] h1 { font-size: 28px !important; font-weight: bold !important; color: #000000 !important; margin: 0.67em 0 !important; line-height: 1.2 !important; }
+          [contenteditable] h2 { font-size: 24px !important; font-weight: bold !important; color: #000000 !important; margin: 0.83em 0 !important; line-height: 1.3 !important; }
+          [contenteditable] h3 { font-size: 20px !important; font-weight: bold !important; color: #5F6368 !important; margin: 1em 0 !important; line-height: 1.4 !important; }
+          [contenteditable] h4 { font-size: 18px !important; font-weight: bold !important; color: #80868B !important; margin: 1.33em 0 !important; line-height: 1.5 !important; }
+          /* Reset <p> styles to inherit editor defaults */
+          [contenteditable] p { all: unset; font-weight: normal !important; }
         `}
       </style>
       <div className="relative" ref={headingButtonRef}>
