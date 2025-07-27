@@ -120,7 +120,7 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-gray-50 font-sans overflow-hidden">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-teal-50 font-sans overflow-hidden">
       {/* Left Panel: Login Form */}
 
       <motion.div
