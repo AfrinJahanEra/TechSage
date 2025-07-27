@@ -65,6 +65,19 @@ const HeadingControls = ({ editorRef, darkMode, primaryColor, activeFormats, set
             }
           });
 
+          // Remove any <code> tags or code-related styles
+          if (newBlock.querySelector('code')) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = newBlock.innerHTML;
+            tempDiv.querySelectorAll('code').forEach((code) => {
+              const textNode = document.createTextNode(code.textContent);
+              code.parentNode.replaceChild(textNode, code);
+            });
+            newBlock.innerHTML = tempDiv.innerHTML;
+          }
+          newBlock.style.fontFamily = ''; // Reset font-family to avoid monospace
+          newBlock.style.removeProperty('font-family'); // Ensure no monospace remains
+
           currentBlock.parentNode.replaceChild(newBlock, currentBlock);
           currentBlock = newBlock;
 
@@ -110,6 +123,15 @@ const HeadingControls = ({ editorRef, darkMode, primaryColor, activeFormats, set
         selection.addRange(newRange);
       }
 
+      // Update formats and ensure 'code' and 'bold' are not included
+      setActiveFormats((prev) => {
+        const newFormats = prev.filter((format) => format !== 'codeBlock' && format !== 'bold');
+        if (styleObj.tag !== 'p') {
+          newFormats.push('heading');
+        }
+        console.log('HeadingControls - Updated activeFormats:', newFormats); // Debugging
+        return newFormats;
+      });
       updateActiveFormats();
       editor.scrollTop = scrollTop;
     } catch (error) {
@@ -140,7 +162,25 @@ const HeadingControls = ({ editorRef, darkMode, primaryColor, activeFormats, set
             const newBlock = editor.lastChild;
             if (newBlock && newBlock.tagName.toLowerCase() === 'p') {
               newBlock.style.cssText = 'font-weight: normal;';
+              newBlock.style.removeProperty('font-family'); // Prevent monospace
+              // Remove any <code> tags in new block
+              if (newBlock.querySelector('code')) {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = newBlock.innerHTML;
+                tempDiv.querySelectorAll('code').forEach((code) => {
+                  const textNode = document.createTextNode(code.textContent);
+                  code.parentNode.replaceChild(textNode, code);
+                });
+                newBlock.innerHTML = tempDiv.innerHTML;
+              }
             }
+            // Update formats to ensure 'codeBlock' and 'bold' are not active
+            setActiveFormats((prev) => {
+              const newFormats = prev.filter((format) => format !== 'codeBlock' && format !== 'bold');
+              console.log('HeadingControls - Enter activeFormats:', newFormats); // Debugging
+              return newFormats;
+            });
+            updateActiveFormats();
           }, 0);
         }
       }
@@ -148,7 +188,7 @@ const HeadingControls = ({ editorRef, darkMode, primaryColor, activeFormats, set
 
     editor.addEventListener('keydown', handleKeyDown);
     return () => editor.removeEventListener('keydown', handleKeyDown);
-  }, [editorRef]);
+  }, [editorRef, setActiveFormats, updateActiveFormats]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -207,7 +247,7 @@ const HeadingControls = ({ editorRef, darkMode, primaryColor, activeFormats, set
           className={`
             p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold flex items-center gap-1
             ${
-              activeFormats.includes('formatBlock') && getActiveHeadingStyle() !== 'p'
+              activeFormats.includes('heading') && getActiveHeadingStyle() !== 'p'
                 ? 'text-white'
                 : darkMode
                 ? 'text-gray-200 hover:text-white'
@@ -217,7 +257,7 @@ const HeadingControls = ({ editorRef, darkMode, primaryColor, activeFormats, set
           onClick={() => setShowHeadingDropdown(!showHeadingDropdown)}
           onMouseEnter={() => {
             setTooltip('Headings');
-            setHoveredIcon('formatBlock');
+            setHoveredIcon('heading');
           }}
           onMouseLeave={() => {
             setTooltip('');
@@ -225,15 +265,15 @@ const HeadingControls = ({ editorRef, darkMode, primaryColor, activeFormats, set
           }}
           style={{
             backgroundColor:
-              (activeFormats.includes('formatBlock') && getActiveHeadingStyle() !== 'p') ||
-              hoveredIcon === 'formatBlock'
+              (activeFormats.includes('heading') && getActiveHeadingStyle() !== 'p') ||
+              hoveredIcon === 'heading'
                 ? primaryColor
                 : darkMode
                 ? '#374151'
                 : 'white',
             borderColor:
-              (activeFormats.includes('formatBlock') && getActiveHeadingStyle() !== 'p') ||
-              hoveredIcon === 'formatBlock'
+              (activeFormats.includes('heading') && getActiveHeadingStyle() !== 'p') ||
+              hoveredIcon === 'heading'
                 ? primaryColor
                 : darkMode
                 ? '#4b5563'
@@ -262,7 +302,7 @@ const HeadingControls = ({ editorRef, darkMode, primaryColor, activeFormats, set
             }`}
           >
             {headingStyles.map((style) => {
-              const isActive = activeFormats.includes('formatBlock') && getActiveHeadingStyle() === style.tag;
+              const isActive = activeFormats.includes('heading') && getActiveHeadingStyle() === style.tag;
               return (
                 <button
                   key={style.tag}
