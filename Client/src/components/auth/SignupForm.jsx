@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { auth, provider, signInWithPopup } from '../../firebase.js';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const SignupForm = () => {
   const [formData, setFormData] = useState({
@@ -14,7 +16,7 @@ const SignupForm = () => {
     role: 'user',
     secretKey: ''
   });
-  const [errors, setErrors] = useState({});
+  const [passwordStrength, setPasswordStrength] = useState({ score: 0, label: '' });
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [otpVerified, setOtpVerified] = useState(false);
@@ -22,56 +24,143 @@ const SignupForm = () => {
   const { register, api } = useAuth();
   const navigate = useNavigate();
 
+  // Password strength checker
+  const checkPasswordStrength = (password) => {
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[a-z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+
+    let label = '';
+    if (score <= 2) label = 'Weak';
+    else if (score <= 4) label = 'Medium';
+    else label = 'Strong';
+
+    return { score, label };
+  };
+
+  // Username format validator
+  const validateUsernameFormat = (username) => {
+    const usernameRegex = /^[a-zA-Z][a-zA-Z0-9_]*$/;
+    if (!usernameRegex.test(username)) {
+      return 'Username must start with a letter and contain only letters, numbers, or underscores';
+    }
+    return null;
+  };
+
+  // Update password strength on password change
+  useEffect(() => {
+    if (formData.password) {
+      setPasswordStrength(checkPasswordStrength(formData.password));
+    } else {
+      setPasswordStrength({ score: 0, label: '' });
+    }
+  }, [formData.password]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
   };
 
-  const validate = () => {
-    const newErrors = {};
-    if (!formData.name) newErrors.name = 'Name is required';
-    if (!formData.university) newErrors.university = 'University is required';
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!formData.email.endsWith('.edu')) {
-      newErrors.email = 'Must be a .edu email';
-    }
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'At least 8 characters';
-    }
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
-    if (formData.role === 'admin' || formData.role === 'moderator') {
-      if (!formData.secretKey) {
-        newErrors.secretKey = 'Key is required';
-      } else if (formData.secretKey !== 'academic123') {
-        newErrors.secretKey = 'Invalid key';
+  const validate = async () => {
+    let isValid = true;
+
+    // Validate username format and uniqueness
+    if (!formData.name) {
+      toast.error('Name is required', { position: 'top-right', autoClose: 3000, theme: 'light', toastId: 'name-error' });
+      isValid = false;
+    } else {
+      const username = formData.name.replace(/\s+/g, '').toLowerCase();
+      const usernameFormatError = validateUsernameFormat(username);
+      if (usernameFormatError) {
+        toast.error(usernameFormatError, { position: 'top-right', autoClose: 3000, theme: 'light', toastId: 'username-format-error' });
+        isValid = false;
+      } else {
+        try {
+          const response = await api.post('/api/auth/check-username/', { username });
+          if (!response.data.available) {
+            toast.error('Username is already taken', { position: 'top-right', autoClose: 3000, theme: 'light', toastId: 'username-taken-error' });
+            isValid = false;
+          }
+        } catch (error) {
+          const errorMessage = error.response?.data?.error || 'Failed to verify username. Please try again.';
+          toast.error(errorMessage, {
+            position: 'top-right',
+            autoClose: 3000,
+            theme: 'light',
+            toastId: 'username-check-error'
+          });
+          isValid = false;
+        }
       }
     }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+
+    if (!formData.university) {
+      toast.error('University is required', { position: 'top-right', autoClose: 3000, theme: 'light', toastId: 'university-error' });
+      isValid = false;
+    }
+
+    if (!formData.email) {
+      toast.error('Email is required', { position: 'top-right', autoClose: 3000, theme: 'light', toastId: 'email-error' });
+      isValid = false;
+    } else if (!formData.email.endsWith('.edu')) {
+      toast.error('Must be a .edu email', { position: 'top-right', autoClose: 3000, theme: 'light', toastId: 'email-format-error' });
+      isValid = false;
+    }
+
+    if (!formData.password) {
+      toast.error('Password is required', { position: 'top-right', autoClose: 3000, theme: 'light', toastId: 'password-error' });
+      isValid = false;
+    } else {
+      const { score } = checkPasswordStrength(formData.password);
+      if (score < 4) {
+        toast.error('Password must be at least 8 characters, include uppercase, lowercase, number, and special character', {
+          position: 'top-right',
+          autoClose: 3000,
+          theme: 'light',
+          toastId: 'password-strength-error'
+        });
+        isValid = false;
+      }
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      toast.error('Passwords do not match', { position: 'top-right', autoClose: 3000, theme: 'light', toastId: 'confirm-password-error' });
+      isValid = false;
+    }
+
+    if (formData.role === 'admin' || formData.role === 'moderator') {
+      if (!formData.secretKey) {
+        toast.error('Verification key is required', { position: 'top-right', autoClose: 3000, theme: 'light', toastId: 'secret-key-error' });
+        isValid = false;
+      } else if (formData.secretKey !== 'academic123') {
+        toast.error('Invalid verification key', { position: 'top-right', autoClose: 3000, theme: 'light', toastId: 'secret-key-invalid-error' });
+        isValid = false;
+      }
+    }
+
+    return isValid;
   };
 
   const handleSendOtp = async (e) => {
     e.preventDefault();
-    if (validate()) {
+    if (await validate()) {
       setLoading(true);
       try {
         const response = await api.post('/api/auth/send-otp/', { email: formData.email });
         setOtpSent(true);
-        setErrors({});
+        toast.success('OTP sent to your email', { position: 'top-right', autoClose: 3000, theme: 'light', toastId: 'otp-sent' });
       } catch (error) {
-        setErrors({
-          api: error.response?.data?.error || error.response?.data?.details || 'Failed to send OTP.'
+        toast.error(error.response?.data?.error || error.response?.data?.details || 'Failed to send OTP', {
+          position: 'top-right',
+          autoClose: 3000,
+          theme: 'light',
+          toastId: 'otp-error'
         });
       } finally {
         setLoading(false);
@@ -91,17 +180,20 @@ const SignupForm = () => {
         });
         if (response.data.email_verified) {
           setOtpVerified(true);
-          setErrors({});
+          toast.success('Email verified successfully', { position: 'top-right', autoClose: 3000, theme: 'light', toastId: 'otp-verified' });
         }
       } catch (error) {
-        setErrors({
-          otp: error.response?.data?.error || 'Invalid OTP.'
+        toast.error(error.response?.data?.error || 'Invalid OTP', {
+          position: 'top-right',
+          autoClose: 3000,
+          theme: 'light',
+          toastId: 'otp-invalid'
         });
       } finally {
         setLoading(false);
       }
     } else {
-      setErrors({ otp: 'Please enter all 6 digits.' });
+      toast.error('Please enter all 6 digits', { position: 'top-right', autoClose: 3000, theme: 'light', toastId: 'otp-digits' });
     }
   };
 
@@ -126,6 +218,23 @@ const SignupForm = () => {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       const username = user.displayName?.replace(/\s+/g, '').toLowerCase() || 'googleuser';
+      // Check username format
+      const usernameFormatError = validateUsernameFormat(username);
+      if (usernameFormatError) {
+        toast.error(usernameFormatError, { position: 'top-right', autoClose: 3000, theme: 'light', toastId: 'google-username-format-error' });
+        return;
+      }
+      // Check username uniqueness
+      const response = await api.post('/api/auth/check-username/', { username });
+      if (!response.data.available) {
+        toast.error('Username is already taken. Please try a different name.', {
+          position: 'top-right',
+          autoClose: 3000,
+          theme: 'light',
+          toastId: 'google-username-taken'
+        });
+        return;
+      }
       const userData = {
         username,
         email: user.email,
@@ -136,17 +245,20 @@ const SignupForm = () => {
       };
       await register(userData);
       navigate('/home');
+      toast.success('Signed up successfully with Google', { position: 'top-right', autoClose: 3000, theme: 'light', toastId: 'google-signup-success' });
     } catch (error) {
-      console.error('Google Sign-in Error:', error);
-      setErrors({
-        api: error.response?.data?.error || error.message || 'Google sign-in failed'
+      toast.error(error.response?.data?.error || error.message || 'Google sign-in failed', {
+        position: 'top-right',
+        autoClose: 3000,
+        theme: 'light',
+        toastId: 'google-signup-error'
       });
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validate() && otpVerified) {
+    if (await validate() && otpVerified) {
       setLoading(true);
       try {
         const username = formData.name.replace(/\s+/g, '').toLowerCase();
@@ -159,6 +271,7 @@ const SignupForm = () => {
           source: 'email'
         };
         await register(userData);
+        toast.success('Registration completed successfully', { position: 'top-right', autoClose: 3000, theme: 'light', toastId: 'registration-success' });
         if (formData.role === 'admin') {
           navigate('/admin');
         } else if (formData.role === 'moderator') {
@@ -167,14 +280,17 @@ const SignupForm = () => {
           navigate('/home');
         }
       } catch (error) {
-        setErrors({
-          api: error.error || error.response?.data?.error || 'Registration failed.'
+        toast.error(error.error || error.response?.data?.error || 'Registration failed', {
+          position: 'top-right',
+          autoClose: 3000,
+          theme: 'light',
+          toastId: 'registration-error'
         });
       } finally {
         setLoading(false);
       }
     } else if (!otpVerified) {
-      setErrors({ api: 'Please verify your email with OTP.' });
+      toast.error('Please verify your email with OTP', { position: 'top-right', autoClose: 3000, theme: 'light', toastId: 'otp-not-verified' });
     }
   };
 
@@ -229,21 +345,42 @@ const SignupForm = () => {
         initial={{ opacity: 0, x: 100 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.8 }}
-        className="lg:w-1/2 bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center p-6 lg:p-8"
+        className="lg:w-1/2 bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center p-8 lg:p-12"
       >
-        <div className="w-full flex flex-col justify-center text-white">
+        <div className="relative w-full h-full flex flex-col justify-center text-white">
           <motion.h1
-            variants={itemVariants}
-            className="text-3xl md:text-4xl font-bold mb-2"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+            className="text-4xl md:text-5xl font-bold mb-4"
           >
-            Join Us!
+            Welcome To TechSage
           </motion.h1>
           <motion.p
-            variants={itemVariants}
-            className="text-base md:text-lg"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+            className="text-lg md:text-xl"
           >
-            Start your journey.
+            Sign Up & Start Your Journey
           </motion.p>
+          {/* Floating Shapes */}
+          <motion.div
+            className="absolute top-10 right-10 w-20 h-20 bg-white bg-opacity-20 rounded-full"
+            animate={{
+              y: [0, -30, 0],
+              scale: [1, 1.2, 1],
+            }}
+            transition={{ repeat: Infinity, duration: 4 }}
+          />
+          <motion.div
+            className="absolute bottom-10 left-10 w-16 h-16 bg-white bg-opacity-20 rounded-full"
+            animate={{
+              y: [0, 30, 0],
+              scale: [1, 1.1, 1],
+            }}
+            transition={{ repeat: Infinity, duration: 5 }}
+          />
         </div>
       </motion.div>
 
@@ -281,22 +418,6 @@ const SignupForm = () => {
               </p>
             </motion.div>
 
-            <AnimatePresence>
-              {errors.api && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="mb-4 overflow-hidden"
-                >
-                  <div className="p-2 bg-red-50 border border-red-200 rounded-md text-red-600 text-xs font-medium">
-                    {errors.api}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
             {!otpSent ? (
               <motion.form
                 onSubmit={handleSendOtp}
@@ -305,208 +426,99 @@ const SignupForm = () => {
               >
                 <motion.div variants={itemVariants}>
                   <label htmlFor="name" className="block text-xs font-medium text-gray-700 mb-1">Full Name</label>
-                  <div className="relative">
-                    <motion.input
-                      type="text"
-                      id="name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      autoComplete="name"
-                      whileFocus={{ boxShadow: '0 0 0 2px rgba(13, 148, 136, 0.2)', borderColor: 'rgb(20, 184, 166)' }}
-                      className={`w-full px-3 py-2.5 border ${errors.name ? 'border-red-300' : 'border-gray-300'} rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 text-sm bg-white`}
-                      aria-invalid={errors.name ? 'true' : 'false'}
-                      aria-describedby={errors.name ? 'name-error' : undefined}
-                    />
-                    {errors.name && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="absolute right-3 top-2.5"
-                      >
-                        <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
-                      </motion.div>
-                    )}
-                  </div>
-                  <AnimatePresence>
-                    {errors.name && (
-                      <motion.p
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="mt-1 text-xs text-red-400"
-                      >
-                        {errors.name}
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
+                  <motion.input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    autoComplete="name"
+                    whileFocus={{ boxShadow: '0 0 0 2px #0D948820', borderColor: '#14B8A6' }}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 text-sm bg-white"
+                    aria-label="Full Name"
+                    placeholder="e.g., JohnDoe_123"
+                  />
                 </motion.div>
 
                 <motion.div variants={itemVariants}>
                   <label htmlFor="university" className="block text-xs font-medium text-gray-700 mb-1">University</label>
-                  <div className="relative">
-                    <motion.input
-                      type="text"
-                      id="university"
-                      name="university"
-                      value={formData.university}
-                      onChange={handleChange}
-                      autoComplete="organization"
-                      whileFocus={{ boxShadow: '0 0 0 2px rgba(13, 148, 136, 0.2)', borderColor: 'rgb(20, 184, 166)' }}
-                      className={`w-full px-3 py-2.5 border ${errors.university ? 'border-red-300' : 'border-gray-300'} rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 text-sm bg-white`}
-                      aria-invalid={errors.university ? 'true' : 'false'}
-                      aria-describedby={errors.university ? 'university-error' : undefined}
-                    />
-                    {errors.university && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="absolute right-3 top-2.5"
-                      >
-                        <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
-                      </motion.div>
-                    )}
-                  </div>
-                  <AnimatePresence>
-                    {errors.university && (
-                      <motion.p
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="mt-1 text-xs text-red-400"
-                      >
-                        {errors.university}
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
+                  <motion.input
+                    type="text"
+                    id="university"
+                    name="university"
+                    value={formData.university}
+                    onChange={handleChange}
+                    autoComplete="organization"
+                    whileFocus={{ boxShadow: '0 0 0 2px #0D948820', borderColor: '#14B8A6' }}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 text-sm bg-white"
+                    aria-label="University"
+                  />
                 </motion.div>
 
                 <motion.div variants={itemVariants}>
                   <label htmlFor="email" className="block text-xs font-medium text-gray-700 mb-1">University Email</label>
-                  <div className="relative">
-                    <motion.input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      autoComplete="email"
-                      whileFocus={{ boxShadow: '0 0 0 2px rgba(13, 148, 136, 0.2)', borderColor: 'rgb(20, 184, 166)' }}
-                      className={`w-full px-3 py-2.5 border ${errors.email ? 'border-red-300' : 'border-gray-300'} rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 text-sm bg-white`}
-                      placeholder="e.g., name@university.edu"
-                      aria-invalid={errors.email ? 'true' : 'false'}
-                      aria-describedby={errors.email ? 'email-error' : undefined}
-                    />
-                    {errors.email && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="absolute right-3 top-2.5"
-                      >
-                        <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
-                      </motion.div>
-                    )}
-                  </div>
-                  <AnimatePresence>
-                    {errors.email && (
-                      <motion.p
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="mt-1 text-xs text-red-400"
-                      >
-                        {errors.email}
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
+                  <motion.input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    autoComplete="email"
+                    whileFocus={{ boxShadow: '0 0 0 2px #0D948820', borderColor: '#14B8A6' }}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 text-sm bg-white"
+                    placeholder="e.g., name@university.edu"
+                    aria-label="University Email"
+                  />
                 </motion.div>
 
                 <motion.div variants={itemVariants}>
                   <label htmlFor="password" className="block text-xs font-medium text-gray-700 mb-1">Password</label>
-                  <div className="relative">
-                    <motion.input
-                      type="password"
-                      id="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      autoComplete="new-password"
-                      whileFocus={{ boxShadow: '0 0 0 2px rgba(13, 148, 136, 0.2)', borderColor: 'rgb(20, 184, 166)' }}
-                      className={`w-full px-3 py-2.5 border ${errors.password ? 'border-red-300' : 'border-gray-300'} rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 text-sm bg-white`}
-                      aria-invalid={errors.password ? 'true' : 'false'}
-                      aria-describedby={errors.password ? 'password-error' : undefined}
-                    />
-                    {errors.password && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="absolute right-3 top-2.5"
-                      >
-                        <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
-                      </motion.div>
-                    )}
-                  </div>
-                  <AnimatePresence>
-                    {errors.password && (
-                      <motion.p
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="mt-1 text-xs text-red-400"
-                      >
-                        {errors.password}
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
+                  <motion.input
+                    type="password"
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    autoComplete="new-password"
+                    whileFocus={{ boxShadow: '0 0 0 2px #0D948820', borderColor: '#14B8A6' }}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 text-sm bg-white"
+                    aria-label="Password"
+                  />
+                  {formData.password && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="mt-2"
+                    >
+                      <div className="flex items-center">
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full transition-all duration-300 ${
+                              passwordStrength.score <= 2 ? 'bg-red-500' :
+                              passwordStrength.score <= 4 ? 'bg-yellow-500' : 'bg-green-500'
+                            }`}
+                            style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
+                          ></div>
+                        </div>
+                        <span className="ml-2 text-xs text-gray-600">{passwordStrength.label}</span>
+                      </div>
+                    </motion.div>
+                  )}
                 </motion.div>
 
                 <motion.div variants={itemVariants}>
                   <label htmlFor="confirmPassword" className="block text-xs font-medium text-gray-700 mb-1">Confirm Password</label>
-                  <div className="relative">
-                    <motion.input
-                      type="password"
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      autoComplete="new-password"
-                      whileFocus={{ boxShadow: '0 0 0 2px rgba(13, 148, 136, 0.2)', borderColor: 'rgb(20, 184, 166)' }}
-                      className={`w-full px-3 py-2.5 border ${errors.confirmPassword ? 'border-red-300' : 'border-gray-300'} rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 text-sm bg-white`}
-                      aria-invalid={errors.confirmPassword ? 'true' : 'false'}
-                      aria-describedby={errors.confirmPassword ? 'confirmPassword-error' : undefined}
-                    />
-                    {errors.confirmPassword && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="absolute right-3 top-2.5"
-                      >
-                        <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
-                      </motion.div>
-                    )}
-                  </div>
-                  <AnimatePresence>
-                    {errors.confirmPassword && (
-                      <motion.p
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="mt-1 text-xs text-red-400"
-                      >
-                        {errors.confirmPassword}
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
+                  <motion.input
+                    type="password"
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    autoComplete="new-password"
+                    whileFocus={{ boxShadow: '0 0 0 2px #0D948820', borderColor: '#14B8A6' }}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 text-sm bg-white"
+                    aria-label="Confirm Password"
+                  />
                 </motion.div>
 
                 <motion.div variants={itemVariants}>
@@ -516,8 +528,9 @@ const SignupForm = () => {
                     name="role"
                     value={formData.role}
                     onChange={handleChange}
-                    whileFocus={{ boxShadow: '0 0 0 2px rgba(13, 148, 136, 0.2)', borderColor: 'rgb(20, 184, 166)' }}
+                    whileFocus={{ boxShadow: '0 0 0 2px #0D948820', borderColor: '#14B8A6' }}
                     className="w-full px-3 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 text-sm bg-white"
+                    aria-label="Account Type"
                   >
                     <option value="user">User</option>
                     <option value="moderator">Moderator</option>
@@ -528,43 +541,17 @@ const SignupForm = () => {
                 {(formData.role === 'admin' || formData.role === 'moderator') && (
                   <motion.div variants={itemVariants}>
                     <label htmlFor="secretKey" className="block text-xs font-medium text-gray-700 mb-1">Verification Key</label>
-                    <div className="relative">
-                      <motion.input
-                        type="password"
-                        id="secretKey"
-                        name="secretKey"
-                        value={formData.secretKey}
-                        onChange={handleChange}
-                        whileFocus={{ boxShadow: '0 0 0 2px rgba(13, 148, 136, 0.2)', borderColor: 'rgb(20, 184, 166)' }}
-                        className={`w-full px-3 py-2.5 border ${errors.secretKey ? 'border-red-300' : 'border-gray-300'} rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 text-sm bg-white`}
-                        placeholder="Enter verification key"
-                        aria-invalid={errors.secretKey ? 'true' : 'false'}
-                        aria-describedby={errors.secretKey ? 'secretKey-error' : undefined}
-                      />
-                      {errors.secretKey && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="absolute right-3 top-2.5"
-                        >
-                          <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                          </svg>
-                        </motion.div>
-                      )}
-                    </div>
-                    <AnimatePresence>
-                      {errors.secretKey && (
-                        <motion.p
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="mt-1 text-xs text-red-400"
-                        >
-                          {errors.secretKey}
-                        </motion.p>
-                      )}
-                    </AnimatePresence>
+                    <motion.input
+                      type="password"
+                      id="secretKey"
+                      name="secretKey"
+                      value={formData.secretKey}
+                      onChange={handleChange}
+                      whileFocus={{ boxShadow: '0 0 0 2px #0D948820', borderColor: '#14B8A6' }}
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 text-sm bg-white"
+                      placeholder="Enter verification key"
+                      aria-label="Verification Key"
+                    />
                   </motion.div>
                 )}
 
@@ -572,8 +559,6 @@ const SignupForm = () => {
                   <motion.button
                     type="submit"
                     disabled={loading}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
                     className="w-full py-3 px-4 bg-gradient-to-r from-teal-600 to-teal-500 text-white rounded-md font-medium text-sm hover:from-teal-500 hover:to-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                     aria-label="Send OTP"
                   >
@@ -602,8 +587,6 @@ const SignupForm = () => {
                   <motion.button
                     type="button"
                     onClick={handleGoogleSignup}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
                     className="mt-3 w-full py-3 px-4 border border-teal-200 rounded-md bg-teal-50 text-xs font-medium text-teal-700 hover:bg-teal-100 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 transition-all duration-200 flex items-center justify-center"
                     aria-label="Sign up with Google"
                   >
@@ -649,48 +632,20 @@ const SignupForm = () => {
                           maxLength="1"
                           value={digit}
                           onChange={(e) => handleOtpChange(index, e.target.value)}
-                          whileFocus={{ boxShadow: '0 0 0 2px rgba(13, 148, 136, 0.2)', borderColor: 'rgb(20, 184, 166)' }}
-                          className={`w-12 h-12 border ${errors.otp ? 'border-red-300' : 'border-gray-300'} rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 text-center text-xl font-mono bg-white`}
+                          whileFocus={{ boxShadow: '0 0 0 2px #0D948820', borderColor: '#14B8A6' }}
+                          className="w-12 h-12 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 text-center text-xl font-mono bg-white"
                           variants={itemVariants}
                           aria-label={`Digit ${index + 1}`}
-                          aria-invalid={errors.otp && !digit ? 'true' : 'false'}
-                          aria-describedby={errors.otp ? 'otp-error' : undefined}
                         />
                       ))}
                     </motion.div>
                   </div>
-                  <AnimatePresence>
-                    {errors.otp && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -5 }}
-                        className="relative mt-2"
-                      >
-                        <div className="flex justify-center">
-                          <svg className="w-5 h-5 text-red-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                          </svg>
-                          <motion.p
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="text-xs text-red-400"
-                          >
-                            {errors.otp}
-                          </motion.p>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
                 </motion.div>
 
                 <motion.div variants={itemVariants}>
                   <motion.button
                     type="submit"
                     disabled={loading}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
                     className="w-full py-3 px-4 bg-gradient-to-r from-teal-600 to-teal-500 text-sm font-medium text-white rounded-md hover:from-teal-500 hover:to-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     aria-label="Verify OTP"
                   >
@@ -742,8 +697,6 @@ const SignupForm = () => {
                   <motion.button
                     type="submit"
                     disabled={loading}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
                     className="w-full py-3 px-4 bg-gradient-to-r from-teal-600 to-teal-500 text-sm font-medium text-white rounded-md hover:from-teal-500 hover:to-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     aria-label="Complete Registration"
                   >

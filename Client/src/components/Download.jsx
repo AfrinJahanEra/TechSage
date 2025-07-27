@@ -1,11 +1,33 @@
 import jsPDF from 'jspdf';
 import { useTheme } from '../context/ThemeContext.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
+import { toast } from 'react-toastify';
 import { getThumbnailUrl, formatDate, calculateReadTime } from '../utils/blogUtils.js';
+import 'react-toastify/dist/ReactToastify.css';
 
-const Download = ({ blog }) => {
-  const { primaryColor } = useTheme();
+const Download = ({ blog, onDownload }) => {
+  const { primaryColor, darkMode } = useTheme();
+  const { user } = useAuth();
+
+  const showLoginToast = () => {
+    toast.error('Please login to perform this action', {
+      position: "top-right",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      theme: darkMode ? 'dark' : 'light'
+    });
+  };
 
   const handleDownload = async () => {
+    if (!user) {
+      showLoginToast();
+      onDownload?.();
+      return;
+    }
+
     try {
       const pdf = new jsPDF('p', 'pt', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
@@ -207,7 +229,15 @@ const Download = ({ blog }) => {
       pdf.save(`${blog.title.replace(/\s+/g, '_')}.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);
-      alert('Failed to generate PDF. Please try again.');
+      toast.error('Failed to generate PDF. Please try again.', {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: darkMode ? 'dark' : 'light'
+      });
     }
   };
 
@@ -224,7 +254,3 @@ const Download = ({ blog }) => {
 };
 
 export default Download;
-
-
-
-

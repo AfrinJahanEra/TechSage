@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTheme } from '../context/ThemeContext';
+import { toast } from 'react-toastify';
 import Download from './Download.jsx';
+import 'react-toastify/dist/ReactToastify.css';
 
 const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog }) => {
   const [votes, setVotes] = useState({
@@ -16,7 +18,24 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog }) 
   const { user, api } = useAuth();
   const { primaryColor, darkMode } = useTheme();
 
+  const showLoginToast = () => {
+    toast.error('Please login to perform this action', {
+      position: "top-right",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      theme: darkMode ? 'dark' : 'light'
+    });
+  };
+
   const handlePlagiarismCheck = async () => {
+    if (!user) {
+      showLoginToast();
+      return;
+    }
+
     try {
       setLoadingPlagiarism(true);
       setError(null);
@@ -34,7 +53,7 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog }) 
 
   const handleVote = (type) => {
     if (!user) {
-      alert('Please login to vote');
+      showLoginToast();
       return;
     }
 
@@ -84,6 +103,11 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog }) 
   };
 
   const shareBlog = (platform) => {
+    if (!user) {
+      showLoginToast();
+      return;
+    }
+
     const url = `${window.location.origin}/blog/${blogId}`;
     const text = `Check out this research: ${blogTitle}`;
     
@@ -140,7 +164,13 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog }) 
           <Download blog={blog} />
           <div className="relative">
             <button 
-              onClick={() => setShowShareOptions(!showShareOptions)}
+              onClick={() => {
+                if (!user) {
+                  showLoginToast();
+                  return;
+                }
+                setShowShareOptions(!showShareOptions);
+              }}
               className="flex items-center space-x-2 px-4 py-2 rounded-full transition-colors"
               style={{ backgroundColor: primaryColor, color: 'white' }}
             >
@@ -187,7 +217,7 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog }) 
           <button 
             onClick={() => {
               if (!user) {
-                alert('Please login to report content');
+                showLoginToast();
                 return;
               }
               onReport();
