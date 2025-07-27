@@ -15,7 +15,9 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 
 DEBUG = True  # Set to False in production
 
+
 ALLOWED_HOSTS = ['*']  # Specify hosts in production (e.g., ['tech-sage-5poh.vercel.app'])
+
 
 # Application definition
 INSTALLED_APPS = [
@@ -34,7 +36,10 @@ INSTALLED_APPS = [
     'channels',
     'reports',
     'checker',
+
+    'version_control',
     'auth.apps.CustomAuthConfig',  # Custom auth app
+
 ]
 
 MIDDLEWARE = [
