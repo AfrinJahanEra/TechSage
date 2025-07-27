@@ -12,7 +12,7 @@ import {
   getThumbnailUrl,
   formatDate,
   calculateReadTime,
-  normalizeBlog
+  normalizeBlog,
 } from '../utils/blogUtils.js';
 import BlogLink from '../components/BlogLink';
 import TopContributor from '../components/TopContributor.jsx';
@@ -97,11 +97,11 @@ const InsideBlog = () => {
       return;
     }
     try {
-      const response = await api.post('/reports/submit/', {
+      await api.post('/reports/submit/', {
         blog_id: id,
         user_id: user.id,
         reason: reportReason,
-        details: reportDetails
+        details: reportDetails,
       });
       setReportSubmitted(true);
     } catch (error) {
@@ -121,8 +121,8 @@ const InsideBlog = () => {
   if (error) {
     return (
       <div className={`min-h-screen flex items-center justify-center ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-800'}`}>
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Error loading blog</h2>
+        <div className="text-center p-4">
+          <h2 className="text-2xl md:text-3xl font-bold mb-4">Error loading blog</h2>
           <p>{error}</p>
         </div>
       </div>
@@ -132,8 +132,8 @@ const InsideBlog = () => {
   if (!blog) {
     return (
       <div className={`min-h-screen flex items-center justify-center ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-800'}`}>
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Blog not found</h2>
+        <div className="text-center p-4">
+          <h2 className="text-2xl md:text-3xl font-bold mb-4">Blog not found</h2>
           <p>The requested blog could not be found.</p>
         </div>
       </div>
@@ -146,21 +146,21 @@ const InsideBlog = () => {
       style={themeStyles}
     >
       <Navbar activePage="home" />
-      <main className="container mx-auto px-4 md:px-20 py-20 pt-28">
-        <div className="flex flex-col lg:flex-row gap-8">
+      <main className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-8 pt-24">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           <article className="flex-1">
-            <header className={`border-b pb-6 mb-8 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-              <h1 className={`text-3xl md:text-4xl font-bold leading-tight mb-3 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+            <header className={`border-b pb-4 mb-6 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold leading-tight mb-3">
                 {blog.title}
               </h1>
               <div className="flex flex-wrap gap-2 mb-2">
                 {blog.categories?.map((category, index) => (
                   <span
                     key={`cat-${index}`}
-                    className="px-3 py-1 text-sm rounded-full font-medium"
+                    className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-full font-medium"
                     style={{
                       backgroundColor: `${primaryColor}20`,
-                      color: primaryColor
+                      color: primaryColor,
                     }}
                   >
                     {category}
@@ -177,10 +177,11 @@ const InsideBlog = () => {
                   </span>
                 ))}
               </div>
-              <div className={`flex flex-wrap gap-4 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              <div className={`flex flex-wrap gap-3 text-xs sm:text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 <span>Published: {formatDate(blog.published_at)}</span>
                 <span>
-                  By: {blog.authors?.map((author, index) => (
+                  By:{' '}
+                  {blog.authors?.map((author, index) => (
                     <BlogLink key={index} blog={blog}>
                       <a
                         href={`/user/${author.username}`}
@@ -199,7 +200,7 @@ const InsideBlog = () => {
 
             <div className="prose max-w-none">
               <div
-                className={`float-left mt-2 mr-5 mb-2 w-90 h-60 bg-cover bg-center rounded-md ${darkMode ? 'bg-gray-800' : 'bg-gray-200'}`}
+                className="float-left mt-2 mr-4 mb-2 w-full sm:w-80 h-48 sm:h-60 bg-cover bg-center rounded-md"
                 style={{ backgroundImage: `url('${getThumbnailUrl(blog)}')` }}
               ></div>
               <div dangerouslySetInnerHTML={{ __html: blog.content }} />
@@ -217,21 +218,21 @@ const InsideBlog = () => {
             <CommentSection blogId={id} />
           </article>
 
-          <div className="lg:w-80 space-y-8">
+          <aside className="lg:w-80 space-y-6">
             <Sidebar />
             <TopContributor />
             <SearchForm />
-          </div>
+          </aside>
         </div>
       </main>
 
-      <section className={`py-16 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
-        <div className="container mx-auto px-4 md:px-20">
-          <h2 className={`text-3xl font-bold mb-4 relative pb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+      <section className={`py-12 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+        <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16">
+          <h2 className={`text-2xl md:text-3xl font-bold mb-4 relative pb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
             {blog?.categories?.[0] ? `More in ${blog.categories[0]}` : 'Latest Research'}
             <span className="absolute bottom-0 left-0 w-16 h-1" style={{ backgroundColor: primaryColor }}></span>
           </h2>
-          <p className={`text-xl mb-8 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+          <p className={`text-lg md:text-xl mb-6 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
             Explore more research in this category
           </p>
 
@@ -240,7 +241,7 @@ const InsideBlog = () => {
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
             </div>
           ) : relatedBlogs.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
               {relatedBlogs.map((relatedBlog) => {
                 const normalizedBlog = normalizeBlog(relatedBlog);
                 return (
@@ -250,8 +251,10 @@ const InsideBlog = () => {
                         className={`w-full h-full bg-cover bg-center ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}
                         style={{ backgroundImage: `url('${getThumbnailUrl(normalizedBlog)}')` }}
                       ></div>
-                      <div className={`absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${darkMode ? 'from-black/90' : 'from-black/80'}`}></div>
-                      <h3 className="absolute bottom-0 left-0 w-full p-4 text-white text-lg font-semibold translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                      <div
+                        className={`absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${darkMode ? 'from-black/90' : 'from-black/80'}`}
+                      ></div>
+                      <h3 className="absolute bottom-0 left-0 w-full p-4 text-white text-base sm:text-lg font-semibold translate-y-full group-hover:translate-y-0 transition-transform duration-300 line-clamp-2">
                         {normalizedBlog.title}
                       </h3>
                     </div>
@@ -268,76 +271,47 @@ const InsideBlog = () => {
       </section>
 
       {showReportModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className={`p-6 rounded-lg w-full max-w-md relative ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className={`p-4 sm:p-6 rounded-lg w-full max-w-md relative ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
             <button
               onClick={() => {
                 setShowReportModal(false);
                 setReportSubmitted(false);
               }}
-              className={`absolute top-4 right-4 text-2xl ${darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`absolute top-4 right-4 text-xl sm:text-2xl ${darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-gray-700'}`}
             >
               &times;
             </button>
 
             {!reportSubmitted ? (
               <>
-                <h3 className="text-xl font-bold mb-4">Report Content</h3>
-                <p className="mb-4">Please select the reason for reporting this academic content:</p>
+                <h3 className="text-lg sm:text-xl font-bold mb-4">Report Content</h3>
+                <p className="mb-4 text-sm sm:text-base">Please select the reason for reporting this academic content:</p>
 
                 <form onSubmit={handleReportSubmit}>
                   <div className="space-y-3 mb-4">
-                    <div className="flex items-center">
-                      <input
-                        type="radio"
-                        id="reason-inaccurate"
-                        name="report-reason"
-                        value="inaccurate"
-                        onChange={() => setReportReason('inaccurate')}
-                        className="mr-2"
-                        style={{ accentColor: primaryColor }}
-                      />
-                      <label htmlFor="reason-inaccurate">Inaccurate or misleading research</label>
-                    </div>
-                    <div className="flex items-center">
-                      <input
-                        type="radio"
-                        id="reason-plagiarism"
-                        name="report-reason"
-                        value="plagiarism"
-                        onChange={() => setReportReason('plagiarism')}
-                        className="mr-2"
-                        style={{ accentColor: primaryColor }}
-                      />
-                      <label htmlFor="reason-plagiarism">Plagiarism concerns</label>
-                    </div>
-                    <div className="flex items-center">
-                      <input
-                        type="radio"
-                        id="reason-methodological"
-                        name="report-reason"
-                        value="methodological"
-                        onChange={() => setReportReason('methodological')}
-                        className="mr-2"
-                        style={{ accentColor: primaryColor }}
-                      />
-                      <label htmlFor="reason-methodological">Methodological flaws</label>
-                    </div>
-                    <div className="flex items-center">
-                      <input
-                        type="radio"
-                        id="reason-other"
-                        name="report-reason"
-                        value="other"
-                        onChange={() => setReportReason('other')}
-                        className="mr-2"
-                        style={{ accentColor: primaryColor }}
-                      />
-                      <label htmlFor="reason-other">Other academic concern</label>
-                    </div>
+                    {[
+                      { id: 'reason-inaccurate', value: 'inaccurate', label: 'Inaccurate or misleading research' },
+                      { id: 'reason-plagiarism', value: 'plagiarism', label: 'Plagiarism concerns' },
+                      { id: 'reason-methodological', value: 'methodological', label: 'Methodological flaws' },
+                      { id: 'reason-other', value: 'other', label: 'Other academic concern' },
+                    ].map(({ id, value, label }) => (
+                      <div key={id} className="flex items-center">
+                        <input
+                          type="radio"
+                          id={id}
+                          name="report-reason"
+                          value={value}
+                          onChange={() => setReportReason(value)}
+                          className="mr-2"
+                          style={{ accentColor: primaryColor }}
+                        />
+                        <label htmlFor={id} className="text-sm sm:text-base">{label}</label>
+                      </div>
+                    ))}
                   </div>
 
-                  <label htmlFor="report-details" className="block mb-2">
+                  <label htmlFor="report-details" className="block mb-2 text-sm sm:text-base">
                     Academic justification for report (required):
                   </label>
                   <textarea
@@ -345,7 +319,7 @@ const InsideBlog = () => {
                     value={reportDetails}
                     onChange={(e) => setReportDetails(e.target.value)}
                     placeholder="Please provide academic rationale for your report with references if possible..."
-                    className={`w-full p-3 border rounded-md mb-4 min-h-32 focus:outline-none focus:ring-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-[var(--primary-color)]' : 'bg-white border-gray-300 text-gray-800 focus:border-[var(--primary-color)]'}`}
+                    className={`w-full p-3 border rounded-md mb-4 min-h-32 focus:outline-none focus:ring-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:ring-[var(--primary-color)]' : 'bg-white border-gray-300 text-gray-800 focus:ring-[var(--primary-color)]'}`}
                     style={{ '--tw-ring-color': primaryColor }}
                     required
                   ></textarea>
@@ -354,14 +328,14 @@ const InsideBlog = () => {
                     <button
                       type="button"
                       onClick={() => setShowReportModal(false)}
-                      className="px-6 py-2 border rounded-md hover:opacity-90 transition-colors duration-200"
+                      className="px-4 sm:px-6 py-2 border rounded-md hover:opacity-90 transition-colors duration-200 text-sm sm:text-base"
                       style={{ borderColor: primaryColor, color: primaryColor }}
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="px-6 py-2 text-white rounded-md hover:opacity-90 transition-colors duration-200"
+                      className="px-4 sm:px-6 py-2 text-white rounded-md hover:opacity-90 transition-colors duration-200 text-sm sm:text-base"
                       style={{ backgroundColor: primaryColor }}
                     >
                       Submit Report
@@ -371,15 +345,15 @@ const InsideBlog = () => {
               </>
             ) : (
               <div className="text-center py-6">
-                <div className="text-5xl mb-4" style={{ color: primaryColor }}>
+                <div className="text-4xl sm:text-5xl mb-4" style={{ color: primaryColor }}>
                   <i className="fas fa-check-circle"></i>
                 </div>
-                <p className="text-lg mb-6">
+                <p className="text-base sm:text-lg mb-6">
                   Thank you for your academic review. Our editorial board will evaluate this report.
                 </p>
                 <button
                   onClick={() => setShowReportModal(false)}
-                  className="px-6 py-2 text-white rounded-md hover:opacity-90 transition-colors duration-200"
+                  className="px-4 sm:px-6 py-2 text-white rounded-md hover:opacity-90 transition-colors duration-200 text-sm sm:text-base"
                   style={{ backgroundColor: primaryColor }}
                 >
                   Close
