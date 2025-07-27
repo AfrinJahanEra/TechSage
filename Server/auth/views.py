@@ -3,11 +3,32 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import OTP
 from .serializers import OTPSendSerializer, OTPVerifySerializer
-import logging
-from django.conf import settings
 from users.models import User
+from django.conf import settings
+import logging
 
 logger = logging.getLogger(__name__)
+
+class CheckUsernameView(APIView):
+    def post(self, request):
+        username = request.data.get('username')
+        if not username:
+            return Response({
+                'error': 'Username is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            user_exists = User.objects(username=username).first() is not None
+            logger.info(f"Username check for {username}: {'taken' if user_exists else 'available'}")
+            return Response({
+                'available': not user_exists
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error(f"Username check error for {username}: {str(e)}")
+            return Response({
+                'error': 'Failed to check username',
+                'details': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class SendOTPView(APIView):
     def post(self, request):

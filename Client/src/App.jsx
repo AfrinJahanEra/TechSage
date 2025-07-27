@@ -18,6 +18,7 @@ import Admin from './pages/Admin.jsx';
 import ModeratorDashboard from './pages/Moderator.jsx';
 import SearchForm from './components/SearchForm.jsx';
 import { ThemeProvider } from './context/ThemeContext';
+import { ToastContainer } from 'react-toastify';
 
 function AppRoutes() {
   const { firstVisit } = useAuth();
@@ -52,6 +53,7 @@ function App() {
       <ThemeProvider>
         <Router>
           <AppRoutes />
+          <ToastContainer />
         </Router>
       </ThemeProvider>
     </AuthProvider>

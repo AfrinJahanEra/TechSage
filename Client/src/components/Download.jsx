@@ -1,11 +1,34 @@
 import jsPDF from 'jspdf';
 import { useTheme } from '../context/ThemeContext.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
+import { toast } from 'react-toastify';
 import { getThumbnailUrl, formatDate, calculateReadTime } from '../utils/blogUtils.js';
+import { FaDownload } from 'react-icons/fa';
+import 'react-toastify/dist/ReactToastify.css';
 
-const Download = ({ blog }) => {
-  const { primaryColor } = useTheme();
+const Download = ({ blog, onDownload }) => {
+  const { primaryColor, darkMode } = useTheme();
+  const { user } = useAuth();
+
+  const showLoginToast = () => {
+    toast.error('Please login to perform this action', {
+      position: "top-right",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      theme: darkMode ? 'dark' : 'light'
+    });
+  };
 
   const handleDownload = async () => {
+    if (!user) {
+      showLoginToast();
+      onDownload?.();
+      return;
+    }
+
     try {
       const pdf = new jsPDF('p', 'pt', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
@@ -50,10 +73,10 @@ const Download = ({ blog }) => {
       pdf.setFillColor(primaryColor);
       pdf.rect(0, 0, pageWidth, 120, 'F');
       pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(28);
+      pdf.setFontSize(24);
       pdf.setTextColor(255, 255, 255); // White
       const titleLines = pdf.splitTextToSize(blog.title, contentWidth);
-      const titleHeight = titleLines.length * 32;
+      const titleHeight = titleLines.length * 28;
       const titleY = 40 + (100 - titleHeight) / 2; // Center vertically in title bar
       pdf.text(titleLines, pageWidth / 2, titleY, { align: 'center', maxWidth: contentWidth });
 
@@ -86,12 +109,12 @@ const Download = ({ blog }) => {
 
       // Metadata, centered
       pdf.setFont('times', 'normal');
-      pdf.setFontSize(12);
+      pdf.setFontSize(11);
       pdf.setTextColor(51, 51, 51); // #333
       const metadata = `By: ${blog.authors?.map(author => author.username).join(', ')} | Published: ${formatDate(blog.published_at)} | ${calculateReadTime(blog.content)}`;
       const metadataLines = pdf.splitTextToSize(metadata, contentWidth);
       pdf.text(metadataLines, pageWidth / 2, currentY, { align: 'center', maxWidth: contentWidth });
-      currentY += metadataLines.length * 16 + 15;
+      currentY += metadataLines.length * 14 + 15;
 
       // Categories, centered with wrapping
       const categories = blog.categories || [];
@@ -100,7 +123,7 @@ const Download = ({ blog }) => {
         let categoryRow = [];
         let rowWidth = 0;
         pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(10);
+        pdf.setFontSize(9);
 
         categories.forEach(category => {
           const categoryText = ` ${category} `;
@@ -112,10 +135,10 @@ const Download = ({ blog }) => {
               pdf.setFillColor(primaryColor);
               pdf.setDrawColor(primaryColor);
               pdf.setTextColor(255, 255, 255); // White
-              pdf.roundedRect(rowStartX + x, currentY - 12, width, 16, 8, 8, 'FD');
+              pdf.roundedRect(rowStartX + x, currentY - 10, width, 14, 7, 7, 'FD');
               pdf.text(text, rowStartX + x, currentY - 2);
             });
-            currentY += 20;
+            currentY += 18;
             categoryRow = [];
             rowWidth = 0;
             categoryX = 0;
@@ -132,17 +155,17 @@ const Download = ({ blog }) => {
             pdf.setFillColor(primaryColor);
             pdf.setDrawColor(primaryColor);
             pdf.setTextColor(255, 255, 255); // White
-            pdf.roundedRect(rowStartX + x, currentY - 12, width, 16, 8, 8, 'FD');
+            pdf.roundedRect(rowStartX + x, currentY - 10, width, 14, 7, 7, 'FD');
             pdf.text(text, rowStartX + x, currentY - 2);
           });
-          currentY += 20;
+          currentY += 18;
         }
       }
       currentY += 10;
 
       // Blog Content (starts on cover page)
       pdf.setFont('times', 'normal');
-      pdf.setFontSize(12);
+      pdf.setFontSize(11);
       pdf.setTextColor(51, 51, 51); // #333
 
       // Parse HTML content
@@ -155,31 +178,31 @@ const Download = ({ blog }) => {
           const text = node.textContent.trim();
           if (text) {
             pdf.setFont('times', 'normal');
-            pdf.setFontSize(12);
+            pdf.setFontSize(11);
             pdf.setTextColor(51, 51, 51); // #333
             const lines = pdf.splitTextToSize(text, contentWidth);
             lines.forEach(line => {
-              addNewPageIfNeeded(16);
+              addNewPageIfNeeded(14);
               pdf.text(line, margin, currentY);
-              currentY += 16;
+              currentY += 14;
             });
           }
         } else if (node.nodeType === Node.ELEMENT_NODE) {
           let fontStyle = 'normal';
-          let fontSize = 12;
+          let fontSize = 11;
           let indent = margin;
           if (node.tagName === 'B' || node.tagName === 'STRONG') {
             fontStyle = 'bold';
           } else if (node.tagName === 'I' || node.tagName === 'EM') {
             fontStyle = 'italic';
           } else if (node.tagName === 'H1' || node.tagName === 'H2') {
-            fontSize = 16;
+            fontSize = 14;
             fontStyle = 'bold';
-            currentY += 10;
-            addNewPageIfNeeded(20);
-          } else if (node.tagName === 'P') {
             currentY += 8;
-            addNewPageIfNeeded(16);
+            addNewPageIfNeeded(18);
+          } else if (node.tagName === 'P') {
+            currentY += 6;
+            addNewPageIfNeeded(14);
           } else if (node.tagName === 'LI') {
             indent = margin + 10;
             pdf.text('•', margin, currentY);
@@ -191,9 +214,9 @@ const Download = ({ blog }) => {
           node.childNodes.forEach(child => processNode(child));
 
           if (node.tagName === 'P' || node.tagName === 'LI') {
-            currentY += 8;
+            currentY += 6;
           } else if (node.tagName === 'H1' || node.tagName === 'H2') {
-            currentY += 10;
+            currentY += 8;
           }
         }
       };
@@ -207,24 +230,29 @@ const Download = ({ blog }) => {
       pdf.save(`${blog.title.replace(/\s+/g, '_')}.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);
-      alert('Failed to generate PDF. Please try again.');
+      toast.error('Failed to generate PDF. Please try again.', {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: darkMode ? 'dark' : 'light'
+      });
     }
   };
 
   return (
     <button
       onClick={handleDownload}
-      className="flex items-center space-x-2 px-4 py-2 rounded-full transition-colors"
+      className="flex items-center justify-center space-x-2 px-2 sm:px-4 py-1 sm:py-2 rounded-full hover:opacity-90 transition-colors text-sm sm:text-base w-10 sm:w-auto h-10 sm:h-auto"
       style={{ backgroundColor: primaryColor, color: 'white' }}
+      title="Download"
     >
-      <i className="fas fa-download"></i>
-      <span>Download</span>
+      <FaDownload className="text-base sm:text-lg" />
+      <span className="hidden sm:inline">Download</span>
     </button>
   );
 };
 
 export default Download;
-
-
-
-
