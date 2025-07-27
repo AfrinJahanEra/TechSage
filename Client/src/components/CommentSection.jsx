@@ -5,7 +5,6 @@ import { formatDistanceToNow } from 'date-fns';
 import { FaThumbsUp, FaReply, FaTrash, FaSpinner } from 'react-icons/fa';
 
 const CommentSection = ({ blogId }) => {
-  // State management
   const [comment, setComment] = useState('');
   const [replyTo, setReplyTo] = useState(null);
   const [replyContent, setReplyContent] = useState('');
@@ -18,17 +17,14 @@ const CommentSection = ({ blogId }) => {
   const [socketStatus, setSocketStatus] = useState('disconnected');
   const socket = useRef(null);
 
-  // Generate unique keys for comments
   const generateKey = useCallback((comment) => {
     return `${comment.id}-${new Date(comment.created_at).getTime()}`;
   }, []);
 
-  // Format comment date
   const formatDate = useCallback((dateString) => {
     return formatDistanceToNow(new Date(dateString), { addSuffix: true });
   }, []);
 
-  // Organize comments into hierarchical structure
   const organizeComments = useCallback((commentsData) => {
     const commentMap = {};
     const rootComments = [];
@@ -55,7 +51,6 @@ const CommentSection = ({ blogId }) => {
     setComments(rootComments);
   }, [formatDate, generateKey]);
 
-  // Handle new comments from WebSocket or API
   const handleNewComment = useCallback((comment, isFromCurrentUser = false) => {
     setComments(prev => {
       const formattedComment = {
@@ -65,13 +60,11 @@ const CommentSection = ({ blogId }) => {
         key: generateKey(comment)
       };
 
-      // Check if comment already exists (including optimistic updates)
       const exists = prev.some(c => c.id === comment.id) || 
                    prev.some(c => c.replies.some(r => r.id === comment.id));
       
       if (exists) return prev;
 
-      // If this is from the current user and we have an optimistic update, replace it
       if (isFromCurrentUser) {
         if (comment.parent) {
           return prev.map(c => 
@@ -93,7 +86,6 @@ const CommentSection = ({ blogId }) => {
         }
       }
       
-      // For comments from other users, just add them normally
       if (comment.parent) {
         return prev.map(c => 
           c.id === comment.parent 
@@ -115,11 +107,9 @@ const CommentSection = ({ blogId }) => {
     });
   }, [formatDate, generateKey, user]);
 
-  // Handle comment updates (likes)
   const handleUpdatedComment = useCallback((updatedComment) => {
     setComments(prev => {
       if (updatedComment.parent) {
-        // Update reply
         return prev.map(c => 
           c.id === updatedComment.parent
             ? {
@@ -133,7 +123,6 @@ const CommentSection = ({ blogId }) => {
             : c
         );
       } else {
-        // Update top-level comment
         return prev.map(c => 
           c.id === updatedComment.id 
             ? { ...c, likes: updatedComment.likes } 
@@ -143,24 +132,20 @@ const CommentSection = ({ blogId }) => {
     });
   }, []);
 
-  // Handle deleted comments
   const handleDeletedComment = useCallback((commentId, parentId) => {
     setComments(prev => {
       if (parentId) {
-        // Delete reply
         return prev.map(c => 
           c.id === parentId
             ? { ...c, replies: c.replies.filter(r => r.id !== commentId) }
             : c
         );
       } else {
-        // Delete top-level comment
         return prev.filter(c => c.id !== commentId);
       }
     });
   }, []);
 
-  // WebSocket message handler
   const handleWebSocketMessage = useCallback((data) => {
     const isFromCurrentUser = data.comment?.author?.username === user?.username;
     
@@ -179,7 +164,6 @@ const CommentSection = ({ blogId }) => {
     }
   }, [handleNewComment, handleUpdatedComment, handleDeletedComment, user]);
 
-  // Initialize WebSocket connection
   useEffect(() => {
     if (!blogId) return;
 
@@ -218,7 +202,6 @@ const CommentSection = ({ blogId }) => {
 
     connectWebSocket();
 
-    // Initial fetch of comments
     const fetchComments = async () => {
       try {
         setLoading(true);
@@ -240,7 +223,6 @@ const CommentSection = ({ blogId }) => {
     };
   }, [blogId, api, organizeComments, handleWebSocketMessage]);
 
-  // Submit new comment
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     if (!user || !comment.trim()) return;
@@ -249,7 +231,6 @@ const CommentSection = ({ blogId }) => {
     const tempId = `temp-${Date.now()}`;
     const commentContent = comment.trim();
     
-    // Optimistic update
     const optimisticComment = {
       id: tempId,
       author: { username: user.username, avatar_url: user.avatar },
@@ -272,20 +253,17 @@ const CommentSection = ({ blogId }) => {
           author: user.username,
           content: commentContent
         }));
-        // Don't remove optimistic update here - let WebSocket response handle it
       } else {
         const response = await api.post('/comments/post/', {
           blog_id: blogId,
           author: user.username,
           content: commentContent
         });
-        // Replace optimistic update with real data
         setComments(prev => prev.map(c => 
           c.id === tempId ? { ...response.data, date: formatDate(response.data.created_at), replies: [] } : c
         ));
       }
     } catch (err) {
-      // Remove optimistic update on error
       setComments(prev => prev.filter(c => c.id !== tempId));
       alert('Failed to post comment: ' + (err.response?.data?.error || 'Server error'));
     } finally {
@@ -293,7 +271,6 @@ const CommentSection = ({ blogId }) => {
     }
   };
 
-  // Submit reply
   const handleReplySubmit = async (commentId, e) => {
     e.preventDefault();
     if (!user || !replyContent.trim()) return;
@@ -302,7 +279,6 @@ const CommentSection = ({ blogId }) => {
     const tempId = `temp-reply-${Date.now()}`;
     const replyContentTrimmed = replyContent.trim();
     
-    // Optimistic update
     const optimisticReply = {
       id: tempId,
       author: { username: user.username, avatar_url: user.avatar },
@@ -330,7 +306,6 @@ const CommentSection = ({ blogId }) => {
           content: replyContentTrimmed,
           parent_id: commentId
         }));
-        // Don't remove optimistic update here - let WebSocket response handle it
       } else {
         const response = await api.post('/comments/post/', {
           blog_id: blogId,
@@ -338,7 +313,6 @@ const CommentSection = ({ blogId }) => {
           content: replyContentTrimmed,
           parent_id: commentId
         });
-        // Replace optimistic update with real data
         setComments(prev => prev.map(c => 
           c.id === commentId
             ? { 
@@ -351,7 +325,6 @@ const CommentSection = ({ blogId }) => {
         ));
       }
     } catch (err) {
-      // Remove optimistic update on error
       setComments(prev => prev.map(c => 
         c.id === commentId
           ? { ...c, replies: c.replies.filter(r => r.id !== tempId) }
@@ -363,7 +336,6 @@ const CommentSection = ({ blogId }) => {
     }
   };
 
-  // Handle like action
   const handleLike = async (commentId, isReply = false, replyId = null) => {
     if (!user) {
       alert('Please login to like comments');
@@ -372,7 +344,6 @@ const CommentSection = ({ blogId }) => {
 
     const targetId = isReply ? replyId : commentId;
     
-    // Optimistic update
     setComments(prev => {
       if (isReply) {
         return prev.map(c => 
@@ -409,7 +380,6 @@ const CommentSection = ({ blogId }) => {
         });
       }
     } catch (err) {
-      // Rollback optimistic update
       setComments(prev => {
         if (isReply) {
           return prev.map(c => 
@@ -436,7 +406,6 @@ const CommentSection = ({ blogId }) => {
     }
   };
 
-  // Handle delete action
   const handleDeleteComment = async (commentId, isReply = false, replyId = null) => {
     if (!user || !confirm('Are you sure you want to delete this comment?')) {
       return;
@@ -444,7 +413,6 @@ const CommentSection = ({ blogId }) => {
 
     const targetId = isReply ? replyId : commentId;
     
-    // Optimistic update
     setComments(prev => {
       if (isReply) {
         return prev.map(c => 
@@ -471,7 +439,6 @@ const CommentSection = ({ blogId }) => {
         });
       }
     } catch (err) {
-      // Re-fetch comments on error
       try {
         const response = await api.get(`/comments/blog/${blogId}`);
         organizeComments(response.data);
@@ -483,20 +450,20 @@ const CommentSection = ({ blogId }) => {
 
   if (loading) {
     return (
-      <div className={`flex justify-center py-12 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-        <FaSpinner className="animate-spin text-2xl mr-2" />
-        <span>Loading comments...</span>
+      <div className={`flex justify-center py-8 sm:py-12 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+        <FaSpinner className="animate-spin text-xl sm:text-2xl mr-2" />
+        <span className="text-sm sm:text-base">Loading comments...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className={`py-8 px-4 rounded-lg text-center ${darkMode ? 'bg-gray-800 text-red-400' : 'bg-red-50 text-red-600'}`}>
-        <p>Error loading comments: {error}</p>
+      <div className={`py-6 sm:py-8 px-3 sm:px-4 rounded-lg text-center ${darkMode ? 'bg-gray-800 text-red-400' : 'bg-red-50 text-red-600'}`}>
+        <p className="text-sm sm:text-base">Error loading comments: {error}</p>
         <button 
           onClick={() => window.location.reload()}
-          className={`mt-4 px-4 py-2 rounded-lg ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'}`}
+          className={`mt-4 px-3 sm:px-4 py-1 sm:py-2 rounded-lg text-sm sm:text-base ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'}`}
         >
           Retry
         </button>
@@ -505,13 +472,13 @@ const CommentSection = ({ blogId }) => {
   }
 
   return (
-    <section className={`mt-16 border-t pt-10 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-      <div className="flex items-center justify-between mb-8">
-        <h2 className={`text-2xl font-bold relative pb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+    <section className={`mt-12 sm:mt-16 border-t pt-8 sm:pt-10 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+      <div className="flex items-center justify-between mb-6 sm:mb-8">
+        <h2 className={`text-xl sm:text-2xl font-bold relative pb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
           Academic Discussion
-          <span className="absolute bottom-0 left-0 w-16 h-1" style={{ backgroundColor: primaryColor }}></span>
+          <span className="absolute bottom-0 left-0 w-12 sm:w-16 h-1" style={{ backgroundColor: primaryColor }}></span>
         </h2>
-        <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+        <div className={`text-xs sm:text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
           {socketStatus === 'connected' ? (
             <span className="flex items-center">
               <span className="w-2 h-2 rounded-full bg-green-500 mr-2"></span>
@@ -526,12 +493,12 @@ const CommentSection = ({ blogId }) => {
         </div>
       </div>
 
-      <form onSubmit={handleCommentSubmit} className="mb-10">
+      <form onSubmit={handleCommentSubmit} className="mb-8 sm:mb-10">
         <textarea
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           placeholder={user ? "Contribute to the academic discussion..." : "Please login to comment"}
-          className={`w-full p-4 rounded-lg mb-4 min-h-32 focus:outline-none focus:ring-2 ${
+          className={`w-full p-3 sm:p-4 rounded-lg mb-4 min-h-24 sm:min-h-32 focus:outline-none focus:ring-2 text-sm sm:text-base ${
             darkMode 
               ? 'bg-gray-800 border-gray-600 text-white focus:border-gray-500' 
               : 'bg-white border-gray-300 text-gray-700 focus:border-gray-400'
@@ -542,7 +509,7 @@ const CommentSection = ({ blogId }) => {
         <div className="flex justify-end">
           <button 
             type="submit" 
-            className="px-6 py-2 text-white rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 flex items-center"
+            className="px-4 sm:px-6 py-1 sm:py-2 text-white rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 flex items-center text-sm sm:text-base"
             style={{ backgroundColor: primaryColor }}
             disabled={!user || !comment.trim() || isSubmitting}
           >
@@ -556,49 +523,49 @@ const CommentSection = ({ blogId }) => {
         </div>
       </form>
 
-      <div className="space-y-8 max-h-screen overflow-y-auto pr-4">
+      <div className="space-y-6 sm:space-y-8 max-h-screen overflow-y-auto pr-3 sm:pr-4">
         {comments.length === 0 ? (
-          <div className={`text-center py-12 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            <p className="text-lg mb-2">No comments yet</p>
-            <p>Be the first to contribute to this academic discussion</p>
+          <div className={`text-center py-8 sm:py-12 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            <p className="text-base sm:text-lg mb-2">No comments yet</p>
+            <p className="text-sm sm:text-base">Be the first to contribute to this academic discussion</p>
           </div>
         ) : (
           comments.map(comment => (
-            <div key={comment.key || comment.id} className={`pb-8 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-              <div className="flex items-start gap-4 mb-4">
+            <div key={comment.key || comment.id} className={`pb-6 sm:pb-8 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <div className="flex items-start gap-3 sm:gap-4 mb-4">
                 <img 
                   src={comment.author.avatar_url || 'https://randomuser.me/api/portraits/women/44.jpg'} 
                   alt={comment.author.username} 
-                  className="w-10 h-10 rounded-full object-cover flex-shrink-0" 
+                  className="w-8 sm:w-10 h-8 sm:h-10 rounded-full object-cover flex-shrink-0" 
                 />
                 <div className="flex-1">
-                  <div className="flex items-center gap-4 flex-wrap">
-                    <h4 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                  <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
+                    <h4 className={`font-semibold text-sm sm:text-base ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                       {comment.author.username}
                     </h4>
-                    <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    <span className={`text-xs sm:text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                       {comment.date}
                     </span>
                     {user && (user.username === comment.author.username || user.role === 'admin') && (
                       <button 
                         onClick={() => handleDeleteComment(comment.id)}
-                        className={`text-sm ml-auto ${darkMode ? 'text-red-400 hover:text-red-300' : 'text-red-500 hover:text-red-700'}`}
+                        className={`text-xs sm:text-sm ml-auto ${darkMode ? 'text-red-400 hover:text-red-300' : 'text-red-500 hover:text-red-700'}`}
                         title="Delete comment"
                       >
                         <FaTrash />
                       </button>
                     )}
                   </div>
-                  <p className={`mt-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  <p className={`mt-1 text-sm sm:text-base ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     {comment.content}
                   </p>
                 </div>
               </div>
 
-              <div className="flex gap-6 ml-14">
+              <div className="flex gap-4 sm:gap-6 ml-10 sm:ml-14">
                 <button 
                   onClick={() => handleLike(comment.id)}
-                  className={`flex items-center gap-1 text-sm ${
+                  className={`flex items-center gap-1 text-xs sm:text-sm ${
                     darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
@@ -613,7 +580,7 @@ const CommentSection = ({ blogId }) => {
                     }
                     setReplyTo(replyTo === comment.id ? null : comment.id);
                   }}
-                  className={`flex items-center gap-1 text-sm ${
+                  className={`flex items-center gap-1 text-xs sm:text-sm ${
                     darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
@@ -623,12 +590,12 @@ const CommentSection = ({ blogId }) => {
               </div>
 
               {replyTo === comment.id && (
-                <form onSubmit={(e) => handleReplySubmit(comment.id, e)} className="mt-4 ml-14">
+                <form onSubmit={(e) => handleReplySubmit(comment.id, e)} className="mt-4 ml-10 sm:ml-14">
                   <textarea
                     value={replyContent}
                     onChange={(e) => setReplyContent(e.target.value)}
                     placeholder="Write your academic reply..."
-                    className={`w-full p-3 rounded-lg mb-2 min-h-24 focus:outline-none focus:ring-2 ${
+                    className={`w-full p-3 rounded-lg mb-2 min-h-20 sm:min-h-24 focus:outline-none focus:ring-2 text-sm sm:text-base ${
                       darkMode 
                         ? 'bg-gray-800 border-gray-600 text-white focus:border-gray-500' 
                         : 'bg-white border-gray-300 text-gray-700 focus:border-gray-400'
@@ -639,7 +606,7 @@ const CommentSection = ({ blogId }) => {
                     <button 
                       type="button" 
                       onClick={() => setReplyTo(null)}
-                      className={`px-4 py-1 border rounded-lg ${
+                      className={`px-3 sm:px-4 py-1 border rounded-lg text-sm sm:text-base ${
                         darkMode 
                           ? 'border-gray-600 hover:bg-gray-700' 
                           : 'border-gray-300 hover:bg-gray-100'
@@ -649,7 +616,7 @@ const CommentSection = ({ blogId }) => {
                     </button>
                     <button 
                       type="submit" 
-                      className="px-4 py-1 text-white rounded-lg hover:opacity-90 flex items-center"
+                      className="px-3 sm:px-4 py-1 text-white rounded-lg hover:opacity-90 flex items-center text-sm sm:text-base"
                       style={{ backgroundColor: primaryColor }}
                       disabled={!replyContent.trim() || isSubmitting}
                     >
@@ -665,18 +632,18 @@ const CommentSection = ({ blogId }) => {
               )}
 
               {comment.replies.length > 0 && (
-                <div className={`mt-6 ml-14 pl-6 border-l-2 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                <div className={`mt-4 sm:mt-6 ml-10 sm:ml-14 pl-4 sm:pl-6 border-l-2 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                   {comment.replies.map(reply => (
-                    <div key={reply.key || reply.id} className={`py-4 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-                      <div className="flex items-start gap-4 mb-2">
+                    <div key={reply.key || reply.id} className={`py-3 sm:py-4 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                      <div className="flex items-start gap-3 sm:gap-4 mb-2">
                         <img 
                           src={reply.author.avatar_url || 'https://randomuser.me/api/portraits/women/44.jpg'} 
                           alt={reply.author.username} 
-                          className="w-8 h-8 rounded-full object-cover flex-shrink-0" 
+                          className="w-6 sm:w-8 h-6 sm:h-8 rounded-full object-cover flex-shrink-0" 
                         />
                         <div className="flex-1">
-                          <div className="flex items-center gap-3 flex-wrap">
-                            <h4 className={`font-semibold text-sm ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                            <h4 className={`font-semibold text-xs sm:text-sm ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                               {reply.author.username}
                             </h4>
                             <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -692,13 +659,13 @@ const CommentSection = ({ blogId }) => {
                               </button>
                             )}
                           </div>
-                          <p className={`mt-1 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          <p className={`mt-1 text-xs sm:text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                             {reply.content}
                           </p>
                         </div>
                       </div>
 
-                      <div className="flex gap-4 ml-12">
+                      <div className="flex gap-3 sm:gap-4 ml-10 sm:ml-12">
                         <button 
                           onClick={() => handleLike(comment.id, true, reply.id)}
                           className={`flex items-center gap-1 text-xs ${

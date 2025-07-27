@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  FiBold, FiItalic, FiUnderline, FiAlignLeft, FiAlignCenter, FiAlignRight,
+  FiBold, FiItalic, FiUnderline, FiList, FiAlignLeft, FiAlignCenter, FiAlignRight,
   FiAlignJustify, FiLink, FiImage, FiCode, FiRotateCcw, FiRotateCw, FiX
 } from 'react-icons/fi';
+import { MdFormatListNumbered } from 'react-icons/md';
 import { PiMathOperationsFill } from 'react-icons/pi';
 import { useTheme } from '../../context/ThemeContext';
 import LatexModal from './LatexModal';
@@ -10,7 +11,6 @@ import LinkModal from './LinkModal';
 import ListControls from './ListControls';
 import CodeModal from './CodeModal';
 import BlockquoteControls from './BlockquoteControls';
-import HeadingControls from './HeadingControls';
 
 const BlogEditorToolbar = ({ editorRef }) => {
   const { primaryColor, darkMode } = useTheme();
@@ -33,7 +33,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
     const selection = window.getSelection();
     const range = selection.rangeCount > 0 ? selection.getRangeAt(0).cloneRange() : null;
     setSavedRange(range);
-    editorRef.current.focus({ preventScroll: true });
+    editorRef.current.focus();
     setShowCodeModal(true);
   };
 
@@ -73,7 +73,6 @@ const BlogEditorToolbar = ({ editorRef }) => {
 
         if (parentBlockquote) {
           e.preventDefault();
-          const scrollTop = editor.scrollTop;
           const newParagraph = document.createElement('p');
           newParagraph.innerHTML = '<br>';
           range.deleteContents();
@@ -83,7 +82,6 @@ const BlogEditorToolbar = ({ editorRef }) => {
           newRange.collapse(true);
           selection.removeAllRanges();
           selection.addRange(newRange);
-          editor.scrollTop = scrollTop;
           updateActiveFormats();
         }
       }
@@ -98,11 +96,9 @@ const BlogEditorToolbar = ({ editorRef }) => {
   }, [editorRef]);
 
   const formatText = (command, value = null) => {
-    const scrollTop = editorRef.current.scrollTop;
     const selection = window.getSelection();
     document.execCommand(command, false, value);
-    editorRef.current.focus({ preventScroll: true });
-    editorRef.current.scrollTop = scrollTop;
+    editorRef.current.focus();
     updateActiveFormats();
   };
 
@@ -114,7 +110,6 @@ const BlogEditorToolbar = ({ editorRef }) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const scrollTop = editorRef.current.scrollTop;
     const imgElement = document.createElement('img');
     imgElement.className = 'inserted-image';
     imgElement.src = URL.createObjectURL(file);
@@ -162,8 +157,8 @@ const BlogEditorToolbar = ({ editorRef }) => {
     newRange.collapse(true);
     selection.removeAllRanges();
     selection.addRange(newRange);
-    editor.focus({ preventScroll: true });
-    editor.scrollTop = scrollTop;
+    editor.focus();
+
     fileInputRef.current.value = '';
   };
 
@@ -208,8 +203,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
     ];
     const active = formats.filter((cmd) => {
       if (cmd === 'formatBlock') {
-        const currentBlock = document.queryCommandValue('formatBlock').toLowerCase();
-        return ['h1', 'h2', 'h3', 'h4', 'blockquote'].includes(currentBlock);
+        return document.queryCommandValue('formatBlock') === 'blockquote';
       }
       return document.queryCommandState(cmd);
     });
@@ -430,24 +424,13 @@ const BlogEditorToolbar = ({ editorRef }) => {
             </div>
 
             {button.command === 'underline' && (
-              <>
-                <ListControls
-                  editorRef={editorRef}
-                  darkMode={darkMode}
-                  primaryColor={primaryColor}
-                  activeFormats={activeFormats}
-                  setActiveFormats={setActiveFormats}
-                  updateActiveFormats={updateActiveFormats}
-                />
-                <HeadingControls
-                  editorRef={editorRef}
-                  darkMode={darkMode}
-                  primaryColor={primaryColor}
-                  activeFormats={activeFormats}
-                  setActiveFormats={setActiveFormats}
-                  updateActiveFormats={updateActiveFormats}
-                />
-              </>
+              <ListControls
+                editorRef={editorRef}
+                darkMode={darkMode}
+                primaryColor={primaryColor}
+                activeFormats={activeFormats}
+                setActiveFormats={setActiveFormats}
+              />
             )}
             {index === 6 && (
               <BlockquoteControls

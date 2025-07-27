@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTheme } from '../context/ThemeContext';
-import userImage from '../assets/user.jpg'
 
 const Navbar = ({ activePage }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -34,50 +33,53 @@ const Navbar = ({ activePage }) => {
     return 'Dashboard';
   };
 
-  // Navbar background style
   const navbarStyle = {
-    backgroundColor: isScrolled ? primaryColor : `${primaryColor}cc`, // cc adds 80% opacity
+    backgroundColor: isScrolled ? primaryColor : `${primaryColor}cc`,
   };
 
-  // Mobile menu background style
   const mobileMenuStyle = {
     backgroundColor: darkMode ? '#1a1a1a' : primaryColor,
   };
 
-  // Login button style
   const loginButtonStyle = {
     color: primaryColor,
   };
 
   return (
-    <nav
+    <nav 
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'h-16 shadow-md' : 'h-20 shadow-lg'}`}
       style={navbarStyle}
     >
-      <div className="container mx-auto px-4 md:px-6 lg:px-8 h-full flex justify-between items-center">
+
+      <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 h-full flex justify-between items-center">
         <Link
           to={user ? "/home" : "/"}
-          className="text-white font-bold text-2xl md:text-3xl font-orbitron tracking-wider"
+          className="text-white font-bold text-xl sm:text-2xl md:text-3xl font-orbitron tracking-wider"
+
         >
           <span className="text-white">Tech</span>Sage
         </Link>
 
-        <div className="hidden md:flex items-center space-x-6">
+        <div className="hidden md:flex items-center space-x-4 lg:space-x-6">
           {user ? (
             <>
               {user.role === 'user' && (
+
                 <Link
                   to="/home"
-                  className={`text-white text-lg font-medium hover:underline ${activePage === 'home' ? 'font-bold' : ''}`}
+                  className={`text-white text-base sm:text-lg font-medium hover:underline ${activePage === 'home' ? 'font-bold' : ''}`}
+
                 >
                   Home
                 </Link>
               )}
 
               {user.role === 'user' && (
+
                 <Link
                   to="/create-blog"
-                  className={`text-white text-lg font-medium hover:underline ${activePage === 'create-blog' ? 'font-bold' : ''}`}
+                  className={`text-white text-base sm:text-lg font-medium hover:underline ${activePage === 'create-blog' ? 'font-bold' : ''}`}
+
                 >
                   Create Blog
                 </Link>
@@ -85,36 +87,40 @@ const Navbar = ({ activePage }) => {
 
               <Link
                 to={getDashboardLink()}
-                className={`text-white text-lg font-medium hover:underline ${activePage === 'dashboard' ? 'font-bold' : ''}`}
+                className={`text-white text-base sm:text-lg font-medium hover:underline ${activePage === 'dashboard' ? 'font-bold' : ''}`}
               >
                 {getDashboardText()}
               </Link>
 
               <div className="relative group">
+
                 <Link
                   to="/settings"
-                  className="w-10 h-10 rounded-full bg-white flex items-center justify-center font-bold overflow-hidden border-2 border-white hover:scale-105 transition-transform"
+                  className="w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-white flex items-center justify-center font-bold overflow-hidden border-2 border-white hover:scale-105 transition-transform"
                   style={{ color: primaryColor }}
                 >
                   <img
-                    src={user?.avatar_url || userImage}  // Fallback to imported image if avatar_url is missing
+                    src={user?.avatar_url || userImage}
                     alt="Profile"
                     className="w-full h-full object-cover"
+
                   />
                 </Link>
               </div>
             </>
           ) : (
             <>
+
               <Link
                 to="/signup"
-                className="text-white text-lg font-medium hover:underline"
+                className="text-white text-base sm:text-lg font-medium hover:underline"
               >
                 Create Account
               </Link>
               <Link
                 to="/login"
-                className="px-4 py-2 bg-white rounded-full hover:bg-gray-100 transition-colors"
+                className="px-3 sm:px-4 py-1 sm:py-2 bg-white rounded-full hover:bg-gray-100 transition-colors text-sm sm:text-base"
+
                 style={loginButtonStyle}
               >
                 Login
@@ -137,26 +143,30 @@ const Navbar = ({ activePage }) => {
         </button>
       </div>
 
-      <div
+      <div 
         className={`md:hidden fixed top-20 left-0 w-full transition-all duration-300 ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'} pt-4 pb-8 shadow-lg`}
         style={mobileMenuStyle}
       >
-        <div className="flex flex-col items-center space-y-4 text-white">
+        <div className="flex flex-col items-center space-y-4 text-white text-base sm:text-lg">
           {user ? (
             <>
               {user.role === 'user' && (
+
                 <Link
                   to="/home"
-                  className="text-white text-lg font-medium hover:underline"
+                  className="font-medium hover:underline"
+
                   onClick={toggleMenu}
                 >
                   Home
                 </Link>
               )}
               {user.role === 'user' && (
+
                 <Link
                   to="/create-blog"
-                  className="text-white text-lg font-medium hover:underline"
+                  className="font-medium hover:underline"
+
                   onClick={toggleMenu}
                 >
                   Create Blog
@@ -164,40 +174,46 @@ const Navbar = ({ activePage }) => {
               )}
               <Link
                 to={getDashboardLink()}
-                className="text-white text-lg font-medium hover:underline"
+                className="font-medium hover:underline"
                 onClick={toggleMenu}
               >
                 {getDashboardText()}
               </Link>
+
               <Link
                 to="/settings"
-                className="text-white text-lg font-medium hover:underline"
+                className="font-medium hover:underline"
+
                 onClick={toggleMenu}
               >
                 Settings
               </Link>
-              <button
+              <button 
                 onClick={() => {
                   logout();
                   toggleMenu();
                 }}
-                className="text-white text-lg font-medium hover:underline"
+                className="font-medium hover:underline"
               >
                 Logout
               </button>
             </>
           ) : (
             <>
+
               <Link
                 to="/signup"
-                className="text-white text-lg font-medium hover:underline"
+                className="font-medium hover:underline"
+
                 onClick={toggleMenu}
               >
                 Create Account
               </Link>
+
               <Link
                 to="/login"
-                className="text-white text-lg font-medium hover:underline"
+                className="font-medium hover:underline"
+
                 onClick={toggleMenu}
               >
                 Login

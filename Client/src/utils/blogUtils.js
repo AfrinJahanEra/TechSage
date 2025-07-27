@@ -115,40 +115,74 @@ export const getContentPreview = (content, path = '') => {
   }
 };
 
-export const getContentPreviewhome = (content, path = '') => {
-  if (!content) return 'No content available';
-  
+export const getContentPreviewhome = (content) => {
+  if (!content) return '<div>No content available</div>';
+
   try {
     const temp = document.createElement('div');
     temp.innerHTML = content;
+
+    // Count words in plain text
+    const text = temp.textContent || '';
+    const words = text.trim().split(/\s+/);
     
-    // Get all paragraphs and line breaks
-    const paragraphs = Array.from(temp.querySelectorAll('p, br'));
-    let lines = [];
-    
-    // Extract text content up to 500 lines
-    paragraphs.some((element, index) => {
-      if (index >= 500) return true; // Stop after 500 lines
-      
-      if (element.tagName === 'P') {
-        lines.push(element.textContent);
-      } else if (element.tagName === 'BR') {
-        lines.push('\n');
-      }
-      return false;
-    });
-    
-    // Join the lines with proper spacing
-    let preview = lines.join('\n').trim();
-    
-    // If we still need more content (for non-paragraph content)
-    if (lines.length < 500) {
-      const remainingContent = temp.textContent || temp.innerText || '';
-      preview += '\n' + remainingContent;
+    // If content is <= 500 words, return original HTML
+    if (words.length <= 500) {
+      return content;
     }
+
+    // If >500 words, truncate while keeping HTML structure
+    let wordCount = 0;
+    const truncate = (node) => {
+      if (wordCount >= 500) {
+        node.remove();
+        return;
+      }
+
+      if (node.nodeType === Node.TEXT_NODE) {
+        const nodeWords = node.textContent.trim().split(/\s+/);
+        const remainingWords = 500 - wordCount;
+        
+        if (nodeWords.length > remainingWords) {
+          node.textContent = nodeWords.slice(0, remainingWords).join(' ') + '...';
+          wordCount = 500;
+        } else {
+          wordCount += nodeWords.length;
+        }
+      } 
+      else if (node.nodeType === Node.ELEMENT_NODE) {
+        Array.from(node.childNodes).forEach(truncate);
+      }
+    };
+
+    const clone = temp.cloneNode(true);
+    truncate(clone);
+    return clone.innerHTML;
+  } catch (e) {
+    console.error("Error generating preview:", e);
+    return '<div>Could not load content</div>';
+  }
+};
+
+
+export const getTitlePreview = (title, path = '') => {
+  if (!title) return 'No content available';
+  
+  try {
+    const temp = document.createElement('div');
+    temp.innerHTML = title;
     
-    // Limit to approximately 500 lines (about 25,000 characters)
-    return preview.slice(0, 25000) + (preview.length > 25000 ? '...' : '');
+    let plainText = temp.textContent || temp.innerText || '';
+    plainText = plainText.replace(/\s+/g, ' ').trim();
+    
+    // Split into words and limit based on path
+    const words = plainText.split(' ');
+    const maxWords = path.toLowerCase() === '/home' ? 100 : 5;
+    
+    if (words.length > maxWords) {
+      return words.slice(0, maxWords).join(' ') + '...';
+    }
+    return plainText;
   } catch (e) {
     console.error('Error parsing content:', e);
     return 'Content preview unavailable';
@@ -169,7 +203,7 @@ export const calculateReadTime = (content) => {
     return `${minutes} min read`;
   } catch (e) {
     console.error('Error calculating read time:', e);
-    return '0 min read';
+    return '1 min read';
   }
 };
 

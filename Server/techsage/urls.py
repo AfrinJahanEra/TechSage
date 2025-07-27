@@ -1,11 +1,14 @@
 from django.urls import path, include
 from django.urls import path
+from django.contrib import admin
+from django.urls import path, include
 from users.views import (
     RegisterUser,
     LoginUser,
     UserProfile,
     UserSearch,
-    SavedBlogsAPI
+    SavedBlogsAPI,
+    UserListByRole
 )
 from blogs.views import (
     CreateBlog, ListBlogs, GetBlog, 
@@ -17,10 +20,10 @@ from blogs.views import (
     PublishedBlogs,ReviewBlog, CreateDraft, UpdateDraft
 )
 
-# from django.contrib import admin
-# from django.urls import path, include
+
 
 urlpatterns = [
+    path('users/by-role/', UserListByRole.as_view(), name='users-by-role'),
     path('register/', RegisterUser.as_view(), name='register'),
     path('login/', LoginUser.as_view(), name='login'),
     path('user/<str:username>/', UserProfile.as_view(), name='user-profile'),
@@ -55,8 +58,8 @@ urlpatterns = [
     path('blogs/', ListBlogs.as_view()),  
     path('jobs/', JobBlogs.as_view()),
 
-    # path('admin/', admin.site.urls),
-    # path('api/auth/', include('auth.urls')),
+    path('admin/', admin.site.urls),
+    path('api/auth/', include('auth.urls')),
 
     
     path('blogs/<str:blog_id>/', GetBlog.as_view()),
