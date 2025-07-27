@@ -34,7 +34,6 @@ INSTALLED_APPS = [
     'channels',
     'reports',
     'checker',
-    'version_control',
     'auth.apps.CustomAuthConfig',  # Custom auth app
 ]
 
@@ -90,12 +89,18 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = os.getenv('EMAIL_HOST_USER', 'afrinjahanera03@gmail.com')
 OTP_VALIDITY_MINUTES = int(os.getenv('OTP_VALIDITY_MINUTES', 2))
 
-# Django Channels configuration
+
+if os.getenv('DJANGO_ENV') == 'production':
+    REDIS_URL = os.getenv('REDIS_URL') 
+else:
+    REDIS_URL = 'redis://127.0.0.1:6379' 
+
+
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [('127.0.0.1', 6379)],
+            'hosts': [REDIS_URL],
         },
     },
 }
