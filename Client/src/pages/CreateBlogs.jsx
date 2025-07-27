@@ -1,14 +1,12 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FiUpload, FiX, FiPlus, FiCheck, FiUsers, FiClock, FiInfo, FiSave, FiTrash2, FiSearch } from 'react-icons/fi';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import BlogEditorToolbar from './BlogEditorToolbar';
+import BlogEditorToolbar from '../components/CreateBlogComponents/BlogEditorToolbar';
 import Footer from '../components/Footer';
 import PopupModal from '../components/PopupModal';
 import Navbar from '../components/Navbar';
-
 
 const CreateBlogPage = () => {
   const { primaryColor, darkMode } = useTheme();
@@ -33,8 +31,9 @@ const CreateBlogPage = () => {
   const [lastSaved, setLastSaved] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [hoveredIcon, setHoveredIcon] = useState(null);
 
- const [popup, setPopup] = useState({ show: false, message: '', type: 'success' });
+  const [popup, setPopup] = useState({ show: false, message: '', type: 'success' });
   const popupTimerRef = useRef(null);
 
   const showPopup = (message, type = 'success', duration = 3000) => {
@@ -49,8 +48,6 @@ const CreateBlogPage = () => {
   useEffect(() => {
     return () => clearTimeout(popupTimerRef.current);
   }, []);
-
-
 
   // Available categories
   const availableCategories = [
@@ -77,10 +74,6 @@ const CreateBlogPage = () => {
       setStatus(draftData.is_published ? 'published' : 'draft');
     }
   }, [location.state]);
-
-  
-
-
 
   // Close search results when clicking outside
   useEffect(() => {
@@ -151,19 +144,15 @@ const CreateBlogPage = () => {
   // Send author request
   const sendAuthorRequest = async (username) => {
     if (!blogId) {
-      // If no blogId exists, save as draft first
       try {
         const newBlogId = await createDraft();
         setBlogId(newBlogId);
-
-        // Now send the request with the new blogId
         await sendCollaborationRequest(newBlogId, username);
       } catch (error) {
         console.error('Error creating draft before sending request:', error);
         showPopup('Failed to create draft before sending request', 'error');
       }
     } else {
-      // If we already have a blogId, just send the request
       await sendCollaborationRequest(blogId, username);
     }
   };
@@ -202,7 +191,6 @@ const CreateBlogPage = () => {
         }
       });
 
-      // Update local state
       if (response.data.success) {
         setBlog(prev => ({
           ...prev,
@@ -232,15 +220,12 @@ const CreateBlogPage = () => {
     }
   };
 
-
-
-const handleInput = () => {
-  if (editorRef.current) {
-    const html = editorRef.current.innerHTML.trim();
-    setContent(html);
-  }
-};
-
+  const handleInput = () => {
+    if (editorRef.current) {
+      const html = editorRef.current.innerHTML.trim();
+      setContent(html);
+    }
+  };
 
   // Create a new draft
   const createDraft = async () => {
@@ -256,7 +241,6 @@ const handleInput = () => {
       setBlogId(response.data.id);
       setStatus('draft');
       setLastSaved(new Date());
-      //showPopup('Draft created successfully', 'success');
       return response.data.id;
     } catch (error) {
       console.error('Error creating draft:', error);
@@ -272,7 +256,6 @@ const handleInput = () => {
     try {
       setIsSubmitting(true);
 
-      // If we don't have a blogId yet, create a new draft first
       let currentBlogId = blogId;
       if (!currentBlogId) {
         currentBlogId = await createDraft();
@@ -283,7 +266,6 @@ const handleInput = () => {
       formData.append('content', content);
       formData.append('username', user.username);
 
-      // Append categories and tags
       categories.forEach(cat => formData.append('categories[]', cat));
       tags.forEach(tag => formData.append('tags[]', tag));
 
@@ -311,64 +293,62 @@ const handleInput = () => {
     }
   };
 
-
-const publishBlog = async () => {
-  if (!title.trim()) {
-    showPopup('Please enter a blog title', 'error');
-    return;
-  }
-
-  const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = content;
-  const textOnly = tempDiv.textContent.trim();
-
-  if (!textOnly) {
-    showPopup('Please add some content to your blog', 'error');
-    return;
-  }
-
-  if (categories.length === 0) {
-    showPopup('Please select at least one category', 'error');
-    return;
-  }
-
-  try {
-    setIsSubmitting(true);
-
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('content', content);
-    formData.append('username', user.username);
-    formData.append('is_published', true);
-    
-    categories.forEach(cat => formData.append('categories[]', cat));
-    tags.forEach(tag => formData.append('tags[]', tag));
-
-    if (thumbnailFile) {
-      formData.append('thumbnail', thumbnailFile);
+  const publishBlog = async () => {
+    if (!title.trim()) {
+      showPopup('Please enter a blog title', 'error');
+      return;
     }
 
-    let response;
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = content;
+    const textOnly = tempDiv.textContent.trim();
+
+    if (!textOnly) {
+      showPopup('Please add some content to your blog', 'error');
+      return;
+    }
+
+    if (!categories.length) {
+      showPopup('Please select at least one category', 'error');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('content', content);
+      formData.append('username', user.username);
+      formData.append('is_published', true);
+      
+      categories.forEach(cat => formData.append('categories[]', cat));
+      tags.forEach(tag => formData.append('tags[]', tag));
+
+      if (thumbnailFile) {
+        formData.append('thumbnail', thumbnailFile);
+      }
+
+      let response;
       response = await api.post('/blogs/create/', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
 
-    setStatus('published');
-    showPopup('Blog published successfully', 'success');
-    
-    // Navigate to the published blog after a short delay
-    setTimeout(() => {
-      navigate(`/blogs/${response.data.id || blogId}`);
-    }, 2000);
-  } catch (error) {
-    console.error('Publish error:', error);
-    showPopup(error.response?.data?.error || 'Failed to publish blog', 'error');
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+      setStatus('published');
+      showPopup('Blog published successfully', 'success');
+      
+      setTimeout(() => {
+        navigate(`/blogs/${response.data.id || blogId}`);
+      }, 2000);
+    } catch (error) {
+      console.error('Publish error:', error);
+      showPopup(error.response?.data?.error || 'Failed to publish blog', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // Discard blog (move to trash)
   const discardBlog = async () => {
@@ -377,7 +357,6 @@ const publishBlog = async () => {
         setIsSubmitting(true);
 
         if (!blogId) {
-          // If we haven't saved the draft yet, just navigate away
           navigate('/blogs/drafts');
           return;
         }
@@ -421,13 +400,10 @@ const publishBlog = async () => {
     return () => clearTimeout(timer);
   }, [title, content, categories, tags, thumbnail]);
 
-
-  
-
   return (
     <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-50 text-gray-800'}`}>
       <Navbar />
-<PopupModal
+      <PopupModal
         show={popup.show}
         message={popup.message}
         type={popup.type}
@@ -453,9 +429,9 @@ const publishBlog = async () => {
                 </label>
                 <input
                   type="text"
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition-colors ${darkMode
-                    ? 'bg-gray-700 border-gray-600 text-white focus:ring-[var(--primary-color)]'
-                    : 'border-gray-300 focus:ring-[var(--primary-color)]'
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:!border-[var(--primary-color)] transition-colors ${darkMode
+                    ? 'bg-gray-700 border-gray-600 text-white'
+                    : 'border-gray-300 text-gray-800'
                     }`}
                   placeholder="Enter your blog title"
                   value={title}
@@ -472,7 +448,7 @@ const publishBlog = async () => {
                 <div
                   className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${thumbnail
                     ? darkMode ? 'border-gray-700' : 'border-gray-200'
-                    : darkMode ? 'border-gray-700 hover:border-[var(--primary-color)]' : 'border-gray-300 hover:border-[var(--primary-color)]'
+                    : darkMode ? 'border-gray-600 hover:border-[var(--primary-color)]' : 'border-gray-300 hover:border-[var(--primary-color)]'
                     }`}
                   onClick={() => fileInputRef.current.click()}
                 >
@@ -526,16 +502,22 @@ const publishBlog = async () => {
                     <button
                       key={cat}
                       type="button"
-                      className={`px-4 py-2 rounded-full border text-sm font-medium flex items-center transition-colors duration-200 ${categories.includes(cat)
-                        ? 'text-white border-[var(--primary-color)]'
-                        : darkMode
-                          ? 'bg-gray-700 text-gray-200 border-gray-600 hover:text-white hover:border-[var(--primary-color)]'
-                          : 'bg-white text-gray-700 border-gray-300 hover:text-white hover:border-[var(--primary-color)]'
-                        }`}
+                      className={`
+                        px-4 py-2 rounded-full border text-sm font-medium flex items-center transition-colors duration-200
+                        ${categories.includes(cat)
+                          ? 'text-white border-[var(--primary-color)]'
+                          : darkMode
+                            ? 'bg-gray-700 text-gray-200 border-gray-600'
+                            : 'bg-white text-gray-700 border-gray-300'
+                        }
+                      `}
                       style={{
-                        backgroundColor: categories.includes(cat) ? primaryColor : ''
+                        backgroundColor: categories.includes(cat) ? primaryColor : '',
+                        borderColor: hoveredIcon === cat ? `var(--primary-color)` : categories.includes(cat) ? `var(--primary-color)` : darkMode ? '#4b5563' : '#e5e7eb',
                       }}
                       onClick={() => toggleCategory(cat)}
+                      onMouseEnter={() => setHoveredIcon(cat)}
+                      onMouseLeave={() => setHoveredIcon(null)}
                     >
                       {cat}
                     </button>
@@ -552,8 +534,7 @@ const publishBlog = async () => {
                   {tags.map((tag) => (
                     <div
                       key={tag}
-                      className={`px-3 py-1 rounded-full text-sm flex items-center ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'
-                        }`}
+                      className={`px-3 py-1 rounded-full text-sm flex items-center ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'}`}
                     >
                       {tag}
                       <button
@@ -571,9 +552,9 @@ const publishBlog = async () => {
                     type="text"
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
-                    className={`flex-1 px-3 py-2 border text-sm rounded-l-lg focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)] ${darkMode
+                    className={`flex-1 px-3 py-2 border text-sm rounded-l-lg focus:outline-none focus:!border-[var(--primary-color)] transition-colors ${darkMode
                       ? 'bg-gray-700 border-gray-600 text-white'
-                      : 'border-gray-300'
+                      : 'border-gray-300 text-gray-800'
                       }`}
                     placeholder="Add tags (press Enter)"
                   />
@@ -587,37 +568,30 @@ const publishBlog = async () => {
                 </form>
               </div>
 
-
-
               {/* Blog Content Editor */}
               <div className="mb-8">
-                <label className="block text-sm font-bold text-gray-700 mb-2">Blog Content</label>
-
+                <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Blog Content *
+                </label>
                 <BlogEditorToolbar editorRef={editorRef} />
-<div
-  ref={editorRef}
-  contentEditable
-  onFocus={handleFocus}
-  onBlur={handleBlur}
-  onInput={handleInput}
-  onKeyUp={handleInput}
-  data-placeholder="Start writing your blog post here..."
-  className={`
-    relative min-h-[300px] border border-gray-300 rounded-lg p-4 prose max-w-none focus:outline-none focus:ring-2 focus:ring-teal-500
-    ${darkMode ? 'text-gray-200' : 'text-gray-800'}
-    before:content-[attr(data-placeholder)]
-    before:absolute before:text-gray-400 before:pointer-events-none before:select-none before:italic
-    before:whitespace-pre-wrap before:top-4 before:left-4
-    ${content ? 'before:hidden' : ''}
-  `}
-/>
-
-
-
-
+                <div
+                  ref={editorRef}
+                  contentEditable
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                  onInput={handleInput}
+                  onKeyUp={handleInput}
+                  data-placeholder="Start writing your blog post here..."
+                  className={`
+                    relative min-h-[300px] border rounded-lg p-4 prose max-w-none focus:outline-none focus:!border-[var(--primary-color)] transition-colors
+                    ${darkMode ? 'text-gray-200 border-gray-600' : 'text-gray-800 border-gray-300'}
+                    before:content-[attr(data-placeholder)]
+                    before:absolute before:text-gray-400 before:pointer-events-none before:select-none before:italic
+                    before:whitespace-pre-wrap before:top-4 before:left-4
+                    ${content ? 'before:hidden' : ''}
+                  `}
+                />
               </div>
-
-
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-8">
@@ -657,17 +631,16 @@ const publishBlog = async () => {
                     <FiSave />
                     {isEditing ? 'Update Draft' : 'Save Draft'}
                   </button>
-                  
                   <button
-  type="button"
-  disabled={isSubmitting} // ✅ Only disable on submitting
-  className="px-6 py-2 text-white rounded-lg hover:opacity-90 transition-colors w-full sm:w-auto flex items-center justify-center gap-2"
-  style={{ backgroundColor: primaryColor }}
-  onClick={publishBlog}
->
-  <FiCheck />
-  Publish
-</button>
+                    type="button"
+                    disabled={isSubmitting}
+                    className="px-6 py-2 text-white rounded-lg hover:opacity-90 transition-colors w-full sm:w-auto flex items-center justify-center gap-2"
+                    style={{ backgroundColor: primaryColor }}
+                    onClick={publishBlog}
+                  >
+                    <FiCheck />
+                    Publish
+                  </button>
                 </div>
               </div>
             </div>
@@ -675,12 +648,10 @@ const publishBlog = async () => {
         </main>
 
         {/* Sidebar */}
-        <aside className={`hidden lg:block w-80 border-l p-6 overflow-y-auto ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
-          }`}>
+        <aside className={`hidden lg:block w-80 border-l p-6 overflow-y-auto ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
           {/* Collaborators Section */}
           <div className="mb-8">
-            <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'
-              }`}>
+            <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <FiUsers className="text-[var(--primary-color)]" />
               Collaborators
             </h3>
@@ -709,8 +680,7 @@ const publishBlog = async () => {
                 {blog?.authors?.filter(author => author.username !== user.username).map((author) => (
                   <div
                     key={author.username}
-                    className={`flex justify-between items-center p-3 rounded-lg ${darkMode ? 'bg-gray-700 hover:shadow-md' : 'bg-white hover:shadow-sm'
-                      }`}
+                    className={`flex justify-between items-center p-3 rounded-lg ${darkMode ? 'bg-gray-700 hover:shadow-md' : 'bg-white hover:shadow-sm'}`}
                   >
                     <div className="flex items-center">
                       <img
@@ -727,10 +697,9 @@ const publishBlog = async () => {
                         </p>
                       </div>
                     </div>
-                    {user.username === blog.authors[0].username && ( // Only primary author can remove
+                    {user.username === blog.authors[0].username && (
                       <button
-                        className={`transition-colors ${darkMode ? 'text-gray-400 hover:text-red-400' : 'text-gray-400 hover:text-red-500'
-                          }`}
+                        className={`transition-colors ${darkMode ? 'text-gray-400 hover:text-red-400' : 'text-gray-400 hover:text-red-500'}`}
                         onClick={() => removeCollaborator(author.username)}
                       >
                         <FiX />
@@ -752,9 +721,9 @@ const publishBlog = async () => {
                     searchUsers(e.target.value);
                   }}
                   onFocus={() => setShowSearchResults(true)}
-                  className={`flex-1 px-3 py-2 border text-sm rounded-l-lg focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)] ${darkMode
+                  className={`flex-1 px-3 py-2 border text-sm rounded-l-lg focus:outline-none focus:!border-[var(--primary-color)] transition-colors ${darkMode
                     ? 'bg-gray-700 border-gray-600 text-white'
-                    : 'border-gray-300'
+                    : 'border-gray-300 text-gray-800'
                     }`}
                   placeholder="Search users to collaborate"
                 />
@@ -768,13 +737,11 @@ const publishBlog = async () => {
 
               {/* Search results dropdown */}
               {showSearchResults && searchResults.length > 0 && (
-                <div className={`absolute z-10 mt-1 w-full rounded-lg shadow-lg py-1 ${darkMode ? 'bg-gray-700' : 'bg-white'
-                  }`}>
+                <div className={`absolute z-10 mt-1 w-full rounded-lg shadow-lg py-1 ${darkMode ? 'bg-gray-700' : 'bg-white'}`}>
                   {searchResults.map((user) => (
                     <div
                       key={user._id}
-                      className={`px-4 py-2 text-sm cursor-pointer flex items-center justify-between ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-100'
-                        }`}
+                      className={`px-4 py-2 text-sm cursor-pointer flex items-center justify-between ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-100'}`}
                     >
                       <div className="flex items-center">
                         <img
@@ -787,8 +754,7 @@ const publishBlog = async () => {
                         </span>
                       </div>
                       <button
-                        className={`p-1 rounded-full ${darkMode ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-500 hover:bg-gray-200'
-                          }`}
+                        className={`p-1 rounded-full ${darkMode ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-500 hover:bg-gray-200'}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           sendAuthorRequest(user.username);
@@ -811,8 +777,7 @@ const publishBlog = async () => {
 
           {/* Blog Status */}
           <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-white'}`}>
-            <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'
-              }`}>
+            <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <FiInfo className="text-[var(--primary-color)]" />
               Blog Status
             </h3>

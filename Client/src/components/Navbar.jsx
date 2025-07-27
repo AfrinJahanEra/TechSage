@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTheme } from '../context/ThemeContext';
-import userImage from '../assets/user.jpg'
 
 const Navbar = ({ activePage }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -47,14 +46,16 @@ const Navbar = ({ activePage }) => {
   };
 
   return (
-    <nav
+    <nav 
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'h-16 shadow-md' : 'h-20 shadow-lg'}`}
       style={navbarStyle}
     >
+
       <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 h-full flex justify-between items-center">
         <Link
           to={user ? "/home" : "/"}
           className="text-white font-bold text-xl sm:text-2xl md:text-3xl font-orbitron tracking-wider"
+
         >
           <span className="text-white">Tech</span>Sage
         </Link>
@@ -63,18 +64,22 @@ const Navbar = ({ activePage }) => {
           {user ? (
             <>
               {user.role === 'user' && (
+
                 <Link
                   to="/home"
                   className={`text-white text-base sm:text-lg font-medium hover:underline ${activePage === 'home' ? 'font-bold' : ''}`}
+
                 >
                   Home
                 </Link>
               )}
 
               {user.role === 'user' && (
+
                 <Link
                   to="/create-blog"
                   className={`text-white text-base sm:text-lg font-medium hover:underline ${activePage === 'create-blog' ? 'font-bold' : ''}`}
+
                 >
                   Create Blog
                 </Link>
@@ -88,6 +93,7 @@ const Navbar = ({ activePage }) => {
               </Link>
 
               <div className="relative group">
+
                 <Link
                   to="/settings"
                   className="w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-white flex items-center justify-center font-bold overflow-hidden border-2 border-white hover:scale-105 transition-transform"
@@ -97,12 +103,14 @@ const Navbar = ({ activePage }) => {
                     src={user?.avatar_url || userImage}
                     alt="Profile"
                     className="w-full h-full object-cover"
+
                   />
                 </Link>
               </div>
             </>
           ) : (
             <>
+
               <Link
                 to="/signup"
                 className="text-white text-base sm:text-lg font-medium hover:underline"
@@ -112,6 +120,7 @@ const Navbar = ({ activePage }) => {
               <Link
                 to="/login"
                 className="px-3 sm:px-4 py-1 sm:py-2 bg-white rounded-full hover:bg-gray-100 transition-colors text-sm sm:text-base"
+
                 style={loginButtonStyle}
               >
                 Login
@@ -134,7 +143,7 @@ const Navbar = ({ activePage }) => {
         </button>
       </div>
 
-      <div
+      <div 
         className={`md:hidden fixed top-20 left-0 w-full transition-all duration-300 ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'} pt-4 pb-8 shadow-lg`}
         style={mobileMenuStyle}
       >
@@ -142,18 +151,22 @@ const Navbar = ({ activePage }) => {
           {user ? (
             <>
               {user.role === 'user' && (
+
                 <Link
                   to="/home"
                   className="font-medium hover:underline"
+
                   onClick={toggleMenu}
                 >
                   Home
                 </Link>
               )}
               {user.role === 'user' && (
+
                 <Link
                   to="/create-blog"
                   className="font-medium hover:underline"
+
                   onClick={toggleMenu}
                 >
                   Create Blog
@@ -166,14 +179,16 @@ const Navbar = ({ activePage }) => {
               >
                 {getDashboardText()}
               </Link>
+
               <Link
                 to="/settings"
                 className="font-medium hover:underline"
+
                 onClick={toggleMenu}
               >
                 Settings
               </Link>
-              <button
+              <button 
                 onClick={() => {
                   logout();
                   toggleMenu();
@@ -185,16 +200,20 @@ const Navbar = ({ activePage }) => {
             </>
           ) : (
             <>
+
               <Link
                 to="/signup"
                 className="font-medium hover:underline"
+
                 onClick={toggleMenu}
               >
                 Create Account
               </Link>
+
               <Link
                 to="/login"
                 className="font-medium hover:underline"
+
                 onClick={toggleMenu}
               >
                 Login
