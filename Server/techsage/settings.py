@@ -34,7 +34,8 @@ INSTALLED_APPS = [
     'channels',
     'reports',
     'checker',
-    'auth.apps.CustomAuthConfig',  # Custom auth app
+    'auth.apps.CustomAuthConfig',
+    'badges',# Custom auth app
 ]
 
 MIDDLEWARE = [
