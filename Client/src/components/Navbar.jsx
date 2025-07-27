@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTheme } from '../context/ThemeContext';
+import avatar from '../../src/assets/default-avatar.png';
 
 const Navbar = ({ activePage }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -100,7 +101,7 @@ const Navbar = ({ activePage }) => {
                   style={{ color: primaryColor }}
                 >
                   <img
-                    src={user?.avatar_url || userImage}
+                    src={avatar}
                     alt="Profile"
                     className="w-full h-full object-cover"
 

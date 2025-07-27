@@ -10,6 +10,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@codemirror/lang-cpp": "^6.0.0",
+    "@codemirror/lang-css": "^6.0.0",
+    "@codemirror/lang-html": "^6.0.0",
+    "@codemirror/lang-java": "^6.0.0",
+    "@codemirror/lang-javascript": "^6.0.0",
+    "@codemirror/lang-json": "^6.0.0",
+    "@codemirror/lang-python": "^6.0.0",
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
     "@fortawesome/free-brands-svg-icons": "^6.7.2",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
@@ -19,6 +26,7 @@
     "ace-builds": "^1.43.2",
     "axios": "^1.10.0",
     "chart.js": "^4.5.0",
+    "codemirror": "^6.0.2",
     "date-fns": "^4.1.0",
     "firebase": "^11.10.0",
     "framer-motion": "^12.15.0",
@@ -28,6 +36,7 @@
     "katex": "^0.16.22",
     "lodash": "^4.17.21",
     "npm": "^11.4.2",
+    "prismjs": "^1.30.0",
     "react": "^19.1.0",
     "react-chartjs-2": "^5.3.0",
     "react-confirm-alert": "^3.0.6",
@@ -36,16 +45,7 @@
     "react-hot-toast": "^2.5.2",
     "react-icons": "^5.5.0",
     "react-router-dom": "^7.6.1",
-    "react-toastify": "^11.0.5",
-    "codemirror": "^6.0.0",
-    "@codemirror/lang-javascript": "^6.0.0",
-    "@codemirror/lang-python": "^6.0.0",
-    "@codemirror/lang-html": "^6.0.0",
-    "@codemirror/lang-css": "^6.0.0",
-    "@codemirror/lang-java": "^6.0.0",
-    "@codemirror/lang-cpp": "^6.0.0",
-    "@codemirror/lang-json": "^6.0.0",
-    "prismjs": "^1.29.0"
+    "react-toastify": "^11.0.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
