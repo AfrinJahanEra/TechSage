@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { auth, provider, signInWithPopup } from '../../firebase.js'; // Adjust path
 import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { auth, provider, signInWithPopup } from '../../firebase.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 
 const SignupForm = () => {
@@ -53,7 +54,6 @@ const SignupForm = () => {
         newErrors.secretKey = 'Invalid secret key';
       }
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -111,9 +111,7 @@ const SignupForm = () => {
           role: formData.role,
           source: 'email'
         };
-
         await register(userData);
-
         if (formData.role === 'admin') {
           navigate('/admin');
         } else if (formData.role === 'moderator') {
@@ -137,7 +135,6 @@ const SignupForm = () => {
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
-
       const username = user.displayName?.replace(/\s+/g, '').toLowerCase() || 'googleuser';
       const userData = {
         username,
@@ -147,11 +144,7 @@ const SignupForm = () => {
         role: 'user',
         source: 'google'
       };
-
-      console.log('📦 Data sent to register:', userData);
-
       await register(userData);
-
       navigate('/home');
     } catch (error) {
       console.error('Google Sign-in Error:', error);
@@ -162,197 +155,325 @@ const SignupForm = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold text-center text-teal-700 mb-6">Create Account</h2>
-      
-      {errors.api && <p className="mb-4 text-sm text-red-600 text-center">{errors.api}</p>}
+    <div className="min-h-screen flex flex-col lg:flex-row-reverse bg-gray-100 font-sans">
+      {/* Animated Right Panel */}
+      <motion.div
+        initial={{ opacity: 0, x: 100 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.8 }}
+        className="lg:w-1/2 bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center p-8 lg:p-12"
+      >
+        <div className="relative w-full h-full flex flex-col justify-center text-white">
+          <motion.h1
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+            className="text-4xl md:text-5xl font-bold mb-4"
+          >
+            Join Us!
+          </motion.h1>
+          <motion.p
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+            className="text-lg md:text-xl"
+          >
+            Create an account to start your journey.
+          </motion.p>
+          {/* Floating Shapes */}
+          <motion.div
+            className="absolute top-10 right-10 w-20 h-20 bg-white bg-opacity-20 rounded-full"
+            animate={{ y: [0, -30, 0], scale: [1, 1.2, 1] }}
+            transition={{ repeat: Infinity, duration: 4 }}
+          />
+          <motion.div
+            className="absolute bottom-10 left-10 w-16 h-16 bg-white bg-opacity-20 rounded-full"
+            animate={{ y: [0, 30, 0], scale: [1, 1.1, 1] }}
+            transition={{ repeat: Infinity, duration: 5 }}
+          />
+        </div>
+      </motion.div>
 
-      {!otpSent ? (
-        <form onSubmit={handleSendOtp}>
-          <div className="mb-4">
-            <label className="block text-gray-700 mb-2" htmlFor="name">Full Name</label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
-            />
-            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+      {/* Left Panel: Signup Form (No Card) */}
+      <motion.div
+        initial={{ opacity: 0, x: -100 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.8 }}
+        className="lg:w-1/2 flex items-center justify-center p-6 sm:p-10"
+      >
+        <div className="w-full max-w-md bg-white p-8">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-800">Create Account</h2>
+            <p className="mt-3 text-sm text-gray-500">
+              Already have an account?{' '}
+              <Link to="/login" className="font-medium text-teal-600 hover:text-teal-700 transition-colors duration-200">
+                Sign in here
+              </Link>
+            </p>
           </div>
 
-          <div className="mb-4">
-            <label className="block text-gray-700 mb-2" htmlFor="university">University Name</label>
-            <input
-              type="text"
-              id="university"
-              name="university"
-              value={formData.university}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded ${errors.university ? 'border-red-500' : 'border-gray-300'}`}
-            />
-            {errors.university && <p className="text-red-500 text-sm mt-1">{errors.university}</p>}
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-gray-700 mb-2" htmlFor="email">University Email</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
-              placeholder="example@university.edu"
-            />
-            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-gray-700 mb-2" htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
-            />
-            {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-gray-700 mb-2" htmlFor="confirmPassword">Confirm Password</label>
-            <input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'}`}
-            />
-            {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-gray-700 mb-2" htmlFor="role">Role</label>
-            <select
-              id="role"
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded"
+          {errors.api && (
+            <motion.p
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6 text-sm text-red-400 text-center font-medium"
             >
-              <option value="user">Regular User</option>
-              <option value="moderator">Moderator</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-
-          {(formData.role === 'admin' || formData.role === 'moderator') && (
-            <div className="mb-4">
-              <label className="block text-gray-700 mb-2" htmlFor="secretKey">Secret Key</label>
-              <input
-                type="password"
-                id="secretKey"
-                name="secretKey"
-                value={formData.secretKey}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded ${errors.secretKey ? 'border-red-500' : 'border-gray-300'}`}
-                placeholder="Enter secret key for this role"
-              />
-              {errors.secretKey && <p className="text-red-500 text-sm mt-1">{errors.secretKey}</p>}
-            </div>
+              {errors.api}
+            </motion.p>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:opacity-50"
-          >
-            {loading ? 'Sending OTP...' : 'Send Verification OTP'}
-          </button>
-
-          <div className="mt-4 text-center">
-            <p className="text-gray-600">Already have an account? <Link to="/login" className="text-teal-600 hover:underline">Login</Link></p>
-          </div>
-
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
+          {!otpSent ? (
+            <form onSubmit={handleSendOtp} className="space-y-7">
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700">Full Name</label>
+                <motion.input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  whileFocus={{ scale: 1.01 }}
+                  className={`mt-2 block w-full px-4 py-3.5 border ${errors.name ? 'border-red-300' : 'border-gray-200'} rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200 text-sm`}
+                  aria-invalid={errors.name ? 'true' : 'false'}
+                  aria-describedby={errors.name ? 'name-error' : undefined}
+                />
+                {errors.name && <p id="name-error" className="mt-1 text-sm text-red-400">{errors.name}</p>}
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or sign up with</span>
-              </div>
-            </div>
 
-            <div className="mt-6 grid grid-cols-1 gap-3">
-              <button
-                type="button"
-                onClick={handleGoogleSignup}
-                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+              <div>
+                <label htmlFor="university" className="block text-sm font-medium text-gray-700">University Name</label>
+                <motion.input
+                  type="text"
+                  id="university"
+                  name="university"
+                  value={formData.university}
+                  onChange={handleChange}
+                  whileFocus={{ scale: 1.01 }}
+                  className={`mt-2 block w-full px-4 py-3.5 border ${errors.university ? 'border-red-300' : 'border-gray-200'} rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200 text-sm`}
+                  aria-invalid={errors.university ? 'true' : 'false'}
+                  aria-describedby={errors.university ? 'university-error' : undefined}
+                />
+                {errors.university && <p id="university-error" className="mt-1 text-sm text-red-400">{errors.university}</p>}
+              </div>
+
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700">University Email</label>
+                <motion.input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  whileFocus={{ scale: 1.01 }}
+                  className={`mt-2 block w-full px-4 py-3.5 border ${errors.email ? 'border-red-300' : 'border-gray-200'} rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200 text-sm`}
+                  placeholder="example@university.edu"
+                  aria-invalid={errors.email ? 'true' : 'false'}
+                  aria-describedby={errors.email ? 'email-error' : undefined}
+                />
+                {errors.email && <p id="email-error" className="mt-1 text-sm text-red-400">{errors.email}</p>}
+              </div>
+
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
+                <motion.input
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  whileFocus={{ scale: 1.01 }}
+                  className={`mt-2 block w-full px-4 py-3.5 border ${errors.password ? 'border-red-300' : 'border-gray-200'} rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200 text-sm`}
+                  aria-invalid={errors.password ? 'true' : 'false'}
+                  aria-describedby={errors.password ? 'password-error' : undefined}
+                />
+                {errors.password && <p id="password-error" className="mt-1 text-sm text-red-400">{errors.password}</p>}
+              </div>
+
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">Confirm Password</label>
+                <motion.input
+                  type="password"
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  whileFocus={{ scale: 1.01 }}
+                  className={`mt-2 block w-full px-4 py-3.5 border ${errors.confirmPassword ? 'border-red-300' : 'border-gray-200'} rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200 text-sm`}
+                  aria-invalid={errors.confirmPassword ? 'true' : 'false'}
+                  aria-describedby={errors.confirmPassword ? 'confirmPassword-error' : undefined}
+                />
+                {errors.confirmPassword && <p id="confirmPassword-error" className="mt-1 text-sm text-red-400">{errors.confirmPassword}</p>}
+              </div>
+
+              <div>
+                <label htmlFor="role" className="block text-sm font-medium text-gray-700">Role</label>
+                <motion.select
+                  id="role"
+                  name="role"
+                  value={formData.role}
+                  onChange={handleChange}
+                  whileFocus={{ scale: 1.01 }}
+                  className="mt-2 block w-full px-4 py-3.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200 text-sm"
+                >
+                  <option value="user">Regular User</option>
+                  <option value="moderator">Moderator</option>
+                  <option value="admin">Admin</option>
+                </motion.select>
+              </div>
+
+              {(formData.role === 'admin' || formData.role === 'moderator') && (
+                <div>
+                  <label htmlFor="secretKey" className="block text-sm font-medium text-gray-700">Secret Key</label>
+                  <motion.input
+                    type="password"
+                    id="secretKey"
+                    name="secretKey"
+                    value={formData.secretKey}
+                    onChange={handleChange}
+                    whileFocus={{ scale: 1.01 }}
+                    className={`mt-2 block w-full px-4 py-3.5 border ${errors.secretKey ? 'border-red-300' : 'border-gray-200'} rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200 text-sm`}
+                    placeholder="Enter secret key for this role"
+                    aria-invalid={errors.secretKey ? 'true' : 'false'}
+                    aria-describedby={errors.secretKey ? 'secretKey-error' : undefined}
+                  />
+                  {errors.secretKey && <p id="secretKey-error" className="mt-1 text-sm text-red-400">{errors.secretKey}</p>}
+                </div>
+              )}
+
+              <motion.button
+                type="submit"
+                disabled={loading}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full py-3.5 px-4 bg-teal-600 text-white rounded-lg font-medium text-sm hover:bg-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
-                <i className="fab fa-google text-red-500 mr-2"></i>
-                Sign up with Google
-              </button>
-            </div>
-          </div>
-        </form>
-      ) : !otpVerified ? (
-        <form onSubmit={handleVerifyOtp}>
-          <div className="mb-4">
-            <p className="text-gray-700 mb-4">We've sent a 6-digit verification code to <span className="font-semibold">{formData.email}</span>. Please enter it below:</p>
-            <input
-              type="text"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              maxLength="6"
-              className="w-full px-3 py-2 border border-gray-300 rounded text-center text-xl tracking-widest"
-              placeholder="123456"
-            />
-            {errors.otp && <p className="text-red-500 text-sm mt-1">{errors.otp}</p>}
-          </div>
+                {loading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Sending OTP...
+                  </>
+                ) : 'Send Verification OTP'}
+              </motion.button>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:opacity-50"
-          >
-            {loading ? 'Verifying...' : 'Verify OTP'}
-          </button>
-
-          <div className="mt-4 text-center">
-            <button
-              type="button"
-              onClick={() => setOtpSent(false)}
-              className="text-teal-600 hover:underline"
-            >
-              Back to form
-            </button>
-          </div>
-        </form>
-      ) : (
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <div className="flex items-center justify-center mb-4">
-              <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
-                <i className="fas fa-check text-green-500 text-2xl"></i>
+              <div className="mt-6 text-center">
+                <p className="text-sm text-gray-600">
+                  Already have an account?{' '}
+                  <Link to="/login" className="font-medium text-teal-600 hover:text-teal-700 transition-colors duration-200">
+                    Sign in
+                  </Link>
+                </p>
               </div>
-            </div>
-            <p className="text-gray-700 text-center mb-6">Your email has been verified! Click below to complete your registration.</p>
-          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:opacity-50"
-          >
-            {loading ? 'Creating account...' : 'Complete Registration'}
-          </button>
-        </form>
-      )}
+              <div className="mt-8">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-200"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-3 bg-white text-gray-500">Or sign up with</span>
+                  </div>
+                </div>
+
+                <motion.button
+                  type="button"
+                  onClick={handleGoogleSignup}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="mt-4 w-full py-3.5 px-4 border border-teal-200 rounded-lg bg-teal-50 text-sm font-medium text-teal-700 hover:bg-teal-100 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 transition-all duration-200 flex items-center justify-center"
+                >
+                  <svg className="w-5 h-5 mr-2 text-teal-600" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z" />
+                  </svg>
+                  Sign up with Google
+                </motion.button>
+              </div>
+            </form>
+          ) : !otpVerified ? (
+            <form onSubmit={handleVerifyOtp} className="space-y-7">
+              <div>
+                <p className="text-gray-700 mb-4 text-sm">
+                  We've sent a 6-digit verification code to{' '}
+                  <span className="font-semibold">{formData.email}</span>. Please enter it below:
+                </p>
+                <motion.input
+                  type="text"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  maxLength="6"
+                  whileFocus={{ scale: 1.01 }}
+                  className={`block w-full px-4 py-3.5 border ${errors.otp ? 'border-red-300' : 'border-gray-200'} rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200 text-xl text-center tracking-widest`}
+                  placeholder="123456"
+                  aria-invalid={errors.otp ? 'true' : 'false'}
+                  aria-describedby={errors.otp ? 'otp-error' : undefined}
+                />
+                {errors.otp && <p id="otp-error" className="mt-1 text-sm text-red-400">{errors.otp}</p>}
+              </div>
+
+              <motion.button
+                type="submit"
+                disabled={loading}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full py-3.5 px-4 bg-teal-600 text-white rounded-lg font-medium text-sm hover:bg-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {loading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Verifying...
+                  </>
+                ) : 'Verify OTP'}
+              </motion.button>
+
+              <div className="mt-6 text-center">
+                <button
+                  type="button"
+                  onClick={() => setOtpSent(false)}
+                  className="text-sm text-teal-600 hover:text-teal-700 transition-colors duration-200"
+                >
+                  Back to form
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-7">
+              <div>
+                <div className="flex items-center justify-center mb-4">
+                  <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+                    <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                  </div>
+                </div>
+                <p className="text-gray-700 text-center mb-6 text-sm">Your email has been verified! Click below to complete your registration.</p>
+              </div>
+
+              <motion.button
+                type="submit"
+                disabled={loading}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full py-3.5 px-4 bg-teal-600 text-white rounded-lg font-medium text-sm hover:bg-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {loading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Creating account...
+                  </>
+                ) : 'Complete Registration'}
+              </motion.button>
+            </form>
+          )}
+        </div>
+      </motion.div>
     </div>
   );
 };
