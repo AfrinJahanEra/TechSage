@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  FiBold, FiItalic, FiUnderline, FiList, FiAlignLeft, FiAlignCenter, FiAlignRight,
+  FiBold, FiItalic, FiUnderline, FiAlignLeft, FiAlignCenter, FiAlignRight,
   FiAlignJustify, FiLink, FiImage, FiCode, FiRotateCcw, FiRotateCw, FiX
 } from 'react-icons/fi';
-import { MdFormatListNumbered } from 'react-icons/md';
 import { PiMathOperationsFill } from 'react-icons/pi';
 import { useTheme } from '../../context/ThemeContext';
 import LatexModal from './LatexModal';
@@ -11,6 +10,7 @@ import LinkModal from './LinkModal';
 import ListControls from './ListControls';
 import CodeModal from './CodeModal';
 import BlockquoteControls from './BlockquoteControls';
+import HeadingControls from './HeadingControls';
 
 const BlogEditorToolbar = ({ editorRef }) => {
   const { primaryColor, darkMode } = useTheme();
@@ -33,7 +33,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
     const selection = window.getSelection();
     const range = selection.rangeCount > 0 ? selection.getRangeAt(0).cloneRange() : null;
     setSavedRange(range);
-    editorRef.current.focus();
+    editorRef.current.focus({ preventScroll: true });
     setShowCodeModal(true);
   };
 
@@ -73,6 +73,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
 
         if (parentBlockquote) {
           e.preventDefault();
+          const scrollTop = editor.scrollTop;
           const newParagraph = document.createElement('p');
           newParagraph.innerHTML = '<br>';
           range.deleteContents();
@@ -82,6 +83,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
           newRange.collapse(true);
           selection.removeAllRanges();
           selection.addRange(newRange);
+          editor.scrollTop = scrollTop;
           updateActiveFormats();
         }
       }
@@ -96,9 +98,11 @@ const BlogEditorToolbar = ({ editorRef }) => {
   }, [editorRef]);
 
   const formatText = (command, value = null) => {
+    const scrollTop = editorRef.current.scrollTop;
     const selection = window.getSelection();
     document.execCommand(command, false, value);
-    editorRef.current.focus();
+    editorRef.current.focus({ preventScroll: true });
+    editorRef.current.scrollTop = scrollTop;
     updateActiveFormats();
   };
 
@@ -110,6 +114,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
     const file = e.target.files[0];
     if (!file) return;
 
+    const scrollTop = editorRef.current.scrollTop;
     const imgElement = document.createElement('img');
     imgElement.className = 'inserted-image';
     imgElement.src = URL.createObjectURL(file);
@@ -157,8 +162,8 @@ const BlogEditorToolbar = ({ editorRef }) => {
     newRange.collapse(true);
     selection.removeAllRanges();
     selection.addRange(newRange);
-    editor.focus();
-
+    editor.focus({ preventScroll: true });
+    editor.scrollTop = scrollTop;
     fileInputRef.current.value = '';
   };
 
@@ -199,14 +204,30 @@ const BlogEditorToolbar = ({ editorRef }) => {
 
     const formats = [
       'bold', 'italic', 'underline', 'insertUnorderedList', 'insertOrderedList',
-      'justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull', 'formatBlock'
+      'justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull'
     ];
-    const active = formats.filter((cmd) => {
-      if (cmd === 'formatBlock') {
-        return document.queryCommandValue('formatBlock') === 'blockquote';
+    const active = formats.filter((cmd) => document.queryCommandState(cmd));
+
+    // Check for block-level formats
+    const currentBlock = selection.rangeCount > 0
+      ? (selection.getRangeAt(0).startContainer.nodeType === Node.ELEMENT_NODE
+          ? selection.getRangeAt(0).startContainer
+          : selection.getRangeAt(0).startContainer.parentNode
+        ).closest('h1, h2, h3, h4, pre, blockquote')
+      : null;
+
+    if (currentBlock) {
+      const tag = currentBlock.tagName.toLowerCase();
+      if (['h1', 'h2', 'h3', 'h4'].includes(tag)) {
+        active.push('heading');
+      } else if (tag === 'pre') {
+        active.push('codeBlock');
+      } else if (tag === 'blockquote') {
+        active.push('blockquote');
       }
-      return document.queryCommandState(cmd);
-    });
+    }
+
+    console.log('updateActiveFormats - Block:', currentBlock?.tagName, 'Active Formats:', active); // Debugging
     setActiveFormats(active);
   };
 
@@ -310,7 +331,7 @@ const BlogEditorToolbar = ({ editorRef }) => {
     { icon: <FiAlignJustify />, command: 'justifyFull', name: 'Justify', action: () => formatText('justifyFull') },
     { icon: <FiLink />, command: 'insertLink', name: 'Insert Link', action: handleLinkButtonClick },
     { icon: <FiImage />, command: 'insertImage', name: 'Insert Image', action: handleImageButtonClick },
-    { icon: <FiCode />, command: 'formatBlock', name: 'Insert Code', action: insertCode },
+    { icon: <FiCode />, command: 'codeBlock', name: 'Insert Code', action: insertCode },
     { icon: <PiMathOperationsFill />, command: 'insertLatex', name: 'Insert LaTeX', action: handleLatexButtonClick },
     { icon: <FiRotateCcw />, command: 'undo', name: 'Undo', action: () => formatText('undo') },
     { icon: <FiRotateCw />, command: 'redo', name: 'Redo', action: () => formatText('redo') },
@@ -424,13 +445,24 @@ const BlogEditorToolbar = ({ editorRef }) => {
             </div>
 
             {button.command === 'underline' && (
-              <ListControls
-                editorRef={editorRef}
-                darkMode={darkMode}
-                primaryColor={primaryColor}
-                activeFormats={activeFormats}
-                setActiveFormats={setActiveFormats}
-              />
+              <>
+                <ListControls
+                  editorRef={editorRef}
+                  darkMode={darkMode}
+                  primaryColor={primaryColor}
+                  activeFormats={activeFormats}
+                  setActiveFormats={setActiveFormats}
+                  updateActiveFormats={updateActiveFormats}
+                />
+                <HeadingControls
+                  editorRef={editorRef}
+                  darkMode={darkMode}
+                  primaryColor={primaryColor}
+                  activeFormats={activeFormats}
+                  setActiveFormats={setActiveFormats}
+                  updateActiveFormats={updateActiveFormats}
+                />
+              </>
             )}
             {index === 6 && (
               <BlockquoteControls
