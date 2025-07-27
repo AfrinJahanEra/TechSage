@@ -1,7 +1,8 @@
-# from django.urls import path
-# from .views import SendOTPView, VerifyOTPView
+from django.urls import path
+from .views import SendOTPView, VerifyOTPView, CheckUsernameView
 
-# urlpatterns = [
-#     path('send-otp/', SendOTPView.as_view(), name='send_otp'),
-#     path('verify-otp/', VerifyOTPView.as_view(), name='verify_otp'),
-# ]
+urlpatterns = [
+    path('send-otp/', SendOTPView.as_view(), name='send_otp'),
+    path('verify-otp/', VerifyOTPView.as_view(), name='verify_otp'),
+    path('check-username/', CheckUsernameView.as_view(), name='check_username'),
+]

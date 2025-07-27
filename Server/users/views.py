@@ -3,10 +3,12 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.hashers import make_password, check_password
 from .models import User
+from auth.models import OTP  # Import OTP model
 import cloudinary
 import os
 from dotenv import load_dotenv
 from datetime import datetime
+from django.conf import settings  # Ensure settings is imported
 
 load_dotenv()
 
@@ -16,6 +18,17 @@ cloudinary.config(
     api_secret=os.getenv('CLOUDINARY_API_SECRET')
 )
 
+class UserListByRole(APIView):
+    def get(self, request):
+        role = request.GET.get('role', '').strip().lower()
+        if not role:
+            return Response({"error": "Role parameter is required"}, status=400)
+        try:
+            users = User.objects(role=role)
+            return Response([user.to_json() for user in users])
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
 class RegisterUser(APIView):
     def post(self, request):
         required_fields = ['username', 'email', 'password']
@@ -23,6 +36,11 @@ class RegisterUser(APIView):
             return Response({"error": "Missing required fields"}, status=400)
 
         try:
+            # Check if email is verified
+            otp = OTP.objects(email=request.data['email']).order_by('-created_at').first()
+            if not otp or not otp.is_verified:
+                return Response({"error": "Email not verified. Please verify your email with OTP."}, status=400)
+
             if User.objects(username=request.data['username']).first():
                 return Response({"error": "Username already exists"}, status=400)
             if User.objects(email=request.data['email']).first():
@@ -50,7 +68,8 @@ class RegisterUser(APIView):
                 job_title=request.data.get('job_title', 'User'),
                 bio=request.data.get('bio', ''),
                 role=request.data.get('role', 'user'),
-                source=request.data.get('source', 'email')
+                source=request.data.get('source', 'email'),
+                is_verified=True  # Set to true since OTP is verified
             )
             user.clean()
             user.save()

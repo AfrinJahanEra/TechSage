@@ -313,8 +313,13 @@ class PublishBlog(APIView):
             docs = list(cursor)
             
             # Format response
+
+            dhaka_tz = pytz.timezone('Asia/Dhaka')
             blogs = []
             for doc in docs:
+
+                published_at_dhaka = doc.published_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)
+                updated_at_dhaka = doc.updated_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)
                 # Get authors
                 authors = []
                 for author_id in doc.get('authors', []):
@@ -329,13 +334,14 @@ class PublishBlog(APIView):
                 blogs.append({
                     "id": str(doc['_id']),
                     "title": doc.get('title', ''),
-                    "excerpt": content[:200] + "..." if len(content) > 200 else content,
+                    "excerpt": content[:1000] + "..." if len(content) > 500 else content,
                     "content": content,  # Full content for 200-word preview
                     "authors": authors,
                     "thumbnail_url": doc.get('thumbnail_url'),
                     "categories": doc.get('categories', []),
                     "tags": doc.get('tags', []),
-                    "published_at": doc.get('published_at').isoformat() if doc.get('published_at') else None,
+                    "published_at": published_at_dhaka.isoformat(),
+                    "updated_at": updated_at_dhaka.isoformat(),
                     "stats": {
                         "upvotes": len(doc.get('upvotes', [])),
                         "downvotes": len(doc.get('downvotes', []))
@@ -672,7 +678,7 @@ class AddAuthorToBlog(APIView):
 
 
 
-class PublishedBlogs(APIView):
+class PublishedBlogs(APIView):#sidebar
     def get(self, request):
         """
         Get ALL published blogs with pagination
@@ -727,7 +733,8 @@ class PublishedBlogs(APIView):
                 blog_data = {
                     "id": str(blog.id),
                     "title": blog.title,
-                    "excerpt": blog.content[:200] + "..." if len(blog.content) > 200 else blog.content,
+                    "excerpt": blog.content,
+                    "content": blog.content,
                     "authors": [{
                         "username": author.username,
                         "avatar": getattr(author, 'avatar_url', None)
@@ -739,7 +746,6 @@ class PublishedBlogs(APIView):
                     "updated_at": updated_at_dhaka.isoformat(),
                     "is_reviewed": blog.is_reviewed,
                     "reviewed_by": blog.reviewed_by.username if blog.reviewed_by else None,
-                    "read_time": f"{max(1, len(blog.content.split()) // 200)} min read",
                     "stats": {
                         "upvotes": len(blog.upvotes),
                         "downvotes": len(blog.downvotes)

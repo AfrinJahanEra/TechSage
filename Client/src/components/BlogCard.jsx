@@ -1,7 +1,7 @@
 // src/components/BlogCard.jsx
 import { Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext.jsx';
-import { getThumbnailUrl, formatDate, calculateReadTime } from '../utils/blogUtils.js';
+import { getThumbnailUrl, formatDate, calculateReadTime , getTitlePreview} from '../utils/blogUtils.js';
 
 const BlogCard = ({ blog }) => {
   const { primaryColor, darkMode } = useTheme();
@@ -20,7 +20,7 @@ const BlogCard = ({ blog }) => {
             {blog.categories?.[0] || 'Uncategorized'}
           </span>
           <h3 className={`text-sm font-medium leading-snug mt-1 group-hover:opacity-80 transition-colors ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-            {blog.title}
+            {getTitlePreview(blog.title)}
           </h3>
           <div className={`flex justify-between text-xs mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
             <span>{formatDate(blog.published_at || blog.created_at)}</span>
