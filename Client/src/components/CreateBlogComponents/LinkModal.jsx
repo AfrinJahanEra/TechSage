@@ -77,8 +77,9 @@ const LinkModal = ({ editorRef, setShowLinkModal, darkMode, primaryColor, savedR
       selection.removeAllRanges();
       selection.addRange(newRange);
     }
-
-    editor.focus();
+setTimeout(() => editor.focus(), 0); // Ensure focus after insertion
+    
+    
     setShowLinkModal(false);
     setLinkUrl('');
     setLinkText('');

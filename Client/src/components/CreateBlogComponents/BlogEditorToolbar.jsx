@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  FiBold, FiItalic, FiUnderline, FiAlignLeft, FiAlignCenter, FiAlignRight,
+  FiBold, FiItalic, FiUnderline, FiList, FiAlignLeft, FiAlignCenter, FiAlignRight,
   FiAlignJustify, FiLink, FiImage, FiCode, FiRotateCcw, FiRotateCw, FiX
 } from 'react-icons/fi';
+import { MdFormatListNumbered } from 'react-icons/md';
 import { PiMathOperationsFill } from 'react-icons/pi';
 import { useTheme } from '../../context/ThemeContext';
 import LatexModal from './LatexModal';
 import LinkModal from './LinkModal';
 import ListControls from './ListControls';
+import CodeModal from './CodeModal';
 import BlockquoteControls from './BlockquoteControls';
 
 const BlogEditorToolbar = ({ editorRef }) => {

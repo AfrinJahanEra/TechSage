@@ -204,6 +204,7 @@ const LatexModal = ({ editorRef, latexInput, setLatexInput, isLatexSelected, set
 
     setShowLatexModal(false);
     setLatexInput('');
+     setTimeout(() => editor.focus(), 0); // Ensure focus after insertion
   };
 
   const insertLatexTemplate = (template) => {
@@ -478,6 +479,7 @@ const LatexModal = ({ editorRef, latexInput, setLatexInput, isLatexSelected, set
           </div>
         </div>
       </div>
+      <button onClick={insertLatex}>Insert Latex</button>;
     </>
   );
 };

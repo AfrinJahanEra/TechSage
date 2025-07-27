@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FiList, FiChevronDown } from 'react-icons/fi';
 import { MdFormatListNumbered } from 'react-icons/md';
 
-const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setActiveFormats }) => {
+const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setActiveFormats, updateActiveFormats }) => {
   const [showBulletDropdown, setShowBulletDropdown] = useState(false);
   const [showNumberedDropdown, setShowNumberedDropdown] = useState(false);
   const [tooltip, setTooltip] = useState('');
@@ -25,6 +25,8 @@ const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setAct
   const handleSelectListStyle = (styleObj) => {
     const editor = editorRef.current;
     if (!editor) return;
+
+    const scrollTop = editor.scrollTop;
 
     const selection = window.getSelection();
     const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
@@ -59,7 +61,7 @@ const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setAct
         lines.forEach(text => {
           if (text.trim()) {
             const li = document.createElement('li');
-            li.style.cssText = styleObj.liStyle ? `position: relative; ${styleObj.liStyle}` : '';
+            li.style.cssText = styleObj.liStyle ? `position LisaStyle: position: relative; ${styleObj.liStyle}` : '';
             li.textContent = text;
             list.appendChild(li);
           }
@@ -130,14 +132,14 @@ const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setAct
           selection.addRange(newRange);
         }
       }
+      updateActiveFormats();
+      editor.scrollTop = scrollTop;
     } catch (error) {
       console.error('Error inserting list:', error);
     }
 
     setShowBulletDropdown(false);
     setShowNumberedDropdown(false);
-    editor.focus();
-    updateActiveFormats();
   };
 
   useEffect(() => {
@@ -146,6 +148,7 @@ const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setAct
 
     const handleKeyDown = (e) => {
       if (e.key === 'Enter') {
+        const scrollTop = editor.scrollTop;
         const selection = window.getSelection();
         const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
         if (!range || !editor.contains(range.startContainer)) return;
@@ -173,7 +176,6 @@ const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setAct
           newRange.collapse(true);
           selection.removeAllRanges();
           selection.addRange(newRange);
-          editor.focus();
         } else {
           const newLi = document.createElement('li');
           newLi.style.cssText = currentLi.style.cssText;
@@ -185,9 +187,11 @@ const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setAct
           selection.removeAllRanges();
           selection.addRange(newRange);
         }
+        editor.scrollTop = scrollTop;
       }
 
       if (e.key === 'Backspace') {
+        const scrollTop = editor.scrollTop;
         const selection = window.getSelection();
         const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
         if (!range || !editor.contains(range.startContainer)) return;
@@ -215,38 +219,14 @@ const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setAct
           newRange.collapse(true);
           selection.removeAllRanges();
           selection.addRange(newRange);
-          editor.focus();
         }
+        editor.scrollTop = scrollTop;
       }
     };
 
     editor.addEventListener('keydown', handleKeyDown);
     return () => editor.removeEventListener('keydown', handleKeyDown);
-  }, [editorRef]);
-
-  const updateActiveFormats = () => {
-    const selection = window.getSelection();
-    const isInsideEditor = editorRef.current && editorRef.current.contains(selection.anchorNode);
-
-    if (!isInsideEditor) {
-      setActiveFormats([]);
-      return;
-    }
-
-    const formats = [
-      'bold',
-      'italic',
-      'underline',
-      'insertUnorderedList',
-      'insertOrderedList',
-      'justifyLeft',
-      'justifyCenter',
-      'justifyRight',
-      'justifyFull'
-    ];
-    const active = formats.filter((cmd) => document.queryCommandState(cmd));
-    setActiveFormats(active);
-  };
+  }, [editorRef, updateActiveFormats]);
 
   const getActiveListStyle = () => {
     const selection = window.getSelection();
@@ -259,7 +239,6 @@ const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setAct
     return null;
   };
 
-  // Handle clicks outside dropdowns to close them
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (
@@ -271,8 +250,8 @@ const ListControls = ({ editorRef, darkMode, primaryColor, activeFormats, setAct
       ) {
         setShowBulletDropdown(false);
         setShowNumberedDropdown(false);
-        if (editorRef.current) {
-          editorRef.current.focus();
+        if (editorRef.current && document.activeElement !== editorRef.current) {
+          editorRef.current.focus({ preventScroll: true });
         }
       }
     };
