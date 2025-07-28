@@ -4,6 +4,7 @@ class Badge:
     BADGE_THRESHOLDS = {
         "diamond": 500,
         "gold": 400,
+        "sapphire": 350,
         "silver": 300,
         "bronze": 200,
         "ruby": 100
