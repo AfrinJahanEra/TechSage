@@ -14,6 +14,7 @@ class Badge:
         "diamond": "/static/badges/diamond.png",
         "gold": "/static/badges/gold.png",
         "silver": "/static/badges/silver.png",
+        "sapphire": "/static/badges/sapphire.png",
         "bronze": "/static/badges/bronze.png",
         "ruby": "/static/badges/ruby.png"
     }
