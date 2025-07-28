@@ -1,5 +1,6 @@
 <a name="top"></a>
 
+
 <h1 align="center" font-style="bold">
   $\Huge\textbf{\color{#2196F3}TECHSAGE}$
 </h1>
@@ -43,6 +44,116 @@ $${\color{lightblue}Create, \space \color{#5EEAD4}manage \space \color{#FBF3D4}a
 
 <br>
 
+<h1>$\large\textbf{\color{#2196F3}{Features}}$</h1>
+
+<table>
+  <tr>
+    <td style="width:70%;">
+      <h3>$\large\textbf{\color{#98FB98}{Real-time Collaborative Writing}}$</h3>
+      <ul>
+        <li>Co-author academic blogs in real time, just like Google Docs</li>
+        <li>Seamless online drafting and synchronized edits</li>
+        <li>Track edits per author with version history and contribution logs</li>
+        <br>
+      </ul>
+    </td>
+    <td style="width:30%;"><img width="100px" src="https://github.com/user-attachments/assets/2fc4e105-0636-4cd7-995f-915a667df071" /></td>
+  </tr>
+
+  <tr>
+    <td style="width:70%;">
+      <h3>$\large\textbf{\color{#AFF4E1}{Academic-Focused Editor}}$</h3>
+      <ul>
+        <li>Supports LaTeX, Markdown, code blocks, and diagrams in a unified editor</li>
+        <li>Designed specifically for academic content creators and researchers</li>
+        <br>
+      </ul>
+    </td>
+    <td style="width:30%;"><img width="100px" src="https://github.com/user-attachments/assets/2fc4e105-0636-4cd7-995f-915a667df071" /></td>
+  </tr>
+
+  <tr>
+    <td style="width:70%;">
+      <h3>$\large\textbf{\color{#919DF3}{Serialized and Topic-wise Blogging}}$</h3>
+      <ul>
+        <li>Organize academic writing by topics or serialized series</li>
+        <li>Easy navigation and categorization for readers</li>
+        <br>
+      </ul>
+    </td>
+    <td style="width:30%;"><img width="100px" src="https://github.com/user-attachments/assets/2fc4e105-0636-4cd7-995f-915a667df071" /></td>
+  </tr>
+
+  <tr>
+    <td style="width:70%;">
+      <h3>$\large\textbf{\color{#F08080}{Version Control and Author Credits}}$</h3>
+      <ul>
+        <li>Git-style change tracking: See what was changed, by whom, and when</li>
+        <li>Transparent contribution history for collaborative integrity</li>
+        <br>
+      </ul>
+    </td>
+    <td style="width:30%;"><img width="100px" src="https://github.com/user-attachments/assets/2fc4e105-0636-4cd7-995f-915a667df071" /></td>
+  </tr>
+
+  <tr>
+    <td style="width:70%;">
+      <h3>$\large\textbf{\color{#00F8FF}{Academic Profiles and Recognition}}$</h3>
+      <ul>
+        <li>Link ORCID, Google Scholar, or other academic IDs</li>
+        <li>Earn badges for contributions like reviews, citations, and collaborations</li>
+        <li>Personal dashboard showing user impact and progress</li>
+        <br>
+      </ul>
+    </td>
+    <td style="width:30%;"><img width="100px" src="https://github.com/user-attachments/assets/2fc4e105-0636-4cd7-995f-915a667df071" /></td>
+  </tr>
+
+  <tr>
+    <td style="width:70%;">
+      <h3>$\large\textbf{\color{#FFFFA0}{Reader Engagement Tools}}$</h3>
+      <ul>
+        <li>Support for comments, upvotes, @mentions, and discussion threads</li>
+        <li>Build a community around academic writing and reviews</li>
+        <br>
+      </ul>
+    </td>
+    <td style="width:30%;"><img width="100px" src="https://github.com/user-attachments/assets/2fc4e105-0636-4cd7-995f-915a667df071" /></td>
+  </tr>
+
+  <tr>
+    <td style="width:70%;">
+      <h3>$\large\textbf{\color{#00E0FF}{Moderation and Admin Capabilities}}$</h3>
+      <ul>
+        <li>Admin can manage categories, moderators, and user groups</li>
+        <li>Moderators can assign badges, flag spam, review citations, and handle plagiarism reports</li>
+        <br>
+      </ul>
+    </td>
+    <td style="width:30%;"><img width="100px" src="https://github.com/user-attachments/assets/2fc4e105-0636-4cd7-995f-915a667df071" /></td>
+  </tr>
+</table>
+
+
+
+<h1>$\large\textbf{\color{#2196F3}{User Roles}}$</h1><br>
+
+| $\large\text{\color{#76DCF1}{Role}}$ | $\large\text{\color{#FD8FAB}{Description}}$ |
+| ------------- | --------------------------------------------------------------------------- |
+| **User**      | Can write, co-author, comment, upvote, and view academic profiles           |
+| **Moderator** | Reviews content, flags issues, validates badges and manages roles           |
+| **Admin**     | Manages the entire platform, including topic categories and user governance |
+
+<br>
+
+<h1>$\large\textbf{\color{#2196F3}{Target Users}}$</h1><br>
+
+
+| <img width="100px" src="https://github.com/user-attachments/assets/2fc4e105-0636-4cd7-995f-915a667df071" /> | <img width="100px" src="https://github.com/user-attachments/assets/f417534a-6029-44d0-b8bf-c0a3b2033d99" /> | <img width="100px" src="https://github.com/user-attachments/assets/cf05c304-1529-457f-925d-e9ab096a93ab" /> | <img width="100px" src="https://github.com/user-attachments/assets/871fb38f-b86b-4bdd-a676-eaa3ad58d09b" /> |
+|:--:|:--:|:--:|:--:|
+| University students | Academic researchers | Educators and teachers | Content reviewers |
+
+
 <details>
   <summary>
     <h1>$\large\textbf{\color{#2196F3}{File Structure}}$</h1><br>
@@ -68,29 +179,16 @@ Clone the repository
 ```console
 https://github.com/AfrinJahanEra/TechSage.git
 ```
-Install `Python` and `React.js` and `Mongodb`. Then create a virtual environment(Optional but recommended).
+Or download the `zip` file, then extract it in a folder.
 
-For `Linux/MacOS`
-```console
-python -m venv env
-source env/bin/activate
-```
-For `Windows`
-```console
-python -m venv env
-.\\env\\Scripts\\activate
-```
+<h1>$\large\textnormal{\color{#2196F3}{How To Run}}$</h1>
 
-Then install python dependencies
-```console
-pip install -r requirements.txt
-```
+<h2>$\large\textnormal{\color{#2196F3}{Prerequisites}}$</h2>
 
-Then download Redis from [`redis-release`](https://github.com/tporadowski/redis/releases) (use the latest zip version)
-
-<h1>$\large\textnormal{\color{#2196F3}{How To Run}}$</h1><br>
-
-Extract the files from `redis-release` zip file. Then click on `redis-server.exe`. To check the server is running or not
+- Install `Python` and `React.js` and `Mongodb`(optional).
+- Open an account at [`MongoDB Atlas`](https://www.mongodb.com/products/platform/atlas-database) and collect the credentials.
+- Open account in [`Cloudinary`](https://cloudinary.com/) and collect credentials from there.
+- Then download Redis from [`redis-release`](https://github.com/tporadowski/redis/releases) (use the latest zip version). Extract the files from `redis-release` zip file. Then click on `redis-server.exe`. To check the server is running or not
 
 Open the command prompt, write
 ```console
@@ -137,16 +235,110 @@ taskkill /PID 14220 /F
 ```
 - Then try refreshing the pc and run the `redis-server.exe` again.
 
-Then open this project. In backend project directory, Open terminal and run
+<h2>$\large\textnormal{\color{#2196F3}{Server Directory}}$</h2>
+
+Then go to the directory path(where the code is)
+```console
+cd "path\to\directory"
+```
+Then open right-click and click `open in Terminal`. Then in terminal run
+```console
+code .
+```
+This will directly take you to the VS Code interface. In `Server` directory, Open terminal and run
+
+For `Linux/MacOS`
+```console
+python -m venv env
+source env/bin/activate
+```
+For `Windows`
+```console
+python -m venv env
+.\\env\\Scripts\\activate
+```
+
+Which will create the environment. Inside this, install the dependencies.
+
+```console
+pip install -r requirements.txt
+```
+This will install all the `pip` dependencies required to run this code. If it doesn't work, run this in `Command Prompt` or in  `VS Code Terminal`
+
+```console
+pip install Django python-dotenv djangorestframework django-cors-headers channels pytz pymongo dnspython certify daphne cloudinary requests
+```
+
+Then run in `Server` directory
 ```console
 daphne techsage.asgi:application
 ```
- In frontend directory, Open terminal and run
+
+If it's missing the `static directory` it will give this error
+```python
+django.core.exceptions.ImproperlyConfigured: 
+You're using the staticfiles app without having set the required STATIC_URL setting.
+```
+
+This happens when:
+- `django.contrib.staticfiles` is in INSTALLED_APPS
+- But forgot to define `STATIC_URL` (and optionally STATICFILES_DIRS)
+
+Add this to `settings.py`:
+```python
+import os
+
+# Required
+STATIC_URL = '/static/'
+
+# Optional (for development)
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
+
+# Optional (for production use)
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+```
+
+Create the static directory (if needed):
+```console
+mkdir static
+```
+
+<h2>$\large\textnormal{\color{#2196F3}{Client Directory}}$</h2>
+
+In `Client` directory, Open terminal and run
  ```console
 npm install
-npm run build
+npm run dev
 ```
-and serve it with Django or a production web server. Don’t deploy with `npm run dev`.
+
+Make sure `Vite` is installed as a dev dependency in your project. Check `package.json` inside `Client/`. If something like this is present:
+```json
+"devDependencies": {
+  "vite": "^5.0.0",  // or another version
+  ...
+}
+```
+It means `Vite` is present. If it's missing, install it:
+```console
+npm install vite --save-dev
+```
+> [!TIP]
+> To fix vulnerabilities, run this :
+> ```console
+> npm audit fix
+> ```
+
+Or to fix all issues automatically (including breaking changes):
+```console
+npm audit fix --force
+```
+
+> [!CAUTION] 
+> Be cautious with `--force`. It may upgrade packages that break project.
+
+and serve it with Django or a production web server. Don’t deploy with `npm run build`.
 
 > [!IMPORTANT]  
 > - This project uses `ASGI` (not `WSGI`), and runs via Daphne instead of `python manage.py runserver`.
@@ -194,15 +386,20 @@ Make sure none of these ports are already in use.
 
 <h1>$\large\textnormal{\color{#2196F3}{Team Members}}$</h1>
 
+<div align="center">
+  
 | $\large\text{\color{#DAA5A4}{Name}}$ | $\large\text{\color{#D6C8FF}{Github Profile}}$ | $\large\text{\color{#C8A2C8}{Contribution}}$ |
 |--------------------------------------|------------------------------------------------|----------------------------------------------|
 | Afrin Jahan Era | [github](https://github.com/AfrinJahanEra) | Frontend |
 | Ramisa Anan Rahman | [github](https://github.com/Ramisa105) | Frontend |
 | Ridika Naznin | [github](https://github.com/ridika-2004) | Backend |
 
+</div>
+
 <h1>$\large\textnormal{\color{#2196F3}{License}}$</h1>
 
-> <img src="https://github.com/user-attachments/assets/780a54a1-6b15-45e6-82a2-f6c36f75faea" align = "right" width = "60px">
+> <img src="https://github.com/user-attachments/assets/da1a44dc-a69d-4b37-8330-30214c6e768f" align = "right" width = "60px">
+
 
 > $${\color{lightblue}This \space \color{#5EEAD4}project \space \color{#FBF3D4}is \space \color{#D4D4FF}under}$$ [MIT License](https://github.com/AfrinJahanEra/TechSage?tab=MIT-1-ov-file)
 
