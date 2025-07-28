@@ -266,7 +266,7 @@ pip install -r requirements.txt
 This will install all the `pip` dependencies required to run this code. If it doesn't work, run this in `Command Prompt` or in  `VS Code Terminal`
 
 ```console
-pip install Django python-dotenv djangorestframework django-cors-headers channels pytz pymongo dnspython certify daphne cloudinary requests
+pip install Django python-dotenv djangorestframework django-cors-headers channels pytz pymongo dnspython certify daphne cloudinary requests pytest pytest-django
 ```
 
 Then run in `Server` directory
