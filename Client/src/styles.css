@@ -1,0 +1,106 @@
+/* Basic editor styles */
+.tiptap {
+  :first-child {
+    margin-top: 0;
+  }
+
+  /* List styles */
+  ul,
+  ol {
+    padding: 0 1rem;
+    margin: 1.25rem 1rem 1.25rem 0.4rem;
+
+    li p {
+      margin-top: 0.25em;
+      margin-bottom: 0.25em;
+    }
+  }
+
+  /* Heading styles */
+  h1,
+  h2,
+  h3,
+  h4 {
+    line-height: 1.1;
+    margin-top: 2.5rem;
+    text-wrap: pretty;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+    margin-top: 3.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    margin-top: 3rem;
+    margin-bottom: 1.25rem;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+  }
+
+  h4 {
+    font-size: 1.125rem;
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Code and preformatted text styles */
+  code {
+    background-color: var(--purple-light, #f3e8ff);
+    border-radius: 0.4rem;
+    color: var(--black, #1f2937);
+    font-size: 0.85rem;
+    padding: 0.25em 0.3em;
+  }
+
+  pre {
+    background: var(--black, #1f2937);
+    border-radius: 0.5rem;
+    color: var(--white, #ffffff);
+    font-family: 'JetBrainsMono', monospace;
+    margin: 1.5rem 0;
+    padding: 0.75rem 1rem;
+
+    code {
+      background: none;
+      color: inherit;
+      font-size: 0.8rem;
+      padding: 0;
+    }
+  }
+
+  /* Blockquote styles */
+  blockquote {
+    border-left: 4px solid var(--primary-color, #3b82f6);
+    margin: 1.5rem 0;
+    padding-left: 1rem;
+  }
+
+  /* Image styles */
+  img {
+    display: block;
+    margin: 1em auto;
+    border-radius: 3px;
+    max-width: 500px;
+    width: 300px;
+  }
+
+  /* Link styles */
+  a {
+    color: var(--primary-color, #3b82f6);
+    text-decoration: underline;
+  }
+
+  /* Horizontal rule */
+  hr {
+    border: none;
+    border-top: 1px solid var(--gray-2, #e5e7eb);
+    margin: 2rem 0;
+  }
+}
