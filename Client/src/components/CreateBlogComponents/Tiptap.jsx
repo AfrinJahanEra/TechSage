@@ -8,6 +8,7 @@ import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import BulletList from '@tiptap/extension-bullet-list';
 import OrderedList from '@tiptap/extension-ordered-list';
 import ListItem from '@tiptap/extension-list-item';
+
 import { createLowlight } from 'lowlight';
 import {
     FiBold, FiItalic, FiUnderline, FiLink, FiImage, FiCode, FiRotateCcw, FiRotateCw,
@@ -15,8 +16,7 @@ import {
 } from 'react-icons/fi';
 import { MdFormatListNumbered } from 'react-icons/md';
 import { BiSolidQuoteRight } from 'react-icons/bi';
-import { PiMathOperationsFill } from 'react-icons/pi';
-import { FiType, FiChevronDown } from 'react-icons/fi';
+import { FiType, FiChevronDown, FiX } from 'react-icons/fi';
 import '../../styles.css';
 
 // Create lowlight instance
@@ -114,6 +114,7 @@ const CustomOrderedList = OrderedList.extend({
     },
 });
 
+
 const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
     const [showHeadingDropdown, setShowHeadingDropdown] = useState(false);
     const [showBulletDropdown, setShowBulletDropdown] = useState(false);
@@ -129,11 +130,19 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
     const bulletButtonRef = useRef(null);
     const numberButtonRef = useRef(null);
 
+    const headingStyles = [
+        { name: 'Paragraph', level: null },
+        { name: 'Heading 1', level: 1 },
+        { name: 'Heading 2', level: 2 },
+        { name: 'Heading 3', level: 3 },
+        { name: 'Heading 4', level: 4 },
+    ];
+
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
-                bulletList: false, // Disable StarterKit's BulletList
-                orderedList: false, // Disable StarterKit's OrderedList
+                bulletList: false,
+                orderedList: false,
             }),
             CustomBulletList,
             CustomOrderedList,
@@ -153,11 +162,13 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             CodeBlockLowlight.configure({
                 lowlight,
             }),
+            
             Latex,
         ],
         content,
         onUpdate: ({ editor }) => {
             setContent(editor.getHTML());
+            console.log('Editor HTML:', editor.getHTML());
         },
     });
 
@@ -253,20 +264,64 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
     ];
 
     const buttons = [
-        { icon: <FiBold />, action: () => editor.chain().focus().toggleBold().run(), disabled: !editor.can().toggleBold(), active: editor.isActive('bold'), name: 'Bold' },
-        { icon: <FiItalic />, action: () => editor.chain().focus().toggleItalic().run(), disabled: !editor.can().toggleItalic(), active: editor.isActive('italic'), name: 'Italic' },
-        { icon: <FiUnderline />, action: () => editor.chain().focus().toggleUnderline().run(), disabled: !editor.can().toggleUnderline(), active: editor.isActive('underline'), name: 'Underline' },
-        { icon: <FiAlignLeft />, action: () => editor.chain().focus().setTextAlign('left').run(), active: editor.isActive({ textAlign: 'left' }), name: 'Align Left' },
-        { icon: <FiAlignCenter />, action: () => editor.chain().focus().setTextAlign('center').run(), active: editor.isActive({ textAlign: 'center' }), name: 'Align Center' },
-        { icon: <FiAlignRight />, action: () => editor.chain().focus().setTextAlign('right').run(), active: editor.isActive({ textAlign: 'right' }), name: 'Align Right' },
-        { icon: <FiAlignJustify />, action: () => editor.chain().focus().setTextAlign('justify').run(), active: editor.isActive({ textAlign: 'justify' }), name: 'Justify' },
-        { icon: <BiSolidQuoteRight />, action: () => editor.chain().focus().toggleBlockquote().run(), active: editor.isActive('blockquote'), name: 'Blockquote' },
-        { icon: <FiLink />, action: handleLinkButtonClick, active: editor.isActive('link'), name: 'Insert Link' },
-        { icon: <FiImage />, action: handleImageUpload, active: false, name: 'Insert Image' },
-        { icon: <FiCode />, action: () => editor.chain().focus().toggleCodeBlock().run(), active: editor.isActive('codeBlock'), name: 'Insert Code' },
-        { icon: <PiMathOperationsFill />, action: handleLatexButtonClick, active: false, name: 'Insert LaTeX' },
-        { icon: <FiRotateCcw />, action: () => editor.chain().focus().undo().run(), disabled: !editor.can().undo(), name: 'Undo' },
-        { icon: <FiRotateCw />, action: () => editor.chain().focus().redo().run(), disabled: !editor.can().redo(), name: 'Redo' },
+        { 
+            icon: <FiBold />, 
+            action: () => editor.chain().focus().toggleBold().run(), 
+            disabled: !editor.can().toggleBold(), 
+            active: editor.isActive('bold'), 
+            name: 'Bold' 
+        },
+        { 
+            icon: <FiItalic />, 
+            action: () => editor.chain().focus().toggleItalic().run(), 
+            disabled: !editor.can().toggleItalic(), 
+            active: editor.isActive('italic'), 
+            name: 'Italic' 
+        },
+        { 
+            icon: <FiUnderline />, 
+            action: () => editor.chain().focus().toggleUnderline().run(), 
+            disabled: !editor.can().toggleUnderline(), 
+            active: editor.isActive('underline'), 
+            name: 'Underline' 
+        },
+        
+        { 
+            icon: <BiSolidQuoteRight />, 
+            action: () => editor.chain().focus().toggleBlockquote().run(), 
+            active: editor.isActive('blockquote'), 
+            name: 'Blockquote' 
+        },
+        { 
+            icon: <FiLink />, 
+            action: handleLinkButtonClick, 
+            active: editor.isActive('link'), 
+            name: 'Insert Link' 
+        },
+        { 
+            icon: <FiImage />, 
+            action: handleImageUpload, 
+            active: false, 
+            name: 'Insert Image' 
+        },
+        { 
+            icon: <FiCode />, 
+            action: () => editor.chain().focus().toggleCodeBlock().run(), 
+            active: editor.isActive('codeBlock'), 
+            name: 'Insert Code' 
+        },
+        { 
+            icon: <FiRotateCcw />, 
+            action: () => editor.chain().focus().undo().run(), 
+            disabled: !editor.can().undo(), 
+            name: 'Undo' 
+        },
+        { 
+            icon: <FiRotateCw />, 
+            action: () => editor.chain().focus().redo().run(), 
+            disabled: !editor.can().redo(), 
+            name: 'Redo' 
+        },
     ];
 
     return (
@@ -343,6 +398,27 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
           }
           .ProseMirror .list-bullets, .ProseMirror .list-numbers {
             padding-left: 1.5rem;
+            margin: 1.25rem 0;
+          }
+          .ProseMirror p[style*="text-align"],
+          .ProseMirror h1[style*="text-align"],
+          .ProseMirror h2[style*="text-align"],
+          .ProseMirror h3[style*="text-align"],
+          .ProseMirror h4[style*="text-align"],
+          .ProseMirror li[style*="text-align"] {
+            text-align: var(--text-align) !important;
+            width: 100%;
+            display: block;
+            --text-align: attr(style, "text-align", "left");
+          }
+          .ProseMirror ul[data-type="bulletList"],
+          .ProseMirror ol[data-type="orderedList"] {
+            width: 100%;
+            margin-left: 0;
+            padding-left: 1.5rem;
+          }
+          .ProseMirror li p {
+            margin: 0;
           }
         `}
             </style>
