@@ -5,7 +5,8 @@ import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
-import { BulletList, ListItem } from '@tiptap/extension-list'
+import BulletList from '@tiptap/extension-bullet-list';
+import ListItem from '@tiptap/extension-list-item';
 import { createLowlight } from 'lowlight';
 import {
     FiBold, FiItalic, FiUnderline, FiLink, FiImage, FiCode, FiRotateCcw, FiRotateCw,
@@ -48,8 +49,41 @@ const Latex = {
     ],
 };
 
+// Custom BulletList extension with bulletStyle attribute
+const CustomBulletList = BulletList.extend({
+    addAttributes() {
+        return {
+            bulletStyle: {
+                default: 'disc',
+                parseHTML: element => element.style.listStyleType || 'disc',
+                renderHTML: attributes => ({
+                    style: `list-style-type: ${attributes.bulletStyle}`,
+                    class: 'list-bullets',
+                }),
+            },
+        };
+    },
+    addCommands() {
+        return {
+            setBulletListStyle: (bulletStyle) => ({ commands }) => {
+                return commands.updateAttributes('bulletList', { bulletStyle });
+            },
+            toggleBulletList: () => ({ commands, state }) => {
+                const { from, to } = state.selection;
+                const isBulletListActive = state.doc.rangeHasMark(from, to, state.schema.nodes.bulletList);
+                if (isBulletListActive) {
+                    return commands.liftListItem('listItem');
+                } else {
+                    return commands.toggleList('bulletList', 'listItem');
+                }
+            },
+        };
+    },
+});
+
 const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
     const [showHeadingDropdown, setShowHeadingDropdown] = useState(false);
+    const [showBulletDropdown, setShowBulletDropdown] = useState(false);
     const [tooltip, setTooltip] = useState('');
     const [hoveredIcon, setHoveredIcon] = useState(null);
     const [showLinkModal, setShowLinkModal] = useState(false);
@@ -58,17 +92,14 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
     const [latexInput, setLatexInput] = useState('');
     const fileInputRef = useRef(null);
     const headingButtonRef = useRef(null);
+    const bulletButtonRef = useRef(null);
 
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
-                bulletList: false, // Disable StarterKit's BulletList to use standalone BulletList
+                bulletList: false, // Disable StarterKit's BulletList
             }),
-            BulletList.configure({
-                HTMLAttributes: {
-                    class: 'list-bullets',
-                },
-            }),
+            CustomBulletList,
             ListItem,
             Underline,
             Link.configure({
@@ -103,6 +134,9 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
         const handleClickOutside = (e) => {
             if (headingButtonRef.current && !headingButtonRef.current.contains(e.target) && !e.target.closest('.heading-dropdown')) {
                 setShowHeadingDropdown(false);
+            }
+            if (bulletButtonRef.current && !bulletButtonRef.current.contains(e.target) && !e.target.closest('.bullet-dropdown')) {
+                setShowBulletDropdown(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -164,11 +198,17 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
         setLatexInput('');
     };
 
+    const bulletStyles = [
+        { name: 'Disc', style: 'disc' },
+        { name: 'Circle', style: 'circle' },
+        { name: 'Square', style: 'square' },
+    ];
+
     const buttons = [
         { icon: <FiBold />, action: () => editor.chain().focus().toggleBold().run(), disabled: !editor.can().toggleBold(), active: editor.isActive('bold'), name: 'Bold' },
         { icon: <FiItalic />, action: () => editor.chain().focus().toggleItalic().run(), disabled: !editor.can().toggleItalic(), active: editor.isActive('italic'), name: 'Italic' },
         { icon: <FiUnderline />, action: () => editor.chain().focus().toggleUnderline().run(), disabled: !editor.can().toggleUnderline(), active: editor.isActive('underline'), name: 'Underline' },
-        { icon: <FiList />, action: () => editor.chain().focus().toggleBulletList().run(), active: editor.isActive('bulletList'), name: 'Bullet List' },
+        // Bullet list button replaced with dropdown
         { icon: <MdFormatListNumbered />, action: () => editor.chain().focus().toggleOrderedList().run(), active: editor.isActive('orderedList'), name: 'Ordered List' },
         { icon: <FiAlignLeft />, action: () => editor.chain().focus().setTextAlign('left').run(), active: editor.isActive({ textAlign: 'left' }), name: 'Align Left' },
         { icon: <FiAlignCenter />, action: () => editor.chain().focus().setTextAlign('center').run(), active: editor.isActive({ textAlign: 'center' }), name: 'Align Center' },
@@ -183,14 +223,6 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
         { icon: <FiRotateCw />, action: () => editor.chain().focus().redo().run(), disabled: !editor.can().redo(), name: 'Redo' },
     ];
 
-    const headingStyles = [
-        { name: 'Heading 1', level: 1 },
-        { name: 'Heading 2', level: 2 },
-        { name: 'Heading 3', level: 3 },
-        { name: 'Heading 4', level: 4 },
-        { name: 'Normal Text', level: null },
-    ];
-
     return (
         <>
             <style>
@@ -200,12 +232,12 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             color: white !important;
             border-color: ${primaryColor} !important;
           }
-          .heading-item-button:hover {
+          .heading-item-button:hover, .bullet-item-button:hover {
             background-color: ${primaryColor} !important;
             color: white !important;
             border-color: ${primaryColor} !important;
           }
-          .heading-item-button.active {
+          .heading-item-button.active, .bullet-item-button.active {
             background-color: ${primaryColor} !important;
             color: white !important;
             border-color: ${primaryColor} !important;
@@ -264,7 +296,6 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             height: 0;
           }
           .ProseMirror .list-bullets {
-            list-style-type: disc;
             padding-left: 1.5rem;
           }
         `}
@@ -312,6 +343,73 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
                         )}
                     </div>
                 ))}
+                <div className="relative" ref={bulletButtonRef}>
+                    <button
+                        type="button"
+                        className={`
+                p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold flex items-center gap-1
+                ${editor.isActive('bulletList') ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
+              `}
+                        onClick={() => setShowBulletDropdown(!showBulletDropdown)}
+                        onMouseEnter={() => {
+                            setTooltip('Bullet Styles');
+                            setHoveredIcon('bullet');
+                        }}
+                        onMouseLeave={() => {
+                            setTooltip('');
+                            setHoveredIcon(null);
+                        }}
+                        style={{
+                            backgroundColor: editor.isActive('bulletList') || hoveredIcon === 'bullet'
+                                ? primaryColor
+                                : darkMode
+                                    ? '#374151'
+                                    : 'white',
+                            borderColor: editor.isActive('bulletList') || hoveredIcon === 'bullet'
+                                ? primaryColor
+                                : darkMode
+                                    ? '#4b5563'
+                                    : '#e5e7eb',
+                        }}
+                    >
+                        <FiList />
+                        <FiChevronDown />
+                    </button>
+                    {tooltip === 'Bullet Styles' && (
+                        <div
+                            className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
+                        >
+                            Bullet Styles
+                        </div>
+                    )}
+                    {showBulletDropdown && (
+                        <div
+                            className={`bullet-dropdown absolute z-20 left-0 mt-1 w-44 rounded-md border shadow-md ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}
+                        >
+                            {bulletStyles.map((style) => (
+                                <button
+                                    key={style.name}
+                                    className={`bullet-item-button w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${editor.isActive('bulletList', { bulletStyle: style.style }) ? 'active' : darkMode ? 'text-white' : 'text-gray-800'}`}
+                                    style={{
+                                        backgroundColor: editor.isActive('bulletList', { bulletStyle: style.style }) ? primaryColor : 'transparent',
+                                        color: editor.isActive('bulletList', { bulletStyle: style.style }) ? 'white' : darkMode ? 'white' : '#1f2937',
+                                        borderColor: editor.isActive('bulletList', { bulletStyle: style.style }) ? primaryColor : 'transparent',
+                                    }}
+                                    onClick={() => {
+                                        if (editor.isActive('bulletList')) {
+                                            editor.chain().focus().setBulletListStyle(style.style).run();
+                                        } else {
+                                            editor.chain().focus().toggleBulletList().setBulletListStyle(style.style).run();
+                                        }
+                                        setShowBulletDropdown(false);
+                                    }}
+                                >
+                                    {style.name}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
                 <div className="relative" ref={headingButtonRef}>
                     <button
                         type="button"
@@ -338,7 +436,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
                                 ? primaryColor
                                 : darkMode
                                     ? '#4b5563'
-                                        : '#e5e7eb',
+                                    : '#e5e7eb',
                         }}
                     >
                         <FiType />
