@@ -4,8 +4,8 @@ class Badge:
     BADGE_THRESHOLDS = {
         "diamond": 500,
         "gold": 400,
-        "sapphire": 350,
         "silver": 300,
+        "sapphire": 350,
         "bronze": 200,
         "ruby": 100
     }
@@ -14,9 +14,9 @@ class Badge:
         "diamond": "/static/badges/diamond.png",
         "gold": "/static/badges/gold.png",
         "silver": "/static/badges/silver.png",
-        "sapphire": "/static/badges/sapphire.png",
         "bronze": "/static/badges/bronze.png",
-        "ruby": "/static/badges/ruby.png"
+        "ruby": "/static/badges/ruby.png",
+        "sapphire": "/static/badges/sapphire.png"
     }
 
     @classmethod
