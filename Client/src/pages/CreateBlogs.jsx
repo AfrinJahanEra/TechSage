@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { FiUpload, FiX, FiPlus, FiCheck, FiUsers, FiClock, FiInfo, FiSave, FiTrash2, FiSearch } from 'react-icons/fi';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import BlogEditorToolbar from '../components/CreateBlogComponents/BlogEditorToolbar';
+import Tiptap from '../components/CreateBlogComponents/Tiptap';
 import Footer from '../components/Footer';
 import PopupModal from '../components/PopupModal';
 import Navbar from '../components/Navbar';
@@ -55,7 +55,6 @@ const CreateBlogPage = () => {
   ];
 
   // Refs
-  const editorRef = useRef(null);
   const fileInputRef = useRef(null);
   const searchRef = useRef(null);
 
@@ -201,29 +200,6 @@ const CreateBlogPage = () => {
     } catch (error) {
       console.error('Error removing collaborator:', error);
       showPopup(error.response?.data?.error || 'Failed to remove collaborator', 'error');
-    }
-  };
-
-  // Handle editor content changes
-  const handleFocus = () => {
-    const isPlaceholder = editorRef.current.textContent.trim() === 'Start writing your blog post here...';
-    if (isPlaceholder) {
-      editorRef.current.innerHTML = '';
-      editorRef.current.classList.remove('text-gray-400');
-      editorRef.current.classList.add(darkMode ? 'text-gray-200' : 'text-gray-800');
-    }
-  };
-
-  const handleBlur = () => {
-    if (editorRef.current && editorRef.current.textContent.trim() === '') {
-      editorRef.current.innerHTML = `<p class="text-gray-400">Start writing your blog post here...</p>`;
-    }
-  };
-
-  const handleInput = () => {
-    if (editorRef.current) {
-      const html = editorRef.current.innerHTML.trim();
-      setContent(html);
     }
   };
 
@@ -569,28 +545,11 @@ const CreateBlogPage = () => {
               </div>
 
               {/* Blog Content Editor */}
-              <div className="mb-8">
+              <div >
                 <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   Blog Content *
                 </label>
-                <BlogEditorToolbar editorRef={editorRef} />
-                <div
-                  ref={editorRef}
-                  contentEditable
-                  onFocus={handleFocus}
-                  onBlur={handleBlur}
-                  onInput={handleInput}
-                  onKeyUp={handleInput}
-                  data-placeholder="Start writing your blog post here..."
-                  className={`
-                    relative min-h-[300px] border rounded-lg p-4 prose max-w-none focus:outline-none focus:!border-[var(--primary-color)] transition-colors
-                    ${darkMode ? 'text-gray-200 border-gray-600' : 'text-gray-800 border-gray-300'}
-                    before:content-[attr(data-placeholder)]
-                    before:absolute before:text-gray-400 before:pointer-events-none before:select-none before:italic
-                    before:whitespace-pre-wrap before:top-4 before:left-4
-                    ${content ? 'before:hidden' : ''}
-                  `}
-                />
+                <Tiptap content={content} setContent={setContent} primaryColor={primaryColor} darkMode={darkMode} />
               </div>
 
               {/* Action Buttons */}
