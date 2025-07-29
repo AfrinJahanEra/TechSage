@@ -6,6 +6,7 @@ import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import BulletList from '@tiptap/extension-bullet-list';
+import OrderedList from '@tiptap/extension-ordered-list';
 import ListItem from '@tiptap/extension-list-item';
 import { createLowlight } from 'lowlight';
 import {
@@ -81,9 +82,42 @@ const CustomBulletList = BulletList.extend({
     },
 });
 
+// Custom OrderedList extension with numberStyle attribute
+const CustomOrderedList = OrderedList.extend({
+    addAttributes() {
+        return {
+            numberStyle: {
+                default: 'decimal',
+                parseHTML: element => element.style.listStyleType || 'decimal',
+                renderHTML: attributes => ({
+                    style: `list-style-type: ${attributes.numberStyle}`,
+                    class: 'list-numbers',
+                }),
+            },
+        };
+    },
+    addCommands() {
+        return {
+            setOrderedListStyle: (numberStyle) => ({ commands }) => {
+                return commands.updateAttributes('orderedList', { numberStyle });
+            },
+            toggleOrderedList: () => ({ commands, state }) => {
+                const { from, to } = state.selection;
+                const isOrderedListActive = state.doc.rangeHasMark(from, to, state.schema.nodes.orderedList);
+                if (isOrderedListActive) {
+                    return commands.liftListItem('listItem');
+                } else {
+                    return commands.toggleList('orderedList', 'listItem');
+                }
+            },
+        };
+    },
+});
+
 const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
     const [showHeadingDropdown, setShowHeadingDropdown] = useState(false);
     const [showBulletDropdown, setShowBulletDropdown] = useState(false);
+    const [showNumberDropdown, setShowNumberDropdown] = useState(false);
     const [tooltip, setTooltip] = useState('');
     const [hoveredIcon, setHoveredIcon] = useState(null);
     const [showLinkModal, setShowLinkModal] = useState(false);
@@ -93,13 +127,16 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
     const fileInputRef = useRef(null);
     const headingButtonRef = useRef(null);
     const bulletButtonRef = useRef(null);
+    const numberButtonRef = useRef(null);
 
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
                 bulletList: false, // Disable StarterKit's BulletList
+                orderedList: false, // Disable StarterKit's OrderedList
             }),
             CustomBulletList,
+            CustomOrderedList,
             ListItem,
             Underline,
             Link.configure({
@@ -137,6 +174,9 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             }
             if (bulletButtonRef.current && !bulletButtonRef.current.contains(e.target) && !e.target.closest('.bullet-dropdown')) {
                 setShowBulletDropdown(false);
+            }
+            if (numberButtonRef.current && !numberButtonRef.current.contains(e.target) && !e.target.closest('.number-dropdown')) {
+                setShowNumberDropdown(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -204,12 +244,18 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
         { name: 'Square', style: 'square' },
     ];
 
+    const numberStyles = [
+        { name: 'Decimal', style: 'decimal' },
+        { name: 'Upper Roman', style: 'upper-roman' },
+        { name: 'Lower Roman', style: 'lower-roman' },
+        { name: 'Upper Alpha', style: 'upper-alpha' },
+        { name: 'Lower Alpha', style: 'lower-alpha' },
+    ];
+
     const buttons = [
         { icon: <FiBold />, action: () => editor.chain().focus().toggleBold().run(), disabled: !editor.can().toggleBold(), active: editor.isActive('bold'), name: 'Bold' },
         { icon: <FiItalic />, action: () => editor.chain().focus().toggleItalic().run(), disabled: !editor.can().toggleItalic(), active: editor.isActive('italic'), name: 'Italic' },
         { icon: <FiUnderline />, action: () => editor.chain().focus().toggleUnderline().run(), disabled: !editor.can().toggleUnderline(), active: editor.isActive('underline'), name: 'Underline' },
-        // Bullet list button replaced with dropdown
-        { icon: <MdFormatListNumbered />, action: () => editor.chain().focus().toggleOrderedList().run(), active: editor.isActive('orderedList'), name: 'Ordered List' },
         { icon: <FiAlignLeft />, action: () => editor.chain().focus().setTextAlign('left').run(), active: editor.isActive({ textAlign: 'left' }), name: 'Align Left' },
         { icon: <FiAlignCenter />, action: () => editor.chain().focus().setTextAlign('center').run(), active: editor.isActive({ textAlign: 'center' }), name: 'Align Center' },
         { icon: <FiAlignRight />, action: () => editor.chain().focus().setTextAlign('right').run(), active: editor.isActive({ textAlign: 'right' }), name: 'Align Right' },
@@ -232,12 +278,12 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             color: white !important;
             border-color: ${primaryColor} !important;
           }
-          .heading-item-button:hover, .bullet-item-button:hover {
+          .heading-item-button:hover, .bullet-item-button:hover, .number-item-button:hover {
             background-color: ${primaryColor} !important;
             color: white !important;
             border-color: ${primaryColor} !important;
           }
-          .heading-item-button.active, .bullet-item-button.active {
+          .heading-item-button.active, .bullet-item-button.active, .number-item-button.active {
             background-color: ${primaryColor} !important;
             color: white !important;
             border-color: ${primaryColor} !important;
@@ -295,7 +341,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             float: left;
             height: 0;
           }
-          .ProseMirror .list-bullets {
+          .ProseMirror .list-bullets, .ProseMirror .list-numbers {
             padding-left: 1.5rem;
           }
         `}
@@ -402,6 +448,73 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
                                             editor.chain().focus().toggleBulletList().setBulletListStyle(style.style).run();
                                         }
                                         setShowBulletDropdown(false);
+                                    }}
+                                >
+                                    {style.name}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+                <div className="relative" ref={numberButtonRef}>
+                    <button
+                        type="button"
+                        className={`
+                p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold flex items-center gap-1
+                ${editor.isActive('orderedList') ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
+              `}
+                        onClick={() => setShowNumberDropdown(!showNumberDropdown)}
+                        onMouseEnter={() => {
+                            setTooltip('Number Styles');
+                            setHoveredIcon('number');
+                        }}
+                        onMouseLeave={() => {
+                            setTooltip('');
+                            setHoveredIcon(null);
+                        }}
+                        style={{
+                            backgroundColor: editor.isActive('orderedList') || hoveredIcon === 'number'
+                                ? primaryColor
+                                : darkMode
+                                    ? '#374151'
+                                    : 'white',
+                            borderColor: editor.isActive('orderedList') || hoveredIcon === 'number'
+                                ? primaryColor
+                                : darkMode
+                                    ? '#4b5563'
+                                    : '#e5e7eb',
+                        }}
+                    >
+                        <MdFormatListNumbered />
+                        <FiChevronDown />
+                    </button>
+                    {tooltip === 'Number Styles' && (
+                        <div
+                            className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
+                        >
+                            Number Styles
+                        </div>
+                    )}
+                    {showNumberDropdown && (
+                        <div
+                            className={`number-dropdown absolute z-20 left-0 mt-1 w-44 rounded-md border shadow-md ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}
+                        >
+                            {numberStyles.map((style) => (
+                                <button
+                                    key={style.name}
+                                    className={`number-item-button w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${editor.isActive('orderedList', { numberStyle: style.style }) ? 'active' : darkMode ? 'text-white' : 'text-gray-800'}`}
+                                    style={{
+                                        backgroundColor: editor.isActive('orderedList', { numberStyle: style.style }) ? primaryColor : 'transparent',
+                                        color: editor.isActive('orderedList', { numberStyle: style.style }) ? 'white' : darkMode ? 'white' : '#1f2937',
+                                        borderColor: editor.isActive('orderedList', { numberStyle: style.style }) ? primaryColor : 'transparent',
+                                    }}
+                                    onClick={() => {
+                                        if (editor.isActive('orderedList')) {
+                                            editor.chain().focus().setOrderedListStyle(style.style).run();
+                                        } else {
+                                            editor.chain().focus().toggleOrderedList().setOrderedListStyle(style.style).run();
+                                        }
+                                        setShowNumberDropdown(false);
                                     }}
                                 >
                                     {style.name}
