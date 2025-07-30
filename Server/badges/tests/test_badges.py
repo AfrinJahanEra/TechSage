@@ -41,4 +41,7 @@ def test_badge_above_max():
     assert badge["name"] == "diamond"
     assert badge["image_url"].endswith("diamond.png")
 
+def test_badge_negative_points():
+    badge = Badge.get_badge(-10)
+    assert badge is None
 
