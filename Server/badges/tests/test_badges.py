@@ -23,3 +23,6 @@ def test_get_badge(points, expected_name):
     else:
         assert badge["name"] == expected_name
         assert badge["image_url"].endswith(f"{expected_name}.png")
+
+
+# run with pytest -v badges/tests/test_badges.py
