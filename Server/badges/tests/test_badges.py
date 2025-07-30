@@ -45,3 +45,6 @@ def test_badge_negative_points():
     badge = Badge.get_badge(-10)
     assert badge is None
 
+def test_badge_non_integer():
+    with pytest.raises(TypeError):
+        Badge.get_badge("300")
