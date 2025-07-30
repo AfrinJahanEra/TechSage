@@ -36,3 +36,9 @@ def test_badge_just_below_threshold(points, expected_name):
         assert badge["name"] == expected_name
 
 
+def test_badge_above_max():
+    badge = Badge.get_badge(1000)
+    assert badge["name"] == "diamond"
+    assert badge["image_url"].endswith("diamond.png")
+
+
