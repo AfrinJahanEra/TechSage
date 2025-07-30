@@ -26,3 +26,13 @@ def test_get_badge(points, expected_name):
 
 
 # run with pytest -v badges/tests/test_badges.py
+
+
+def test_badge_just_below_threshold(points, expected_name):
+    badge = Badge.get_badge(points)
+    if expected_name is None:
+        assert badge is None
+    else:
+        assert badge["name"] == expected_name
+
+
