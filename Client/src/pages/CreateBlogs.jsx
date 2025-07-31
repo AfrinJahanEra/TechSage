@@ -545,7 +545,7 @@ const CreateBlogPage = () => {
               </div>
 
               {/* Blog Content Editor */}
-              <div >
+              <div className="mb-8">
                 <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   Blog Content *
                 </label>
