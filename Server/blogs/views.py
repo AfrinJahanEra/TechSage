@@ -407,15 +407,10 @@ class DeleteBlog(APIView):
             
             blog.soft_delete(username)
             Comment.objects(blog=blog).update(set__is_deleted=True)
-            
-            return Response({
-                "message": "Blog moved to trash",
-                "deleted_at": blog.deleted_at.isoformat()
-            })
+        
             
         except DoesNotExist:
             return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
-
 
 class SaveAsDraft(APIView):
     def post(self, request, blog_id):
