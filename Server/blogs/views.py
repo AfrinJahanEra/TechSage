@@ -406,6 +406,7 @@ class DeleteBlog(APIView):
                                status=status.HTTP_403_FORBIDDEN)
             
             blog.soft_delete(username)
+            Comment.objects(blog=blog).update(set__is_deleted=True)
             
             return Response({
                 "message": "Blog moved to trash",
