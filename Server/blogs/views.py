@@ -527,6 +527,7 @@ class ModeratorDeleteBlog(APIView):
     def delete(self, request, blog_id):
         try:
             blog = Blog.objects.get(id=blog_id)
+            Comment.objects(blog=blog).delete()
             blog.hard_delete()
             return Response({"message": "Blog permanently deleted"})
         except Blog.DoesNotExist:
