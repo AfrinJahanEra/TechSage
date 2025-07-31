@@ -492,33 +492,6 @@ class RevertBlogVersion(APIView):
         except Blog.DoesNotExist:
             return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
 
-class DeleteBlog(APIView):
-    def delete(self, request, blog_id):
-        try:
-            blog = Blog.objects.get(id=blog_id)
-            username = request.data.get('username')
-            
-            if not username:
-                return Response({"error": "username required"}, status=status.HTTP_400_BAD_REQUEST)
-                
-            user = User.objects(username=username).first()
-            if not user:
-                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-
-            if user not in blog.authors:
-                return Response({"error": "You can only delete your own blogs"}, 
-                               status=status.HTTP_403_FORBIDDEN)
-            
-            blog.soft_delete(username)
-            
-            return Response({
-                "message": "Blog moved to trash",
-                "deleted_at": blog.deleted_at.isoformat()
-            })
-            
-        except Blog.DoesNotExist:
-            return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
-
 class RestoreBlog(APIView):
     def post(self, request, blog_id):
         try:
