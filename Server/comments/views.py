@@ -144,3 +144,14 @@ class ReviewComment(View):
                 'success': False,
                 'error': str(e)
             }, status=500)
+
+
+class GetCommentsByBlog(View):
+    def get(self, request, blog_id):
+        try:
+            page = int(request.GET.get('page', 1))
+            per_page = int(request.GET.get('per_page', 10))
+
+            query = Comment.objects(blog=blog_id, is_deleted=False).order_by('-created_at')
+            paginator = Paginator(query, per_page)
+            page_obj = paginator.page(page)
