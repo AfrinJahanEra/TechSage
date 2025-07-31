@@ -1,4 +1,5 @@
 from django.urls import path
+from .views import GetCommentsByBlog
 from .views import PostComment, GetComments, LikeComment, DeleteComment, GetAllComments, ReviewComment
 
 urlpatterns = [
