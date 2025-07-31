@@ -155,3 +155,14 @@ class GetCommentsByBlog(View):
             query = Comment.objects(blog=blog_id, is_deleted=False).order_by('-created_at')
             paginator = Paginator(query, per_page)
             page_obj = paginator.page(page)
+
+            return JsonResponse({
+                'success': True,
+                'comments': [c.to_json() for c in page_obj],
+                'pagination': {
+                    'page': page,
+                    'per_page': per_page,
+                    'total_pages': paginator.num_pages,
+                    'total_comments': paginator.count
+                }
+            })
