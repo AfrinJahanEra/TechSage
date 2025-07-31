@@ -166,3 +166,6 @@ class GetCommentsByBlog(View):
                     'total_comments': paginator.count
                 }
             })
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
