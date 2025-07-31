@@ -407,6 +407,11 @@ class DeleteBlog(APIView):
             
             blog.soft_delete(username)
             Comment.objects(blog=blog).update(set__is_deleted=True)
+
+            return Response({
+                "message": "Blog moved to trash and all associated comments marked as deleted",
+                "deleted_at": blog.deleted_at.isoformat()
+            })
         
             
         except DoesNotExist:
