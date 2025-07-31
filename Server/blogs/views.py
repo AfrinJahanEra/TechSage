@@ -529,7 +529,7 @@ class ModeratorDeleteBlog(APIView):
             blog = Blog.objects.get(id=blog_id)
             Comment.objects(blog=blog).delete()
             blog.hard_delete()
-            return Response({"message": "Blog permanently deleted"})
+            return Response({"message": "Blog and all associated comments permanently deleted"})
         except Blog.DoesNotExist:
             return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
 
