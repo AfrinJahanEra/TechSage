@@ -6,6 +6,7 @@ from mongoengine import ValidationError
 import cloudinary.uploader
 from .models import Blog
 from users.models import User
+from comments.models import Comment
 import pytz
 from django.core.paginator import Paginator, EmptyPage
 from rest_framework import status
