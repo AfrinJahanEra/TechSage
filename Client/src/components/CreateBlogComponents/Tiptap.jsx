@@ -8,15 +8,14 @@ import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import BulletList from '@tiptap/extension-bullet-list';
 import OrderedList from '@tiptap/extension-ordered-list';
 import ListItem from '@tiptap/extension-list-item';
-
 import { createLowlight } from 'lowlight';
 import {
     FiBold, FiItalic, FiUnderline, FiLink, FiImage, FiCode, FiRotateCcw, FiRotateCw,
-    FiAlignLeft, FiAlignCenter, FiAlignRight, FiAlignJustify, FiList
+    FiAlignLeft, FiAlignCenter, FiAlignRight, FiAlignJustify, FiList, FiType, FiChevronDown
 } from 'react-icons/fi';
 import { MdFormatListNumbered } from 'react-icons/md';
 import { BiSolidQuoteRight } from 'react-icons/bi';
-import { FiType, FiChevronDown, FiX } from 'react-icons/fi';
+import LinkModal from './LinkModal';
 import '../../styles.css';
 
 // Create lowlight instance
@@ -114,7 +113,6 @@ const CustomOrderedList = OrderedList.extend({
     },
 });
 
-
 const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
     const [showHeadingDropdown, setShowHeadingDropdown] = useState(false);
     const [showBulletDropdown, setShowBulletDropdown] = useState(false);
@@ -122,7 +120,6 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
     const [tooltip, setTooltip] = useState('');
     const [hoveredIcon, setHoveredIcon] = useState(null);
     const [showLinkModal, setShowLinkModal] = useState(false);
-    const [linkUrl, setLinkUrl] = useState('');
     const [showLatexModal, setShowLatexModal] = useState(false);
     const [latexInput, setLatexInput] = useState('');
     const fileInputRef = useRef(null);
@@ -150,6 +147,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             Underline,
             Link.configure({
                 openOnClick: true,
+                autolink: false,
                 HTMLAttributes: {
                     target: '_blank',
                     rel: 'noopener noreferrer',
@@ -162,13 +160,16 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             CodeBlockLowlight.configure({
                 lowlight,
             }),
-            
             Latex,
         ],
         content,
         onUpdate: ({ editor }) => {
-            setContent(editor.getHTML());
-            console.log('Editor HTML:', editor.getHTML());
+            const html = editor.getHTML();
+            setContent(html);
+            console.log('Updated content:', html);
+        },
+        onCreate: () => {
+            console.log('Editor initialized:', editor);
         },
     });
 
@@ -194,10 +195,6 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    if (!editor) {
-        return null;
-    }
-
     const handleImageUpload = () => {
         fileInputRef.current.click();
     };
@@ -212,22 +209,6 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             reader.readAsDataURL(file);
             fileInputRef.current.value = '';
         }
-    };
-
-    const handleLinkButtonClick = () => {
-        const previousUrl = editor.getAttributes('link').href || '';
-        setLinkUrl(previousUrl);
-        setShowLinkModal(true);
-    };
-
-    const handleInsertLink = () => {
-        if (linkUrl) {
-            editor.chain().focus().setLink({ href: linkUrl }).run();
-        } else {
-            editor.chain().focus().unsetLink().run();
-        }
-        setShowLinkModal(false);
-        setLinkUrl('');
     };
 
     const handleLatexButtonClick = () => {
@@ -285,7 +266,6 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             active: editor.isActive('underline'), 
             name: 'Underline' 
         },
-        
         { 
             icon: <BiSolidQuoteRight />, 
             action: () => editor.chain().focus().toggleBlockquote().run(), 
@@ -294,9 +274,12 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
         },
         { 
             icon: <FiLink />, 
-            action: handleLinkButtonClick, 
+            action: () => {
+                console.log('Link button clicked, opening modal');
+                setShowLinkModal(true);
+            }, 
             active: editor.isActive('link'), 
-            name: 'Insert Link' 
+            name: 'Insert/Edit Link' 
         },
         { 
             icon: <FiImage />, 
@@ -349,18 +332,6 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             border-radius: 3px;
             cursor: pointer;
           }
-          .modal {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 50;
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            width: 90%;
-            max-width: 400px;
-          }
           .ProseMirror {
             min-height: 300px;
             max-height: 400px;
@@ -370,6 +341,9 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             color: inherit;
             line-height: 1.5;
             overflow-y: auto;
+          }
+          .ProseMirror a {
+            cursor: pointer; /* Ensure hand pointer for links in editor */
           }
           .ProseMirror::-webkit-scrollbar {
             width: 8px;
@@ -430,9 +404,9 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
                             onClick={button.action}
                             disabled={button.disabled}
                             className={`
-                  p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold
-                  ${button.active ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
-                `}
+                                p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold
+                                ${button.active ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
+                            `}
                             onMouseEnter={() => {
                                 setTooltip(button.name);
                                 setHoveredIcon(button.name);
@@ -469,9 +443,9 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
                     <button
                         type="button"
                         className={`
-                p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold flex items-center gap-1
-                ${editor.isActive('bulletList') ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
-              `}
+                            p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold flex items-center gap-1
+                            ${editor.isActive('bulletList') ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
+                        `}
                         onClick={() => setShowBulletDropdown(!showBulletDropdown)}
                         onMouseEnter={() => {
                             setTooltip('Bullet Styles');
@@ -536,9 +510,9 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
                     <button
                         type="button"
                         className={`
-                p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold flex items-center gap-1
-                ${editor.isActive('orderedList') ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
-              `}
+                            p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold flex items-center gap-1
+                            ${editor.isActive('orderedList') ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
+                        `}
                         onClick={() => setShowNumberDropdown(!showNumberDropdown)}
                         onMouseEnter={() => {
                             setTooltip('Number Styles');
@@ -603,9 +577,9 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
                     <button
                         type="button"
                         className={`
-                p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold flex items-center gap-1
-                ${editor.isActive('heading') ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
-              `}
+                            p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold flex items-center gap-1
+                            ${editor.isActive('heading') ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
+                        `}
                         onClick={() => setShowHeadingDropdown(!showHeadingDropdown)}
                         onMouseEnter={() => {
                             setTooltip('Headings');
@@ -678,38 +652,13 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
                 editor={editor}
                 className={`relative min-h-[300px] border rounded-lg prose max-w-none focus:outline-none focus:!border-[var(--primary-color)] transition-colors ${darkMode ? 'text-gray-200 border-gray-600 bg-gray-800' : 'text-gray-800 border-gray-300 bg-gray-50'}`}
             />
-            {showLinkModal && (
-                <div className={`modal ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-semibold">Insert Link</h3>
-                        <button onClick={() => setShowLinkModal(false)}>
-                            <FiX />
-                        </button>
-                    </div>
-                    <input
-                        type="text"
-                        value={linkUrl}
-                        onChange={(e) => setLinkUrl(e.target.value)}
-                        placeholder="Enter URL"
-                        className={`w-full px-3 py-2 border rounded-lg mb-4 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300 text-gray-800'}`}
-                    />
-                    <div className="flex justify-end gap-2">
-                        <button
-                            onClick={() => setShowLinkModal(false)}
-                            className={`px-4 py-2 border rounded-lg ${darkMode ? 'border-gray-600 text-gray-200' : 'border-gray-300 text-gray-800'}`}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={handleInsertLink}
-                            className="px-4 py-2 text-white rounded-lg"
-                            style={{ backgroundColor: primaryColor }}
-                        >
-                            Insert
-                        </button>
-                    </div>
-                </div>
-            )}
+            <LinkModal
+                editor={editor}
+                primaryColor={primaryColor}
+                darkMode={darkMode}
+                isOpen={showLinkModal}
+                setIsOpen={setShowLinkModal}
+            />
             {showLatexModal && (
                 <div className={`modal ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
                     <div className="flex justify-between items-center mb-4">

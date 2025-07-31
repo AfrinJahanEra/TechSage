@@ -1,169 +1,174 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { FiX } from 'react-icons/fi';
 
-const LinkModal = ({ editorRef, setShowLinkModal, darkMode, primaryColor, savedRange }) => {
+const LinkModal = ({ editor, primaryColor, darkMode, isOpen, setIsOpen }) => {
   const [linkUrl, setLinkUrl] = useState('');
-  const [linkText, setLinkText] = useState('');
+  const [displayText, setDisplayText] = useState('');
 
-  const insertLink = () => {
-    if (!linkUrl.trim()) return;
+  // Handle Ctrl+K keyboard shortcut
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        console.log('Ctrl+K pressed, opening link modal');
+        handleLinkButtonClick();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [editor]);
 
-    const editor = editorRef.current;
+  // Set initial URL and display text when opening modal
+  const handleLinkButtonClick = () => {
     if (!editor) {
-      console.error('Editor reference is null');
+      console.error('Editor instance is not available');
+      return;
+    }
+    editor.commands.focus();
+    const { from, to } = editor.state.selection;
+    const previousUrl = editor.getAttributes('link').href || '';
+    const selectedText = from !== to ? editor.state.doc.textBetween(from, to) : '';
+    console.log('Selection:', { from, to, selectedText });
+    console.log('Previous URL:', previousUrl);
+    setLinkUrl(previousUrl);
+    setDisplayText(selectedText || previousUrl || '');
+    setIsOpen(true);
+  };
+
+  // Handle link insertion or removal
+  const handleInsertLink = () => {
+    if (!editor) {
+      console.error('Editor instance is not available');
+      alert('Editor is not initialized. Please try again.');
+      return;
+    }
+    console.log('Attempting to focus editor');
+    editor.chain().focus().run();
+    const url = linkUrl.trim();
+    const text = displayText.trim() || url;
+
+    if (!url) {
+      console.log('Unsetting link');
+      editor.chain().focus().unsetLink().run();
+      setIsOpen(false);
+      setLinkUrl('');
+      setDisplayText('');
       return;
     }
 
-    const linkElement = document.createElement('a');
-    linkElement.href = linkUrl;
-    linkElement.className = 'inserted-link';
-    linkElement.contentEditable = 'false';
-    linkElement.style.display = 'inline-block';
-    linkElement.style.padding = '0.2em 0.4em';
-    linkElement.style.margin = '0 0.1em';
-    linkElement.style.borderRadius = '3px';
-    linkElement.style.color = darkMode ? '#2dd4bf' : '#0d9488';
-    linkElement.style.textDecoration = 'underline';
-    linkElement.style.cursor = 'pointer';
-    linkElement.textContent = linkText.trim() || linkUrl;
-
-    linkElement.target = '_blank';
-    linkElement.rel = 'noopener noreferrer';
-    linkElement.onclick = (e) => {
-      e.preventDefault();
-      window.open(linkUrl, '_blank');
-    };
-
-    try {
-      editor.focus();
-      const selection = window.getSelection();
-      selection.removeAllRanges();
-
-      let range = savedRange;
-      if (!range || !editor.contains(range.startContainer)) {
-        console.warn('Invalid saved range, attempting current selection');
-        range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-      }
-
-      if (range && editor.contains(range.startContainer)) {
-        console.log('Inserting at saved range:', {
-          startContainer: range.startContainer,
-          startOffset: range.startOffset,
-        });
-        range.deleteContents();
-        range.insertNode(linkElement);
-      } else {
-        console.warn('No valid range, inserting at end of editor');
-        const fallbackRange = document.createRange();
-        fallbackRange.selectNodeContents(editor);
-        fallbackRange.collapse(false); // Insert at end
-        fallbackRange.insertNode(linkElement);
-      }
-
-      const newRange = document.createRange();
-      newRange.setStartAfter(linkElement);
-      newRange.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(newRange);
-      console.log('Cursor set after link');
-    } catch (error) {
-      console.error('Error inserting link:', error);
-      const fallbackRange = document.createRange();
-      fallbackRange.selectNodeContents(editor);
-      fallbackRange.collapse(false);
-      fallbackRange.insertNode(linkElement);
-      const newRange = document.createRange();
-      newRange.setStartAfter(linkElement);
-      newRange.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(newRange);
+    const isValidUrl = /^(https?:\/\/[^\s$.?#].[^\s]*)$/i.test(url);
+    if (!isValidUrl) {
+      alert('Please enter a valid URL (e.g., https://example.com)');
+      return;
     }
-setTimeout(() => editor.focus(), 0); // Ensure focus after insertion
-    
-    
-    setShowLinkModal(false);
+
+    const { from, to } = editor.state.selection;
+    console.log('Inserting link:', { url, text, hasSelection: from !== to });
+
+    if (from !== to) {
+      // If text is selected, apply the link to the selected text
+      editor.chain().focus().setLink({ href: url }).run();
+    } else {
+      // If no text is selected, insert the display text with the link
+      editor
+        .chain()
+        .focus()
+        .insertContent({
+          type: 'text',
+          text: text,
+          marks: [{ type: 'link', attrs: { href: url, target: '_blank', rel: 'noopener noreferrer' } }],
+        })
+        .run();
+    }
+
+    setIsOpen(false);
     setLinkUrl('');
-    setLinkText('');
+    setDisplayText('');
   };
+
+  if (!isOpen) return null;
 
   return (
     <>
       <style>
         {`
-          .inserted-link:hover {
-            cursor: pointer !important;
+          .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 50;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 400px;
           }
         `}
       </style>
-      <div
-        className="fixed inset-0 flex items-center justify-center z-50"
-        style={{
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          backdropFilter: 'blur(4px)',
-          WebkitBackdropFilter: 'blur(4px)',
-        }}
-      >
-        <div
-          className={`rounded-xl p-6 w-full max-w-md h-[300px] overflow-hidden flex flex-col shadow-xl ${
-            darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-          }`}
-          style={{
-            border: '1px solid rgba(0, 0, 0, 0.12)',
-            boxShadow: '0 12px 30px rgba(0,0,0,0.2)',
+      <div className={`modal ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold">Insert/Edit Link</h3>
+          <button onClick={() => setIsOpen(false)} aria-label="Close">
+            <FiX />
+          </button>
+        </div>
+        <input
+          type="text"
+          value={linkUrl}
+          onChange={(e) => setLinkUrl(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleInsertLink();
+            if (e.key === 'Escape') setIsOpen(false);
           }}
-        >
-          {/* Title */}
-          <div className="flex items-center justify-center pt-3 mb-3">
-            <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-              Insert Link
-            </h3>
-          </div>
-
-          {/* Input Fields & Actions */}
-          <div className="flex flex-1 flex-col gap-y-4">
-            <input
-              type="text"
-              className={`w-full p-2 border rounded font-mono text-sm ${
-                darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
-              }`}
-              placeholder="Enter URL (e.g., https://example.com)"
-              value={linkUrl}
-              onChange={(e) => setLinkUrl(e.target.value)}
-            />
-            <input
-              type="text"
-              className={`w-full p-2 border rounded font-mono text-sm ${
-                darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
-              }`}
-              placeholder="Enter display text (optional)"
-              value={linkText}
-              onChange={(e) => setLinkText(e.target.value)}
-            />
-            <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              Tip: Enter a URL to create a link. Optionally, add display text to customize how the link appears.
-            </div>
-            <div className="flex justify-end space-x-2">
-              <button
-                className={`px-4 py-2 rounded hover:opacity-90 transition-colors duration-200 ${
-                  darkMode ? 'bg-gray-600 text-white' : 'bg-gray-200 text-gray-800'
-                }`}
-                onClick={() => {
-                  setShowLinkModal(false);
-                  setLinkUrl('');
-                  setLinkText('');
-                  editorRef.current.focus();
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-2 text-white rounded hover:opacity-90 transition-colors duration-200"
-                style={{ backgroundColor: primaryColor }}
-                onClick={insertLink}
-              >
-                Insert Link
-              </button>
-            </div>
-          </div>
+          placeholder="https://example.com"
+          className={`w-full px-3 py-2 border rounded-lg mb-4 focus:outline-none focus:!border-[${primaryColor}] ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300 text-gray-800'}`}
+          autoFocus
+        />
+        <input
+          type="text"
+          value={displayText}
+          onChange={(e) => setDisplayText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleInsertLink();
+            if (e.key === 'Escape') setIsOpen(false);
+          }}
+          placeholder="Optional display text"
+          className={`w-full px-3 py-2 border rounded-lg mb-4 focus:outline-none focus:!border-[${primaryColor}] ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300 text-gray-800'}`}
+        />
+        {linkUrl && (
+          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-4`}>
+            Preview: <a href={linkUrl} target="_blank" rel="noopener noreferrer" className="underline" style={{ color: primaryColor }}>{displayText || linkUrl}</a>
+          </p>
+        )}
+        <div className="flex justify-end gap-2">
+          {linkUrl && (
+            <button
+              onClick={() => {
+                console.log('Removing link');
+                editor.chain().focus().unsetLink().run();
+                setIsOpen(false);
+                setLinkUrl('');
+                setDisplayText('');
+              }}
+              className={`px-4 py-2 border rounded-lg ${darkMode ? 'border-gray-600 text-gray-200 hover:bg-gray-700' : 'border-gray-300 text-gray-800 hover:bg-gray-50'}`}
+            >
+              Remove Link
+            </button>
+          )}
+          <button
+            onClick={() => setIsOpen(false)}
+            className={`px-4 py-2 border rounded-lg ${darkMode ? 'border-gray-600 text-gray-200 hover:bg-gray-700' : 'border-gray-300 text-gray-800 hover:bg-gray-50'}`}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleInsertLink}
+            className="px-4 py-2 text-white rounded-lg hover:opacity-90 transition-colors"
+            style={{ backgroundColor: primaryColor }}
+          >
+            Insert
+          </button>
         </div>
       </div>
     </>
