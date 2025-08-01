@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -12,13 +11,13 @@ import ListItem from '@tiptap/extension-list-item';
 import { Mathematics } from '@tiptap/extension-mathematics';
 import { createLowlight } from 'lowlight';
 import {
-    FiBold, FiItalic, FiUnderline, FiLink, FiImage, FiCode, FiRotateCcw, FiRotateCw,
-    FiList, FiType, FiChevronDown
+  FiBold, FiItalic, FiUnderline, FiLink, FiImage, FiCode, FiRotateCcw, FiRotateCw,
 } from 'react-icons/fi';
-import { MdFormatListNumbered } from 'react-icons/md';
 import { BiSolidQuoteRight, BiMath } from 'react-icons/bi';
 import LinkModal from './LinkModal';
 import LatexModal from './LatexModal';
+import ListControls from './ListControls';
+import HeadingControls from './HeadingControls';
 import 'katex/dist/katex.min.css';
 import '../../styles.css';
 
@@ -27,264 +26,220 @@ const lowlight = createLowlight();
 
 // Custom BulletList extension with bulletStyle attribute
 const CustomBulletList = BulletList.extend({
-    addAttributes() {
-        return {
-            bulletStyle: {
-                default: 'disc',
-                parseHTML: element => element.style.listStyleType || 'disc',
-                renderHTML: attributes => ({
-                    style: `list-style-type: ${attributes.bulletStyle}`,
-                    class: 'list-bullets',
-                }),
-            },
-        };
-    },
-    addCommands() {
-        return {
-            setBulletListStyle: (bulletStyle) => ({ commands }) => {
-                return commands.updateAttributes('bulletList', { bulletStyle });
-            },
-            toggleBulletList: () => ({ commands, state }) => {
-                const { from, to } = state.selection;
-                const isBulletListActive = state.doc.rangeHasMark(from, to, state.schema.nodes.bulletList);
-                if (isBulletListActive) {
-                    return commands.liftListItem('listItem');
-                } else {
-                    return commands.toggleList('bulletList', 'listItem');
-                }
-            },
-        };
-    },
+  addAttributes() {
+    return {
+      bulletStyle: {
+        default: 'disc',
+        parseHTML: element => element.style.listStyleType || 'disc',
+        renderHTML: attributes => ({
+          style: `list-style-type: ${attributes.bulletStyle}`,
+          class: 'list-bullets',
+        }),
+      },
+    };
+  },
+  addCommands() {
+    return {
+      setBulletListStyle: (bulletStyle) => ({ commands }) => {
+        return commands.updateAttributes('bulletList', { bulletStyle });
+      },
+      toggleBulletList: () => ({ commands, state }) => {
+        const { from, to } = state.selection;
+        const isBulletListActive = state.doc.rangeHasMark(from, to, state.schema.nodes.bulletList);
+        if (isBulletListActive) {
+          return commands.liftListItem('listItem');
+        } else {
+          return commands.toggleList('bulletList', 'listItem');
+        }
+      },
+    };
+  },
 });
 
 // Custom OrderedList extension with numberStyle attribute
 const CustomOrderedList = OrderedList.extend({
-    addAttributes() {
-        return {
-            numberStyle: {
-                default: 'decimal',
-                parseHTML: element => element.style.listStyleType || 'decimal',
-                renderHTML: attributes => ({
-                    style: `list-style-type: ${attributes.numberStyle}`,
-                    class: 'list-numbers',
-                }),
-            },
-        };
-    },
-    addCommands() {
-        return {
-            setOrderedListStyle: (numberStyle) => ({ commands }) => {
-                return commands.updateAttributes('orderedList', { numberStyle });
-            },
-            toggleOrderedList: () => ({ commands, state }) => {
-                const { from, to } = state.selection;
-                const isOrderedListActive = state.doc.rangeHasMark(from, to, state.schema.nodes.orderedList);
-                if (isOrderedListActive) {
-                    return commands.liftListItem('listItem');
-                } else {
-                    return commands.toggleList('orderedList', 'listItem');
-                }
-            },
-        };
-    },
+  addAttributes() {
+    return {
+      numberStyle: {
+        default: 'decimal',
+        parseHTML: element => element.style.listStyleType || 'decimal',
+        renderHTML: attributes => ({
+          style: `list-style-type: ${attributes.numberStyle}`,
+          class: 'list-numbers',
+        }),
+      },
+    };
+  },
+  addCommands() {
+    return {
+      setOrderedListStyle: (numberStyle) => ({ commands }) => {
+        return commands.updateAttributes('orderedList', { numberStyle });
+      },
+      toggleOrderedList: () => ({ commands, state }) => {
+        const { from, to } = state.selection;
+        const isOrderedListActive = state.doc.rangeHasMark(from, to, state.schema.nodes.orderedList);
+        if (isOrderedListActive) {
+          return commands.liftListItem('listItem');
+        } else {
+          return commands.toggleList('orderedList', 'listItem');
+        }
+      },
+    };
+  },
 });
 
 const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
-    const [showHeadingDropdown, setShowHeadingDropdown] = useState(false);
-    const [showBulletDropdown, setShowBulletDropdown] = useState(false);
-    const [showNumberDropdown, setShowNumberDropdown] = useState(false);
-    const [tooltip, setTooltip] = useState('');
-    const [hoveredIcon, setHoveredIcon] = useState(null);
-    const [showLinkModal, setShowLinkModal] = useState(false);
-    const [showLatexModal, setShowLatexModal] = useState(false);
-    const fileInputRef = useRef(null);
-    const headingButtonRef = useRef(null);
-    const bulletButtonRef = useRef(null);
-    const numberButtonRef = useRef(null);
+  const [tooltip, setTooltip] = useState('');
+  const [hoveredIcon, setHoveredIcon] = useState(null);
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [showLatexModal, setShowLatexModal] = useState(false);
+  const fileInputRef = useRef(null);
 
-    const headingStyles = [
-        { name: 'Paragraph', level: null },
-        { name: 'Heading 1', level: 1 },
-        { name: 'Heading 2', level: 2 },
-        { name: 'Heading 3', level: 3 },
-        { name: 'Heading 4', level: 4 },
-    ];
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        bulletList: false,
+        orderedList: false,
+      }),
+      CustomBulletList,
+      CustomOrderedList,
+      ListItem,
+      Underline,
+      Link.configure({
+        openOnClick: true,
+        autolink: false,
+        HTMLAttributes: {
+          target: '_blank',
+          rel: 'noopener noreferrer',
+        },
+      }),
+      Image.configure({
+        inline: true,
+        allowBase64: true,
+      }),
+      CodeBlockLowlight.configure({
+        lowlight,
+      }),
+      Mathematics.configure({
+        inlineOptions: {
+          katexOptions: {
+            throwOnError: false,
+            macros: {
+              '\\R': '\\mathbb{R}',
+              '\\N': '\\mathbb{N}',
+            },
+          },
+          onClick: (node, pos) => {
+            setShowLatexModal(true);
+            // Selection is handled in LatexModal.jsx
+          },
+        },
+      }),
+    ],
+    content,
+    onUpdate: ({ editor }) => {
+      const html = editor.getHTML();
+      console.log('Editor content updated:', html);
+      setContent(html);
+    },
+    onCreate: ({ editor }) => {
+      console.log('Editor initialized:', editor);
+    },
+  });
 
-    const editor = useEditor({
-        extensions: [
-            StarterKit.configure({
-                bulletList: false,
-                orderedList: false,
-            }),
-            CustomBulletList,
-            CustomOrderedList,
-            ListItem,
-            Underline,
-            Link.configure({
-                openOnClick: true,
-                autolink: false,
-                HTMLAttributes: {
-                    target: '_blank',
-                    rel: 'noopener noreferrer',
-                },
-            }),
-            Image.configure({
-                inline: true,
-                allowBase64: true,
-            }),
-            CodeBlockLowlight.configure({
-                lowlight,
-            }),
-            Mathematics.configure({
-                inlineOptions: {
-                    katexOptions: {
-                        throwOnError: false,
-                        macros: {
-                            '\\R': '\\mathbb{R}',
-                            '\\N': '\\mathbb{N}',
-                        },
-                    },
-                    onClick: (node, pos) => {
-                        setShowLatexModal(true);
-                        // Selection is handled in LatexModal.jsx
-                    },
-                },
-            }),
-        ],
-        content,
-        onUpdate: ({ editor }) => {
-            const html = editor.getHTML();
-            console.log('Editor content updated:', html);
-            setContent(html);
-        },
-        onCreate: ({ editor }) => {
-            console.log('Editor initialized:', editor);
-        },
-    });
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+      console.log('Updating editor content:', content);
+      editor.commands.setContent(content);
+    }
+  }, [content, editor]);
 
-    useEffect(() => {
-        if (editor && content !== editor.getHTML()) {
-            console.log('Updating editor content:', content);
-            editor.commands.setContent(content);
-        }
-    }, [content, editor]);
+  const handleImageUpload = () => {
+    fileInputRef.current.click();
+  };
 
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (headingButtonRef.current && !headingButtonRef.current.contains(e.target) && !e.target.closest('.heading-dropdown')) {
-                setShowHeadingDropdown(false);
-            }
-            if (bulletButtonRef.current && !bulletButtonRef.current.contains(e.target) && !e.target.closest('.bullet-dropdown')) {
-                setShowBulletDropdown(false);
-            }
-            if (numberButtonRef.current && !numberButtonRef.current.contains(e.target) && !e.target.closest('.number-dropdown')) {
-                setShowNumberDropdown(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        editor.chain().focus().setImage({ src: event.target.result }).run();
+      };
+      reader.readAsDataURL(file);
+      fileInputRef.current.value = '';
+    }
+  };
 
-    const handleImageUpload = () => {
-        fileInputRef.current.click();
-    };
+  const buttons = [
+    { 
+      icon: <FiBold />, 
+      action: () => editor.chain().focus().toggleBold().run(), 
+      disabled: !editor.can().toggleBold(), 
+      active: editor.isActive('bold'), 
+      name: 'Bold' 
+    },
+    { 
+      icon: <FiItalic />, 
+      action: () => editor.chain().focus().toggleItalic().run(), 
+      disabled: !editor.can().toggleItalic(), 
+      active: editor.isActive('italic'), 
+      name: 'Italic' 
+    },
+    { 
+      icon: <FiUnderline />, 
+      action: () => editor.chain().focus().toggleUnderline().run(), 
+      disabled: !editor.can().toggleUnderline(), 
+      active: editor.isActive('underline'), 
+      name: 'Underline' 
+    },
+    { 
+      icon: <BiSolidQuoteRight />, 
+      action: () => editor.chain().focus().toggleBlockquote().run(), 
+      active: editor.isActive('blockquote'), 
+      name: 'Blockquote' 
+    },
+    { 
+      icon: <FiLink />, 
+      action: () => setShowLinkModal(true), 
+      active: editor.isActive('link'), 
+      name: 'Insert/Edit Link' 
+    },
+    { 
+      icon: <FiImage />, 
+      action: handleImageUpload, 
+      active: false, 
+      name: 'Insert Image' 
+    },
+    { 
+      icon: <FiCode />, 
+      action: () => editor.chain().focus().toggleCodeBlock().run(), 
+      active: editor.isActive('codeBlock'), 
+      name: 'Insert Code' 
+    },
+    { 
+      icon: <BiMath />, 
+      action: () => setShowLatexModal(true), 
+      active: editor.isActive('inlineMath'), 
+      name: 'Insert/Edit LaTeX' 
+    },
+    { 
+      icon: <FiRotateCcw />, 
+      action: () => editor.chain().focus().undo().run(), 
+      disabled: !editor.can().undo(), 
+      name: 'Undo' 
+    },
+    { 
+      icon: <FiRotateCw />, 
+      action: () => editor.chain().focus().redo().run(), 
+      disabled: !editor.can().redo(), 
+      name: 'Redo' 
+    },
+  ];
 
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                editor.chain().focus().setImage({ src: event.target.result }).run();
-            };
-            reader.readAsDataURL(file);
-            fileInputRef.current.value = '';
-        }
-    };
-
-    const bulletStyles = [
-        { name: 'Disc', style: 'disc' },
-        { name: 'Circle', style: 'circle' },
-        { name: 'Square', style: 'square' },
-    ];
-
-    const numberStyles = [
-        { name: 'Decimal', style: 'decimal' },
-        { name: 'Upper Roman', style: 'upper-roman' },
-        { name: 'Lower Roman', style: 'lower-roman' },
-        { name: 'Upper Alpha', style: 'upper-alpha' },
-        { name: 'Lower Alpha', style: 'lower-alpha' },
-    ];
-
-    const buttons = [
-        { 
-            icon: <FiBold />, 
-            action: () => editor.chain().focus().toggleBold().run(), 
-            disabled: !editor.can().toggleBold(), 
-            active: editor.isActive('bold'), 
-            name: 'Bold' 
-        },
-        { 
-            icon: <FiItalic />, 
-            action: () => editor.chain().focus().toggleItalic().run(), 
-            disabled: !editor.can().toggleItalic(), 
-            active: editor.isActive('italic'), 
-            name: 'Italic' 
-        },
-        { 
-            icon: <FiUnderline />, 
-            action: () => editor.chain().focus().toggleUnderline().run(), 
-            disabled: !editor.can().toggleUnderline(), 
-            active: editor.isActive('underline'), 
-            name: 'Underline' 
-        },
-        { 
-            icon: <BiSolidQuoteRight />, 
-            action: () => editor.chain().focus().toggleBlockquote().run(), 
-            active: editor.isActive('blockquote'), 
-            name: 'Blockquote' 
-        },
-        { 
-            icon: <FiLink />, 
-            action: () => setShowLinkModal(true), 
-            active: editor.isActive('link'), 
-            name: 'Insert/Edit Link' 
-        },
-        { 
-            icon: <FiImage />, 
-            action: handleImageUpload, 
-            active: false, 
-            name: 'Insert Image' 
-        },
-        { 
-            icon: <FiCode />, 
-            action: () => editor.chain().focus().toggleCodeBlock().run(), 
-            active: editor.isActive('codeBlock'), 
-            name: 'Insert Code' 
-        },
-        { 
-            icon: <BiMath />, 
-            action: () => setShowLatexModal(true), 
-            active: editor.isActive('inlineMath'), 
-            name: 'Insert/Edit LaTeX' 
-        },
-        { 
-            icon: <FiRotateCcw />, 
-            action: () => editor.chain().focus().undo().run(), 
-            disabled: !editor.can().undo(), 
-            name: 'Undo' 
-        },
-        { 
-            icon: <FiRotateCw />, 
-            action: () => editor.chain().focus().redo().run(), 
-            disabled: !editor.can().redo(), 
-            name: 'Redo' 
-        },
-    ];
-
-    return (
-        <>
-            <style>
-                {`
+  return (
+    <>
+      <style>
+        {`
           .is-active {
             background-color: ${primaryColor} !important;
             color: white !important;
@@ -381,279 +336,80 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             vertical-align: middle;
           }
         `}
-            </style>
-            <div className={`flex items-center gap-1 mb-3 p-2 rounded-lg border ${darkMode ? 'border-gray-600' : 'border-gray-300'} focus-within:!border-[var(--primary-color)]`}>
-                {buttons.map((button) => (
-                    <div className="relative" key={button.name}>
-                        <button
-                            type="button"
-                            onClick={button.action}
-                            disabled={button.disabled}
-                            className={`
-                                p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold
-                                ${button.active ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
-                            `}
-                            onMouseEnter={() => {
-                                setTooltip(button.name);
-                                setHoveredIcon(button.name);
-                            }}
-                            onMouseLeave={() => {
-                                setTooltip('');
-                                setHoveredIcon(null);
-                            }}
-                            style={{
-                                backgroundColor: button.active || hoveredIcon === button.name
-                                    ? primaryColor
-                                    : darkMode
-                                        ? '#374151'
-                                        : 'white',
-                                borderColor: button.active || hoveredIcon === button.name
-                                    ? primaryColor
-                                    : darkMode
-                                        ? '#4b5563'
-                                        : '#e5e7eb',
-                            }}
-                        >
-                            {button.icon}
-                        </button>
-                        {tooltip === button.name && (
-                            <div
-                                className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
-                            >
-                                {button.name}
-                            </div>
-                        )}
-                    </div>
-                ))}
-                <div className="relative" ref={bulletButtonRef}>
-                    <button
-                        type="button"
-                        className={`
-                            p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold flex items-center gap-1
-                            ${editor.isActive('bulletList') ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
-                        `}
-                        onClick={() => setShowBulletDropdown(!showBulletDropdown)}
-                        onMouseEnter={() => {
-                            setTooltip('Bullet Styles');
-                            setHoveredIcon('bullet');
-                        }}
-                        onMouseLeave={() => {
-                            setTooltip('');
-                            setHoveredIcon(null);
-                        }}
-                        style={{
-                            backgroundColor: editor.isActive('bulletList') || hoveredIcon === 'bullet'
-                                ? primaryColor
-                                : darkMode
-                                    ? '#374151'
-                                    : 'white',
-                            borderColor: editor.isActive('bulletList') || hoveredIcon === 'bullet'
-                                ? primaryColor
-                                : darkMode
-                                    ? '#4b5563'
-                                        : '#e5e7eb',
-                        }}
-                    >
-                        <FiList />
-                        <FiChevronDown />
-                    </button>
-                    {tooltip === 'Bullet Styles' && (
-                        <div
-                            className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
-                        >
-                            Bullet Styles
-                        </div>
-                    )}
-                    {showBulletDropdown && (
-                        <div
-                            className={`bullet-dropdown absolute z-20 left-0 mt-1 w-44 rounded-md border shadow-md ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}
-                        >
-                            {bulletStyles.map((style) => (
-                                <button
-                                    key={style.name}
-                                    className={`bullet-item-button w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${editor.isActive('bulletList', { bulletStyle: style.style }) ? 'active' : darkMode ? 'text-white' : 'text-gray-800'}`}
-                                    style={{
-                                        backgroundColor: editor.isActive('bulletList', { bulletStyle: style.style }) ? primaryColor : 'transparent',
-                                        color: editor.isActive('bulletList', { bulletStyle: style.style }) ? 'white' : darkMode ? 'white' : '#1f2937',
-                                        borderColor: editor.isActive('bulletList', { bulletStyle: style.style }) ? primaryColor : 'transparent',
-                                    }}
-                                    onClick={() => {
-                                        if (editor.isActive('bulletList')) {
-                                            editor.chain().focus().setBulletListStyle(style.style).run();
-                                        } else {
-                                            editor.chain().focus().toggleBulletList().setBulletListStyle(style.style).run();
-                                        }
-                                        setShowBulletDropdown(false);
-                                    }}
-                                >
-                                    {style.name}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
-                <div className="relative" ref={numberButtonRef}>
-                    <button
-                        type="button"
-                        className={`
-                            p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold flex items-center gap-1
-                            ${editor.isActive('orderedList') ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
-                        `}
-                        onClick={() => setShowNumberDropdown(!showNumberDropdown)}
-                        onMouseEnter={() => {
-                            setTooltip('Number Styles');
-                            setHoveredIcon('number');
-                        }}
-                        onMouseLeave={() => {
-                            setTooltip('');
-                            setHoveredIcon(null);
-                        }}
-                        style={{
-                            backgroundColor: editor.isActive('orderedList') || hoveredIcon === 'number'
-                                ? primaryColor
-                                : darkMode
-                                    ? '#374151'
-                                    : 'white',
-                            borderColor: editor.isActive('orderedList') || hoveredIcon === 'number'
-                                ? primaryColor
-                                : darkMode
-                                    ? '#4b5563'
-                                        : '#e5e7eb',
-                        }}
-                    >
-                        <MdFormatListNumbered />
-                        <FiChevronDown />
-                    </button>
-                    {tooltip === 'Number Styles' && (
-                        <div
-                            className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
-                        >
-                            Number Styles
-                        </div>
-                    )}
-                    {showNumberDropdown && (
-                        <div
-                            className={`number-dropdown absolute z-20 left-0 mt-1 w-44 rounded-md border shadow-md ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}
-                        >
-                            {numberStyles.map((style) => (
-                                <button
-                                    key={style.name}
-                                    className={`number-item-button w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${editor.isActive('orderedList', { numberStyle: style.style }) ? 'active' : darkMode ? 'text-white' : 'text-gray-800'}`}
-                                    style={{
-                                        backgroundColor: editor.isActive('orderedList', { numberStyle: style.style }) ? primaryColor : 'transparent',
-                                        color: editor.isActive('orderedList', { numberStyle: style.style }) ? 'white' : darkMode ? 'white' : '#1f2937',
-                                        borderColor: editor.isActive('orderedList', { numberStyle: style.style }) ? primaryColor : 'transparent',
-                                    }}
-                                    onClick={() => {
-                                        if (editor.isActive('orderedList')) {
-                                            editor.chain().focus().setOrderedListStyle(style.style).run();
-                                        } else {
-                                            editor.chain().focus().toggleOrderedList().setOrderedListStyle(style.style).run();
-                                        }
-                                        setShowNumberDropdown(false);
-                                    }}
-                                >
-                                    {style.name}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
-                <div className="relative" ref={headingButtonRef}>
-                    <button
-                        type="button"
-                        className={`
-                            p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold flex items-center gap-1
-                            ${editor.isActive('heading') ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
-                        `}
-                        onClick={() => setShowHeadingDropdown(!showHeadingDropdown)}
-                        onMouseEnter={() => {
-                            setTooltip('Headings');
-                            setHoveredIcon('heading');
-                        }}
-                        onMouseLeave={() => {
-                            setTooltip('');
-                            setHoveredIcon(null);
-                        }}
-                        style={{
-                            backgroundColor: editor.isActive('heading') || hoveredIcon === 'heading'
-                                ? primaryColor
-                                : darkMode
-                                    ? '#374151'
-                                    : 'white',
-                            borderColor: editor.isActive('heading') || hoveredIcon === 'heading'
-                                ? primaryColor
-                                : darkMode
-                                    ? '#4b5563'
-                                        : '#e5e7eb',
-                        }}
-                    >
-                        <FiType />
-                        <FiChevronDown />
-                    </button>
-                    {tooltip === 'Headings' && (
-                        <div
-                            className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
-                        >
-                            Headings
-                        </div>
-                    )}
-                    {showHeadingDropdown && (
-                        <div
-                            className={`heading-dropdown absolute z-20 left-0 mt-1 w-44 rounded-md border shadow-md ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}
-                        >
-                            {headingStyles.map((style) => (
-                                <button
-                                    key={style.name}
-                                    className={`heading-item-button w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${editor.isActive('heading', { level: style.level }) ? 'active' : darkMode ? 'text-white' : 'text-gray-800'}`}
-                                    style={{
-                                        backgroundColor: editor.isActive('heading', { level: style.level }) ? primaryColor : 'transparent',
-                                        color: editor.isActive('heading', { level: style.level }) ? 'white' : darkMode ? 'white' : '#1f2937',
-                                        borderColor: editor.isActive('heading', { level: style.level }) ? primaryColor : 'transparent',
-                                    }}
-                                    onClick={() => {
-                                        if (style.level) {
-                                            editor.chain().focus().toggleHeading({ level: style.level }).run();
-                                        } else {
-                                            editor.chain().focus().setParagraph().run();
-                                        }
-                                        setShowHeadingDropdown(false);
-                                    }}
-                                >
-                                    {style.name}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
-                <input
-                    type="file"
-                    accept="image/*"
-                    ref={fileInputRef}
-                    style={{ display: 'none' }}
-                    onChange={handleFileChange}
-                />
-            </div>
-            <EditorContent
-                editor={editor}
-                className={`relative min-h-[300px] border rounded-lg prose max-w-none focus:outline-none focus:!border-[var(--primary-color)] transition-colors ${darkMode ? 'text-gray-200 border-gray-600 bg-gray-800' : 'text-gray-800 border-gray-300 bg-gray-50'}`}
-            />
-            <LinkModal
-                editor={editor}
-                primaryColor={primaryColor}
-                darkMode={darkMode}
-                isOpen={showLinkModal}
-                setIsOpen={setShowLinkModal}
-            />
-            <LatexModal
-                editor={editor}
-                primaryColor={primaryColor}
-                darkMode={darkMode}
-                isOpen={showLatexModal}
-                setIsOpen={setShowLatexModal}
-            />
-        </>
-    );
+      </style>
+      <div className={`flex items-center gap-1 mb-3 p-2 rounded-lg border ${darkMode ? 'border-gray-600' : 'border-gray-300'} focus-within:!border-[var(--primary-color)]`}>
+        {buttons.map((button) => (
+          <div className="relative" key={button.name}>
+            <button
+              type="button"
+              onClick={button.action}
+              disabled={button.disabled}
+              className={`
+                p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold
+                ${button.active ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
+              `}
+              onMouseEnter={() => {
+                setTooltip(button.name);
+                setHoveredIcon(button.name);
+              }}
+              onMouseLeave={() => {
+                setTooltip('');
+                setHoveredIcon(null);
+              }}
+              style={{
+                backgroundColor: button.active || hoveredIcon === button.name
+                  ? primaryColor
+                  : darkMode
+                    ? '#374151'
+                    : 'white',
+                borderColor: button.active || hoveredIcon === button.name
+                  ? primaryColor
+                  : darkMode
+                    ? '#4b5563'
+                    : '#e5e7eb',
+              }}
+            >
+              {button.icon}
+            </button>
+            {tooltip === button.name && (
+              <div
+                className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
+              >
+                {button.name}
+              </div>
+            )}
+          </div>
+        ))}
+        <ListControls editor={editor} primaryColor={primaryColor} darkMode={darkMode} />
+        <HeadingControls editor={editor} primaryColor={primaryColor} darkMode={darkMode} />
+        <input
+          type="file"
+          accept="image/*"
+          ref={fileInputRef}
+          style={{ display: 'none' }}
+          onChange={handleFileChange}
+        />
+      </div>
+      <EditorContent
+        editor={editor}
+        className={`relative min-h-[300px] border rounded-lg prose max-w-none focus:outline-none focus:!border-[var(--primary-color)] transition-colors ${darkMode ? 'text-gray-200 border-gray-600 bg-gray-800' : 'text-gray-800 border-gray-300 bg-gray-50'}`}
+      />
+      <LinkModal
+        editor={editor}
+        primaryColor={primaryColor}
+        darkMode={darkMode}
+        isOpen={showLinkModal}
+        setIsOpen={setShowLinkModal}
+      />
+      <LatexModal
+        editor={editor}
+        primaryColor={primaryColor}
+        darkMode={darkMode}
+        isOpen={showLatexModal}
+        setIsOpen={setShowLatexModal}
+      />
+    </>
+  );
 };
 
 export default Tiptap;
