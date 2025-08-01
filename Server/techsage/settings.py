@@ -13,6 +13,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Security settings
 SECRET_KEY = os.getenv('SECRET_KEY')
 
+STATIC_URL = '/static/'
+
 DEBUG = True  # Set to False in production
 
 ALLOWED_HOSTS = ['*']  # Specify hosts in production (e.g., ['tech-sage-5poh.vercel.app'])
