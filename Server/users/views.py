@@ -16,6 +16,24 @@ cloudinary.config(
     api_secret=os.getenv('CLOUDINARY_API_SECRET')
 )
 
+class AllUsersView(APIView):
+    def get(self, request):
+        try:
+            users = User.objects.only('username', 'email', 'role', 'job_title', 'points', 'avatar_url', 'created_at')
+            user_data = [{
+                "username": user.username,
+                "email": user.email,
+                "role": user.role,
+                "job_title": user.job_title,
+                "points": user.points,
+                "avatar_url": user.avatar_url,
+                "created_at": user.created_at.isoformat()
+            } for user in users]
+            return Response({"users": user_data}, status=200)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+
 class RegisterUser(APIView):
     def post(self, request):
         required_fields = ['username', 'email', 'password']
