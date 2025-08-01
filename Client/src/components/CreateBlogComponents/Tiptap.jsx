@@ -8,10 +8,11 @@ import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import BulletList from '@tiptap/extension-bullet-list';
 import OrderedList from '@tiptap/extension-ordered-list';
 import ListItem from '@tiptap/extension-list-item';
+import HorizontalRule from '@tiptap/extension-horizontal-rule';
 import { Mathematics } from '@tiptap/extension-mathematics';
 import { createLowlight } from 'lowlight';
 import {
-  FiBold, FiItalic, FiUnderline, FiLink, FiImage, FiCode, FiRotateCcw, FiRotateCw,
+  FiBold, FiItalic, FiUnderline, FiLink, FiImage, FiCode, FiRotateCcw, FiRotateCw, FiMinus,
 } from 'react-icons/fi';
 import { BiSolidQuoteRight, BiMath } from 'react-icons/bi';
 import LinkModal from './LinkModal';
@@ -120,6 +121,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
       CodeBlockLowlight.configure({
         lowlight,
       }),
+      HorizontalRule,
       Mathematics.configure({
         inlineOptions: {
           katexOptions: {
@@ -221,6 +223,12 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
       action: () => setShowLatexModal(true), 
       active: editor.isActive('inlineMath'), 
       name: 'Insert/Edit LaTeX' 
+    },
+    { 
+      icon: <FiMinus />, 
+      action: () => editor.chain().focus().setHorizontalRule().run(), 
+      active: editor.isActive('horizontalRule'), 
+      name: 'Horizontal Rule' 
     },
     { 
       icon: <FiRotateCcw />, 
@@ -364,7 +372,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
                     : 'white',
                 borderColor: button.active || hoveredIcon === button.name
                   ? primaryColor
-                  : darkMode
+                    : darkMode
                     ? '#4b5563'
                     : '#e5e7eb',
               }}
