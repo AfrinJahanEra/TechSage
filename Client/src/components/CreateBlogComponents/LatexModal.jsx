@@ -1,15 +1,18 @@
+
 import React, { useState, useEffect } from 'react';
 import { FiX } from 'react-icons/fi';
 import katex from 'katex';
-import 'katex/dist/katex.min.css';
 
-const LatexModal = ({ editorRef, latexInput, setLatexInput, isLatexSelected, setShowLatexModal, darkMode, primaryColor }) => {
+const LatexModal = ({ editor, primaryColor, darkMode, isOpen, setIsOpen }) => {
+  const [latexInput, setLatexInput] = useState('');
   const [latexPreview, setLatexPreview] = useState('');
   const [openTemplateCategory, setOpenTemplateCategory] = useState(null);
   const [openFunctionSubcategory, setOpenFunctionSubcategory] = useState(null);
   const [showMatrixInput, setShowMatrixInput] = useState(false);
   const [matrixRows, setMatrixRows] = useState(2);
   const [matrixCols, setMatrixCols] = useState(2);
+  const [isLatexSelected, setIsLatexSelected] = useState(false);
+  const [selectedNodePos, setSelectedNodePos] = useState(null);
 
   const latexTemplates = [
     {
@@ -17,7 +20,7 @@ const LatexModal = ({ editorRef, latexInput, setLatexInput, isLatexSelected, set
       items: [
         { name: 'Simple Fraction', template: '\\frac{a}{b}' },
         { name: 'Mixed Fraction', template: 'c\\frac{a}{b}' },
-      ]
+      ],
     },
     {
       category: 'Script',
@@ -26,14 +29,14 @@ const LatexModal = ({ editorRef, latexInput, setLatexInput, isLatexSelected, set
         { name: 'Subscript', template: 'x_{i}' },
         { name: 'Superscript with Subscript', template: 'x_{i}^{n}' },
         { name: 'Left Subscript-Superscript', template: '{}_{i}^{n}x' },
-      ]
+      ],
     },
     {
       category: 'Radical',
       items: [
         { name: 'Square Root', template: '\\sqrt{a}' },
         { name: 'N-th Root', template: '\\sqrt[n]{a}' },
-      ]
+      ],
     },
     {
       category: 'Differentiation',
@@ -41,7 +44,7 @@ const LatexModal = ({ editorRef, latexInput, setLatexInput, isLatexSelected, set
         { name: 'Derivative', template: '\\frac{dy}{dx}' },
         { name: 'n-th Derivative', template: '\\frac{d^n y}{dx^n}' },
         { name: 'Partial Derivative', template: '\\frac{\\partial y}{\\partial x}' },
-      ]
+      ],
     },
     {
       category: 'Integration',
@@ -50,7 +53,7 @@ const LatexModal = ({ editorRef, latexInput, setLatexInput, isLatexSelected, set
         { name: 'Definite Integral', template: '\\int_{a}^{b} y \\, dx' },
         { name: 'Double Integral', template: '\\iint y \\, dx' },
         { name: 'Double Definite Integral', template: '\\iint_{a}^{b} y \\, dx \\, dy' },
-      ]
+      ],
     },
     {
       category: 'Functions',
@@ -64,7 +67,7 @@ const LatexModal = ({ editorRef, latexInput, setLatexInput, isLatexSelected, set
             { name: 'cot', template: '\\cot(x)' },
             { name: 'sec', template: '\\sec(x)' },
             { name: 'cosec', template: '\\csc(x)' },
-          ]
+          ],
         },
         {
           name: 'Inverse Trigonometric',
@@ -86,7 +89,7 @@ const LatexModal = ({ editorRef, latexInput, setLatexInput, isLatexSelected, set
             { name: 'Hyperbolic cot', template: '\\coth(x)' },
             { name: 'Hyperbolic sec', template: '\\sech(x)' },
             { name: 'Hyperbolic cosec', template: '\\csch(x)' },
-          ]
+          ],
         },
         {
           name: 'Inverse Hyperbolic',
@@ -97,9 +100,9 @@ const LatexModal = ({ editorRef, latexInput, setLatexInput, isLatexSelected, set
             { name: 'Inverse Hyperbolic cot', template: '\\coth^{-1}(x)' },
             { name: 'Inverse Hyperbolic sec', template: '\\sech^{-1}(x)' },
             { name: 'Inverse Hyperbolic cosec', template: '\\csch^{-1}(x)' },
-          ]
+          ],
         },
-      ]
+      ],
     },
     {
       category: 'Logarithms',
@@ -107,7 +110,7 @@ const LatexModal = ({ editorRef, latexInput, setLatexInput, isLatexSelected, set
         { name: 'Logarithm with Base', template: '\\log_{a} b' },
         { name: 'Natural Logarithm', template: '\\ln(a)' },
         { name: 'Common Logarithm', template: '\\log_{10} a' },
-      ]
+      ],
     },
     {
       category: 'Greek Letters',
@@ -120,7 +123,7 @@ const LatexModal = ({ editorRef, latexInput, setLatexInput, isLatexSelected, set
         { name: 'Pi', template: '\\pi' },
         { name: 'Sigma', template: '\\sigma' },
         { name: 'Omega', template: '\\omega' },
-      ]
+      ],
     },
     {
       category: 'Operators',
@@ -128,16 +131,39 @@ const LatexModal = ({ editorRef, latexInput, setLatexInput, isLatexSelected, set
         { name: 'Summation', template: '\\sum_{i=1}^{n}' },
         { name: 'Product', template: '\\prod_{i=1}^{n}' },
         { name: 'Limit', template: '\\lim_{x \\to \\infty}' },
-      ]
+      ],
     },
     {
       category: 'Matrix',
       items: [
         { name: '2x2 Matrix', template: '\\left| \\begin{matrix} a & b \\\\ c & d \\end{matrix} \\right|' },
-        { name: 'Custom Matrix', template: 'custom-matrix' }
-      ]
-    }
+        { name: 'Custom Matrix', template: 'custom-matrix' },
+      ],
+    },
   ];
+
+  useEffect(() => {
+    if (!isOpen || !editor) return;
+
+    // Check if a math node is selected
+    const { selection } = editor.state;
+    const { from } = selection;
+    let selectedLatex = '';
+    let isMathNode = false;
+    let nodePos = null;
+
+    editor.state.doc.nodesBetween(from, from + 1, (node, pos) => {
+      if (node.type.name === 'inlineMath') {
+        selectedLatex = node.attrs.latex;
+        isMathNode = true;
+        nodePos = pos;
+      }
+    });
+
+    setLatexInput(selectedLatex);
+    setIsLatexSelected(isMathNode);
+    setSelectedNodePos(nodePos);
+  }, [isOpen, editor]);
 
   useEffect(() => {
     try {
@@ -145,7 +171,6 @@ const LatexModal = ({ editorRef, latexInput, setLatexInput, isLatexSelected, set
         setLatexPreview('');
         return;
       }
-
       const rendered = katex.renderToString(latexInput, {
         throwOnError: true,
         displayMode: false,
@@ -157,54 +182,39 @@ const LatexModal = ({ editorRef, latexInput, setLatexInput, isLatexSelected, set
   }, [latexInput]);
 
   const insertLatex = () => {
-    if (!latexInput.trim()) return;
-
-    const latexSpan = document.createElement('span');
-    latexSpan.className = 'latex-equation';
-    latexSpan.contentEditable = 'false';
-    latexSpan.style.display = 'inline-block';
-    latexSpan.style.padding = '0.2em 0.4em';
-    latexSpan.style.margin = '0 0.1em';
-    latexSpan.style.borderRadius = '3px';
-    latexSpan.style.fontFamily = 'monospace';
-    latexSpan.style.fontSize = '0.9em';
-    latexSpan.style.backgroundColor = darkMode ? '#374151' : '#f5f5f5';
-    latexSpan.style.color = darkMode ? '#f3f4f6' : '#333';
+    if (!latexInput.trim() || !editor) return;
 
     try {
-      latexSpan.innerHTML = katex.renderToString(latexInput, {
-        throwOnError: false,
-        displayMode: false,
-      });
-      latexSpan.setAttribute('data-latex', latexInput);
+      // Validate LaTeX syntax before insertion
+      katex.renderToString(latexInput, { throwOnError: true, displayMode: false });
+
+      if (isLatexSelected && selectedNodePos !== null) {
+        // Update existing inline math node
+        editor
+          .chain()
+          .focus()
+          .setNodeSelection(selectedNodePos)
+          .updateInlineMath({ latex: latexInput })
+          .insertContent(' ') // Add space after for better UX
+          .run();
+      } else {
+        // Insert new inline math node
+        editor
+          .chain()
+          .focus()
+          .insertInlineMath({ latex: latexInput })
+          .insertContent(' ') // Add space after for better UX
+          .run();
+      }
+
+      setIsOpen(false);
+      setLatexInput('');
+      setIsLatexSelected(false);
+      setSelectedNodePos(null);
     } catch (err) {
-      console.error('KaTeX render error:', err);
-      alert('Invalid LaTeX syntax.');
-      return;
+      console.error('KaTeX validation error:', err);
+      setLatexPreview(`<span style="color: red; font-size: 0.875rem;">Invalid LaTeX syntax</span>`);
     }
-
-    const editor = editorRef.current;
-    const selection = window.getSelection();
-    const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-
-    if (!range || !editor.contains(range.startContainer)) {
-      editor.appendChild(latexSpan);
-    } else {
-      range.deleteContents();
-      range.insertNode(latexSpan);
-    }
-
-    const newRange = document.createRange();
-    newRange.setStartAfter(latexSpan);
-    newRange.collapse(true);
-
-    selection.removeAllRanges();
-    selection.addRange(newRange);
-    editor.focus();
-
-    setShowLatexModal(false);
-    setLatexInput('');
-     setTimeout(() => editor.focus(), 0); // Ensure focus after insertion
   };
 
   const insertLatexTemplate = (template) => {
@@ -218,11 +228,10 @@ const LatexModal = ({ editorRef, latexInput, setLatexInput, isLatexSelected, set
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-
     const before = latexInput.slice(0, start);
     const after = latexInput.slice(end);
-
     const newLatex = before + template + after;
+
     setLatexInput(newLatex);
 
     setTimeout(() => {
@@ -230,6 +239,8 @@ const LatexModal = ({ editorRef, latexInput, setLatexInput, isLatexSelected, set
       textarea.setSelectionRange(start + template.length, start + template.length);
     }, 0);
   };
+
+  if (!isOpen) return null;
 
   return (
     <>
@@ -272,15 +283,16 @@ const LatexModal = ({ editorRef, latexInput, setLatexInput, isLatexSelected, set
             <h4 className={`text-sm font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               LaTeX Templates
             </h4>
-
             <div className="relative flex-1 text-center">
               <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                 {isLatexSelected ? 'Edit LaTeX Equation' : 'Insert LaTeX Equation'}
               </h3>
               <button
                 onClick={() => {
-                  setShowLatexModal(false);
+                  setIsOpen(false);
                   setLatexInput('');
+                  setIsLatexSelected(false);
+                  setSelectedNodePos(null);
                 }}
                 className={`absolute right-0 top-1/2 -translate-y-1/2 ${
                   darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
@@ -290,12 +302,10 @@ const LatexModal = ({ editorRef, latexInput, setLatexInput, isLatexSelected, set
               </button>
             </div>
           </div>
-
           <div className="flex flex-1 gap-6 overflow-hidden">
             <div className="w-full md:w-1/3 h-full overflow-y-auto pr-2 space-y-2">
               {latexTemplates.map((category) => {
                 const isOpen = openTemplateCategory === category.category;
-
                 return (
                   <div key={category.category} className="shrink-0">
                     <button
@@ -311,13 +321,11 @@ const LatexModal = ({ editorRef, latexInput, setLatexInput, isLatexSelected, set
                       {category.category}
                       <span className="ml-2">{isOpen ? '▲' : '▼'}</span>
                     </button>
-
                     {isOpen && (
                       <div className={`mt-1 border rounded-md shadow-sm overflow-hidden ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
                         {'subcategories' in category ? (
                           category.subcategories.map((subcat) => {
                             const isSubOpen = openFunctionSubcategory === subcat.name;
-
                             return (
                               <div key={subcat.name}>
                                 <button
@@ -333,7 +341,6 @@ const LatexModal = ({ editorRef, latexInput, setLatexInput, isLatexSelected, set
                                   {subcat.name}
                                   <span>{isSubOpen ? '▲' : '▼'}</span>
                                 </button>
-
                                 {isSubOpen && (
                                   <div className={`pl-4 ${darkMode ? 'bg-gray-700' : 'bg-white'}`}>
                                     {subcat.items.map((item) => (
@@ -377,7 +384,6 @@ const LatexModal = ({ editorRef, latexInput, setLatexInput, isLatexSelected, set
                 );
               })}
             </div>
-
             <div className="w-full md:w-2/3">
               {showMatrixInput && (
                 <div className={`mb-4 border p-3 rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-teal-50 border-teal-200'}`}>
@@ -443,26 +449,25 @@ const LatexModal = ({ editorRef, latexInput, setLatexInput, isLatexSelected, set
                 onChange={(e) => setLatexInput(e.target.value)}
                 autoFocus
               />
-
               <div className={`text-xs mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                 Tip: Use standard LaTeX syntax. Your equation will be rendered when published.
               </div>
-
               <div className={`border p-3 rounded mb-4 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'}`}>
                 <div className={`text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   Live Preview:
                 </div>
                 <div className="text-sm" dangerouslySetInnerHTML={{ __html: latexPreview }} />
               </div>
-
               <div className="flex justify-end space-x-2">
                 <button
                   className={`px-4 py-2 rounded hover:opacity-90 transition-colors duration-200 ${
                     darkMode ? 'bg-gray-600 text-white' : 'bg-gray-200 text-gray-800'
                   }`}
                   onClick={() => {
-                    setShowLatexModal(false);
+                    setIsOpen(false);
                     setLatexInput('');
+                    setIsLatexSelected(false);
+                    setSelectedNodePos(null);
                   }}
                 >
                   Cancel
@@ -479,7 +484,6 @@ const LatexModal = ({ editorRef, latexInput, setLatexInput, isLatexSelected, set
           </div>
         </div>
       </div>
-      <button onClick={insertLatex}>Insert Latex</button>;
     </>
   );
 };

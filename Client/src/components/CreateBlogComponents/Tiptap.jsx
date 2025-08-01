@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -8,46 +9,21 @@ import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import BulletList from '@tiptap/extension-bullet-list';
 import OrderedList from '@tiptap/extension-ordered-list';
 import ListItem from '@tiptap/extension-list-item';
+import { Mathematics } from '@tiptap/extension-mathematics'; // Use Mathematics instead of InlineMath
 import { createLowlight } from 'lowlight';
 import {
     FiBold, FiItalic, FiUnderline, FiLink, FiImage, FiCode, FiRotateCcw, FiRotateCw,
-    FiAlignLeft, FiAlignCenter, FiAlignRight, FiAlignJustify, FiList, FiType, FiChevronDown
+    FiList, FiType, FiChevronDown
 } from 'react-icons/fi';
 import { MdFormatListNumbered } from 'react-icons/md';
-import { BiSolidQuoteRight } from 'react-icons/bi';
+import { BiSolidQuoteRight, BiMath } from 'react-icons/bi';
 import LinkModal from './LinkModal';
+import LatexModal from './LatexModal';
+import 'katex/dist/katex.min.css';
 import '../../styles.css';
 
 // Create lowlight instance
 const lowlight = createLowlight();
-
-const Latex = {
-    name: 'latex',
-    marks: [
-        {
-            name: 'latex',
-            parseHTML(element) {
-                return {
-                    name: 'latex',
-                    getAttrs: (element) => ({
-                        latex: element.getAttribute('data-latex') || '',
-                    }),
-                };
-            },
-            renderHTML({ mark }) {
-                return ['span', { class: 'latex-equation', 'data-latex': mark.attrs.latex }, `$${mark.attrs.latex}$`];
-            },
-            parseDOM: [
-                {
-                    tag: 'span.latex-equation',
-                    getAttrs: (dom) => ({
-                        latex: dom.getAttribute('data-latex') || '',
-                    }),
-                },
-            ],
-        },
-    ],
-};
 
 // Custom BulletList extension with bulletStyle attribute
 const CustomBulletList = BulletList.extend({
@@ -121,7 +97,6 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
     const [hoveredIcon, setHoveredIcon] = useState(null);
     const [showLinkModal, setShowLinkModal] = useState(false);
     const [showLatexModal, setShowLatexModal] = useState(false);
-    const [latexInput, setLatexInput] = useState('');
     const fileInputRef = useRef(null);
     const headingButtonRef = useRef(null);
     const bulletButtonRef = useRef(null);
@@ -160,21 +135,36 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             CodeBlockLowlight.configure({
                 lowlight,
             }),
-            Latex,
+            Mathematics.configure({
+                inlineOptions: {
+                    katexOptions: {
+                        throwOnError: false,
+                        macros: {
+                            '\\R': '\\mathbb{R}',
+                            '\\N': '\\mathbb{N}',
+                        },
+                    },
+                    onClick: (node, pos) => {
+                        setShowLatexModal(true);
+                        // Selection is handled in LatexModal.jsx
+                    },
+                },
+            }),
         ],
         content,
         onUpdate: ({ editor }) => {
             const html = editor.getHTML();
+            console.log('Editor content updated:', html);
             setContent(html);
-            console.log('Updated content:', html);
         },
-        onCreate: () => {
+        onCreate: ({ editor }) => {
             console.log('Editor initialized:', editor);
         },
     });
 
     useEffect(() => {
         if (editor && content !== editor.getHTML()) {
+            console.log('Updating editor content:', content);
             editor.commands.setContent(content);
         }
     }, [content, editor]);
@@ -209,25 +199,6 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             reader.readAsDataURL(file);
             fileInputRef.current.value = '';
         }
-    };
-
-    const handleLatexButtonClick = () => {
-        const selection = editor.state.selection;
-        const node = selection.$from.nodeAfter;
-        if (node && node.marks.some(mark => mark.type.name === 'latex')) {
-            setLatexInput(node.marks.find(mark => mark.type.name === 'latex').attrs.latex);
-        } else {
-            setLatexInput('');
-        }
-        setShowLatexModal(true);
-    };
-
-    const handleInsertLatex = () => {
-        if (latexInput) {
-            editor.chain().focus().insertContent(`<span class="latex-equation" data-latex="${latexInput}">$${latexInput}$</span>`).run();
-        }
-        setShowLatexModal(false);
-        setLatexInput('');
     };
 
     const bulletStyles = [
@@ -274,10 +245,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
         },
         { 
             icon: <FiLink />, 
-            action: () => {
-                console.log('Link button clicked, opening modal');
-                setShowLinkModal(true);
-            }, 
+            action: () => setShowLinkModal(true), 
             active: editor.isActive('link'), 
             name: 'Insert/Edit Link' 
         },
@@ -292,6 +260,12 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             action: () => editor.chain().focus().toggleCodeBlock().run(), 
             active: editor.isActive('codeBlock'), 
             name: 'Insert Code' 
+        },
+        { 
+            icon: <BiMath />, 
+            action: () => setShowLatexModal(true), 
+            active: editor.isActive('inlineMath'), 
+            name: 'Insert/Edit LaTeX' 
         },
         { 
             icon: <FiRotateCcw />, 
@@ -326,12 +300,6 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             color: white !important;
             border-color: ${primaryColor} !important;
           }
-          .latex-equation {
-            background-color: ${darkMode ? '#4b5563' : '#f3f4f6'};
-            padding: 2px 4px;
-            border-radius: 3px;
-            cursor: pointer;
-          }
           .ProseMirror {
             min-height: 300px;
             max-height: 400px;
@@ -343,7 +311,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             overflow-y: auto;
           }
           .ProseMirror a {
-            cursor: pointer; /* Ensure hand pointer for links in editor */
+            cursor: pointer;
           }
           .ProseMirror::-webkit-scrollbar {
             width: 8px;
@@ -393,6 +361,22 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
           }
           .ProseMirror li p {
             margin: 0;
+          }
+          .tiptap-mathematics-render {
+            background-color: ${darkMode ? '#4b5563' : '#f3f4f6'};
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            cursor: pointer;
+            display: inline-block;
+            margin: 0 0.1em;
+            font-family: monospace;
+            font-size: 0.9em;
+          }
+          .tiptap-mathematics-render--editable {
+            cursor: text;
+          }
+          .tiptap-mathematics-render[data-type="inline-math"] {
+            display: inline-block;
           }
         `}
             </style>
@@ -465,7 +449,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
                                 ? primaryColor
                                 : darkMode
                                     ? '#4b5563'
-                                    : '#e5e7eb',
+                                        : '#e5e7eb',
                         }}
                     >
                         <FiList />
@@ -532,7 +516,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
                                 ? primaryColor
                                 : darkMode
                                     ? '#4b5563'
-                                    : '#e5e7eb',
+                                        : '#e5e7eb',
                         }}
                     >
                         <MdFormatListNumbered />
@@ -599,7 +583,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
                                 ? primaryColor
                                 : darkMode
                                     ? '#4b5563'
-                                    : '#e5e7eb',
+                                        : '#e5e7eb',
                         }}
                     >
                         <FiType />
@@ -659,38 +643,13 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
                 isOpen={showLinkModal}
                 setIsOpen={setShowLinkModal}
             />
-            {showLatexModal && (
-                <div className={`modal ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-semibold">Insert LaTeX</h3>
-                        <button onClick={() => setShowLatexModal(false)}>
-                            <FiX />
-                        </button>
-                    </div>
-                    <textarea
-                        value={latexInput}
-                        onChange={(e) => setLatexInput(e.target.value)}
-                        placeholder="Enter LaTeX code"
-                        className={`w-full px-3 py-2 border rounded-lg mb-4 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300 text-gray-800'}`}
-                        rows="4"
-                    />
-                    <div className="flex justify-end gap-2">
-                        <button
-                            onClick={() => setShowLatexModal(false)}
-                            className={`px-4 py-2 border rounded-lg ${darkMode ? 'border-gray-600 text-gray-200' : 'border-gray-300 text-gray-800'}`}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={handleInsertLatex}
-                            className="px-4 py-2 text-white rounded-lg"
-                            style={{ backgroundColor: primaryColor }}
-                        >
-                            Insert
-                        </button>
-                    </div>
-                </div>
-            )}
+            <LatexModal
+                editor={editor}
+                primaryColor={primaryColor}
+                darkMode={darkMode}
+                isOpen={showLatexModal}
+                setIsOpen={setShowLatexModal}
+            />
         </>
     );
 };
