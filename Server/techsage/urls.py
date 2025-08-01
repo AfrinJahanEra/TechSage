@@ -2,6 +2,7 @@ from django.urls import path, include
 from django.urls import path
 from django.contrib import admin
 from django.urls import path, include
+from users.views import AllUsersView, LoginUser, UserProfile, UserSearch, SavedBlogsAPI
 from users.views import (
     RegisterUser,
     LoginUser,
