@@ -9,16 +9,19 @@ import BulletList from '@tiptap/extension-bullet-list';
 import OrderedList from '@tiptap/extension-ordered-list';
 import ListItem from '@tiptap/extension-list-item';
 import HorizontalRule from '@tiptap/extension-horizontal-rule';
+import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table';
 import { Mathematics } from '@tiptap/extension-mathematics';
 import { createLowlight } from 'lowlight';
 import {
-  FiBold, FiItalic, FiUnderline, FiLink, FiImage, FiCode, FiRotateCcw, FiRotateCw, FiMinus,
+  FiBold, FiItalic, FiUnderline, FiLink, FiImage, FiCode, FiRotateCcw, FiRotateCw, FiMinus, FiGrid, FiMenu
 } from 'react-icons/fi';
 import { BiSolidQuoteRight, BiMath } from 'react-icons/bi';
 import LinkModal from './LinkModal';
 import LatexModal from './LatexModal';
 import ListControls from './ListControls';
 import HeadingControls from './HeadingControls';
+import TableControls from './TableControls';
+import TableGridSelector from './TableGridSelector';
 import 'katex/dist/katex.min.css';
 import '../../styles.css';
 
@@ -94,7 +97,12 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
   const [hoveredIcon, setHoveredIcon] = useState(null);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [showLatexModal, setShowLatexModal] = useState(false);
+  const [showTableGrid, setShowTableGrid] = useState(false);
+  const [showTableDropdown, setShowTableDropdown] = useState({});
+  const [tablePositions, setTablePositions] = useState([]);
   const fileInputRef = useRef(null);
+  const tableButtonRef = useRef(null);
+  const tableFormatButtonRefs = useRef({});
 
   const editor = useEditor({
     extensions: [
@@ -122,6 +130,12 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
         lowlight,
       }),
       HorizontalRule,
+      Table.configure({
+        resizable: true,
+      }),
+      TableCell,
+      TableHeader,
+      TableRow,
       Mathematics.configure({
         inlineOptions: {
           katexOptions: {
@@ -133,7 +147,6 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
           },
           onClick: (node, pos) => {
             setShowLatexModal(true);
-            // Selection is handled in LatexModal.jsx
           },
         },
       }),
@@ -156,6 +169,78 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
     }
   }, [content, editor]);
 
+  useEffect(() => {
+    if (!editor) {
+      console.log('Editor not initialized');
+      return;
+    }
+
+    const updateTablePositions = () => {
+      console.log('Running updateTablePositions');
+      try {
+        const positions = [];
+        editor.state.doc.descendants((node, pos) => {
+          if (node.type.name !== 'table') {
+            return;
+          }
+          console.log(`Found table at position: ${pos}`);
+          const domNode = editor.view.nodeDOM(pos);
+          if (!domNode || !domNode.getBoundingClientRect) {
+            console.log(`No valid DOM node for table at position: ${pos}`);
+            return;
+          }
+
+          const editorElement = editor.view.dom.offsetParent || editor.view.dom;
+          const editorRect = editorElement.getBoundingClientRect();
+          const tableRect = domNode.getBoundingClientRect();
+
+          console.log(`Table at pos ${pos} rect:`, tableRect);
+          console.log('Editor rect:', editorRect);
+
+          const top = tableRect.bottom - editorRect.top + 4; // Below table
+          const left = tableRect.right - editorRect.left - 24; // Right corner
+
+          if (top > 0 && left > 0) {
+            positions.push({ id: pos, top, left });
+          } else {
+            console.log(`Invalid position for table at pos ${pos}: top=${top}, left=${left}`);
+          }
+        });
+
+        console.log('Detected table positions:', positions);
+        setTablePositions(positions);
+
+        // Reset dropdown states for removed tables
+        setShowTableDropdown((prev) => {
+          const newState = {};
+          positions.forEach((pos) => {
+            newState[pos.id] = prev[pos.id] || false;
+          });
+          return newState;
+        });
+      } catch (error) {
+        console.error('Error updating table positions:', error);
+        setTablePositions([]);
+      }
+    };
+
+    const handleUpdate = () => {
+      // Delay to ensure DOM is rendered
+      setTimeout(() => {
+        requestAnimationFrame(updateTablePositions);
+      }, 100);
+    };
+
+    handleUpdate();
+    editor.on('update', handleUpdate);
+    editor.on('selectionUpdate', handleUpdate);
+
+    return () => {
+      editor.off('update', handleUpdate);
+      editor.off('selectionUpdate', handleUpdate);
+    };
+  }, [editor]);
+
   const handleImageUpload = () => {
     fileInputRef.current.click();
   };
@@ -170,6 +255,13 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
       reader.readAsDataURL(file);
       fileInputRef.current.value = '';
     }
+  };
+
+  const toggleTableDropdown = (tableId) => {
+    setShowTableDropdown((prev) => ({
+      ...prev,
+      [tableId]: !prev[tableId],
+    }));
   };
 
   const buttons = [
@@ -231,6 +323,13 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
       name: 'Horizontal Rule' 
     },
     { 
+      icon: <FiGrid />, 
+      action: () => setShowTableGrid(!showTableGrid), 
+      active: showTableGrid, 
+      name: 'Insert Table',
+      ref: tableButtonRef 
+    },
+    { 
       icon: <FiRotateCcw />, 
       action: () => editor.chain().focus().undo().run(), 
       disabled: !editor.can().undo(), 
@@ -253,17 +352,18 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             color: white !important;
             border-color: ${primaryColor} !important;
           }
-          .heading-item-button:hover, .bullet-item-button:hover, .number-item-button:hover {
+          .heading-item-button:hover, .bullet-item-button:hover, .number-item-button:hover, .table-item-button:hover {
             background-color: ${primaryColor} !important;
             color: white !important;
             border-color: ${primaryColor} !important;
           }
-          .heading-item-button.active, .bullet-item-button.active, .number-item-button.active {
+          .heading-item-button.active, .bullet-item-button.active, .number-item-button.active, .table-item-button.active {
             background-color: ${primaryColor} !important;
             color: white !important;
             border-color: ${primaryColor} !important;
           }
           .ProseMirror {
+            position: relative;
             min-height: 300px;
             max-height: 400px;
             padding: 0.75rem 1rem;
@@ -343,6 +443,39 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             display: inline-block;
             vertical-align: middle;
           }
+          .table-format-button {
+            position: absolute;
+            z-index: 20;
+            width: 24px;
+            height: 24px;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: ${darkMode ? '#374151' : 'white'};
+            border: 1px solid ${darkMode ? '#4b5563' : '#d1d5db'};
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          }
+          .table-format-button:hover {
+            background: ${primaryColor};
+            border-color: ${primaryColor};
+            color: white;
+          }
+          .table-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            z-index: 20;
+            display: flex;
+            gap: 4px;
+            padding: 4px;
+            background: ${darkMode ? '#374151' : 'white'};
+            border: 1px solid ${darkMode ? '#4b5563' : '#d1d5db'};
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-top: 4px;
+          }
         `}
       </style>
       <div className={`flex items-center gap-1 mb-3 p-2 rounded-lg border ${darkMode ? 'border-gray-600' : 'border-gray-300'} focus-within:!border-[var(--primary-color)]`}>
@@ -352,6 +485,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
               type="button"
               onClick={button.action}
               disabled={button.disabled}
+              ref={button.ref}
               className={`
                 p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold
                 ${button.active ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
@@ -372,7 +506,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
                     : 'white',
                 borderColor: button.active || hoveredIcon === button.name
                   ? primaryColor
-                    : darkMode
+                  : darkMode
                     ? '#4b5563'
                     : '#e5e7eb',
               }}
@@ -390,6 +524,15 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
         ))}
         <ListControls editor={editor} primaryColor={primaryColor} darkMode={darkMode} />
         <HeadingControls editor={editor} primaryColor={primaryColor} darkMode={darkMode} />
+        {showTableGrid && (
+          <TableGridSelector
+            editor={editor}
+            primaryColor={primaryColor}
+            darkMode={darkMode}
+            onClose={() => setShowTableGrid(false)}
+            tableButtonRef={tableButtonRef}
+          />
+        )}
         <input
           type="file"
           accept="image/*"
@@ -398,10 +541,43 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
           onChange={handleFileChange}
         />
       </div>
-      <EditorContent
-        editor={editor}
-        className={`relative min-h-[300px] border rounded-lg prose max-w-none focus:outline-none focus:!border-[var(--primary-color)] transition-colors ${darkMode ? 'text-gray-200 border-gray-600 bg-gray-800' : 'text-gray-800 border-gray-300 bg-gray-50'}`}
-      />
+      <div className="editor-container" style={{ position: 'relative' }}>
+        <EditorContent
+          className={`relative min-h-[300px] border rounded-lg prose max-w-none focus:outline-none focus:!border-[var(--primary-color)] transition-colors ${darkMode ? 'text-gray-200 border-gray-600 bg-gray-800' : 'text-gray-800 border-gray-300 bg-gray-50'}`}
+          editor={editor}
+        />
+        {editor && tablePositions.map((position) => (
+          <div
+            key={position.id}
+            className="table-format-button"
+            style={{
+              top: `${position.top}px`,
+              left: `${position.left}px`,
+            }}
+          >
+            <button
+              type="button"
+              ref={(el) => (tableFormatButtonRefs.current[position.id] = el)}
+              onClick={() => toggleTableDropdown(position.id)}
+              className="w-full h-full flex items-center justify-center"
+              style={{
+                color: darkMode ? '#e5e7eb' : '#1f2937',
+              }}
+            >
+              <FiMenu />
+            </button>
+            {showTableDropdown[position.id] && (
+              <TableControls
+                editor={editor}
+                primaryColor={primaryColor}
+                darkMode={darkMode}
+                onClose={() => toggleTableDropdown(position.id)}
+                tableFormatButtonRef={tableFormatButtonRefs.current[position.id]}
+              />
+            )}
+          </div>
+        ))}
+      </div>
       <LinkModal
         editor={editor}
         primaryColor={primaryColor}
