@@ -123,6 +123,110 @@
     }
   }
 
+/* Table styles */
+      table {
+        border-collapse: collapse;
+        margin: 1.5rem 0;
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+        position: relative;
+        table-layout: fixed; /* Ensure columns respect explicit widths */
+      }
+
+      colgroup col {
+        width: auto; /* Default width, overridden by inline styles */
+      }
+
+      th,
+      td {
+        border: 1px solid #d1d5db;
+        padding: 0.5rem;
+        text-align: left;
+        vertical-align: top;
+        position: relative;
+        min-width: 50px; /* Prevent columns from collapsing too small */
+      }
+
+      th {
+        background-color: #f3f4f6;
+        font-weight: 600;
+      }
+
+      [data-theme='dark'] th,
+      [data-theme='dark'] td {
+        border: 1px solid #4b5563;
+      }
+
+      [data-theme='dark'] th {
+        background-color: #374151;
+      }
+
+      /* Resizable column styles */
+      .resize-handle {
+        position: absolute;
+        right: -4px;
+        top: 0;
+        bottom: 0;
+        width: 8px;
+        cursor: col-resize;
+        background: transparent;
+        z-index: 10;
+        user-select: none; /* Prevent text selection during drag */
+      }
+
+      .resize-handle:hover,
+      .resize-handle.active {
+        background: var(--primary-color, #3b82f6);
+        opacity: 0.5;
+      }
+
+      [data-theme='dark'] .resize-handle:hover,
+      [data-theme='dark'] .resize-handle.active {
+        background: var(--primary-color, #60a5fa);
+        opacity: 0.7;
+      }
+
+      /* Table grid selector styles */
+      .table-grid-selector {
+        background-color: white;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        padding: 1rem;
+      }
+
+      [data-theme='dark'] .table-grid-selector {
+        background-color: #1f2937;
+        border: 1px solid #4b5563;
+      }
+
+      .table-grid-selector .grid-square {
+        width: 20px;
+        height: 20px;
+        border: 1px solid #d1d5db;
+        background-color: #f9fafb;
+        cursor: pointer;
+      }
+
+      .table-grid-selector .grid-square:hover,
+      .table-grid-selector .grid-square.active {
+        background-color: #bfdbfe;
+        border: 1px solid #3b82f6;
+      }
+
+      [data-theme='dark'] .table-grid-selector .grid-square {
+        background-color: #374151;
+        border: 1px solid #4b5563;
+      }
+
+      [data-theme='dark'] .table-grid-selector .grid-square:hover,
+      [data-theme='dark'] .table-grid-selector .grid-square.active {
+        background-color: #4b5563;
+        border: 1px solid #60a5fa;
+      }
+
+      
   /* Mathematics styles */
   .tiptap-mathematics-render {
     background-color: var(--math-bg, #f3f4f6);
@@ -147,4 +251,7 @@
   .tiptap-mathematics-render[data-type="inline-math"] {
     display: inline-block;
   }
+  .editor-container {
+  position: relative;
+}
 }
