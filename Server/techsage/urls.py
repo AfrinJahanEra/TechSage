@@ -77,4 +77,6 @@ urlpatterns = [
     path('reports/', include('reports.urls')),
 
     path('', include('checker.urls')),
+
+    # path('version-control/', include('version_control.urls')),
 ]
