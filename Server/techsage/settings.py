@@ -23,21 +23,21 @@ ALLOWED_HOSTS = ['*']  # Specify hosts in production (e.g., ['tech-sage-5poh.ver
 INSTALLED_APPS = [
     'daphne',
     'django.contrib.admin',
-    'django.contrib.auth',  # Built-in auth app
+    'django.contrib.auth',  # Django's built-in auth
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
+    'auth',
     'users',
     'blogs',
     'comments',
     'channels',
     'reports',
     'checker',
-    'auth.apps.CustomAuthConfig',
-    'badges',# Custom auth app
+    'badges',
 ]
 
 MIDDLEWARE = [
