@@ -1,3 +1,4 @@
+
 .tiptap {
   :first-child {
     margin-top: 0;
@@ -107,4 +108,30 @@
     border-top: 1px solid var(--gray-2, #e5e7eb);
     margin: 2rem 0;
   }
+
+  /* Mathematics styles */
+
+.tiptap-mathematics-render {
+  background-color: var(--math-bg, #f3f4f6);
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  cursor: pointer;
+  display: inline-block;
+  margin: 0 0.1em;
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+[data-theme='dark'] .tiptap-mathematics-render {
+  background-color: var(--math-bg, #4b5563);
+  color: var(--math-color, #f3f4f6);
+}
+
+.tiptap-mathematics-render--editable {
+  cursor: text;
+}
+
+.tiptap-mathematics-render[data-type="inline-math"] {
+  display: inline-block;
+}
 }
