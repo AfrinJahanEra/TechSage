@@ -9,7 +9,7 @@ import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import BulletList from '@tiptap/extension-bullet-list';
 import OrderedList from '@tiptap/extension-ordered-list';
 import ListItem from '@tiptap/extension-list-item';
-import { Mathematics } from '@tiptap/extension-mathematics'; // Use Mathematics instead of InlineMath
+import { Mathematics } from '@tiptap/extension-mathematics';
 import { createLowlight } from 'lowlight';
 import {
     FiBold, FiItalic, FiUnderline, FiLink, FiImage, FiCode, FiRotateCcw, FiRotateCw,
@@ -364,19 +364,21 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
           }
           .tiptap-mathematics-render {
             background-color: ${darkMode ? '#4b5563' : '#f3f4f6'};
-            padding: 0.2em 0.4em;
-            border-radius: 3px;
+            padding: 0.3em 0.4em;
+            border-radius: 4px;
             cursor: pointer;
             display: inline-block;
-            margin: 0 0.1em;
+            margin: 0.2em 0.1em;
             font-family: monospace;
             font-size: 0.9em;
+            line-height: 1.6;
           }
           .tiptap-mathematics-render--editable {
             cursor: text;
           }
           .tiptap-mathematics-render[data-type="inline-math"] {
             display: inline-block;
+            vertical-align: middle;
           }
         `}
             </style>
