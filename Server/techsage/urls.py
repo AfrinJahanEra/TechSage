@@ -24,6 +24,7 @@ from blogs.views import (
 
 
 urlpatterns = [
+    path('all-users/', AllUsersView.as_view(), name='all-users'),
     path('users/by-role/', UserListByRole.as_view(), name='users-by-role'),
     path('register/', RegisterUser.as_view(), name='register'),
     path('login/', LoginUser.as_view(), name='login'),
