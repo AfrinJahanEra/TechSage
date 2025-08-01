@@ -1,14 +1,8 @@
-# from rest_framework import serializers
-# from .models import OTP
+from rest_framework import serializers
 
-# class OTPSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = OTP
-#         fields = ['email', 'otp']
+class OTPSendSerializer(serializers.Serializer):
+    email = serializers.EmailField()
 
-# class OTPSendSerializer(serializers.Serializer):
-#     email = serializers.EmailField()
-
-# class OTPVerifySerializer(serializers.Serializer):
-#     email = serializers.EmailField()
-#     otp = serializers.CharField(max_length=6)
+class OTPVerifySerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    otp_code = serializers.CharField(max_length=6)
