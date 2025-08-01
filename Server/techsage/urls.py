@@ -79,4 +79,6 @@ urlpatterns = [
     path('', include('checker.urls')),
 
     # path('version-control/', include('version_control.urls')),
+
+    path('', include('badges.urls')),
 ]
