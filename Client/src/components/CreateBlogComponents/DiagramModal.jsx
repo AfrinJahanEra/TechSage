@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import mermaid from 'mermaid';
-import { FiX, FiCheck } from 'react-icons/fi';
+import { FiX, FiCheck, FiChevronDown } from 'react-icons/fi';
 
-// Diagram templates for different types
 const diagramTemplates = {
   flowchart: `graph TD
     A[Start] --> B{Decision}
@@ -35,16 +34,78 @@ const diagramTemplates = {
     Active task      :active, des2, 2014-01-09, 3d
     Future task      :des3, after des2, 5d
     Future task2     :des4, after des3, 5d`,
+  pie: `pie title Sample Pie Chart
+    "Category A" : 30
+    "Category B" : 20
+    "Category C" : 40
+    "Category D" : 10`,
+  erd: `erDiagram
+    CUSTOMER ||--o{ ORDER : places
+    ORDER ||--|{ LINE-ITEM : contains
+    CUSTOMER }|..|{ DELIVERY-ADDRESS : uses
+    LINE-ITEM ||--o{ PRODUCT : includes
+    CUSTOMER {
+        int customerId
+        string name
+        string email
+    }
+    ORDER {
+        int orderId
+        date orderDate
+        string status
+    }
+    LINE-ITEM {
+        int itemId
+        int orderId
+        int productId
+        int quantity
+    }
+    PRODUCT {
+        int productId
+        string name
+        float price
+    }
+    DELIVERY-ADDRESS {
+        int addressId
+        int customerId
+        string street
+        string city
+    }`
 };
+
+const diagramTypes = [
+  { value: 'flowchart', label: 'Flowchart' },
+  { value: 'sequence', label: 'Sequence Diagram' },
+  { value: 'class', label: 'Class Diagram' },
+  { value: 'gantt', label: 'Gantt Chart' },
+  { value: 'pie', label: 'Pie Chart' },
+  { value: 'erd', label: 'ER Diagram' },
+];
 
 const DiagramModal = ({ editor, primaryColor, darkMode, isOpen, setIsOpen }) => {
   const [diagramType, setDiagramType] = useState('flowchart');
   const [diagramCode, setDiagramCode] = useState(diagramTemplates.flowchart);
   const [preview, setPreview] = useState('');
   const [error, setError] = useState('');
+  const [showDiagramDropdown, setShowDiagramDropdown] = useState(false);
+  const [tooltip, setTooltip] = useState('');
+  const diagramButtonRef = useRef(null);
   const renderIdRef = useRef(`diagram-preview-${Date.now()}`);
 
-  // Initialize Mermaid with default theme and custom gray shades
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        diagramButtonRef.current &&
+        !diagramButtonRef.current.contains(e.target) &&
+        !e.target.closest('.diagram-dropdown')
+      ) {
+        setShowDiagramDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   useEffect(() => {
     const themeCSS = darkMode
       ? `
@@ -83,8 +144,18 @@ const DiagramModal = ({ editor, primaryColor, darkMode, isOpen, setIsOpen }) => 
           stroke: #d1d5db;
           stroke-width: 1px;
         }
+        .pieLabel {
+          fill: #ffffff;
+          color: #ffffff;
+        }
         .mermaid-main {
           background: transparent !important;
+        }
+        svg {
+          width: 600px !important;
+          height: 400px !important;
+          max-width: 600px !important;
+          max-height: 400px !important;
         }
       `
       : `
@@ -123,8 +194,18 @@ const DiagramModal = ({ editor, primaryColor, darkMode, isOpen, setIsOpen }) => 
           stroke: #4b5563;
           stroke-width: 1px;
         }
+        .pieLabel {
+          fill: #1f2937;
+          color: #1f2937;
+        }
         .mermaid-main {
           background: transparent !important;
+        }
+        svg {
+          width: 600px !important;
+          height: 400px !important;
+          max-width: 600px !important;
+          max-height: 400px !important;
         }
       `;
 
@@ -132,14 +213,15 @@ const DiagramModal = ({ editor, primaryColor, darkMode, isOpen, setIsOpen }) => 
       startOnLoad: false,
       theme: 'base',
       themeCSS,
-      flowchart: { useMaxWidth: true, htmlLabels: true },
-      sequence: { actorMargin: 50 },
-      class: { useMaxWidth: true },
-      gantt: { axisFormat: '%Y-%m-%d' },
+      flowchart: { useMaxWidth: false, htmlLabels: true, diagramPadding: 8 },
+      sequence: { actorMargin: 50, useMaxWidth: false },
+      class: { useMaxWidth: false },
+      gantt: { axisFormat: '%Y-%m-%d', useMaxWidth: false },
+      pie: { useMaxWidth: false },
+      er: { useMaxWidth: false }
     });
   }, [darkMode]);
 
-  // Update diagram code when type changes
   useEffect(() => {
     if (isOpen) {
       setDiagramCode(diagramTemplates[diagramType]);
@@ -148,7 +230,6 @@ const DiagramModal = ({ editor, primaryColor, darkMode, isOpen, setIsOpen }) => 
     }
   }, [diagramType, isOpen]);
 
-  // Render diagram preview
   useEffect(() => {
     if (!isOpen) return;
 
@@ -173,7 +254,12 @@ const DiagramModal = ({ editor, primaryColor, darkMode, isOpen, setIsOpen }) => 
   const handleInsert = () => {
     if (editor && preview) {
       const base64Svg = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(preview)))}`;
-      editor.chain().focus().setImage({ src: base64Svg, alt: `Diagram (${diagramType})` }).run();
+      editor.chain().focus().setImage({ 
+        src: base64Svg, 
+        alt: `Diagram (${diagramType})`,
+        width: 600,
+        height: 400
+      }).run();
       setIsOpen(false);
     }
   };
@@ -184,109 +270,167 @@ const DiagramModal = ({ editor, primaryColor, darkMode, isOpen, setIsOpen }) => 
     setDiagramCode(diagramTemplates.flowchart);
     setPreview('');
     setError('');
+    setShowDiagramDropdown(false);
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 transition-opacity duration-200 ${
-        isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-      }`}
-    >
-      <div
-        className={`relative w-full max-w-3xl rounded-lg shadow-xl p-6 ${
-          darkMode ? 'bg-gray-800 text-gray-200' : 'bg-white text-gray-800'
-        }`}
-      >
-        <button
+    isOpen && (
+      <>
+        <style>
+          {`
+            .diagram-dropdown {
+              position: absolute;
+              z-index: 20;
+              left: 0;
+              margin-top: 0.25rem;
+              width: 11rem;
+              border-radius: 0.375rem;
+              border: 1px solid ${darkMode ? '#4b5563' : '#e5e7eb'};
+              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+              background-color: ${darkMode ? '#374151' : 'white'};
+            }
+            .diagram-item-button {
+              width: 100%;
+              text-align: left;
+              padding: 0.5rem 1rem;
+              font-size: 0.875rem;
+              line-height: 1.25rem;
+              transition: background-color 0.2s ease, color 0.2s ease;
+              color: ${darkMode ? 'white' : '#1f2937'};
+            }
+            .diagram-item-button.active {
+              background-color: ${primaryColor};
+              color: white;
+            }
+            .diagram-item-button:hover {
+              background-color: ${primaryColor};
+              color: white;
+            }
+            .diagram-modal-textarea:focus {
+              border-color: ${primaryColor};
+              outline: none;
+            }
+            .diagram-button {
+              background-color: ${darkMode ? '#374151' : 'white'};
+              border-color: ${darkMode ? '#4b5563' : '#e5e7eb'};
+              color: ${darkMode ? 'white' : '#1f2937'};
+            }
+            .diagram-button:hover {
+              background-color: ${darkMode ? '#374151' : 'white'};
+              border-color: ${darkMode ? '#4b5563' : '#e5e7eb'};
+              color: ${darkMode ? 'white' : '#1f2937'};
+            }
+          `}
+        </style>
+        <div
+          className={`fixed inset-0 flex items-center justify-center z-50 ${darkMode ? 'bg-black/50' : 'bg-black/30'}`}
           onClick={handleClose}
-          className="absolute top-4 right-4 p-2 rounded-md hover:bg-opacity-80 transition-all"
-          style={{
-            backgroundColor: darkMode ? '#4b5563' : '#f3f4f6',
-            color: darkMode ? '#e5e7eb' : '#1f2937',
-          }}
         >
-          <FiX size={20} />
-        </button>
-
-        <h3 className="text-lg font-semibold mb-4">Create Diagram</h3>
-
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium">Diagram Type</label>
-            <select
-              value={diagramType}
-              onChange={(e) => setDiagramType(e.target.value)}
-              className={`p-2 rounded-md border focus:outline-none focus:ring-2 ${
-                darkMode
-                  ? 'bg-gray-700 border-gray-600 text-gray-200 focus:ring-[var(--primary-color)]'
-                  : 'bg-gray-50 border-gray-300 text-gray-800 focus:ring-[var(--primary-color)]'
-              }`}
-            >
-              <option value="flowchart">Flowchart</option>
-              <option value="sequence">Sequence Diagram</option>
-              <option value="class">Class Diagram</option>
-              <option value="gantt">Gantt Chart</option>
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium">Diagram Code (Mermaid Syntax)</label>
-            <textarea
-              value={diagramCode}
-              onChange={(e) => setDiagramCode(e.target.value)}
-              className={`w-full h-48 p-3 rounded-md border resize-y focus:outline-none focus:ring-2 ${
-                darkMode
-                  ? 'bg-gray-700 border-gray-600 text-gray-200 focus:ring-[var(--primary-color)]'
-                  : 'bg-gray-50 border-gray-300 text-gray-800 focus:ring-[var(--primary-color)]'
-              }`}
-              placeholder="Enter Mermaid diagram code..."
-            />
-            {error && <span className="text-red-500 text-sm">{error}</span>}
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium">Preview</label>
-            <div
-              className={`border rounded-md p-4 overflow-auto max-h-60 ${
-                darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'
-              }`}
-            >
-              {preview ? (
-                <div dangerouslySetInnerHTML={{ __html: preview }} />
-              ) : (
-                <p className="text-gray-500">Diagram preview will appear here...</p>
-              )}
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2">
+          <div
+            className={`p-6 rounded-lg shadow-lg max-w-3xl w-full ${darkMode ? 'bg-gray-800 text-gray-200' : 'bg-white text-gray-800'}`}
+            style={{ border: `1px solid ${darkMode ? '#4b5563' : '#d1d5db'}` }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               onClick={handleClose}
-              className={`px-4 py-2 rounded-md transition-all ${
-                darkMode ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'
-              }`}
+              className="absolute top-4 right-4 p-2 rounded-md hover:bg-opacity-80 transition-all"
+              style={{
+                backgroundColor: darkMode ? '#4b5563' : '#f3f4f6',
+                color: darkMode ? '#e5e7eb' : '#1f2937',
+              }}
             >
-              Cancel
+              <FiX size={20} />
             </button>
-            <button
-              onClick={handleInsert}
-              disabled={!preview}
-              className={`px-4 py-2 rounded-md transition-all flex items-center gap-2 ${
-                preview
-                  ? `bg-[var(--primary-color)] hover:bg-opacity-90 text-white`
-                  : 'bg-gray-400 cursor-not-allowed text-gray-200'
-              }`}
-              style={{ backgroundColor: preview ? primaryColor : undefined }}
-            >
-              <FiCheck />
-              Insert Diagram
-            </button>
+
+            <h3 className="text-lg font-semibold mb-4">Create Diagram</h3>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">Diagram Type</label>
+              <div className="relative" ref={diagramButtonRef}>
+                <button
+                  type="button"
+                  className="diagram-button p-2 rounded-md border shadow-sm transition-colors duration-200 flex items-center gap-1 w-full text-sm"
+                  onClick={() => setShowDiagramDropdown(!showDiagramDropdown)}
+                  onMouseEnter={() => setTooltip('Select Diagram Type')}
+                  onMouseLeave={() => setTooltip('')}
+                >
+                  <span>{diagramTypes.find((type) => type.value === diagramType).label}</span>
+                  <FiChevronDown className="ml-auto" />
+                </button>
+                {tooltip === 'Select Diagram Type' && (
+                  <div
+                    className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
+                  >
+                    Select Diagram Type
+                  </div>
+                )}
+                {showDiagramDropdown && (
+                  <div className="diagram-dropdown">
+                    {diagramTypes.map((type) => (
+                      <button
+                        key={type.value}
+                        className={`diagram-item-button ${diagramType === type.value ? 'active' : ''}`}
+                        onClick={() => {
+                          setDiagramType(type.value);
+                          setShowDiagramDropdown(false);
+                        }}
+                      >
+                        {type.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">Diagram Code (Mermaid Syntax)</label>
+              <textarea
+                value={diagramCode}
+                onChange={(e) => setDiagramCode(e.target.value)}
+                className={`diagram-modal-textarea w-full p-2 rounded border resize-y font-mono text-sm ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-50 text-gray-800'}`}
+                style={{ minHeight: '150px' }}
+                placeholder="Enter Mermaid diagram code..."
+              />
+              {error && <span className="text-red-500 text-sm">{error}</span>}
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">Preview</label>
+              <div
+                className={`border rounded-md p-4 overflow-auto max-h-60 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'}`}
+              >
+                {preview ? (
+                  <div dangerouslySetInnerHTML={{ __html: preview }} />
+                ) : (
+                  <p className="text-gray-500">Diagram preview will appear here...</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={handleClose}
+                className={`px-4 py-2 rounded ${darkMode ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'}`}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleInsert}
+                disabled={!preview}
+                className={`px-4 py-2 rounded flex items-center gap-2 text-white ${preview ? '' : 'opacity-50 cursor-not-allowed'}`}
+                style={{ backgroundColor: preview ? primaryColor : '#9ca3af', borderColor: preview ? primaryColor : '#9ca3af' }}
+              >
+                <FiCheck />
+                Insert Diagram
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </>
+    )
   );
 };
 
