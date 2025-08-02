@@ -108,6 +108,7 @@ const CodeModal = ({ editor, primaryColor, darkMode, isOpen, setIsOpen }) => {
         </style>
         <div
           className={`fixed inset-0 flex items-center justify-center z-50 ${darkMode ? 'bg-black/50' : 'bg-black/30'}`}
+          style={{ backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}
           onClick={handleCancel}
         >
           <div

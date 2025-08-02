@@ -93,10 +93,7 @@ const LinkModal = ({ editor, primaryColor, darkMode, isOpen, setIsOpen }) => {
       <style>
         {`
           .modal {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            position: relative;
             z-index: 50;
             padding: 1.5rem;
             border-radius: 0.5rem;
@@ -106,69 +103,79 @@ const LinkModal = ({ editor, primaryColor, darkMode, isOpen, setIsOpen }) => {
           }
         `}
       </style>
-      <div className={`modal ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">Insert/Edit Link</h3>
-          <button onClick={() => setIsOpen(false)} aria-label="Close">
-            <FiX />
-          </button>
-        </div>
-        <input
-          type="text"
-          value={linkUrl}
-          onChange={(e) => setLinkUrl(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') handleInsertLink();
-            if (e.key === 'Escape') setIsOpen(false);
-          }}
-          placeholder="https://example.com"
-          className={`w-full px-3 py-2 border rounded-lg mb-4 focus:outline-none focus:!border-[${primaryColor}] ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300 text-gray-800'}`}
-          autoFocus
-        />
-        <input
-          type="text"
-          value={displayText}
-          onChange={(e) => setDisplayText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') handleInsertLink();
-            if (e.key === 'Escape') setIsOpen(false);
-          }}
-          placeholder="Optional display text"
-          className={`w-full px-3 py-2 border rounded-lg mb-4 focus:outline-none focus:!border-[${primaryColor}] ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300 text-gray-800'}`}
-        />
-        {linkUrl && (
-          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-4`}>
-            Preview: <a href={linkUrl} target="_blank" rel="noopener noreferrer" className="underline" style={{ color: primaryColor }}>{displayText || linkUrl}</a>
-          </p>
-        )}
-        <div className="flex justify-end gap-2">
+      <div
+        className={`fixed inset-0 flex items-center justify-center z-50 ${darkMode ? 'bg-black/50' : 'bg-black/30'}`}
+        style={{ backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}
+        onClick={() => setIsOpen(false)}
+      >
+        <div
+          className={`modal ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}
+          style={{ border: `1px solid ${darkMode ? '#4b5563' : '#d1d5db'}` }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">Insert/Edit Link</h3>
+            <button onClick={() => setIsOpen(false)} aria-label="Close">
+              <FiX />
+            </button>
+          </div>
+          <input
+            type="text"
+            value={linkUrl}
+            onChange={(e) => setLinkUrl(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleInsertLink();
+              if (e.key === 'Escape') setIsOpen(false);
+            }}
+            placeholder="https://example.com"
+            className={`w-full px-3 py-2 border rounded-lg mb-4 focus:outline-none focus:!border-[${primaryColor}] ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300 text-gray-800'}`}
+            autoFocus
+          />
+          <input
+            type="text"
+            value={displayText}
+            onChange={(e) => setDisplayText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleInsertLink();
+              if (e.key === 'Escape') setIsOpen(false);
+            }}
+            placeholder="Optional display text"
+            className={`w-full px-3 py-2 border rounded-lg mb-4 focus:outline-none focus:!border-[${primaryColor}] ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300 text-gray-800'}`}
+          />
           {linkUrl && (
+            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-4`}>
+              Preview: <a href={linkUrl} target="_blank" rel="noopener noreferrer" className="underline" style={{ color: primaryColor }}>{displayText || linkUrl}</a>
+            </p>
+          )}
+          <div className="flex justify-end gap-2">
+            {linkUrl && (
+              <button
+                onClick={() => {
+                  console.log('Removing link');
+                  editor.chain().focus().unsetLink().run();
+                  setIsOpen(false);
+                  setLinkUrl('');
+                  setDisplayText('');
+                }}
+                className={`px-4 py-2 border rounded-lg ${darkMode ? 'border-gray-600 text-gray-200 hover:bg-gray-700' : 'border-gray-300 text-gray-800 hover:bg-gray-50'}`}
+              >
+                Remove Link
+              </button>
+            )}
             <button
-              onClick={() => {
-                console.log('Removing link');
-                editor.chain().focus().unsetLink().run();
-                setIsOpen(false);
-                setLinkUrl('');
-                setDisplayText('');
-              }}
+              onClick={() => setIsOpen(false)}
               className={`px-4 py-2 border rounded-lg ${darkMode ? 'border-gray-600 text-gray-200 hover:bg-gray-700' : 'border-gray-300 text-gray-800 hover:bg-gray-50'}`}
             >
-              Remove Link
+              Cancel
             </button>
-          )}
-          <button
-            onClick={() => setIsOpen(false)}
-            className={`px-4 py-2 border rounded-lg ${darkMode ? 'border-gray-600 text-gray-200 hover:bg-gray-700' : 'border-gray-300 text-gray-800 hover:bg-gray-50'}`}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleInsertLink}
-            className="px-4 py-2 text-white rounded-lg hover:opacity-90 transition-colors"
-            style={{ backgroundColor: primaryColor }}
-          >
-            Insert
-          </button>
+            <button
+              onClick={handleInsertLink}
+              className="px-4 py-2 text-white rounded-lg hover:opacity-90 transition-colors"
+              style={{ backgroundColor: primaryColor }}
+            >
+              Insert
+            </button>
+          </div>
         </div>
       </div>
     </>

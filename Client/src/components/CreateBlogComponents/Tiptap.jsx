@@ -324,6 +324,12 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
       name: 'Insert Code' 
     },
     { 
+      icon: <BiMath />, 
+      action: () => setShowLatexModal(true), 
+      active: editor.isActive('mathematics'), 
+      name: 'Insert LaTeX' 
+    },
+    { 
       icon: <FiMinus />, 
       action: () => editor.chain().focus().setHorizontalRule().run(), 
       active: editor.isActive('horizontalRule'), 
