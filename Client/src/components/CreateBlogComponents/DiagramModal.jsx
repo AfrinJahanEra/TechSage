@@ -2,16 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import mermaid from 'mermaid';
 import { FiX, FiCheck } from 'react-icons/fi';
 
-// Initialize Mermaid with a unique ID
-mermaid.initialize({
-  startOnLoad: false,
-  theme: 'default',
-  flowchart: { useMaxWidth: true, htmlLabels: true },
-  sequence: { actorMargin: 50 },
-  class: { useMaxWidth: true },
-  gantt: { axisFormat: '%Y-%m-%d' },
-});
-
+// Diagram templates for different types
 const diagramTemplates = {
   flowchart: `graph TD
     A[Start] --> B{Decision}
@@ -53,22 +44,116 @@ const DiagramModal = ({ editor, primaryColor, darkMode, isOpen, setIsOpen }) => 
   const [error, setError] = useState('');
   const renderIdRef = useRef(`diagram-preview-${Date.now()}`);
 
+  // Initialize Mermaid with default theme and custom gray shades
+  useEffect(() => {
+    const themeCSS = darkMode
+      ? `
+        .node rect, .node circle, .node ellipse, .node polygon, .node path {
+          fill: #9ca3af;
+          stroke: #d1d5db;
+          stroke-width: 2px;
+        }
+        .edgePath path {
+          stroke: #d1d5db;
+          stroke-width: 3px;
+        }
+        .label, .actor, .messageText, .noteText, .taskText {
+          fill: #ffffff;
+          color: #ffffff;
+        }
+        .section rect {
+          fill: #4b5563;
+        }
+        .grid .tick line {
+          stroke: #6b7280;
+        }
+        .todayMarker {
+          stroke: #d1d5db;
+          stroke-width: 2px;
+        }
+        .actor {
+          fill: #9ca3af;
+        }
+        .note rect {
+          fill: #4b5563;
+          stroke: #d1d5db;
+        }
+        .cluster rect {
+          fill: #4b5563;
+          stroke: #d1d5db;
+          stroke-width: 1px;
+        }
+        .mermaid-main {
+          background: transparent !important;
+        }
+      `
+      : `
+        .node rect, .node circle, .node ellipse, .node polygon, .node path {
+          fill: #e5e7eb;
+          stroke: #4b5563;
+          stroke-width: 2px;
+        }
+        .edgePath path {
+          stroke: #4b5563;
+          stroke-width: 3px;
+        }
+        .label, .actor, .messageText, .noteText, .taskText {
+          fill: #1f2937;
+          color: #1f2937;
+        }
+        .section rect {
+          fill: #6b7280;
+        }
+        .grid .tick line {
+          stroke: #9ca3af;
+        }
+        .todayMarker {
+          stroke: #4b5563;
+          stroke-width: 2px;
+        }
+        .actor {
+          fill: #e5e7eb;
+        }
+        .note rect {
+          fill: #6b7280;
+          stroke: #4b5563;
+        }
+        .cluster rect {
+          fill: #6b7280;
+          stroke: #4b5563;
+          stroke-width: 1px;
+        }
+        .mermaid-main {
+          background: transparent !important;
+        }
+      `;
+
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      themeCSS,
+      flowchart: { useMaxWidth: true, htmlLabels: true },
+      sequence: { actorMargin: 50 },
+      class: { useMaxWidth: true },
+      gantt: { axisFormat: '%Y-%m-%d' },
+    });
+  }, [darkMode]);
+
+  // Update diagram code when type changes
   useEffect(() => {
     if (isOpen) {
-      // Update diagram code when type changes
       setDiagramCode(diagramTemplates[diagramType]);
       setPreview('');
       setError('');
     }
   }, [diagramType, isOpen]);
 
+  // Render diagram preview
   useEffect(() => {
     if (!isOpen) return;
 
-    // Debounce rendering to avoid excessive calls
     const renderDiagram = async () => {
       try {
-        // Generate a unique ID for each render to avoid Mermaid conflicts
         const renderId = `diagram-preview-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         renderIdRef.current = renderId;
 
@@ -100,6 +185,8 @@ const DiagramModal = ({ editor, primaryColor, darkMode, isOpen, setIsOpen }) => 
     setPreview('');
     setError('');
   };
+
+  if (!isOpen) return null;
 
   return (
     <div
