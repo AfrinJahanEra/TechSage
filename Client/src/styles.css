@@ -88,9 +88,13 @@
     display: block;
     margin: 1.5em auto;
     border-radius: 4px;
-    max-width: 500px;
-    width: 300px;
+    max-width: 300px;
+    width: 250px;
     transition: transform 0.2s ease;
+  
+   
+    
+
   }
 
   img:hover {
