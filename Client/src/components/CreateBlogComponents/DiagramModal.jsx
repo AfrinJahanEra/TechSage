@@ -320,6 +320,9 @@ const DiagramModal = ({ editor, primaryColor, darkMode, isOpen, setIsOpen }) => 
               border-color: ${darkMode ? '#4b5563' : '#e5e7eb'};
               color: ${darkMode ? 'white' : '#1f2937'};
             }
+            .preview-box::-webkit-scrollbar {
+              height: 8px; /* Decreased width of the horizontal scrollbar */
+            }
           `}
         </style>
         <div
@@ -398,7 +401,7 @@ const DiagramModal = ({ editor, primaryColor, darkMode, isOpen, setIsOpen }) => 
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">Preview</label>
               <div
-                className={`border rounded-md p-4 overflow-auto max-h-60 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'}`}
+                className={`preview-box border rounded-md p-4 overflow-auto max-h-60 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'}`}
               >
                 {preview ? (
                   <div dangerouslySetInnerHTML={{ __html: preview }} />
