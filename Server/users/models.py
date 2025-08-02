@@ -33,6 +33,7 @@ class User(me.Document):
     saved_blogs = me.ListField(me.StringField())
     created_at = me.DateTimeField(default=datetime.datetime.now)
     updated_at = me.DateTimeField(default=datetime.datetime.now)
+        badge = StringField(choices=['ruby', 'bronze', 'sapphire', 'silver', 'gold', 'diamond'], default=None)
 
     meta = {
         'strict': False,

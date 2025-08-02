@@ -144,3 +144,28 @@ class ReviewComment(View):
                 'success': False,
                 'error': str(e)
             }, status=500)
+
+
+class GetCommentsByBlog(View):
+    def get(self, request, blog_id):
+        try:
+            page = int(request.GET.get('page', 1))
+            per_page = int(request.GET.get('per_page', 10))
+
+            query = Comment.objects(blog=blog_id, is_deleted=False).order_by('-created_at')
+            paginator = Paginator(query, per_page)
+            page_obj = paginator.page(page)
+
+            return JsonResponse({
+                'success': True,
+                'comments': [c.to_json() for c in page_obj],
+                'pagination': {
+                    'page': page,
+                    'per_page': per_page,
+                    'total_pages': paginator.num_pages,
+                    'total_comments': paginator.count
+                }
+            })
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
