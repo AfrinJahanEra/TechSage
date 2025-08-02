@@ -18,6 +18,7 @@ import {
 import { BiSolidQuoteRight, BiMath } from 'react-icons/bi';
 import LinkModal from './LinkModal';
 import LatexModal from './LatexModal';
+import CodeModal from './CodeModal';
 import ListControls from './ListControls';
 import HeadingControls from './HeadingControls';
 import TableControls from './TableControls';
@@ -25,8 +26,20 @@ import TableGridSelector from './TableGridSelector';
 import 'katex/dist/katex.min.css';
 import '../../styles.css';
 
-// Create lowlight instance
+// Create lowlight instance with common languages
 const lowlight = createLowlight();
+import javascript from 'highlight.js/lib/languages/javascript';
+import python from 'highlight.js/lib/languages/python';
+import css from 'highlight.js/lib/languages/css';
+import html from 'highlight.js/lib/languages/xml';
+import typescript from 'highlight.js/lib/languages/typescript';
+import json from 'highlight.js/lib/languages/json';
+lowlight.register('javascript', javascript);
+lowlight.register('python', python);
+lowlight.register('css', css);
+lowlight.register('html', html);
+lowlight.register('typescript', typescript);
+lowlight.register('json', json);
 
 // Custom BulletList extension with bulletStyle attribute
 const CustomBulletList = BulletList.extend({
@@ -99,6 +112,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
   const [showLatexModal, setShowLatexModal] = useState(false);
   const [showTableGrid, setShowTableGrid] = useState(false);
   const [showTableDropdown, setShowTableDropdown] = useState({});
+  const [showCodeModal, setShowCodeModal] = useState(false);
   const [tablePositions, setTablePositions] = useState([]);
   const fileInputRef = useRef(null);
   const tableButtonRef = useRef(null);
@@ -128,6 +142,11 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
       }),
       CodeBlockLowlight.configure({
         lowlight,
+        defaultLanguage: 'plaintext',
+        languageClassPrefix: 'language-',
+        HTMLAttributes: {
+          class: 'code-block',
+        },
       }),
       HorizontalRule,
       Table.configure({
@@ -184,10 +203,9 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             if (!domNode || !domNode.getBoundingClientRect) return;
 
             const tableRect = domNode.getBoundingClientRect();
-            const top = tableRect.bottom - editorRect.top + 8; // Slightly increased offset
-            const left = tableRect.right - editorRect.left - 32; // Adjusted for better alignment
+            const top = tableRect.bottom - editorRect.top + 8;
+            const left = tableRect.right - editorRect.left - 32;
 
-            // Ensure table button stays within editor bounds
             const adjustedTop = Math.max(8, Math.min(top, editorRect.height - 32));
             const adjustedLeft = Math.max(8, Math.min(left, editorRect.width - 32));
 
@@ -198,7 +216,6 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
 
           setTablePositions(positions);
 
-          // Update dropdown states
           setShowTableDropdown((prev) => {
             const newState = {};
             positions.forEach((pos) => {
@@ -294,7 +311,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
     },
     { 
       icon: <FiCode />, 
-      action: () => editor.chain().focus().toggleCodeBlock().run(), 
+      action: () => setShowCodeModal(true), 
       active: editor.isActive('codeBlock'), 
       name: 'Insert Code' 
     },
@@ -328,141 +345,141 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
   return (
     <>
       <style>
-  {`
-    .is-active {
-      background-color: ${primaryColor} !important;
-      color: white !important;
-      border-color: ${primaryColor} !important;
-    }
-    .heading-item-button:hover, .bullet-item-button:hover, .number-item-button:hover, .table-item-button:hover {
-      background-color: ${primaryColor} !important;
-      color: white !important;
-      border-color: ${primaryColor} !important;
-    }
-    .heading-item-button.active, .bullet-item-button.active, .number-item-button.active, .table-item-button.active {
-      background-color: ${primaryColor} !important;
-      color: white !important;
-      border-color: ${primaryColor} !important;
-    }
-    .ProseMirror {
-      position: relative;
-      min-height: 300px;
-      max-height: 400px;
-      padding: 0.75rem 1rem;
-      outline: none;
-      background: transparent;
-      color: inherit;
-      line-height: 1.5;
-      overflow-y: auto;
-      transition: border-color 0.2s ease;
-    }
-    .ProseMirror a {
-      cursor: pointer;
-    }
-    .ProseMirror::-webkit-scrollbar {
-      width: 8px;
-    }
-    .ProseMirror::-webkit-scrollbar-track {
-      background: ${darkMode ? '#1f2937' : '#f9fafb'};
-      border-radius: 4px;
-    }
-    .ProseMirror::-webkit-scrollbar-thumb {
-      background: ${primaryColor};
-      border-radius: 4px;
-    }
-    .ProseMirror::-webkit-scrollbar-thumb:hover {
-      background: ${darkMode ? 'color-mix(in srgb, ' + primaryColor + ' 80%, white)' : 'color-mix(in srgb, ' + primaryColor + ' 80%, black)'};
-    }
-    .ProseMirror p {
-      margin-top: 0;
-      margin-bottom: 0;
-    }
-    .ProseMirror p.is-empty:first-child::before {
-      content: 'Start typing your blog content...';
-      color: ${darkMode ? '#6b7280' : '#9ca3af'};
-      pointer-events: none;
-      float: left;
-      height: 0;
-    }
-    .ProseMirror .list-bullets, .ProseMirror .list-numbers {
-      padding-left: 1.5rem;
-      margin: 1.25rem 0;
-    }
-    .ProseMirror p[style*="text-align"],
-    .ProseMirror h1[style*="text-align"],
-    .ProseMirror h2[style*="text-align"],
-    .ProseMirror h3[style*="text-align"],
-    .ProseMirror h4[style*="text-align"],
-    .ProseMirror li[style*="text-align"] {
-      text-align: var(--text-align) !important;
-      width: 100%;
-      display: block;
-      --text-align: attr(style, "text-align", "left");
-    }
-    .ProseMirror ul[data-type="bulletList"],
-    .ProseMirror ol[data-type="orderedList"] {
-      width: 100%;
-      margin-left: 0;
-      padding-left: 1.5rem;
-    }
-    .ProseMirror li p {
-      margin: 0;
-    }
-    .tiptap-mathematics-render {
-      background-color: ${darkMode ? '#4b5563' : '#f3f4f6'};
-      padding: 0.3em 0.4em;
-      border-radius: 4px;
-      cursor: pointer;
-      display: inline-block;
-      margin: 0.2em 0.1em;
-      font-family: monospace;
-      font-size: 0.9em;
-      line-height: 1.6;
-    }
-    .tiptap-mathematics-render--editable {
-      cursor: text;
-    }
-    .tiptap-mathematics-render[data-type="inline-math"] {
-      display: inline-block;
-      vertical-align: middle;
-    }
-    .table-format-button {
-      position: absolute;
-      z-index: 20;
-      width: 28px;
-      height: 28px;
-      padding: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: ${darkMode ? '#374151' : 'white'};
-      border: 1px solid ${darkMode ? '#4b5563' : '#d1d5db'};
-      border-radius: 6px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-      transition: all 0.2s ease;
-    }
-    .table-format-button:hover {
-      background: ${primaryColor};
-      border-color: ${primaryColor};
-      color: white;
-    }
-    .table-dropdown {
-      position: absolute;
-      top: 100%;
-      right: 0;
-      z-index: 20;
-      display: flex;
-      gap: 6px;
-      padding: 6px;
-      background: ${darkMode ? '#374151' : 'white'};
-      border: 1px solid ${darkMode ? '#4b5563' : '#d1d5db'};
-      border-radius: 6px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-      margin-top: 6px;
-      transition: opacity 0.2s ease;
-    }
-  `}
-</style>
+        {`
+          .is-active {
+            background-color: ${primaryColor} !important;
+            color: white !important;
+            border-color: ${primaryColor} !important;
+          }
+          .heading-item-button:hover, .bullet-item-button:hover, .number-item-button:hover, .table-item-button:hover {
+            background-color: ${primaryColor} !important;
+            color: white !important;
+            border-color: ${primaryColor} !important;
+          }
+          .heading-item-button.active, .bullet-item-button.active, .number-item-button.active, .table-item-button.active {
+            background-color: ${primaryColor} !important;
+            color: white !important;
+            border-color: ${primaryColor} !important;
+          }
+          .ProseMirror {
+            position: relative;
+            min-height: 300px;
+            max-height: 400px;
+            padding: 0.75rem 1rem;
+            outline: none;
+            background: transparent;
+            color: inherit;
+            line-height: 1.5;
+            overflow-y: auto;
+            transition: border-color 0.2s ease;
+          }
+          .ProseMirror a {
+            cursor: pointer;
+          }
+          .ProseMirror::-webkit-scrollbar {
+            width: 8px;
+          }
+          .ProseMirror::-webkit-scrollbar-track {
+            background: ${darkMode ? '#1f2937' : '#f9fafb'};
+            border-radius: 4px;
+          }
+          .ProseMirror::-webkit-scrollbar-thumb {
+            background: ${primaryColor};
+            border-radius: 4px;
+          }
+          .ProseMirror::-webkit-scrollbar-thumb:hover {
+            background: ${darkMode ? 'color-mix(in srgb, ' + primaryColor + ' 80%, white)' : 'color-mix(in srgb, ' + primaryColor + ' 80%, black)'};
+          }
+          .ProseMirror p {
+            margin-top: 0;
+            margin-bottom: 0;
+          }
+          .ProseMirror p.is-empty:first-child::before {
+            content: 'Start typing your blog content...';
+            color: ${darkMode ? '#6b7280' : '#9ca3af'};
+            pointer-events: none;
+            float: left;
+            height: 0;
+          }
+          .ProseMirror .list-bullets, .ProseMirror .list-numbers {
+            padding-left: 1.5rem;
+            margin: 1.25rem 0;
+          }
+          .ProseMirror p[style*="text-align"],
+          .ProseMirror h1[style*="text-align"],
+          .ProseMirror h2[style*="text-align"],
+          .ProseMirror h3[style*="text-align"],
+          .ProseMirror h4[style*="text-align"],
+          .ProseMirror li[style*="text-align"] {
+            text-align: var(--text-align) !important;
+            width: 100%;
+            display: block;
+            --text-align: attr(style, "text-align", "left");
+          }
+          .ProseMirror ul[data-type="bulletList"],
+          .ProseMirror ol[data-type="orderedList"] {
+            width: 100%;
+            margin-left: 0;
+            padding-left: 1.5rem;
+          }
+          .ProseMirror li p {
+            margin: 0;
+          }
+          .tiptap-mathematics-render {
+            background-color: ${darkMode ? '#4b5563' : '#f3f4f6'};
+            padding: 0.3em 0.4em;
+            border-radius: 4px;
+            cursor: pointer;
+            display: inline-block;
+            margin: 0.2em 0.1em;
+            font-family: monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+          }
+          .tiptap-mathematics-render--editable {
+            cursor: text;
+          }
+          .tiptap-mathematics-render[data-type="inline-math"] {
+            display: inline-block;
+            vertical-align: middle;
+          }
+          .table-format-button {
+            position: absolute;
+            z-index: 20;
+            width: 28px;
+            height: 28px;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: ${darkMode ? '#374151' : 'white'};
+            border: 1px solid ${darkMode ? '#4b5563' : '#d1d5db'};
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            transition: all 0.2s ease;
+          }
+          .table-format-button:hover {
+            background: ${primaryColor};
+            border-color: ${primaryColor};
+            color: white;
+          }
+          .table-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            z-index: 20;
+            display: flex;
+            gap: 6px;
+            padding: 6px;
+            background: ${darkMode ? '#374151' : 'white'};
+            border: 1px solid ${darkMode ? '#4b5563' : '#d1d5db'};
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            margin-top: 6px;
+            transition: opacity 0.2s ease;
+          }
+        `}
+      </style>
       <div className={`flex items-center gap-1.5 mb-4 p-3 rounded-lg border ${darkMode ? 'border-gray-600' : 'border-gray-300'} focus-within:!border-[var(--primary-color)] transition-colors duration-200`}>
         {buttons.map((button) => (
           <div className="relative" key={button.name}>
@@ -576,6 +593,13 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
         darkMode={darkMode}
         isOpen={showLatexModal}
         setIsOpen={setShowLatexModal}
+      />
+      <CodeModal
+        editor={editor}
+        primaryColor={primaryColor}
+        darkMode={darkMode}
+        isOpen={showCodeModal}
+        setIsOpen={setShowCodeModal}
       />
     </>
   );
