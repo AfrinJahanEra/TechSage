@@ -61,4 +61,3 @@ class UserBadgeView(APIView):
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=404)
 
-
