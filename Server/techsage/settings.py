@@ -38,7 +38,6 @@ INSTALLED_APPS = [
     'reports',
     'checker',
     'badges',
-    'auth.apps.CustomAuthConfig',  
 ]
 
 MIDDLEWARE = [
