@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import mermaid from 'mermaid';
 import { FiX, FiCheck, FiChevronDown } from 'react-icons/fi';
@@ -185,11 +184,11 @@ const DiagramModal = ({ editor, primaryColor, darkMode, isOpen, setIsOpen }) => 
           fill: #e5e7eb;
         }
         .note rect {
-          fill: #6b7280;
+          fill: #6b5563;
           stroke: #4b5563;
         }
         .cluster rect {
-          fill: #6b7280;
+          fill: #6b5563;
           stroke: #4b5563;
           stroke-width: 1px;
         }
@@ -328,10 +327,14 @@ const DiagramModal = ({ editor, primaryColor, darkMode, isOpen, setIsOpen }) => 
             .preview-box::-webkit-scrollbar {
               height: 8px;
             }
+            .mermaid-link:hover {
+              text-decoration: underline;
+            }
           `}
         </style>
         <div
           className={`fixed inset-0 flex items-center justify-center z-50 ${darkMode ? 'bg-black/50' : 'bg-black/30'}`}
+          style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
           onClick={handleClose}
         >
           <div
@@ -406,6 +409,26 @@ const DiagramModal = ({ editor, primaryColor, darkMode, isOpen, setIsOpen }) => 
             </div>
 
             <div className="flex justify-end gap-2">
+              <div className="relative mr-auto">
+                <a
+                  href="https://mermaid.js.org/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mermaid-link text-sm"
+                  style={{ color: primaryColor }}
+                  onMouseEnter={() => setTooltip('Learn Mermaid Syntax')}
+                  onMouseLeave={() => setTooltip('')}
+                >
+                  Learn Mermaid Syntax
+                </a>
+                {tooltip === 'Learn Mermaid Syntax' && (
+                  <div
+                    className={`absolute z-10 top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
+                  >
+                    Learn Mermaid Syntax
+                  </div>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={handleClose}
