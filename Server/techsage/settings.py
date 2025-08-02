@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'channels',
     'reports',
     'checker',
+    'badges',
     'auth.apps.CustomAuthConfig',  # Custom auth app
 ]
 
