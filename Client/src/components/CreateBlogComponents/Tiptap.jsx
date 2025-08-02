@@ -116,6 +116,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
   const [showCodeModal, setShowCodeModal] = useState(false);
   const [showDiagramModal, setShowDiagramModal] = useState(false);
   const [tablePositions, setTablePositions] = useState([]);
+  const [isEditorFocused, setIsEditorFocused] = useState(false);
   const fileInputRef = useRef(null);
   const tableButtonRef = useRef(null);
   const tableFormatButtonRefs = useRef({});
@@ -179,6 +180,12 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
     },
     onCreate: ({ editor }) => {
       console.log('Editor initialized:', editor);
+    },
+    onFocus: () => {
+      setIsEditorFocused(true);
+    },
+    onBlur: () => {
+      setIsEditorFocused(false);
     },
   });
 
@@ -387,6 +394,9 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             overflow-y: auto;
             transition: border-color 0.2s ease;
           }
+          .ProseMirror-focused {
+            border-color: ${primaryColor} !important;
+          }
           .ProseMirror a {
             cursor: pointer;
           }
@@ -559,7 +569,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
       </div>
       <div className="editor-container" style={{ position: 'relative' }}>
         <EditorContent
-          className={`relative min-h-[300px] border rounded-lg prose max-w-none focus:outline-none focus:!border-[var(--primary-color)] transition-colors duration-200 ${darkMode ? 'text-gray-200 border-gray-600 bg-gray-800' : 'text-gray-800 border-gray-300 bg-gray-50'}`}
+          className={`relative min-h-[300px] border rounded-lg prose max-w-none focus:outline-none transition-colors duration-200 ${darkMode ? 'text-gray-200 border-gray-600 bg-gray-800' : 'text-gray-800 border-gray-300 bg-gray-50'} ${isEditorFocused ? '!border-[var(--primary-color)]' : ''}`}
           editor={editor}
         />
         {editor && tablePositions.map((position) => (
