@@ -11,6 +11,7 @@ import ListItem from '@tiptap/extension-list-item';
 import HorizontalRule from '@tiptap/extension-horizontal-rule';
 import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table';
 import { Mathematics } from '@tiptap/extension-mathematics';
+import { Placeholder } from '@tiptap/extensions';
 import { createLowlight } from 'lowlight';
 import {
   FiBold, FiItalic, FiUnderline, FiLink, FiImage, FiCode, FiRotateCcw, FiRotateCw, FiMinus, FiLayout, FiMenu, FiPieChart
@@ -171,6 +172,19 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             setShowLatexModal(true);
           },
         },
+      }),
+      Placeholder.configure({
+        placeholder: ({ node }) => {
+          if (node.type.name === 'heading') {
+            return 'What’s the heading?';
+          }
+          return 'Start typing your blog content...';
+        },
+        emptyEditorClass: 'is-editor-empty',
+        emptyNodeClass: 'is-empty',
+        showOnlyWhenEditable: true,
+        showOnlyCurrent: true,
+        includeChildren: false,
       }),
     ],
     content,
@@ -418,8 +432,18 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             margin-top: 0;
             margin-bottom: 0;
           }
-          .ProseMirror p.is-empty:first-child::before {
-            content: 'Start typing your blog content...';
+          .ProseMirror p.is-editor-empty:first-child::before {
+            content: attr(data-placeholder);
+            color: ${darkMode ? '#6b7280' : '#9ca3af'};
+            pointer-events: none;
+            float: left;
+            height: 0;
+          }
+          .ProseMirror h1.is-empty::before,
+          .ProseMirror h2.is-empty::before,
+          .ProseMirror h3.is-empty::before,
+          .ProseMirror h4.is-empty::before {
+            content: attr(data-placeholder);
             color: ${darkMode ? '#6b7280' : '#9ca3af'};
             pointer-events: none;
             float: left;
