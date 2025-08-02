@@ -50,29 +50,99 @@
   }
 
   /* Code and preformatted text styles */
-  code {
-    background-color: var(--purple-light, #f3e8ff);
-    border-radius: 0.4rem;
-    color: var(--black, #1f2937);
-    font-size: 0.85rem;
-    padding: 0.25em 0.3em;
-  }
-
   pre {
-    background: var(--black, #1f2937);
-    border-radius: 0.5rem;
-    color: var(--white, #ffffff);
+    background: #313131;
+    border-radius: 0;
+    color: #ffffff;
     font-family: 'JetBrainsMono', monospace;
     margin: 1.5rem 0;
-    padding: 0.75rem 1rem;
-    tab-size: 2;
-    white-space: pre-wrap;
+    padding: 1rem;
+    box-sizing: border-box;
+    overflow-x: auto;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 
     code {
       background: none;
       color: inherit;
       font-size: 0.8rem;
       padding: 0;
+    }
+
+    /* Enhanced syntax highlighting */
+    .hljs-comment,
+    .hljs-quote {
+      color: #7c7c7c;
+      font-style: italic;
+    }
+
+    .hljs-keyword,
+    .hljs-selector-tag,
+    .hljs-subst {
+      color: #ff79c6; /* Bright pink for keywords */
+      font-weight: 600;
+    }
+
+    .hljs-number,
+    .hljs-literal,
+    .hljs-variable.constant_ {
+      color: #ffb86c; /* Orange for numbers and literals */
+    }
+
+    .hljs-string,
+    .hljs-regexp,
+    .hljs-template-variable {
+      color: #f1fa8c; /* Yellow-green for strings */
+    }
+
+    .hljs-title,
+    .hljs-name,
+    .hljs-selector-id,
+    .hljs-selector-class,
+    .hljs-attribute {
+      color: #50fa7b; /* Green for identifiers and attributes */
+    }
+
+    .hljs-function,
+    .hljs-title.function_ {
+      color: #8be9fd; /* Cyan for function names */
+    }
+
+    .hljs-property,
+    .hljs-tag,
+    .hljs-symbol,
+    .hljs-bullet {
+      color: #bd93f9; /* Purple for properties and tags */
+    }
+
+    .hljs-built_in,
+    .hljs-builtin-name {
+      color: #66d9ef; /* Blue for built-in functions */
+    }
+
+    .hljs-meta,
+    .hljs-meta.keyword_ {
+      color: #6272a4; /* Muted blue for meta keywords */
+    }
+
+    .hljs-operator {
+      color: #ff5555; /* Red for operators */
+    }
+
+    .hljs-punctuation {
+      color: #ffffff; /* White for punctuation */
+    }
+
+    .hljs-emphasis {
+      font-style: italic;
+    }
+
+    .hljs-strong {
+      font-weight: 700;
+    }
+
+    .hljs-link {
+      color: #8be9fd; /* Cyan for links */
+      text-decoration: underline;
     }
   }
 
@@ -91,10 +161,6 @@
     max-width: 300px;
     width: 250px;
     transition: transform 0.2s ease;
-  
-   
-    
-
   }
 
   img:hover {
@@ -143,11 +209,11 @@
     position: relative;
     border-radius: 6px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    table-layout: fixed; /* Add this to prevent columns from resizing */
+    table-layout: fixed;
   }
 
   colgroup col {
-    width: 100px; /* Set a fixed width for columns; adjust as needed */
+    width: 100px;
   }
 
   th,
