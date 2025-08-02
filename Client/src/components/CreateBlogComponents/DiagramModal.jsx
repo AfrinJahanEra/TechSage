@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import mermaid from 'mermaid';
 import { FiX, FiCheck, FiChevronDown } from 'react-icons/fi';
@@ -152,9 +153,7 @@ const DiagramModal = ({ editor, primaryColor, darkMode, isOpen, setIsOpen }) => 
           background: transparent !important;
         }
         svg {
-          width: 600px !important;
           height: 400px !important;
-          max-width: 600px !important;
           max-height: 400px !important;
         }
       `
@@ -202,9 +201,7 @@ const DiagramModal = ({ editor, primaryColor, darkMode, isOpen, setIsOpen }) => 
           background: transparent !important;
         }
         svg {
-          width: 600px !important;
           height: 400px !important;
-          max-width: 600px !important;
           max-height: 400px !important;
         }
       `;
@@ -216,7 +213,16 @@ const DiagramModal = ({ editor, primaryColor, darkMode, isOpen, setIsOpen }) => 
       flowchart: { useMaxWidth: false, htmlLabels: true, diagramPadding: 8 },
       sequence: { actorMargin: 50, useMaxWidth: false },
       class: { useMaxWidth: false },
-      gantt: { axisFormat: '%Y-%m-%d', useMaxWidth: false },
+      gantt: { 
+        axisFormat: '%Y-%m-%d', 
+        useMaxWidth: false, 
+        barHeight: 30,
+        fontSize: 14,
+        sectionPadding: 20,
+        barGap: 10,
+        topPadding: 50,
+        gridLineStartPadding: 40
+      },
       pie: { useMaxWidth: false },
       er: { useMaxWidth: false }
     });
@@ -257,7 +263,6 @@ const DiagramModal = ({ editor, primaryColor, darkMode, isOpen, setIsOpen }) => 
       editor.chain().focus().setImage({ 
         src: base64Svg, 
         alt: `Diagram (${diagramType})`,
-        width: 600,
         height: 400
       }).run();
       setIsOpen(false);
@@ -321,7 +326,7 @@ const DiagramModal = ({ editor, primaryColor, darkMode, isOpen, setIsOpen }) => 
               color: ${darkMode ? 'white' : '#1f2937'};
             }
             .preview-box::-webkit-scrollbar {
-              height: 8px; /* Decreased width of the horizontal scrollbar */
+              height: 8px;
             }
           `}
         </style>
@@ -334,17 +339,6 @@ const DiagramModal = ({ editor, primaryColor, darkMode, isOpen, setIsOpen }) => 
             style={{ border: `1px solid ${darkMode ? '#4b5563' : '#d1d5db'}` }}
             onClick={(e) => e.stopPropagation()}
           >
-            <button
-              onClick={handleClose}
-              className="absolute top-4 right-4 p-2 rounded-md hover:bg-opacity-80 transition-all"
-              style={{
-                backgroundColor: darkMode ? '#4b5563' : '#f3f4f6',
-                color: darkMode ? '#e5e7eb' : '#1f2937',
-              }}
-            >
-              <FiX size={20} />
-            </button>
-
             <h3 className="text-lg font-semibold mb-4">Create Diagram</h3>
 
             <div className="mb-4">
