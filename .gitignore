@@ -108,4 +108,5 @@ coverage.xml
 # !*/migrations/__init__.py
 
 #
-redis
+redis__pycache__/
+*.pyc
