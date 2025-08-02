@@ -2,6 +2,7 @@ from django.urls import path, include
 from django.urls import path
 from django.contrib import admin
 from django.urls import path, include
+from users.views import AllUsersView, LoginUser, UserProfile, UserSearch, SavedBlogsAPI
 from users.views import (
     RegisterUser,
     LoginUser,
@@ -23,6 +24,7 @@ from blogs.views import (
 
 
 urlpatterns = [
+    path('all-users/', AllUsersView.as_view(), name='all-users'),
     path('users/by-role/', UserListByRole.as_view(), name='users-by-role'),
     path('register/', RegisterUser.as_view(), name='register'),
     path('login/', LoginUser.as_view(), name='login'),
@@ -78,5 +80,7 @@ urlpatterns = [
 
     path('', include('checker.urls')),
 
-    path('version-control/', include('version_control.urls')),
+    # path('version-control/', include('version_control.urls')),
+
+    path('', include('badges.urls')),
 ]

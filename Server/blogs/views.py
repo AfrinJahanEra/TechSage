@@ -6,6 +6,7 @@ from mongoengine import ValidationError
 import cloudinary.uploader
 from .models import Blog
 from users.models import User
+from comments.models import Comment
 import pytz
 from django.core.paginator import Paginator, EmptyPage
 from rest_framework import status
@@ -405,15 +406,16 @@ class DeleteBlog(APIView):
                                status=status.HTTP_403_FORBIDDEN)
             
             blog.soft_delete(username)
-            
+            Comment.objects(blog=blog).update(set__is_deleted=True)
+
             return Response({
-                "message": "Blog moved to trash",
+                "message": "Blog moved to trash and all associated comments marked as deleted",
                 "deleted_at": blog.deleted_at.isoformat()
             })
+        
             
         except DoesNotExist:
             return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
-
 
 class SaveAsDraft(APIView):
     def post(self, request, blog_id):
@@ -490,33 +492,6 @@ class RevertBlogVersion(APIView):
         except Blog.DoesNotExist:
             return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
 
-class DeleteBlog(APIView):
-    def delete(self, request, blog_id):
-        try:
-            blog = Blog.objects.get(id=blog_id)
-            username = request.data.get('username')
-            
-            if not username:
-                return Response({"error": "username required"}, status=status.HTTP_400_BAD_REQUEST)
-                
-            user = User.objects(username=username).first()
-            if not user:
-                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-
-            if user not in blog.authors:
-                return Response({"error": "You can only delete your own blogs"}, 
-                               status=status.HTTP_403_FORBIDDEN)
-            
-            blog.soft_delete(username)
-            
-            return Response({
-                "message": "Blog moved to trash",
-                "deleted_at": blog.deleted_at.isoformat()
-            })
-            
-        except Blog.DoesNotExist:
-            return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
-
 class RestoreBlog(APIView):
     def post(self, request, blog_id):
         try:
@@ -552,8 +527,9 @@ class ModeratorDeleteBlog(APIView):
     def delete(self, request, blog_id):
         try:
             blog = Blog.objects.get(id=blog_id)
+            Comment.objects(blog=blog).delete()
             blog.hard_delete()
-            return Response({"message": "Blog permanently deleted"})
+            return Response({"message": "Blog and all associated comments permanently deleted"})
         except Blog.DoesNotExist:
             return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -675,9 +651,6 @@ class AddAuthorToBlog(APIView):
         except Blog.DoesNotExist:
             return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
         
-
-
-
 class PublishedBlogs(APIView):#sidebar
     def get(self, request):
         """
@@ -780,7 +753,6 @@ class PublishedBlogs(APIView):#sidebar
                 "details": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-
 class ReviewBlog(APIView):
     def post(self, request, blog_id):
         try:

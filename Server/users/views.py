@@ -3,12 +3,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.hashers import make_password, check_password
 from .models import User
-from auth.models import OTP  # Import OTP model
 import cloudinary
 import os
 from dotenv import load_dotenv
+from reports.models import BlogReport
 from datetime import datetime
-from django.conf import settings  # Ensure settings is imported
 
 load_dotenv()
 
@@ -17,6 +16,9 @@ cloudinary.config(
     api_key=os.getenv('CLOUDINARY_API_KEY'),
     api_secret=os.getenv('CLOUDINARY_API_SECRET')
 )
+
+from blogs.models import Blog
+from comments.models import Comment
 
 class UserListByRole(APIView):
     def get(self, request):
@@ -29,6 +31,73 @@ class UserListByRole(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
+from rest_framework.parsers import JSONParser
+
+
+class DeleteUserAccount(APIView):
+    def delete(self, request, username):
+        try:
+            req_username = request.data.get('username')
+            req_password = request.data.get('password')
+
+            # Ensure username and password provided
+            if not req_username or not req_password:
+                return Response({"error": "Username and password required"}, status=400)
+
+            # Identity check
+            if req_username != username:
+                return Response({"error": "You can only delete your own account"}, status=403)
+
+            # Find user
+            user = User.objects(username=username).first()
+            if not user:
+                return Response({"error": "User not found"}, status=404)
+
+            # Check password
+            if not check_password(req_password, user.password):
+                return Response({"error": "Incorrect password"}, status=401)
+
+            # Delete blogs (only those solely authored)
+            user_blogs = Blog.objects(authors=user)
+            for blog in user_blogs:
+                if len(blog.authors) == 1:
+                    blog.delete()
+                else:
+                    blog.authors.remove(user)
+                    blog.save()
+
+            # Delete user's comments
+            Comment.objects(author=user).update(set__is_deleted=True)
+
+            # Delete user's reports
+            BlogReport.objects(reported_by=user).delete()
+
+            # Delete the user
+            user.delete()
+
+            return Response({"message": f"User '{username}' and associated data deleted successfully"}, status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+
+class AllUsersView(APIView):
+    def get(self, request):
+        try:
+            users = User.objects.only('username', 'email', 'role', 'job_title', 'points', 'avatar_url', 'created_at')
+            user_data = [{
+                "username": user.username,
+                "email": user.email,
+                "role": user.role,
+                "job_title": user.job_title,
+                "points": user.points,
+                "avatar_url": user.avatar_url,
+                "created_at": user.created_at.isoformat()
+            } for user in users]
+            return Response({"users": user_data}, status=200)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
 class RegisterUser(APIView):
     def post(self, request):
         required_fields = ['username', 'email', 'password']
@@ -36,11 +105,6 @@ class RegisterUser(APIView):
             return Response({"error": "Missing required fields"}, status=400)
 
         try:
-            # Check if email is verified
-            otp = OTP.objects(email=request.data['email']).order_by('-created_at').first()
-            if not otp or not otp.is_verified:
-                return Response({"error": "Email not verified. Please verify your email with OTP."}, status=400)
-
             if User.objects(username=request.data['username']).first():
                 return Response({"error": "Username already exists"}, status=400)
             if User.objects(email=request.data['email']).first():
@@ -68,8 +132,7 @@ class RegisterUser(APIView):
                 job_title=request.data.get('job_title', 'User'),
                 bio=request.data.get('bio', ''),
                 role=request.data.get('role', 'user'),
-                source=request.data.get('source', 'email'),
-                is_verified=True  # Set to true since OTP is verified
+                source=request.data.get('source', 'email')
             )
             user.clean()
             user.save()
