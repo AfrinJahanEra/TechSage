@@ -13,7 +13,7 @@ import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table
 import { Mathematics } from '@tiptap/extension-mathematics';
 import { createLowlight } from 'lowlight';
 import {
-  FiBold, FiItalic, FiUnderline, FiLink, FiImage, FiCode, FiRotateCcw, FiRotateCw, FiMinus, FiLayout, FiMenu
+  FiBold, FiItalic, FiUnderline, FiLink, FiImage, FiCode, FiRotateCcw, FiRotateCw, FiMinus, FiLayout, FiMenu, FiPieChart
 } from 'react-icons/fi';
 import { BiSolidQuoteRight, BiMath } from 'react-icons/bi';
 import LinkModal from './LinkModal';
@@ -312,7 +312,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
       name: 'Insert Image' 
     },
     { 
-      icon: <FiImage />, 
+      icon: <FiPieChart />, 
       action: () => setShowDiagramModal(true), 
       active: false, 
       name: 'Insert Diagram' 
