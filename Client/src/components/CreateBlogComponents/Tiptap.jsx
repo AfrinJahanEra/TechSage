@@ -13,7 +13,7 @@ import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table
 import { Mathematics } from '@tiptap/extension-mathematics';
 import { createLowlight } from 'lowlight';
 import {
-  FiBold, FiItalic, FiUnderline, FiLink, FiImage, FiCode, FiRotateCcw, FiRotateCw, FiMinus, FiGrid, FiMenu
+  FiBold, FiItalic, FiUnderline, FiLink, FiImage, FiCode, FiRotateCcw, FiRotateCw, FiMinus, FiLayout, FiMenu
 } from 'react-icons/fi';
 import { BiSolidQuoteRight, BiMath } from 'react-icons/bi';
 import LinkModal from './LinkModal';
@@ -323,7 +323,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
       name: 'Horizontal Rule' 
     },
     { 
-      icon: <FiGrid />, 
+      icon: <FiLayout />, 
       action: () => setShowTableGrid(!showTableGrid), 
       active: showTableGrid, 
       name: 'Insert Table',

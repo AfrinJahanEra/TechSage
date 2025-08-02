@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FiPlus, FiMinus, FiArrowUp, FiArrowDown, FiArrowLeft, FiArrowRight, FiGrid } from 'react-icons/fi';
+import { FiArrowUp, FiArrowDown, FiXCircle, FiArrowLeft, FiArrowRight, FiXSquare, FiGrid, FiTrash2 } from 'react-icons/fi';
 
 const TableControls = ({ editor, primaryColor, darkMode, onClose, tableFormatButtonRef }) => {
   const [tooltip, setTooltip] = useState('');
@@ -20,7 +20,7 @@ const TableControls = ({ editor, primaryColor, darkMode, onClose, tableFormatBut
       disabled: !editor.can().addRowAfter(),
     },
     {
-      icon: <FiMinus />,
+      icon: <FiXCircle />,
       name: 'Delete Row',
       action: () => editor.chain().focus().deleteRow().run(),
       disabled: !editor.can().deleteRow(),
@@ -38,7 +38,7 @@ const TableControls = ({ editor, primaryColor, darkMode, onClose, tableFormatBut
       disabled: !editor.can().addColumnAfter(),
     },
     {
-      icon: <FiMinus />,
+      icon: <FiXSquare />,
       name: 'Delete Column',
       action: () => editor.chain().focus().deleteColumn().run(),
       disabled: !editor.can().deleteColumn(),
@@ -48,6 +48,12 @@ const TableControls = ({ editor, primaryColor, darkMode, onClose, tableFormatBut
       name: 'Merge/Split Cells',
       action: () => editor.chain().focus().mergeOrSplit().run(),
       disabled: !editor.can().mergeOrSplit(),
+    },
+    {
+      icon: <FiTrash2 />,
+      name: 'Delete Table',
+      action: () => editor.chain().focus().deleteTable().run(),
+      disabled: !editor.can().deleteTable(),
     },
   ];
 
