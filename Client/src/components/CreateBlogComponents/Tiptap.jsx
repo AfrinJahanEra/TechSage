@@ -19,6 +19,7 @@ import { BiSolidQuoteRight, BiMath } from 'react-icons/bi';
 import LinkModal from './LinkModal';
 import LatexModal from './LatexModal';
 import CodeModal from './CodeModal';
+import DiagramModal from './DiagramModal';
 import ListControls from './ListControls';
 import HeadingControls from './HeadingControls';
 import TableControls from './TableControls';
@@ -113,6 +114,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
   const [showTableGrid, setShowTableGrid] = useState(false);
   const [showTableDropdown, setShowTableDropdown] = useState({});
   const [showCodeModal, setShowCodeModal] = useState(false);
+  const [showDiagramModal, setShowDiagramModal] = useState(false);
   const [tablePositions, setTablePositions] = useState([]);
   const fileInputRef = useRef(null);
   const tableButtonRef = useRef(null);
@@ -308,6 +310,12 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
       action: handleImageUpload, 
       active: false, 
       name: 'Insert Image' 
+    },
+    { 
+      icon: <FiImage />, 
+      action: () => setShowDiagramModal(true), 
+      active: false, 
+      name: 'Insert Diagram' 
     },
     { 
       icon: <FiCode />, 
@@ -600,6 +608,13 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
         darkMode={darkMode}
         isOpen={showCodeModal}
         setIsOpen={setShowCodeModal}
+      />
+      <DiagramModal
+        editor={editor}
+        primaryColor={primaryColor}
+        darkMode={darkMode}
+        isOpen={showDiagramModal}
+        setIsOpen={setShowDiagramModal}
       />
     </>
   );
