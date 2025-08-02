@@ -19,6 +19,18 @@ cloudinary.config(
     api_secret=os.getenv('CLOUDINARY_API_SECRET')
 )
 
+class UserListByRole(APIView):
+    def get(self, request):
+        role = request.GET.get('role', '').strip().lower()
+        if not role:
+            return Response({"error": "Role parameter is required"}, status=400)
+        try:
+            users = User.objects(role=role)
+            return Response([user.to_json() for user in users])
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+
 class AllUsersView(APIView):
     def get(self, request):
         try:
@@ -179,4 +191,5 @@ class SavedBlogsAPI(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+
 
