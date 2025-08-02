@@ -75,94 +75,107 @@
   }
 
   /* Enhanced syntax highlighting */
-  .hljs-comment,
-  .hljs-quote {
-    color: #7c7c7c;
-    font-style: italic;
-  }
+  /* Enhanced syntax highlighting */
+.hljs {
+  color: #f8f8f2;
+  background: transparent;
+}
 
-  .hljs-keyword,
-  .hljs-selector-tag,
-  .hljs-subst {
-    color: #ff79c6; /* Bright pink for keywords */
-    font-weight: 600;
-  }
+/* Comments */
+.hljs-comment,
+.hljs-quote {
+  color: #6272a4;
+  font-style: italic;
+}
 
-  .hljs-number,
-  .hljs-literal,
-  .hljs-variable.constant_ {
-    color: #ffb86c; /* Orange for numbers and literals */
-  }
+/* Keywords */
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-name {
+  color: #ff79c6;
+  font-weight: 600;
+}
 
-  .hljs-string,
-  .hljs-regexp,
-  .hljs-template-variable {
-    color: #f1fa8c; /* Yellow-green for strings */
-  }
+/* Data types and built-ins */
+.hljs-type,
+.hljs-built_in,
+.hljs-builtin-name {
+  color: #8be9fd;
+}
 
-  .hljs-title,
-  .hljs-name,
-  .hljs-selector-id,
-  .hljs-selector-class,
-  .hljs-attribute {
-    color: #50fa7b; /* Green for identifiers and attributes */
-  }
+/* Numbers, symbols, and boolean literals */
+.hljs-number,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-boolean,
+.hljs-attr {
+  color: #bd93f9;
+}
 
-  .hljs-function,
-  .hljs-title.function_ {
-    color: #8be9fd; /* Cyan for function names */
-  }
+/* Strings and template literals */
+.hljs-string,
+.hljs-regexp,
+.hljs-template-variable,
+.hljs-addition {
+  color: #f1fa8c;
+}
 
-  .hljs-property,
-  .hljs-tag,
-  .hljs-symbol,
-  .hljs-bullet {
-    color: #bd93f9; /* Purple for properties and tags */
-  }
+/* Variables */
+.hljs-variable,
+.hljs-variable.language_ {
+  color: #50fa7b;
+}
 
-  .hljs-built_in,
-  .hljs-builtin-name {
-    color: #66d9ef; /* Blue for built-in functions */
-  }
+/* Function and title identifiers */
+.hljs-title,
+.hljs-title.function_,
+.hljs-function {
+  color: #8be9fd;
+  font-weight: 500;
+}
 
-  .hljs-meta,
-  .hljs-meta.keyword_ {
-    color: #6272a4; /* Muted blue for meta keywords */
-  }
+/* Class names and attributes */
+.hljs-class,
+.hljs-title.class_,
+.hljs-selector-class,
+.hljs-attribute {
+  color: #ffb86c;
+}
 
-  .hljs-operator {
-    color: #ff5555; /* Red for operators */
-  }
+/* HTML/XML tags */
+.hljs-tag,
+.hljs-doctag,
+.hljs-meta {
+  color: #ff5555;
+}
 
-  .hljs-punctuation {
-    color: #ffffff; /* White for punctuation */
-  }
+/* Parameters and punctuation */
+.hljs-params,
+.hljs-punctuation {
+  color: #f8f8f2;
+}
 
-  .hljs-link {
-    color: #8be9fd; /* Cyan for links */
-    text-decoration: underline;
-  }
+/* Operators */
+.hljs-operator {
+  color: #ff79c6;
+}
 
-  .hljs-emphasis {
-    font-style: italic;
-  }
+/* Link styling */
+.hljs-link {
+  color: #8be9fd;
+  text-decoration: underline;
+}
 
-  .hljs-strong {
-    font-weight: 700;
-  }
+/* Emphasis and bold */
+.hljs-emphasis {
+  font-style: italic;
+}
 
-  /* Language dropdown hover effect */
-  .language-item-button:hover {
-    background-color: var(--primary-color, #3b82f6);
-    color: white;
-    border-color: var(--primary-color, #3b82f6);
-  }
+.hljs-strong {
+  font-weight: 700;
+}
 
-  /* Textarea focus style */
-  textarea:focus {
-    border-color: var(--primary-color, #3b82f6);
-    outline: none;
-  }
 
   /* Blockquote styles */
   blockquote {
