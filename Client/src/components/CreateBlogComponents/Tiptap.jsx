@@ -154,7 +154,6 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
     content,
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
-      console.log('Editor content updated:', html);
       setContent(html);
     },
     onCreate: ({ editor }) => {
@@ -164,71 +163,59 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
 
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
-      console.log('Updating editor content:', content);
       editor.commands.setContent(content);
     }
   }, [content, editor]);
 
   useEffect(() => {
-    if (!editor) {
-      console.log('Editor not initialized');
-      return;
-    }
+    if (!editor) return;
 
+    let animationFrameId;
     const updateTablePositions = () => {
-      console.log('Running updateTablePositions');
-      try {
-        const positions = [];
-        editor.state.doc.descendants((node, pos) => {
-          if (node.type.name !== 'table') {
-            return;
-          }
-          console.log(`Found table at position: ${pos}`);
-          const domNode = editor.view.nodeDOM(pos);
-          if (!domNode || !domNode.getBoundingClientRect) {
-            console.log(`No valid DOM node for table at position: ${pos}`);
-            return;
-          }
-
+      animationFrameId = requestAnimationFrame(() => {
+        try {
+          const positions = [];
           const editorElement = editor.view.dom.offsetParent || editor.view.dom;
           const editorRect = editorElement.getBoundingClientRect();
-          const tableRect = domNode.getBoundingClientRect();
 
-          console.log(`Table at pos ${pos} rect:`, tableRect);
-          console.log('Editor rect:', editorRect);
+          editor.state.doc.descendants((node, pos) => {
+            if (node.type.name !== 'table') return;
+            const domNode = editor.view.nodeDOM(pos);
+            if (!domNode || !domNode.getBoundingClientRect) return;
 
-          const top = tableRect.bottom - editorRect.top + 4; // Below table
-          const left = tableRect.right - editorRect.left - 24; // Right corner
+            const tableRect = domNode.getBoundingClientRect();
+            const top = tableRect.bottom - editorRect.top + 8; // Slightly increased offset
+            const left = tableRect.right - editorRect.left - 32; // Adjusted for better alignment
 
-          if (top > 0 && left > 0) {
-            positions.push({ id: pos, top, left });
-          } else {
-            console.log(`Invalid position for table at pos ${pos}: top=${top}, left=${left}`);
-          }
-        });
+            // Ensure table button stays within editor bounds
+            const adjustedTop = Math.max(8, Math.min(top, editorRect.height - 32));
+            const adjustedLeft = Math.max(8, Math.min(left, editorRect.width - 32));
 
-        console.log('Detected table positions:', positions);
-        setTablePositions(positions);
-
-        // Reset dropdown states for removed tables
-        setShowTableDropdown((prev) => {
-          const newState = {};
-          positions.forEach((pos) => {
-            newState[pos.id] = prev[pos.id] || false;
+            if (adjustedTop > 0 && adjustedLeft > 0) {
+              positions.push({ id: pos, top: adjustedTop, left: adjustedLeft });
+            }
           });
-          return newState;
-        });
-      } catch (error) {
-        console.error('Error updating table positions:', error);
-        setTablePositions([]);
-      }
+
+          setTablePositions(positions);
+
+          // Update dropdown states
+          setShowTableDropdown((prev) => {
+            const newState = {};
+            positions.forEach((pos) => {
+              newState[pos.id] = prev[pos.id] || false;
+            });
+            return newState;
+          });
+        } catch (error) {
+          console.error('Error updating table positions:', error);
+          setTablePositions([]);
+        }
+      });
     };
 
     const handleUpdate = () => {
-      // Delay to ensure DOM is rendered
-      setTimeout(() => {
-        requestAnimationFrame(updateTablePositions);
-      }, 100);
+      cancelAnimationFrame(animationFrameId);
+      updateTablePositions();
     };
 
     handleUpdate();
@@ -236,6 +223,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
     editor.on('selectionUpdate', handleUpdate);
 
     return () => {
+      cancelAnimationFrame(animationFrameId);
       editor.off('update', handleUpdate);
       editor.off('selectionUpdate', handleUpdate);
     };
@@ -311,12 +299,6 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
       name: 'Insert Code' 
     },
     { 
-      icon: <BiMath />, 
-      action: () => setShowLatexModal(true), 
-      active: editor.isActive('inlineMath'), 
-      name: 'Insert/Edit LaTeX' 
-    },
-    { 
       icon: <FiMinus />, 
       action: () => editor.chain().focus().setHorizontalRule().run(), 
       active: editor.isActive('horizontalRule'), 
@@ -346,139 +328,142 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
   return (
     <>
       <style>
-        {`
-          .is-active {
-            background-color: ${primaryColor} !important;
-            color: white !important;
-            border-color: ${primaryColor} !important;
-          }
-          .heading-item-button:hover, .bullet-item-button:hover, .number-item-button:hover, .table-item-button:hover {
-            background-color: ${primaryColor} !important;
-            color: white !important;
-            border-color: ${primaryColor} !important;
-          }
-          .heading-item-button.active, .bullet-item-button.active, .number-item-button.active, .table-item-button.active {
-            background-color: ${primaryColor} !important;
-            color: white !important;
-            border-color: ${primaryColor} !important;
-          }
-          .ProseMirror {
-            position: relative;
-            min-height: 300px;
-            max-height: 400px;
-            padding: 0.75rem 1rem;
-            outline: none;
-            background: transparent;
-            color: inherit;
-            line-height: 1.5;
-            overflow-y: auto;
-          }
-          .ProseMirror a {
-            cursor: pointer;
-          }
-          .ProseMirror::-webkit-scrollbar {
-            width: 8px;
-          }
-          .ProseMirror::-webkit-scrollbar-track {
-            background: ${darkMode ? '#1f2937' : '#f9fafb'};
-            border-radius: 4px;
-          }
-          .ProseMirror::-webkit-scrollbar-thumb {
-            background: ${primaryColor};
-            border-radius: 4px;
-          }
-          .ProseMirror::-webkit-scrollbar-thumb:hover {
-            background: ${darkMode ? 'color-mix(in srgb, ' + primaryColor + ' 80%, white)' : 'color-mix(in srgb, ' + primaryColor + ' 80%, black)'};
-          }
-          .ProseMirror p {
-            margin-top: 0;
-            margin-bottom: 0;
-          }
-          .ProseMirror p.is-empty:first-child::before {
-            content: 'Start typing your blog content...';
-            color: ${darkMode ? '#6b7280' : '#9ca3af'};
-            pointer-events: none;
-            float: left;
-            height: 0;
-          }
-          .ProseMirror .list-bullets, .ProseMirror .list-numbers {
-            padding-left: 1.5rem;
-            margin: 1.25rem 0;
-          }
-          .ProseMirror p[style*="text-align"],
-          .ProseMirror h1[style*="text-align"],
-          .ProseMirror h2[style*="text-align"],
-          .ProseMirror h3[style*="text-align"],
-          .ProseMirror h4[style*="text-align"],
-          .ProseMirror li[style*="text-align"] {
-            text-align: var(--text-align) !important;
-            width: 100%;
-            display: block;
-            --text-align: attr(style, "text-align", "left");
-          }
-          .ProseMirror ul[data-type="bulletList"],
-          .ProseMirror ol[data-type="orderedList"] {
-            width: 100%;
-            margin-left: 0;
-            padding-left: 1.5rem;
-          }
-          .ProseMirror li p {
-            margin: 0;
-          }
-          .tiptap-mathematics-render {
-            background-color: ${darkMode ? '#4b5563' : '#f3f4f6'};
-            padding: 0.3em 0.4em;
-            border-radius: 4px;
-            cursor: pointer;
-            display: inline-block;
-            margin: 0.2em 0.1em;
-            font-family: monospace;
-            font-size: 0.9em;
-            line-height: 1.6;
-          }
-          .tiptap-mathematics-render--editable {
-            cursor: text;
-          }
-          .tiptap-mathematics-render[data-type="inline-math"] {
-            display: inline-block;
-            vertical-align: middle;
-          }
-          .table-format-button {
-            position: absolute;
-            z-index: 20;
-            width: 24px;
-            height: 24px;
-            padding: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: ${darkMode ? '#374151' : 'white'};
-            border: 1px solid ${darkMode ? '#4b5563' : '#d1d5db'};
-            border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-          }
-          .table-format-button:hover {
-            background: ${primaryColor};
-            border-color: ${primaryColor};
-            color: white;
-          }
-          .table-dropdown {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            z-index: 20;
-            display: flex;
-            gap: 4px;
-            padding: 4px;
-            background: ${darkMode ? '#374151' : 'white'};
-            border: 1px solid ${darkMode ? '#4b5563' : '#d1d5db'};
-            border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            margin-top: 4px;
-          }
-        `}
-      </style>
-      <div className={`flex items-center gap-1 mb-3 p-2 rounded-lg border ${darkMode ? 'border-gray-600' : 'border-gray-300'} focus-within:!border-[var(--primary-color)]`}>
+  {`
+    .is-active {
+      background-color: ${primaryColor} !important;
+      color: white !important;
+      border-color: ${primaryColor} !important;
+    }
+    .heading-item-button:hover, .bullet-item-button:hover, .number-item-button:hover, .table-item-button:hover {
+      background-color: ${primaryColor} !important;
+      color: white !important;
+      border-color: ${primaryColor} !important;
+    }
+    .heading-item-button.active, .bullet-item-button.active, .number-item-button.active, .table-item-button.active {
+      background-color: ${primaryColor} !important;
+      color: white !important;
+      border-color: ${primaryColor} !important;
+    }
+    .ProseMirror {
+      position: relative;
+      min-height: 300px;
+      max-height: 400px;
+      padding: 0.75rem 1rem;
+      outline: none;
+      background: transparent;
+      color: inherit;
+      line-height: 1.5;
+      overflow-y: auto;
+      transition: border-color 0.2s ease;
+    }
+    .ProseMirror a {
+      cursor: pointer;
+    }
+    .ProseMirror::-webkit-scrollbar {
+      width: 8px;
+    }
+    .ProseMirror::-webkit-scrollbar-track {
+      background: ${darkMode ? '#1f2937' : '#f9fafb'};
+      border-radius: 4px;
+    }
+    .ProseMirror::-webkit-scrollbar-thumb {
+      background: ${primaryColor};
+      border-radius: 4px;
+    }
+    .ProseMirror::-webkit-scrollbar-thumb:hover {
+      background: ${darkMode ? 'color-mix(in srgb, ' + primaryColor + ' 80%, white)' : 'color-mix(in srgb, ' + primaryColor + ' 80%, black)'};
+    }
+    .ProseMirror p {
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+    .ProseMirror p.is-empty:first-child::before {
+      content: 'Start typing your blog content...';
+      color: ${darkMode ? '#6b7280' : '#9ca3af'};
+      pointer-events: none;
+      float: left;
+      height: 0;
+    }
+    .ProseMirror .list-bullets, .ProseMirror .list-numbers {
+      padding-left: 1.5rem;
+      margin: 1.25rem 0;
+    }
+    .ProseMirror p[style*="text-align"],
+    .ProseMirror h1[style*="text-align"],
+    .ProseMirror h2[style*="text-align"],
+    .ProseMirror h3[style*="text-align"],
+    .ProseMirror h4[style*="text-align"],
+    .ProseMirror li[style*="text-align"] {
+      text-align: var(--text-align) !important;
+      width: 100%;
+      display: block;
+      --text-align: attr(style, "text-align", "left");
+    }
+    .ProseMirror ul[data-type="bulletList"],
+    .ProseMirror ol[data-type="orderedList"] {
+      width: 100%;
+      margin-left: 0;
+      padding-left: 1.5rem;
+    }
+    .ProseMirror li p {
+      margin: 0;
+    }
+    .tiptap-mathematics-render {
+      background-color: ${darkMode ? '#4b5563' : '#f3f4f6'};
+      padding: 0.3em 0.4em;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-block;
+      margin: 0.2em 0.1em;
+      font-family: monospace;
+      font-size: 0.9em;
+      line-height: 1.6;
+    }
+    .tiptap-mathematics-render--editable {
+      cursor: text;
+    }
+    .tiptap-mathematics-render[data-type="inline-math"] {
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .table-format-button {
+      position: absolute;
+      z-index: 20;
+      width: 28px;
+      height: 28px;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: ${darkMode ? '#374151' : 'white'};
+      border: 1px solid ${darkMode ? '#4b5563' : '#d1d5db'};
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      transition: all 0.2s ease;
+    }
+    .table-format-button:hover {
+      background: ${primaryColor};
+      border-color: ${primaryColor};
+      color: white;
+    }
+    .table-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      z-index: 20;
+      display: flex;
+      gap: 6px;
+      padding: 6px;
+      background: ${darkMode ? '#374151' : 'white'};
+      border: 1px solid ${darkMode ? '#4b5563' : '#d1d5db'};
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      margin-top: 6px;
+      transition: opacity 0.2s ease;
+    }
+  `}
+</style>
+      <div className={`flex items-center gap-1.5 mb-4 p-3 rounded-lg border ${darkMode ? 'border-gray-600' : 'border-gray-300'} focus-within:!border-[var(--primary-color)] transition-colors duration-200`}>
         {buttons.map((button) => (
           <div className="relative" key={button.name}>
             <button
@@ -487,7 +472,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
               disabled={button.disabled}
               ref={button.ref}
               className={`
-                p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold
+                p-2.5 rounded-md border shadow-sm transition-all duration-200 font-bold
                 ${button.active ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
               `}
               onMouseEnter={() => {
@@ -515,7 +500,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             </button>
             {tooltip === button.name && (
               <div
-                className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
+                className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
               >
                 {button.name}
               </div>
@@ -543,7 +528,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
       </div>
       <div className="editor-container" style={{ position: 'relative' }}>
         <EditorContent
-          className={`relative min-h-[300px] border rounded-lg prose max-w-none focus:outline-none focus:!border-[var(--primary-color)] transition-colors ${darkMode ? 'text-gray-200 border-gray-600 bg-gray-800' : 'text-gray-800 border-gray-300 bg-gray-50'}`}
+          className={`relative min-h-[300px] border rounded-lg prose max-w-none focus:outline-none focus:!border-[var(--primary-color)] transition-colors duration-200 ${darkMode ? 'text-gray-200 border-gray-600 bg-gray-800' : 'text-gray-800 border-gray-300 bg-gray-50'}`}
           editor={editor}
         />
         {editor && tablePositions.map((position) => (
