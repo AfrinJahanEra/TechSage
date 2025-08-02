@@ -651,9 +651,6 @@ class AddAuthorToBlog(APIView):
         except Blog.DoesNotExist:
             return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
         
-
-
-
 class PublishedBlogs(APIView):#sidebar
     def get(self, request):
         """
@@ -756,7 +753,6 @@ class PublishedBlogs(APIView):#sidebar
                 "details": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-
 class ReviewBlog(APIView):
     def post(self, request, blog_id):
         try:
