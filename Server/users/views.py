@@ -8,6 +8,9 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime
 
+from blogs.models import Blog
+from comments.models import Comment
+
 load_dotenv()
 
 cloudinary.config(
@@ -176,3 +179,4 @@ class SavedBlogsAPI(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+
