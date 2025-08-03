@@ -1,7 +1,11 @@
 import mongoengine as me
-from users.models import User 
-import cloudinary
+from users.models import User
 import os
+from datetime import datetime
+from werkzeug.utils import secure_filename
+from flask import current_app
+import cloudinary
+import cloudinary.uploader
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,58 +18,56 @@ cloudinary.config(
 
 class Badge(me.Document):
     name = me.StringField(required=True, unique=True)
-    description = me.StringField()
-    image_public_id = me.StringField()
     image_url = me.StringField(required=True)
     points_required = me.IntField(required=True)
-    created_at = me.DateTimeField(default=datetime.datetime.utcnow)
-    updated_at = me.DateTimeField(default=datetime.datetime.utcnow)
+    description = me.StringField()
+    created_at = me.DateTimeField(default=datetime.utcnow)
 
     meta = {
         'collection': 'badges',
         'ordering': ['-points_required']
     }
 
-    def upload_image(self, file):
-        """Handle badge image upload to Cloudinary"""
-        try:
-            if self.image_public_id:
-                cloudinary.uploader.destroy(self.image_public_id)
-            
-            upload_result = cloudinary.uploader.upload(
-                file,
-                folder="techsage/badges",
-                allowed_formats=['png', 'svg', 'jpg', 'jpeg']
-            )
-            self.image_public_id = upload_result['public_id']
-            self.image_url = upload_result['secure_url']
-            return True
-        except Exception as e:
-            print(f"Badge image upload error: {e}")
-            return False
+    def __str__(self):
+        return self.name
 
-    def clean(self):
-        self.updated_at = datetime.datetime.utcnow()
+    @classmethod
+    def get_badge_for_points(cls, points):
+        """Get the appropriate badge for a given point value"""
+        return cls.objects(points_required__lte=points).order_by('-points_required').first()
 
 class UserBadge(me.Document):
     user = me.ReferenceField(User, required=True)
     badge = me.ReferenceField(Badge, required=True)
-    awarded_at = me.DateTimeField(default=datetime.datetime.utcnow)
+    awarded_at = me.DateTimeField(default=datetime.utcnow)
 
     meta = {
         'collection': 'user_badges',
         'indexes': [
             ('user', 'badge'),
-            'user',
-            'badge'
+            {'fields': ['user'], 'unique': False}
         ]
     }
 
-    def clean(self):
-        if UserBadge.objects(user=self.user, badge=self.badge).count() > 0:
-            raise me.ValidationError("User already has this badge")
-        
-        if self.user.points < self.badge.points_required:
-            raise me.ValidationError(
-                f"User needs {self.badge.points_required} points for this badge (has {self.user.points})"
-            )
+    @classmethod
+    def assign_appropriate_badge(cls, user):
+        """Automatically assign the highest badge the user qualifies for"""
+        if not user.points:
+            return None
+
+        appropriate_badge = Badge.get_badge_for_points(user.points)
+        if not appropriate_badge:
+            return None
+
+        # Check if user already has this badge
+        existing = cls.objects(user=user, badge=appropriate_badge).first()
+        if existing:
+            return existing
+
+        # Assign new badge
+        user_badge = cls(user=user, badge=appropriate_badge)
+        user_badge.save()
+        return user_badge
+
+    def __str__(self):
+        return f"{self.user.username} → {self.badge.name}"
