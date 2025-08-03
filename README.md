@@ -44,95 +44,63 @@ $${\color{lightblue}Create, \space \color{#5EEAD4}manage \space \color{#FBF3D4}a
 
 <br>
 
+<h1>$\large\textbf{\color{#2196F3}{User Roles}}$</h1>
+
+<div align="center">
+  
+  | $\large\text{\color{#DAA5A4}{Role}}$ | $\large\text{\color{#D6C8FF}{Role}}$ | $\large\text{\color{#C8A2C8}{Role}}$ |
+|--------------------------------------|------------------------------------------------|----------------------------------------------|
+| Admin | Moderator | User |
+  
+</div>
+
+
+<br>
+
 <h1>$\large\textbf{\color{#2196F3}{Features}}$</h1>
 
-<table>
-  <tr>
-    <td style="width:70%;">
-      <h3>$\large\textbf{\color{#98FB98}{Real-time Collaborative Writing}}$</h3>
-      <ul>
-        <li>Co-author academic blogs in real time, just like Google Docs</li>
-        <li>Seamless online drafting and synchronized edits</li>
-        <li>Track edits per author with version history and contribution logs</li>
-        <br>
-      </ul>
-    </td>
-    <td style="width:30%;"><img width="100px" src="https://github.com/user-attachments/assets/2fc4e105-0636-4cd7-995f-915a667df071" /></td>
-  </tr>
+<h3>$\large\textbf{\color{#98FB98}{Real-time Collaborative Writing}}$</h3>
+<ul>
+<li>Co-author academic blogs.</li>
+<li>Seamless online drafting and synchronized edits</li>
+<li>Track edits per author with version history and contribution logs</li>
+<br>
+</ul>
 
-  <tr>
-    <td style="width:70%;">
-      <h3>$\large\textbf{\color{#AFF4E1}{Academic-Focused Editor}}$</h3>
-      <ul>
-        <li>Supports LaTeX, Markdown, code blocks, and diagrams in a unified editor</li>
-        <li>Designed specifically for academic content creators and researchers</li>
-        <br>
-      </ul>
-    </td>
-    <td style="width:30%;"><img width="100px" src="https://github.com/user-attachments/assets/2fc4e105-0636-4cd7-995f-915a667df071" /></td>
-  </tr>
+<h3>$\large\textbf{\color{#AFF4E1}{Academic-Focused Editor}}$</h3>
+<ul>
+<li>Supports LaTeX, Markdown, code blocks, and diagrams in a unified editor</li>
+<li>Designed specifically for academic content creators and researchers</li>
+</ul>
 
-  <tr>
-    <td style="width:70%;">
-      <h3>$\large\textbf{\color{#919DF3}{Serialized and Topic-wise Blogging}}$</h3>
-      <ul>
-        <li>Organize academic writing by topics or serialized series</li>
-        <li>Easy navigation and categorization for readers</li>
-        <br>
-      </ul>
-    </td>
-    <td style="width:30%;"><img width="100px" src="https://github.com/user-attachments/assets/2fc4e105-0636-4cd7-995f-915a667df071" /></td>
-  </tr>
+<br>
+<h3>$\large\textbf{\color{#919DF3}{Serialized and Topic-wise Blogging}}$</h3>
+<ul>
+<li>Organize academic writing by topics or serialized series</li>
+<li>Easy navigation and categorization for readers</li>
+</ul>
 
-  <tr>
-    <td style="width:70%;">
-      <h3>$\large\textbf{\color{#F08080}{Version Control and Author Credits}}$</h3>
-      <ul>
-        <li>Git-style change tracking: See what was changed, by whom, and when</li>
-        <li>Transparent contribution history for collaborative integrity</li>
-        <br>
-      </ul>
-    </td>
-    <td style="width:30%;"><img width="100px" src="https://github.com/user-attachments/assets/2fc4e105-0636-4cd7-995f-915a667df071" /></td>
-  </tr>
+<h3>$\large\textbf{\color{#00F8FF}{Academic Profiles and Recognition}}$</h3>
+<ul>
+<li>Link ORCID, Google Scholar, or other academic IDs</li>
+<li>Earn badges for contributions like reviews, citations, and collaborations</li>
+<li>Personal dashboard showing user impact and progress</li>
+<br>
+</ul>
 
-  <tr>
-    <td style="width:70%;">
-      <h3>$\large\textbf{\color{#00F8FF}{Academic Profiles and Recognition}}$</h3>
-      <ul>
-        <li>Link ORCID, Google Scholar, or other academic IDs</li>
-        <li>Earn badges for contributions like reviews, citations, and collaborations</li>
-        <li>Personal dashboard showing user impact and progress</li>
-        <br>
-      </ul>
-    </td>
-    <td style="width:30%;"><img width="100px" src="https://github.com/user-attachments/assets/2fc4e105-0636-4cd7-995f-915a667df071" /></td>
-  </tr>
+<h3>$\large\textbf{\color{#FFFFA0}{Reader Engagement Tools}}$</h3>
+<ul>
+<li>Support for comments, upvotes, and discussion threads</li>
+<li>Build a community around academic writing and reviews</li>
+<br>
+</ul>
 
-  <tr>
-    <td style="width:70%;">
-      <h3>$\large\textbf{\color{#FFFFA0}{Reader Engagement Tools}}$</h3>
-      <ul>
-        <li>Support for comments, upvotes, @mentions, and discussion threads</li>
-        <li>Build a community around academic writing and reviews</li>
-        <br>
-      </ul>
-    </td>
-    <td style="width:30%;"><img width="100px" src="https://github.com/user-attachments/assets/2fc4e105-0636-4cd7-995f-915a667df071" /></td>
-  </tr>
-
-  <tr>
-    <td style="width:70%;">
-      <h3>$\large\textbf{\color{#00E0FF}{Moderation and Admin Capabilities}}$</h3>
-      <ul>
-        <li>Admin can manage categories, moderators, and user groups</li>
-        <li>Moderators can assign badges, flag spam, review citations, and handle plagiarism reports</li>
-        <br>
-      </ul>
-    </td>
-    <td style="width:30%;"><img width="100px" src="https://github.com/user-attachments/assets/2fc4e105-0636-4cd7-995f-915a667df071" /></td>
-  </tr>
-</table>
+<h3>$\large\textbf{\color{#00E0FF}{Moderation and Admin Capabilities}}$</h3>
+<ul>
+<li>Admin can manage categories, moderators</li>
+<li>Admins and moderators can assign badges, flag spam, review citations, and handle plagiarism reports</li>
+<br>
+</ul>
 
 
 
