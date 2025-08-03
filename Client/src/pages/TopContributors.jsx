@@ -18,8 +18,16 @@ const TopContributors = () => {
 
   const primaryDark = shadeColor(primaryColor, -20);
   const primaryLight = shadeColor(primaryColor, 20);
-  const titleBgColor = shadeColor(primaryColor, -10); // Slightly darker shade for background
-  const titleTextColor = darkMode ? '#ffffff' : '#000000'; // White in dark mode, black in light mode
+
+  // Color mappings for badge titles
+  const badgeColors = {
+    Master: { start: '#B9F2FF', end: '#80D0C7' }, // Diamond-like
+    Specialist: { start: '#A9A9A9', end: '#D3D3D3' }, // Ash-like
+    Expert: { start: '#DC143C', end: '#FF4040' }, // Ruby-like
+    Grandmaster: { start: '#C0C0C0', end: '#E8E8E8' }, // Silver-like
+    Visionary: { start: '#FFD700', end: '#FFA500' }, // Gold-like
+    None: { start: '#D3D3D3', end: '#E0E0E0' }, // Neutral
+  };
 
   const themeStyles = {
     '--primary-color': primaryColor,
@@ -137,50 +145,55 @@ const TopContributors = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {contributors.map(contributor => (
-                    <tr key={contributor.id} className={`border-b transition-colors ${darkMode ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-200 hover:bg-[var(--primary-light)]'}`}>
-                      <td className="px-4 py-3">{contributor.rank}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center">
-                          <Link to={`/user/${contributor.name}`} className="flex items-center hover:underline">
-                            <img src={contributor.image} alt={contributor.name} className="w-10 h-10 rounded-full mr-3 object-cover" />
-                            <span className="flex items-center">
-                              {contributor.name}
-                              {contributor.highestTitle !== 'None' && (
-                                <span
-                                  className="ml-2 px-2 py-1 rounded-full text-sm font-semibold"
-                                  style={{
-                                    background: `linear-gradient(90deg, ${titleBgColor}, ${shadeColor(primaryColor, -5)})`,
-                                    color: titleTextColor,
-                                    border: `1px solid ${shadeColor(primaryColor, -15)}`,
-                                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-                                  }}
-                                >
-                                  {contributor.highestTitle}
-                                </span>
-                              )}
-                            </span>
-                          </Link>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">{contributor.field}</td>
-                      <td className="px-4 py-3">{contributor.publications}</td>
-                      <td className="px-4 py-3 font-semibold">{contributor.points}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-1">
-                          {contributor.badges?.map((badge, idx) => (
-                            <img
-                              key={idx}
-                              src={badge.image_url}
-                              alt={badge.name}
-                              className="w-6 h-6"
-                              title={`${badge.title} (${badge.name})`}
-                            />
-                          ))}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {contributors.map(contributor => {
+                    const badgeColor = badgeColors[contributor.highestTitle] || badgeColors.None;
+                    const textColor = darkMode ? '#ffffff' : '#000000'; // Ensure contrast
+
+                    return (
+                      <tr key={contributor.id} className={`border-b transition-colors ${darkMode ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-200 hover:bg-[var(--primary-light)]'}`}>
+                        <td className="px-4 py-3">{contributor.rank}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center">
+                            <Link to={`/user/${contributor.name}`} className="flex items-center hover:underline">
+                              <img src={contributor.image} alt={contributor.name} className="w-10 h-10 rounded-full mr-3 object-cover" />
+                              <span className="flex items-center">
+                                {contributor.name}
+                                {contributor.highestTitle !== 'None' && (
+                                  <span
+                                    className="ml-2 px-2 py-1 rounded-full text-sm font-semibold"
+                                    style={{
+                                      background: `linear-gradient(90deg, ${badgeColor.start}, ${badgeColor.end})`,
+                                      color: textColor,
+                                      border: `1px solid ${shadeColor(badgeColor.start, -20)}`,
+                                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                                    }}
+                                  >
+                                    {contributor.highestTitle}
+                                  </span>
+                                )}
+                              </span>
+                            </Link>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">{contributor.field}</td>
+                        <td className="px-4 py-3">{contributor.publications}</td>
+                        <td className="px-4 py-3 font-semibold">{contributor.points}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-wrap gap-1">
+                            {contributor.badges?.map((badge, idx) => (
+                              <img
+                                key={idx}
+                                src={badge.image_url}
+                                alt={badge.name}
+                                className="w-6 h-6"
+                                title={`${badge.title} (${badge.name})`}
+                              />
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
