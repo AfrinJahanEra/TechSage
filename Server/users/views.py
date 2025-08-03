@@ -8,6 +8,9 @@ import os
 from dotenv import load_dotenv
 from reports.models import BlogReport
 from datetime import datetime
+from mongoengine.queryset.visitor import Q
+from blogs.models import Blog
+from comments.models import Comment
 
 load_dotenv()
 
@@ -17,8 +20,7 @@ cloudinary.config(
     api_secret=os.getenv('CLOUDINARY_API_SECRET')
 )
 
-from blogs.models import Blog
-from comments.models import Comment
+
 
 class UserListByRole(APIView):
     def get(self, request):
@@ -31,8 +33,6 @@ class UserListByRole(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
-from rest_framework.parsers import JSONParser
-
 
 class DeleteUserAccount(APIView):
     def delete(self, request, username):
@@ -40,40 +40,48 @@ class DeleteUserAccount(APIView):
             req_username = request.data.get('username')
             req_password = request.data.get('password')
 
-            # Ensure username and password provided
-            if not req_username or not req_password:
-                return Response({"error": "Username and password required"}, status=400)
+            if not req_username:
+                return Response({"error": "Username is required"}, status=400)
 
-            # Identity check
-            if req_username != username:
-                return Response({"error": "You can only delete your own account"}, status=403)
+            # Fetch requesting user
+            requesting_user = User.objects(username=req_username).first()
+            if not requesting_user:
+                return Response({"error": "Requesting user not found"}, status=404)
 
-            # Find user
-            user = User.objects(username=username).first()
-            if not user:
-                return Response({"error": "User not found"}, status=404)
+            # Fetch target user to be deleted
+            target_user = User.objects(username=username).first()
+            if not target_user:
+                return Response({"error": "Target user not found"}, status=404)
 
-            # Check password
-            if not check_password(req_password, user.password):
-                return Response({"error": "Incorrect password"}, status=401)
+            # Admin can delete anyone without password
+            if requesting_user.role == 'admin':
+                pass  # Skip password check
+            else:
+                # Regular user can only delete their own account with correct password
+                if req_username != username:
+                    return Response({"error": "You can only delete your own account"}, status=403)
+                if not req_password:
+                    return Response({"error": "Password required"}, status=400)
+                if not check_password(req_password, requesting_user.password):
+                    return Response({"error": "Incorrect password"}, status=401)
 
-            # Delete blogs (only those solely authored)
-            user_blogs = Blog.objects(authors=user)
+            # Delete blogs (only those solely authored by target user)
+            user_blogs = Blog.objects(authors=target_user)
             for blog in user_blogs:
                 if len(blog.authors) == 1:
                     blog.delete()
                 else:
-                    blog.authors.remove(user)
+                    blog.authors.remove(target_user)
                     blog.save()
 
-            # Delete user's comments
-            Comment.objects(author=user).update(set__is_deleted=True)
+            # Delete target user's comments
+            Comment.objects(author=target_user).update(set__is_deleted=True)
 
-            # Delete user's reports
-            BlogReport.objects(reported_by=user).delete()
+            # Delete target user's reports
+            BlogReport.objects(reported_by=target_user).delete()
 
-            # Delete the user
-            user.delete()
+            # Delete the target user
+            target_user.delete()
 
             return Response({"message": f"User '{username}' and associated data deleted successfully"}, status=200)
 
@@ -81,8 +89,7 @@ class DeleteUserAccount(APIView):
             return Response({"error": str(e)}, status=500)
 
 
-# users/views.py
-from mongoengine.queryset.visitor import Q
+
 
 class AllUsersView(APIView):
     def get(self, request):
