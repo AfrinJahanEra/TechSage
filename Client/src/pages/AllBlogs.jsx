@@ -22,38 +22,37 @@ const AllBlogs = () => {
   const [communityPosts, setCommunityPosts] = useState([]);
   const [recommendationPosts, setRecommendationPosts] = useState([]);
   const [jobOpportunities, setJobOpportunities] = useState([]);
-  const [topContributors, setTopContributors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Generate color variants
+
   const primaryDark = shadeColor(primaryColor, -20);
   const primaryLight = shadeColor(primaryColor, 20);
 
-  // Dynamic style variables for theme colors
+
   const themeStyles = {
     '--primary-color': primaryColor,
     '--primary-dark': primaryDark,
     '--primary-light': primaryLight,
   };
 
-  // Fetch data from API
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
 
-        // Fetch community posts
+
         const communityResponse = await api.get('/published-blogs/');
         console.log('Community Posts Response:', communityResponse.data); // Debug log
         setCommunityPosts(communityResponse.data.blogs?.map(normalizeBlog) || []);
 
-        // Fetch recommendation posts
+
         const recommendationResponse = await api.get('/jobs/');
         console.log('Recommendation Posts Response:', recommendationResponse.data); // Debug log
         setRecommendationPosts(recommendationResponse.data.blogs?.map(normalizeBlog) || []);
 
-        // Fetch job opportunities
+
         const jobsResponse = await api.get('/jobs/?limit=5');
         console.log('Jobs Response:', jobsResponse.data); // Debug log
         setJobOpportunities(jobsResponse.data.blogs?.map(normalizeBlog) || []);
@@ -70,7 +69,7 @@ const AllBlogs = () => {
     fetchData();
   }, [api]);
 
-  // Handle view toggle
+
   const handleViewToggle = (view) => {
     setCurrentView(view);
     navigate('/all-blogs', { 
@@ -79,7 +78,7 @@ const AllBlogs = () => {
     });
   };
 
-  // Filtered posts based on active filters
+
   const filteredCommunityPosts = activeCategory === 'all' 
     ? communityPosts 
     : communityPosts.filter(post => post.categories?.includes(activeCategory));

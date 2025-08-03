@@ -5,22 +5,16 @@ import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
-import BlogCardDash from '../components/BlogCardDash';
 import { formatDate } from '../utils/blogUtils';
-import axios from 'axios';
 import { confirmAlert } from 'react-confirm-alert';
 import 'react-confirm-alert/src/react-confirm-alert.css';
-import ModeratorReports from '../components/ModeratorReports';
+
 
 const AdminDashboard = () => {
   const performanceChartRef = useRef(null);
   const [activeSection, setActiveSection] = useState('users');
-  const [blogFilter, setBlogFilter] = useState('all');
-  const [reportFilter, setReportFilter] = useState('all');
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, api } = useAuth();
   const { darkMode, primaryColor } = useTheme();
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [showProfilePanel, setShowProfilePanel] = useState(false);
   const [blogs, setBlogs] = useState([]);
   const [users, setUsers] = useState([]);
@@ -32,7 +26,7 @@ const AdminDashboard = () => {
   });
   const navigate = useNavigate();
 
-  // Fetch all users
+
   const fetchUsers = async () => {
     setLoading(true);
     try {
@@ -45,7 +39,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Fetch all blogs
   const fetchBlogs = async () => {
     setLoading(true);
     try {
@@ -58,7 +51,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // Fetch badges
+
   const fetchBadges = async () => {
     setLoading(true);
     try {
@@ -71,7 +64,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // Get badge threshold requirements
+
   const getBadgeThreshold = (badgeName) => {
     const thresholds = {
       "ruby": 100,
@@ -84,7 +77,7 @@ const AdminDashboard = () => {
     return thresholds[badgeName] || 'N/A';
   };
 
-  // Create new badge
+
   const handleCreateBadge = async (e) => {
     e.preventDefault();
     try {
@@ -99,7 +92,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // Delete badge
+
   const handleDeleteBadge = async (badgeId) => {
     confirmAlert({
       title: 'Delete Badge',
@@ -152,7 +145,7 @@ const AdminDashboard = () => {
     });
   };
 
-  // Approve blog handler
+
   const handleApproveBlog = async (blogId) => {
     confirmAlert({
       title: 'Approve Blog',
@@ -193,7 +186,7 @@ const AdminDashboard = () => {
     });
   };
 
-  // Reject blog handler
+
   const handleRejectBlog = async (blogId) => {
     confirmAlert({
       title: 'Reject Blog',
@@ -220,7 +213,7 @@ const AdminDashboard = () => {
     });
   };
 
-  // Assign badge handler
+
   const handleAssignBadge = async (username, badgeId) => {
     confirmAlert({
       title: 'Assign Badge',
@@ -314,19 +307,13 @@ const AdminDashboard = () => {
     }
   }, [activeSection, darkMode, primaryColor]);
 
-  const toggleNotifications = () => {
-    setNotificationsEnabled(!notificationsEnabled);
-    alert(`Notifications ${!notificationsEnabled ? 'enabled' : 'disabled'}`);
-  };
+
 
   const toggleProfilePanel = (e) => {
     e.stopPropagation();
     setShowProfilePanel(!showProfilePanel);
   };
 
-  const closeProfilePanel = () => {
-    setShowProfilePanel(false);
-  };
 
   useEffect(() => {
     const handleClickOutside = () => {
@@ -341,15 +328,7 @@ const AdminDashboard = () => {
     };
   }, [showProfilePanel]);
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-    document.body.style.overflow = isMenuOpen ? '' : 'hidden';
-  };
 
-  const closeMenu = () => {
-    setIsMenuOpen(false);
-    document.body.style.overflow = '';
-  };
 
   const handleBlogClick = (blogId) => {
     navigate(`/blog/${blogId}`);

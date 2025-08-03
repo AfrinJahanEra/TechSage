@@ -19,7 +19,7 @@ const TopContributor = ({ type = 'default', currentBlogId = null }) => {
         const response = await api.get('/all-users/');
         
         if (response.data?.users) {
-          // Sort by points descending and take top 2
+
           const sorted = response.data.users
             .sort((a, b) => b.points - a.points)
             .slice(0, 3)
