@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import Navbar from '../components/Navbar';
@@ -6,11 +6,16 @@ import Footer from '../components/Footer';
 import Sidebar from '../components/Sidebar';
 import SearchForm from '../components/SearchForm';
 import avatar from '../../src/assets/default-avatar.png';
+import { useAuth } from '../context/AuthContext';
 
 const TopContributors = () => {
   const { primaryColor, darkMode, shadeColor } = useTheme();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
+  const [contributors, setContributors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { api } = useAuth();
 
   // Generate color variants
   const primaryDark = shadeColor(primaryColor, -20);
@@ -23,65 +28,52 @@ const TopContributors = () => {
     '--primary-light': primaryLight,
   };
 
-  const contributors = [
-    {
-      id: 1,
-      rank: 1,
-      image: avatar,
-      name: 'Ramisa Anan Rahman',
-      field: 'Quantum Computing',
-      publications: 42,
-      rating: 4.9,
-      badge: 'gold'
-    },
-    {
-      id: 2,
-      rank: 2,
-      image: avatar,
-      name: 'Ridika Naznin',
-      field: 'Machine Learning',
-      publications: 38,
-      rating: 4.8,
-      badge: 'silver'
-    },
-    {
-      id: 3,
-      rank: 3,
-      image: avatar,
-      name: 'Afrin Jahan Era',
-      field: 'Biotechnology',
-      publications: 35,
-      rating: 4.7,
-      badge: 'bronze'
-    },
-    {
-      id: 4,
-      rank: 4,
-      image: avatar,
-      name: 'Dr. Tahira Jannat',
-      field: 'Renewable Energy',
-      publications: 28,
-      rating: 4.6
-    },
-    {
-      id: 5,
-      rank: 5,
-      image: avatar,
-      name: 'Sabikunnahar Tabassom',
-      field: 'Neuroscience',
-      publications: 25,
-      rating: 4.5
-    },
-    {
-      id: 6,
-      rank: 6,
-      image: avatar,
-      name: 'Ayesha Siddika Juthi',
-      field: 'Cybersecurity',
-      publications: 22,
-      rating: 4.4
-    }
-  ];
+  useEffect(() => {
+    const fetchTopContributors = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/all-users/');
+        if (response.data && response.data.users) {
+          // Sort users by points (descending), then by blog_count (descending)
+          const sortedUsers = response.data.users
+            .sort((a, b) => {
+              if (b.points !== a.points) {
+                return b.points - a.points;
+              }
+              return b.blog_count - a.blog_count;
+            })
+            .map((user, index) => ({
+              id: index + 1,
+              rank: index + 1,
+              image: user.avatar_url || avatar,
+              name: user.username,
+              field: user.job_title || 'Researcher',
+              publications: user.blog_count || 0,
+              rating: (user.points / 100).toFixed(1) || 0,
+              badge: getBadgeType(index + 1),
+              points: user.points || 0
+            }));
+          
+          setContributors(sortedUsers);
+        }
+      } catch (err) {
+        setError(err.response?.data?.error || 'Failed to fetch contributors');
+        console.error('Error fetching contributors:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTopContributors();
+  }, [api]);
+
+
+  const getBadgeType = (rank) => {
+    if (rank === 1) return 'gold';
+    if (rank === 2) return 'silver';
+    if (rank === 3) return 'bronze';
+    return '';
+  };
 
   const getBadgeClass = (badge) => {
     switch (badge) {
@@ -114,6 +106,32 @@ const TopContributors = () => {
     // In a real app, you would fetch data for the new page here
   };
 
+  if (loading) {
+    return (
+      <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'}`}>
+        <Navbar activePage="top-contributors" />
+        <main className="container mx-auto px-4 py-8 pt-28">
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'}`}>
+        <Navbar activePage="top-contributors" />
+        <main className="container mx-auto px-4 py-8 pt-28">
+          <div className="text-center text-red-500">{error}</div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div 
       className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'}`}
@@ -130,7 +148,7 @@ const TopContributors = () => {
                 Top Researchers
               </h1>
               <p className={`text-lg ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                Our most active and influential contributors based on publications, citations, and community engagement.
+                Our most active and influential contributors based on points and publications.
               </p>
             </header>
 
@@ -146,6 +164,7 @@ const TopContributors = () => {
                     <th className="px-4 py-3 text-left">Field</th>
                     <th className="px-4 py-3 text-left">Publications</th>
                     <th className="px-4 py-3 text-left">Rating</th>
+                    <th className="px-4 py-3 text-left">Points</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -157,7 +176,7 @@ const TopContributors = () => {
                       <td className="px-4 py-3">{contributor.rank}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center">
-                          <Link to="/other-dashboard" className="flex items-center">
+                          <Link to={`/user/${contributor.name}`} className="flex items-center">
                             <img 
                               src={contributor.image} 
                               alt={contributor.name} 
@@ -175,6 +194,7 @@ const TopContributors = () => {
                       <td className="px-4 py-3">{contributor.field}</td>
                       <td className="px-4 py-3">{contributor.publications}</td>
                       <td className="px-4 py-3">{contributor.rating}</td>
+                      <td className="px-4 py-3">{contributor.points}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -71,6 +71,14 @@ class User(me.Document):
         except Exception as e:
             print(f"Avatar upload error: {e}")
             return False
+        
+    def calculate_publications(self):
+        from blogs.models import Blog
+        return Blog.objects(
+            authors__in=[self],
+            is_published=True,
+            is_deleted=False
+        ).count()
 
     def to_json(self):
         return {
@@ -87,5 +95,6 @@ class User(me.Document):
             "total_publications": self.total_publications,
             "followers": self.followers,
             "created_at": self.created_at.isoformat(),
-            "updated_at": self.updated_at.isoformat()
+            "updated_at": self.updated_at.isoformat(),
+            "blog_count": self.calculate_publications()
         }

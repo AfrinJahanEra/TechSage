@@ -292,100 +292,63 @@ class UpdateBlog(APIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class PublishBlog(APIView):
-    def get(self, request):
-        """
-        Completely isolated published blogs endpoint - no MongoEngine imports
-        """
+    def post(self, request, blog_id):
         try:
-            from mongoengine.connection import get_db
+            blog = Blog.objects.get(id=blog_id)
+            username = request.data.get('username')
             
-            db = get_db()
-            collection = db['blogs']
-            user_collection = db['user']
-            
-            # Base query
-            query = {
-                'is_published': True,
-                'is_deleted': False
-            }
-            
-            # Get documents
-            cursor = collection.find(query).sort('published_at', -1).limit(10)
-            docs = list(cursor)
-            
-            # Format response
-
-            dhaka_tz = pytz.timezone('Asia/Dhaka')
-            blogs = []
-            for doc in docs:
-
-                published_at_dhaka = doc.published_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)
-                updated_at_dhaka = doc.updated_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)
-                # Get authors
-                authors = []
-                for author_id in doc.get('authors', []):
-                    author = user_collection.find_one({'_id': author_id})
-                    if author:
-                        authors.append({
-                            'username': author.get('username'),
-                            'avatar': author.get('avatar_url')
-                        })
+            if not username:
+                return Response({"error": "username is required"}, status=400)
                 
-                content = doc.get('content', '')
-                blogs.append({
-                    "id": str(doc['_id']),
-                    "title": doc.get('title', ''),
-                    "excerpt": content[:1000] + "..." if len(content) > 500 else content,
-                    "content": content,  # Full content for 200-word preview
-                    "authors": authors,
-                    "thumbnail_url": doc.get('thumbnail_url'),
-                    "categories": doc.get('categories', []),
-                    "tags": doc.get('tags', []),
-                    "published_at": published_at_dhaka.isoformat(),
-                    "updated_at": updated_at_dhaka.isoformat(),
-                    "stats": {
-                        "upvotes": len(doc.get('upvotes', [])),
-                        "downvotes": len(doc.get('downvotes', []))
-                    }
-                })
+            user = User.objects(username=username).first()
+            if not user:
+                return Response({"error": "User not found"}, status=404)
+                
+            if user not in blog.authors:
+                return Response({"error": "You are not authorized to publish this blog"}, 
+                              status=403)
             
-            total = collection.count_documents(query)
+            blog.publish(username)
+            
+            # Update user's total publications count
+            for author in blog.authors:
+                author.update(inc__total_publications=1)
             
             return Response({
-                "success": True,
-                "blogs": blogs,
-                "total": total
+                "message": "Blog published successfully",
+                "published_at": blog.published_at.isoformat()
             })
             
-        except Exception as e:
-            import traceback
-            return Response({
-                "success": False,
-                "error": str(e),
-                "traceback": traceback.format_exc()
-            }, status=500)
+        except Blog.DoesNotExist:
+            return Response({"error": "Blog not found"}, status=404)
 
 class UnpublishBlog(APIView):
     def post(self, request, blog_id):
         try:
-            blog = Blog.objects.get(id=blog_id, is_deleted=False)
+            blog = Blog.objects.get(id=blog_id)
             username = request.data.get('username')
             
             if not username:
-                return Response({"error": "username is required"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "username is required"}, status=400)
                 
             user = User.objects(username=username).first()
             if not user:
-                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"error": "User not found"}, status=404)
                 
             if user not in blog.authors:
                 return Response({"error": "You are not authorized to unpublish this blog"}, 
-                               status=status.HTTP_403_FORBIDDEN)
-                
+                              status=403)
+            
+            # Only decrement if the blog was previously published
+            if blog.is_published:
+                for author in blog.authors:
+                    author.update(dec__total_publications=1)
+            
             blog.unpublish(username)
             return Response({"message": "Blog unpublished and moved to drafts"})
-        except DoesNotExist:
-            return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+        except Blog.DoesNotExist:
+            return Response({"error": "Blog not found"}, status=404)
 
 class DeleteBlog(APIView):
     def delete(self, request, blog_id):

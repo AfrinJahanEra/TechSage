@@ -85,19 +85,33 @@ class AllUsersView(APIView):
     def get(self, request):
         try:
             users = User.objects.only('username', 'email', 'role', 'job_title', 'points', 'avatar_url', 'created_at')
-            user_data = [{
-                "username": user.username,
-                "email": user.email,
-                "role": user.role,
-                "job_title": user.job_title,
-                "points": user.points,
-                "avatar_url": user.avatar_url,
-                "created_at": user.created_at.isoformat()
-            } for user in users]
+            
+            # Get blog counts for each user
+            from blogs.models import Blog
+            user_data = []
+            for user in users:
+                blog_count = Blog.objects(
+                    authors__in=[user],
+                    is_published=True,
+                    is_deleted=False
+                ).count()
+                
+                user_data.append({
+                    "username": user.username,
+                    "email": user.email,
+                    "role": user.role,
+                    "job_title": user.job_title,
+                    "points": user.points,
+                    "avatar_url": user.avatar_url,
+                    "created_at": user.created_at.isoformat(),
+                    "blog_count": blog_count  # Add blog count
+                })
+            
             return Response({"users": user_data}, status=200)
         except Exception as e:
             return Response({"error": str(e)}, status=500)
-
+        
+        
 class RegisterUser(APIView):
     def post(self, request):
         required_fields = ['username', 'email', 'password']
