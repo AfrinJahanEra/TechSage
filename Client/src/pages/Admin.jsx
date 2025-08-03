@@ -62,7 +62,7 @@ const AdminDashboard = () => {
   const fetchBadges = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/badges/');
+      const response = await api.get('/');
       setBadges(response.data.badges || []);
     } catch (error) {
       console.error('Error fetching badges:', error);
@@ -88,7 +88,7 @@ const AdminDashboard = () => {
   const handleCreateBadge = async (e) => {
     e.preventDefault();
     try {
-      const response = await api.post('/badges/', newBadge);
+      const response = await api.post('/assign/', newBadge);
       setBadges([...badges, response.data.badge]);
       setActiveSection('badges');
       setNewBadge({ name: '', image_url: '' });
