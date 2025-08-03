@@ -60,7 +60,7 @@ $${\color{lightblue}Create, \space \color{#5EEAD4}manage \space \color{#FBF3D4}a
 
 <h1>$\large\textbf{\color{#2196F3}{Features}}$</h1>
 
-<h3>$\large\textbf{\color{#98FB98}{Real-time Collaborative Writing}}$</h3>
+<h3>$\large\textbf{\color{#98FB98}{Collaborative Writing}}$</h3>
 <ul>
 <li>Co-author academic blogs.</li>
 <li>Seamless online drafting and synchronized edits</li>
