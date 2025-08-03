@@ -1,9 +1,9 @@
 from django.urls import path
-from django.views.generic import TemplateView
-from .views import AssignBadgeView, UserBadgeView
+from .views import BadgeListView, BadgeDetailView, AssignBadgeView, UserBadgesView
 
 urlpatterns = [
-    path('assign/', AssignBadgeView.as_view()),
-    path('user/<str:username>/', UserBadgeView.as_view()),
-    path('admin-panel/', TemplateView.as_view(template_name='badges/assign_badge.html')),
+    path('', BadgeListView.as_view(), name='badge-list'),
+    path('<str:badge_id>/', BadgeDetailView.as_view(), name='badge-detail'),
+    path('assign/', AssignBadgeView.as_view(), name='assign-badge'),
+    path('user/<str:username>/', UserBadgesView.as_view(), name='user-badges'),
 ]
