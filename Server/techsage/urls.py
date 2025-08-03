@@ -84,5 +84,5 @@ urlpatterns = [
 
     # path('version-control/', include('version_control.urls')),
 
-    path('', include('badges.urls')),
+    path('badges/', include('badges.urls')),
 ]

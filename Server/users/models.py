@@ -33,8 +33,8 @@ class User(me.Document):
     saved_blogs = me.ListField(me.StringField())
     created_at = me.DateTimeField(default=datetime.datetime.now)
     updated_at = me.DateTimeField(default=datetime.datetime.now)
-    badges = me.ListField(default=[])  # Stores badge objects
-    badge = me.StringField(choices=['ruby', 'bronze', 'sapphire', 'silver', 'gold', 'diamond'], default=None)
+    badges = me.ListField(me.DictField(), default=[])  # Structured badge storage
+    
 
     meta = {
         'strict': False,
@@ -177,5 +177,6 @@ class User(me.Document):
             "followers": self.followers,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
+            "badges": self.badges,
             "blog_count": self.calculate_publications()
         }
