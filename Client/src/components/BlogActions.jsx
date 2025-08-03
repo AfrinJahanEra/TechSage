@@ -109,15 +109,14 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog }) 
     const url = `${window.location.origin}/blog/${blogId}`;
     const text = `Check out this research: ${blogTitle}`;
     const hashtags = blog.categories?.map(cat => cat.replace(/\s+/g, '')).join(',') || 'blog,research';
-    const description = blog.excerpt || text; // Use blog excerpt if available, else fallback to text
-
+    const description = blog.excerpt || text; 
     switch (platform) {
       case 'facebook':
-        // *** MODIFIED: Removed 'quote' parameter and added security features ***
+      
         window.open(
           `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
           '_blank',
-          'noopener,noreferrer' // Good practice for security
+          'noopener,noreferrer' 
         );
         break;
       case 'twitter':
@@ -142,18 +141,18 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog }) 
             url: url
           }).catch(err => {
             console.error('Error sharing (native):', err);
-            // Fallback to copying URL if native share fails
+         
             copyToClipboard(url);
           });
         } else {
-          // Fallback to copying URL if Web Share API is not supported
+
           copyToClipboard(url);
         }
     }
   };
 
   const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text).then( // Ensure writeText is used correctly
+    navigator.clipboard.writeText(text).then( 
       () => {
         toast.success('Link copied to clipboard!', {
           position: "top-right",
