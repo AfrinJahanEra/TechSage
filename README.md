@@ -50,8 +50,8 @@ $${\color{lightblue}Create, \space \color{#5EEAD4}manage \space \color{#FBF3D4}a
 | $\large\text{\color{#76DCF1}{Role}}$ | $\large\text{\color{#FD8FAB}{Description}}$ |
 | ------------- | --------------------------------------------------------------------------- |
 | **User**      | Can write, co-author, comment, upvote, and view academic profiles           |
-| **Moderator** | Reviews content, flags issues, validates badges and manages roles           |
-| **Admin**     | Manages the entire platform, including topic categories and user governance |
+| **Moderator** | Reviews content, flags issues, and manages roles           |
+| **Admin**     | Manages the entire platform, validates badges and user governance |
 
 <br>
 
