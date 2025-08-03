@@ -41,8 +41,14 @@ const TopContributors = () => {
                 id: badge.id,
                 name: badge.name,
                 title: badge.title,
-                image_url: badge.image_url
+                image_url: badge.image_url,
+                points_required: badge.points_required // Include points_required for sorting
               }));
+
+            // Find the badge with the highest points_required
+            const highestBadge = earnedBadges.length > 0
+              ? earnedBadges.reduce((max, badge) => max.points_required > badge.points_required ? max : badge)
+              : null;
 
             return {
               ...user,
@@ -51,7 +57,8 @@ const TopContributors = () => {
               image: user.avatar_url || avatar,
               field: user.job_title || 'Researcher',
               publications: user.published_blogs || 0,
-              badges: earnedBadges
+              badges: earnedBadges,
+              highestTitle: highestBadge ? highestBadge.title : 'None' // Store the highest title
             };
           });
 
@@ -136,7 +143,7 @@ const TopContributors = () => {
                         <div className="flex items-center">
                           <Link to={`/user/${contributor.name}`} className="flex items-center hover:underline">
                             <img src={contributor.image} alt={contributor.name} className="w-10 h-10 rounded-full mr-3 object-cover" />
-                            <span>{contributor.name}</span>
+                            <span>{contributor.name} <span className="text-sm text-gray-500">({contributor.highestTitle})</span></span>
                           </Link>
                         </div>
                       </td>
