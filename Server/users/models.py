@@ -28,15 +28,14 @@ class User(me.Document):
     university = me.StringField()
     bio = me.StringField(max_length=500, default='')
     is_verified = me.BooleanField(default=False)
-    points = me.IntField(default=0)
     total_publications = me.IntField(default=0)
     followers = me.IntField(default=0)
     source = me.StringField()
     saved_blogs = me.ListField(me.StringField())
     created_at = me.DateTimeField(default=datetime.datetime.now)
     updated_at = me.DateTimeField(default=datetime.datetime.now)
-    badges = ListField(StringField(), default=[])
-    points = IntField(default=0)
+    badges = me.ListField(default=[])  # Stores badge objects
+    points = me.IntField(default=0)
     badge = me.StringField(choices=['ruby', 'bronze', 'sapphire', 'silver', 'gold', 'diamond'], default=None)
 
     meta = {
@@ -153,10 +152,16 @@ class User(me.Document):
         return max(points, 0)
     
     def update_points(self):
+        """Update user points and assign badges accordingly"""
         self.points = self.calculate_points()
         self.save()
+        
+        # Automatically assign badges based on new points
+        from badges.models import Badge
+        Badge.assign_badges(self)
+        
         return self.points
-    
+        
 
     def to_json(self):
         return {
