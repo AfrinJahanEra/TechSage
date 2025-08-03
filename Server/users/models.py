@@ -2,8 +2,6 @@ import mongoengine as me
 import datetime
 import cloudinary
 import os
-import ListField,StringField
-import IntField
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -28,6 +26,7 @@ class User(me.Document):
     university = me.StringField()
     bio = me.StringField(max_length=500, default='')
     is_verified = me.BooleanField(default=False)
+    points = me.IntField(default=0)
     total_publications = me.IntField(default=0)
     followers = me.IntField(default=0)
     source = me.StringField()
@@ -35,7 +34,6 @@ class User(me.Document):
     created_at = me.DateTimeField(default=datetime.datetime.now)
     updated_at = me.DateTimeField(default=datetime.datetime.now)
     badges = me.ListField(default=[])  # Stores badge objects
-    points = me.IntField(default=0)
     badge = me.StringField(choices=['ruby', 'bronze', 'sapphire', 'silver', 'gold', 'diamond'], default=None)
 
     meta = {
@@ -161,7 +159,7 @@ class User(me.Document):
         Badge.assign_badges(self)
         
         return self.points
-        
+    
 
     def to_json(self):
         return {

@@ -2,6 +2,7 @@ from django.urls import path
 from .views import BadgeAPI, UserBadgesAPI
 
 urlpatterns = [
-    path('badges/', BadgeAPI.as_view()),
-    path('users/<str:username>/badges/', UserBadgesAPI.as_view()),
+    path('', BadgeAPI.as_view()),
+    path('<str:badge_id>/', BadgeAPI.as_view()),
+    path('users/<str:username>/', UserBadgesAPI.as_view()),
 ]
