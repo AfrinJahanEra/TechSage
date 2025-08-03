@@ -1,9 +1,9 @@
 from django.urls import path
-from .views import BadgeListView, BadgeDetailView, AssignBadgeView, UserBadgesView
+from .views import BadgeAPIView, BadgeDetailAPIView, UserBadgeAPIView, AssignBadgeAPIView
 
 urlpatterns = [
-    path('', BadgeListView.as_view(), name='badge-list'),
-    path('<str:badge_id>/', BadgeDetailView.as_view(), name='badge-detail'),
-    path('assign/', AssignBadgeView.as_view(), name='assign-badge'),
-    path('user/<str:username>/', UserBadgesView.as_view(), name='user-badges'),
+    path('', BadgeAPIView.as_view()),
+    path('<str:badge_id>/', BadgeDetailAPIView.as_view()),
+    path('user/<str:username>/', UserBadgeAPIView.as_view()),
+    path('assign/', AssignBadgeAPIView.as_view()),
 ]
