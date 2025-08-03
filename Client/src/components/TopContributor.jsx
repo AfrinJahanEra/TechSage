@@ -22,7 +22,7 @@ const TopContributor = ({ type = 'default', currentBlogId = null }) => {
           // Sort by points descending and take top 2
           const sorted = response.data.users
             .sort((a, b) => b.points - a.points)
-            .slice(0, 5)
+            .slice(0, 3)
             .map(user => ({
               id: user._id || user.id,
               image: user.avatar_url || avatar,
