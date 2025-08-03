@@ -2,6 +2,8 @@ import mongoengine as me
 import datetime
 import cloudinary
 import os
+import ListField,StringField
+import IntField
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -33,6 +35,8 @@ class User(me.Document):
     saved_blogs = me.ListField(me.StringField())
     created_at = me.DateTimeField(default=datetime.datetime.now)
     updated_at = me.DateTimeField(default=datetime.datetime.now)
+    badges = ListField(StringField(), default=[])
+    points = IntField(default=0)
     badge = me.StringField(choices=['ruby', 'bronze', 'sapphire', 'silver', 'gold', 'diamond'], default=None)
 
     meta = {

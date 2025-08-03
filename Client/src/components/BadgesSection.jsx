@@ -1,66 +1,73 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { confirmAlert } from 'react-confirm-alert';
 import 'react-confirm-alert/src/react-confirm-alert.css';
 
-const BadgesSection = ({ username }) => {
+const BadgesSection = ({ userId }) => {
   const { api } = useAuth();
+  const { darkMode } = useTheme();
   const [badges, setBadges] = useState([]);
   const [userBadges, setUserBadges] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [newBadge, setNewBadge] = useState({
     name: '',
-    description: '',
     points_required: 100,
+    description: '',
     image: null
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [badgesRes, userBadgesRes] = await Promise.all([
-          api.get('/badges/'),
-          api.get(`/badges/user/${username}/`)
-        ]);
-        setBadges(badgesRes.data);
-        setUserBadges(userBadgesRes.data);
-      } catch (err) {
-        setError(err.response?.data?.error || 'Failed to fetch badges');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchBadges = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get('/badges/');
+      setBadges(response.data);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to fetch badges');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchData();
-  }, [api, username]);
+  const fetchUserBadges = async () => {
+    try {
+      const response = await api.get(`/badges/user/${userId}/`);
+      setUserBadges(response.data);
+    } catch (err) {
+      console.error('Error fetching user badges:', err);
+    }
+  };
 
   const handleCreateBadge = async (e) => {
     e.preventDefault();
-    try {
-      const formData = new FormData();
-      formData.append('name', newBadge.name);
-      formData.append('description', newBadge.description);
-      formData.append('points_required', newBadge.points_required);
+    setLoading(true);
+    
+    const formData = new FormData();
+    formData.append('name', newBadge.name);
+    formData.append('points_required', newBadge.points_required);
+    formData.append('description', newBadge.description);
+    if (newBadge.image) {
       formData.append('image', newBadge.image);
+    }
 
+    try {
       const response = await api.post('/badges/', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
-
-      setBadges([...badges, response.data.badge]);
+      setBadges([...badges, response.data]);
       setNewBadge({
         name: '',
-        description: '',
         points_required: 100,
+        description: '',
         image: null
       });
-      alert('Badge created successfully!');
     } catch (err) {
-      alert(`Failed to create badge: ${err.response?.data?.error || 'Unknown error'}`);
+      setError(err.response?.data?.error || 'Failed to create badge');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -75,179 +82,166 @@ const BadgesSection = ({ username }) => {
             try {
               await api.delete(`/badges/${badgeId}/`);
               setBadges(badges.filter(b => b.id !== badgeId));
-              setUserBadges(userBadges.filter(ub => ub.badge.id !== badgeId));
-              alert('Badge deleted successfully');
             } catch (err) {
-              alert(`Failed to delete badge: ${err.response?.data?.error || 'Unknown error'}`);
+              setError(err.response?.data?.error || 'Failed to delete badge');
             }
           }
         },
-        {
-          label: 'No',
-          onClick: () => {}
-        }
+        { label: 'No' }
       ]
     });
   };
 
-  const handleAssignBadge = async (badgeId) => {
-    confirmAlert({
-      title: 'Assign Badge',
-      message: `Assign this badge to ${username}?`,
-      buttons: [
-        {
-          label: 'Yes',
-          onClick: async () => {
-            try {
-              const response = await api.post('/badges/assign/', {
-                username,
-                badge_id: badgeId
-              });
-              setUserBadges([...userBadges, {
-                id: Date.now().toString(), // Temporary ID
-                badge: badges.find(b => b.id === badgeId),
-                awarded_at: new Date().toISOString()
-              }]);
-              alert(response.data.message);
-            } catch (err) {
-              alert(`Failed to assign badge: ${err.response?.data?.error || 'Unknown error'}`);
-            }
-          }
-        },
-        {
-          label: 'No',
-          onClick: () => {}
-        }
-      ]
-    });
+  const handleAssignBadge = async () => {
+    try {
+      await api.post('/badges/assign/', { username: userId });
+      fetchUserBadges();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to assign badge');
+    }
   };
+
+  useEffect(() => {
+    fetchBadges();
+    if (userId) {
+      fetchUserBadges();
+    }
+  }, [userId]);
 
   if (loading) {
-    return <div className="text-center py-8">Loading badges...</div>;
-  }
-
-  if (error) {
-    return <div className="text-red-500 text-center py-8">{error}</div>;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Badge Management (Admin Only) */}
-      {user?.role === 'admin' && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h3 className="text-xl font-semibold mb-4">Create New Badge</h3>
-          <form onSubmit={handleCreateBadge} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Badge Name</label>
-              <input
-                type="text"
-                className="w-full p-2 border rounded"
-                value={newBadge.name}
-                onChange={(e) => setNewBadge({...newBadge, name: e.target.value})}
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Description</label>
-              <textarea
-                className="w-full p-2 border rounded"
-                value={newBadge.description}
-                onChange={(e) => setNewBadge({...newBadge, description: e.target.value})}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Points Required</label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded"
-                value={newBadge.points_required}
-                onChange={(e) => setNewBadge({...newBadge, points_required: parseInt(e.target.value) || 0})}
-                min="0"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Badge Image</label>
-              <input
-                type="file"
-                className="w-full p-2 border rounded"
-                accept="image/*"
-                onChange={(e) => setNewBadge({...newBadge, image: e.target.files[0]})}
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            >
-              Create Badge
-            </button>
-          </form>
+    <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-white shadow'}`}>
+      <h2 className={`text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+        Badges
+      </h2>
+
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
         </div>
       )}
 
-      {/* User's Badges */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h3 className="text-xl font-semibold mb-4">Your Badges</h3>
+      <div className="mb-6">
+        <h3 className={`text-lg font-semibold mb-3 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+          Your Badges
+        </h3>
         {userBadges.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {userBadges.map(userBadge => (
-              <div key={userBadge.id} className="text-center p-4 border rounded-lg">
+          <div className="flex flex-wrap gap-4">
+            {userBadges.map(badge => (
+              <div key={badge.id} className="flex flex-col items-center">
                 <img 
-                  src={userBadge.badge.image_url} 
-                  alt={userBadge.badge.name} 
-                  className="w-16 h-16 mx-auto mb-2"
+                  src={badge.badge.image_url} 
+                  alt={badge.badge.name} 
+                  className="w-16 h-16 object-contain"
                 />
-                <h4 className="font-medium capitalize">{userBadge.badge.name}</h4>
-                <p className="text-sm text-gray-500">{userBadge.badge.points_required} pts</p>
+                <span className="text-sm mt-1 capitalize">{badge.badge.name}</span>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-gray-500">No badges earned yet</p>
+          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            No badges earned yet
+          </p>
         )}
+        <button
+          onClick={handleAssignBadge}
+          className={`mt-3 px-4 py-2 rounded ${darkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'} text-white text-sm`}
+        >
+          Check for New Badges
+        </button>
       </div>
 
-      {/* All Available Badges */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h3 className="text-xl font-semibold mb-4">Available Badges</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          {badges.map(badge => {
-            const hasBadge = userBadges.some(ub => ub.badge.id === badge.id);
-            return (
-              <div key={badge.id} className={`text-center p-4 border rounded-lg ${
-                hasBadge ? 'bg-green-50 dark:bg-green-900' : ''
-              }`}>
-                <img 
-                  src={badge.image_url} 
-                  alt={badge.name} 
-                  className="w-16 h-16 mx-auto mb-2"
-                />
-                <h4 className="font-medium capitalize">{badge.name}</h4>
-                <p className="text-sm text-gray-500">{badge.points_required} pts</p>
-                {user?.role === 'admin' && (
-                  <div className="mt-2 flex justify-center space-x-2">
-                    <button
-                      onClick={() => handleAssignBadge(badge.id)}
-                      className="text-xs bg-blue-500 text-white px-2 py-1 rounded"
-                    >
-                      Assign
-                    </button>
-                    <button
-                      onClick={() => handleDeleteBadge(badge.id)}
-                      className="text-xs bg-red-500 text-white px-2 py-1 rounded"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                )}
-                {hasBadge && (
-                  <span className="text-xs text-green-600 dark:text-green-300">✓ Earned</span>
-                )}
-              </div>
-            );
-          })}
+      <div>
+        <h3 className={`text-lg font-semibold mb-3 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+          Available Badges
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+          {badges.map(badge => (
+            <div key={badge.id} className={`p-4 rounded-lg border ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'} flex flex-col items-center`}>
+              <img 
+                src={badge.image_url} 
+                alt={badge.name} 
+                className="w-16 h-16 object-contain mb-2"
+              />
+              <h4 className="font-medium capitalize text-center">{badge.name}</h4>
+              <p className="text-sm text-gray-500 text-center">{badge.points_required}+ points</p>
+              {userBadges.some(ub => ub.badge.name === badge.name) && (
+                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full mt-2">
+                  Earned
+                </span>
+              )}
+            </div>
+          ))}
         </div>
+      </div>
+
+      <div className={`mt-8 p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+        <h3 className={`text-lg font-semibold mb-3 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+          Create New Badge
+        </h3>
+        <form onSubmit={handleCreateBadge}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className={`block mb-1 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Name</label>
+              <input
+                type="text"
+                value={newBadge.name}
+                onChange={(e) => setNewBadge({...newBadge, name: e.target.value})}
+                className={`w-full px-3 py-2 rounded ${darkMode ? 'bg-gray-600 text-white' : 'bg-white'} border ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}
+                required
+              />
+            </div>
+            <div>
+              <label className={`block mb-1 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Points Required</label>
+              <input
+                type="number"
+                min="0"
+                value={newBadge.points_required}
+                onChange={(e) => setNewBadge({...newBadge, points_required: parseInt(e.target.value) || 0})}
+                className={`w-full px-3 py-2 rounded ${darkMode ? 'bg-gray-600 text-white' : 'bg-white'} border ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}
+                required
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className={`block mb-1 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Description</label>
+              <textarea
+                value={newBadge.description}
+                onChange={(e) => setNewBadge({...newBadge, description: e.target.value})}
+                className={`w-full px-3 py-2 rounded ${darkMode ? 'bg-gray-600 text-white' : 'bg-white'} border ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}
+                rows="2"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className={`block mb-1 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Badge Image</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setNewBadge({...newBadge, image: e.target.files[0]})}
+                className="block w-full text-sm text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-blue-50 file:text-blue-700
+                  hover:file:bg-blue-100"
+                required
+              />
+            </div>
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className={`px-4 py-2 rounded ${darkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'} text-white`}
+          >
+            {loading ? 'Creating...' : 'Create Badge'}
+          </button>
+        </form>
       </div>
     </div>
   );
