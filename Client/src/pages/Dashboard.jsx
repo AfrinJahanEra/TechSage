@@ -144,7 +144,7 @@ const Dashboard = () => {
         }
     };
     const handleEditDraft = (draft) => {
-        // Navigate to the create blog page with draft data
+
         navigate('/create-blog', {
             state: {
                 draftData: draft,

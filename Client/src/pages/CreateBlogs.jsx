@@ -14,7 +14,7 @@ const CreateBlogPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // State management
+
   const [title, setTitle] = useState('');
   const [categories, setCategories] = useState([]);
   const [tags, setTags] = useState([]);
@@ -49,16 +49,16 @@ const CreateBlogPage = () => {
     return () => clearTimeout(popupTimerRef.current);
   }, []);
 
-  // Available categories
+
   const availableCategories = [
     'Technology', 'Science', 'Programming', 'AI', 'Web Development', 'Mobile', 'Job'
   ];
 
-  // Refs
+ 
   const fileInputRef = useRef(null);
   const searchRef = useRef(null);
 
-  // Initialize from location state if editing
+
   useEffect(() => {
     if (location.state?.draftData) {
       const { draftData } = location.state;
@@ -74,7 +74,7 @@ const CreateBlogPage = () => {
     }
   }, [location.state]);
 
-  // Close search results when clicking outside
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -87,7 +87,7 @@ const CreateBlogPage = () => {
     };
   }, []);
 
-  // Toggle category selection
+
   const toggleCategory = (category) => {
     setCategories(prev =>
       prev.includes(category)
@@ -96,7 +96,7 @@ const CreateBlogPage = () => {
     );
   };
 
-  // Handle tag addition
+
   const addTag = (e) => {
     e.preventDefault();
     if (newTag.trim() && !tags.includes(newTag.trim())) {
@@ -105,12 +105,12 @@ const CreateBlogPage = () => {
     }
   };
 
-  // Remove tag
+
   const removeTag = (tagToRemove) => {
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
-  // Handle image upload
+
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -123,7 +123,7 @@ const CreateBlogPage = () => {
     }
   };
 
-  // Search for users to collaborate with
+
   const searchUsers = async (query) => {
     if (!query.trim()) {
       setSearchResults([]);
@@ -140,7 +140,7 @@ const CreateBlogPage = () => {
     }
   };
 
-  // Send author request
+
   const sendAuthorRequest = async (username) => {
     if (!blogId) {
       try {
@@ -156,7 +156,7 @@ const CreateBlogPage = () => {
     }
   };
 
-  // Helper function to actually send the request
+ 
   const sendCollaborationRequest = async (blogId, username) => {
     try {
       const response = await api.post('/collaboration-request/request-author/', {
@@ -175,7 +175,7 @@ const CreateBlogPage = () => {
     }
   };
 
-  // Remove collaborator
+ 
   const removeCollaborator = async (username) => {
     if (!blogId) {
       showPopup('No blog selected', 'error');
@@ -203,7 +203,7 @@ const CreateBlogPage = () => {
     }
   };
 
-  // Create a new draft
+
   const createDraft = async () => {
     try {
       setIsSubmitting(true);
@@ -227,7 +227,7 @@ const CreateBlogPage = () => {
     }
   };
 
-  // Save as draft
+
   const saveAsDraft = async () => {
     try {
       setIsSubmitting(true);
@@ -326,7 +326,7 @@ const CreateBlogPage = () => {
     }
   };
 
-  // Discard blog (move to trash)
+
   const discardBlog = async () => {
     if (window.confirm('Are you sure you want to discard this blog? It will be moved to trash.')) {
       try {
@@ -352,7 +352,7 @@ const CreateBlogPage = () => {
     }
   };
 
-  // Format last saved time
+  
   const formatLastSaved = () => {
     if (!lastSaved) return 'Not saved yet';
 
@@ -365,13 +365,13 @@ const CreateBlogPage = () => {
     return `${Math.floor(diffInSeconds / 86400)} days ago`;
   };
 
-  // Auto-save functionality for drafts
+  
   useEffect(() => {
     const timer = setTimeout(() => {
       if ((title || content) && status === 'draft') {
         saveAsDraft();
       }
-    }, 30000); // Auto-save every 30 seconds
+    }, 30000); 
 
     return () => clearTimeout(timer);
   }, [title, content, categories, tags, thumbnail]);
