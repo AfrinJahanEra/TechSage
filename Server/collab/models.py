@@ -6,8 +6,8 @@ from blogs.models import Blog
 
 class AuthorRequest(Document):
     blog = fields.ReferenceField(Blog, required=True)
-    requested_author = fields.ReferenceField(User, required=True)  # The user being requested to become an author
-    requesting_author = fields.ReferenceField(User, required=True)  # The user who made the request
+    requested_author = fields.ReferenceField(User, required=True)  
+    requesting_author = fields.ReferenceField(User, required=True) 
     status = fields.StringField(default='pending', choices=['pending', 'accepted', 'rejected'])
     created_at = fields.DateTimeField(default=datetime.utcnow)
     updated_at = fields.DateTimeField(default=datetime.utcnow)

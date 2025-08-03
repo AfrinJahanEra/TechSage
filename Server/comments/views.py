@@ -69,7 +69,7 @@ class DeleteComment(View):
         if not comment or not user:
             return JsonResponse({'error': 'Invalid comment or user'}, status=400)
 
-        # Only allow author or admin to delete
+
         if comment.author.username != user.username and user.role != 'moderator':
             return JsonResponse({'error': 'Unauthorized'}, status=403)
 
@@ -81,23 +81,23 @@ class DeleteComment(View):
 class GetAllComments(View):
     def get(self, request):
         try:
-            # Get query parameters
+
             page = request.GET.get('page', 1)
             per_page = request.GET.get('per_page', 20)
             reviewed = request.GET.get('reviewed')
             
-            # Base query
+
             query = Comment.objects(is_deleted=False)
             
-            # Filter by review status if provided
+  
             if reviewed is not None:
                 query = query.filter(is_reviewed=(reviewed.lower() == 'true'))
             
-            # Pagination
+     
             paginator = Paginator(query, per_page)
             comments_page = paginator.page(page)
             
-            # Prepare response
+
             comments_data = [c.to_json() for c in comments_page]
             
             return JsonResponse({

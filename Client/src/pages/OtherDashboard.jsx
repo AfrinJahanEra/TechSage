@@ -7,6 +7,7 @@ import Footer from '../components/Footer';
 import Sidebar from '../components/Sidebar';
 import { Chart } from 'chart.js/auto';
 import avatar from '../../src/assets/default-avatar.png';
+
 const OtherDashboard = () => {
   const { username } = useParams();
   const { primaryColor, darkMode, shadeColor } = useTheme();
@@ -17,11 +18,10 @@ const OtherDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Generate color variants
   const primaryDark = shadeColor(primaryColor, -20);
   const primaryLight = shadeColor(primaryColor, 20);
 
-  // Dynamic style variables for theme colors
+
   const themeStyles = {
     '--primary-color': primaryColor,
     '--primary-dark': primaryDark,
@@ -36,7 +36,7 @@ const OtherDashboard = () => {
     return 'Master';
   };
 
-  // Fetch user data when component mounts or username changes
+
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -57,7 +57,7 @@ const OtherDashboard = () => {
     }
   }, [username, api]);
 
-  // Initialize chart when component mounts
+
   useEffect(() => {
     if (!userData) return;
 

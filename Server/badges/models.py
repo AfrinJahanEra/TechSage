@@ -1,5 +1,5 @@
 import mongoengine as me
-from users.models import User  # MongoEngine User
+from users.models import User 
 
 class Badge(me.Document):
     name = me.StringField(required=True, unique=True, choices=[

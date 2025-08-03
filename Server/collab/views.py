@@ -12,29 +12,29 @@ class RequestAuthor(APIView):
     def post(self, request):
         try:
             data = request.data
-            username = data.get('username')  # The user making the request
-            requested_username = data.get('requested_username')  # The user being requested
+            username = data.get('username')  
+            requested_username = data.get('requested_username') 
             blog_id = data.get('blog_id')
 
             if not all([username, requested_username, blog_id]):
                 return Response({"error": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Get the users and blog
+
             user = User.objects.get(username=username)
             requested_user = User.objects.get(username=requested_username)
             blog = Blog.objects.get(id=blog_id)
 
-            # Check if requesting user is already an author
+
             if user not in blog.authors:
                 return Response({"error": "You must be an author to request collaborators"}, 
                               status=status.HTTP_403_FORBIDDEN)
 
-            # Check if requested user is already an author
+
             if requested_user in blog.authors:
                 return Response({"error": "User is already an author of this blog"}, 
                               status=status.HTTP_400_BAD_REQUEST)
 
-            # Check if there's already a pending request
+ 
             existing_request = AuthorRequest.objects(
                 blog=blog,
                 requested_author=requested_user,
@@ -45,7 +45,7 @@ class RequestAuthor(APIView):
                 return Response({"error": "There's already a pending request for this user"}, 
                               status=status.HTTP_400_BAD_REQUEST)
 
-            # Create the request
+      
             author_request = AuthorRequest(
                 blog=blog,
                 requested_author=requested_user,
@@ -70,8 +70,8 @@ class RespondToAuthorRequest(APIView):
     def post(self, request, request_id):
         try:
             data = request.data
-            username = data.get('username')  # The user responding to the request
-            response = data.get('response')  # 'accept' or 'reject'
+            username = data.get('username')  
+            response = data.get('response')
 
             if not all([username, response]):
                 return Response({"error": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
@@ -80,16 +80,16 @@ class RespondToAuthorRequest(APIView):
                 return Response({"error": "Response must be either 'accept' or 'reject'"}, 
                               status=status.HTTP_400_BAD_REQUEST)
 
-            # Get the request and user
+
             author_request = AuthorRequest.objects.get(id=request_id)
             user = User.objects.get(username=username)
 
-            # Verify the user is the requested author
+     
             if user != author_request.requested_author:
                 return Response({"error": "You are not authorized to respond to this request"}, 
                               status=status.HTTP_403_FORBIDDEN)
 
-            # Verify the request is still pending
+     
             if author_request.status != 'pending':
                 return Response({"error": "This request has already been processed"}, 
                               status=status.HTTP_400_BAD_REQUEST)
@@ -97,7 +97,7 @@ class RespondToAuthorRequest(APIView):
             blog = author_request.blog
 
             if response == 'accept':
-                # Add user to authors list if not already there
+     
                 if user not in blog.authors:
                     blog.authors.append(user)
                     blog.save()
@@ -111,12 +111,11 @@ class RespondToAuthorRequest(APIView):
                     "authors": [author.username for author in blog.authors]
                 })
 
-            else:  # reject
+            else: 
                 author_request.status = 'rejected'
                 author_request.save()
 
-                # Here you would typically send a notification to the requesting author
-                # For now we'll just return a response
+
                 return Response({
                     "message": "Author request rejected",
                     "notification": f"Your author request was rejected by {user.username}"
@@ -134,7 +133,7 @@ class GetAuthorRequests(APIView):
         try:
             user = User.objects.get(username=username)
             
-            # Get all pending requests for this user
+       
             requests = AuthorRequest.objects(
                 requested_author=user,
                 status='pending'
@@ -163,5 +162,5 @@ class GetAuthorRequests(APIView):
 
 class RemoveAuthor(APIView):
     def post(self, request, blog_id):
-        # Remove author from blog
+  
         pass

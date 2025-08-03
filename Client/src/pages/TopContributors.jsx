@@ -11,17 +11,16 @@ import { useAuth } from '../context/AuthContext';
 const TopContributors = () => {
   const { primaryColor, darkMode, shadeColor } = useTheme();
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState('');
+
   const [contributors, setContributors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { api } = useAuth();
 
-  // Generate color variants
   const primaryDark = shadeColor(primaryColor, -20);
   const primaryLight = shadeColor(primaryColor, 20);
 
-  // Dynamic style variables
+
   const themeStyles = {
     '--primary-color': primaryColor,
     '--primary-dark': primaryDark,

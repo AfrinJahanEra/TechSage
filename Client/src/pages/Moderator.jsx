@@ -15,8 +15,6 @@ import ModeratorReports from '../components/ModeratorReports';
 const ModeratorDashboard = () => {
     const performanceChartRef = useRef(null);
     const [activeSection, setActiveSection] = useState('blogs');
-    const [blogFilter, setBlogFilter] = useState('all');
-    const [reportFilter, setReportFilter] = useState('all');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { user, api } = useAuth();
     const { darkMode, primaryColor } = useTheme();
@@ -28,7 +26,7 @@ const ModeratorDashboard = () => {
 
     const navigate = useNavigate();
 
-    // Fetch all blogs
+
     const fetchBlogs = async () => {
         setLoading(true);
         try {
@@ -41,7 +39,7 @@ const ModeratorDashboard = () => {
         }
     };
 
-    // Fetch all comments
+
     const fetchComments = async () => {
         setLoading(true);
         try {
@@ -54,7 +52,7 @@ const ModeratorDashboard = () => {
         }
     };
 
-    // Fetch reviewed blogs
+
     const fetchReviewedBlogs = async () => {
         setLoading(true);
         try {
@@ -77,8 +75,7 @@ const ModeratorDashboard = () => {
         }
     }, [activeSection]);
 
-    // Approve blog handler
-    // In your handleApproveBlog function
+
     const handleApproveBlog = async (blogId) => {
         confirmAlert({
             title: 'Approve Blog',
@@ -88,7 +85,7 @@ const ModeratorDashboard = () => {
                     label: 'Yes',
                     onClick: async () => {
                         try {
-                            // Optimistically update the UI first
+
                             setBlogs(prevBlogs =>
                                 prevBlogs.map(blog =>
                                     blog.id === blogId
@@ -96,24 +93,24 @@ const ModeratorDashboard = () => {
                                         : blog
                                 )
                                     .sort((a, b) => {
-                                        // Move approved blogs to bottom
+                             
                                         if (a.is_reviewed && !b.is_reviewed) return 1;
                                         if (!a.is_reviewed && b.is_reviewed) return -1;
                                         return 0;
                                     })
                             );
 
-                            // Then make the API call
+
                             await api.post(`/blogs/review/${blogId}/`, {
                                 reviewer: user.username
                             });
 
-                            // Refresh data to ensure consistency
+                      
                             fetchBlogs();
                         } catch (error) {
                             console.error('Error approving blog:', error);
                             alert('Failed to approve blog');
-                            // Revert UI if API call fails
+                        
                             fetchBlogs();
                         }
                     }
@@ -127,7 +124,7 @@ const ModeratorDashboard = () => {
     };
 
 
-    // Reject blog handler
+   
     const handleRejectBlog = async (blogId) => {
         confirmAlert({
             title: 'Reject Blog',
@@ -154,7 +151,7 @@ const ModeratorDashboard = () => {
         });
     };
 
-    // Approve comment handler
+
     const handleApproveComment = async (commentId) => {
         confirmAlert({
             title: 'Approve Comment',
@@ -183,7 +180,7 @@ const ModeratorDashboard = () => {
         });
     };
 
-    // Reject comment handler
+
     const handleRejectComment = async (commentId) => {
         confirmAlert({
             title: 'Reject Comment',
@@ -210,18 +207,15 @@ const ModeratorDashboard = () => {
         });
     };
 
-    // Function to handle blog clicks
+  
     const handleBlogClick = (blogId) => {
         navigate(`/blog/${blogId}`);
     };
 
-    // Function to handle profile icon/name clicks
-    const handleProfileClick = (userId) => {
-        navigate(`/dashboard/${userId}`);
-    };
+
 
     useEffect(() => {
-        // Initialize chart when profile section is active
+ 
         if (activeSection === 'profile') {
             const ctx = document.getElementById('performanceChart');
             if (ctx) {
@@ -278,21 +272,11 @@ const ModeratorDashboard = () => {
         }
     }, [activeSection, darkMode, primaryColor]);
 
-    const toggleNotifications = () => {
-        setNotificationsEnabled(!notificationsEnabled);
-        alert(`Notifications ${!notificationsEnabled ? 'enabled' : 'disabled'}`);
-    };
-
     const toggleProfilePanel = (e) => {
         e.stopPropagation();
         setShowProfilePanel(!showProfilePanel);
     };
 
-    const closeProfilePanel = () => {
-        setShowProfilePanel(false);
-    };
-
-    // Close profile panel when clicking outside
     useEffect(() => {
         const handleClickOutside = () => {
             if (showProfilePanel) {
@@ -306,15 +290,7 @@ const ModeratorDashboard = () => {
         };
     }, [showProfilePanel]);
 
-    const toggleMenu = () => {
-        setIsMenuOpen(!isMenuOpen);
-        document.body.style.overflow = isMenuOpen ? '' : 'hidden';
-    };
 
-    const closeMenu = () => {
-        setIsMenuOpen(false);
-        document.body.style.overflow = '';
-    };
 
     return (
         <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-800'}`}>

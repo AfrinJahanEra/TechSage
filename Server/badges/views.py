@@ -19,7 +19,7 @@ class AssignBadgeView(APIView):
 
             user_badge, _ = UserBadge.objects.get_or_create(user=user)
             user_badge.badge = badge
-            user_badge.clean()  # Validates the user's points
+            user_badge.clean() 
             user_badge.save()
 
             return Response({

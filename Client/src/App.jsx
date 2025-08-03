@@ -17,7 +17,6 @@ import Admin from './pages/Admin.jsx';
 import ModeratorDashboard from './pages/Moderator.jsx';
 import SearchForm from './components/SearchForm.jsx';
 import AdminDashboard from '../src/pages/Admin.jsx';
-import { useContext } from 'react';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastContainer } from 'react-toastify';
 

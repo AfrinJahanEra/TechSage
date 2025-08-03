@@ -40,6 +40,6 @@ class Comment(me.Document):
             "likes": len(self.likes),
             "dislikes": len(self.dislikes),
             "is_deleted": self.is_deleted,
-            "is_reviewed": self.is_reviewed,  # New field in response
+            "is_reviewed": self.is_reviewed, 
             "reviewed_by": self.reviewed_by.username if self.reviewed_by else None  # New field in response
         }

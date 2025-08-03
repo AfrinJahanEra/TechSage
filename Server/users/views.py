@@ -39,25 +39,19 @@ class DeleteUserAccount(APIView):
         try:
             req_username = request.data.get('username')
             req_password = request.data.get('password')
-
             if not req_username:
                 return Response({"error": "Username is required"}, status=400)
-
-            # Fetch requesting user
             requesting_user = User.objects(username=req_username).first()
             if not requesting_user:
                 return Response({"error": "Requesting user not found"}, status=404)
 
-            # Fetch target user to be deleted
             target_user = User.objects(username=username).first()
             if not target_user:
                 return Response({"error": "Target user not found"}, status=404)
 
-            # Admin can delete anyone without password
             if requesting_user.role == 'admin':
-                pass  # Skip password check
+                pass 
             else:
-                # Regular user can only delete their own account with correct password
                 if req_username != username:
                     return Response({"error": "You can only delete your own account"}, status=403)
                 if not req_password:
@@ -65,7 +59,6 @@ class DeleteUserAccount(APIView):
                 if not check_password(req_password, requesting_user.password):
                     return Response({"error": "Incorrect password"}, status=401)
 
-            # Delete blogs (only those solely authored by target user)
             user_blogs = Blog.objects(authors=target_user)
             for blog in user_blogs:
                 if len(blog.authors) == 1:
@@ -74,17 +67,10 @@ class DeleteUserAccount(APIView):
                     blog.authors.remove(target_user)
                     blog.save()
 
-            # Delete target user's comments
             Comment.objects(author=target_user).update(set__is_deleted=True)
-
-            # Delete target user's reports
             BlogReport.objects(reported_by=target_user).delete()
-
-            # Delete the target user
             target_user.delete()
-
             return Response({"message": f"User '{username}' and associated data deleted successfully"}, status=200)
-
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
@@ -95,23 +81,17 @@ class AllUsersView(APIView):
     def get(self, request):
         try:
             users = User.objects.all()
-            
             user_data = []
             for user in users:
-                # Published blogs count
                 published_blogs = Blog.objects(
                     authors__in=[user],
                     is_published=True,
                     is_deleted=False
                 ).count()
-                
-                # User comments count
                 user_comments = Comment.objects(
                     author=user,
                     is_deleted=False
                 ).count()
-                
-                # Likes on user's blogs (aggregation)
                 blog_likes = Blog.objects(authors__in=[user]).aggregate([
                     {
                         '$project': {
@@ -126,8 +106,6 @@ class AllUsersView(APIView):
                     }
                 ])
                 blog_likes = next(blog_likes, {}).get('total_likes', 0)
-                
-                # Reports on user's blogs (aggregation with lookup)
                 blog_reports = BlogReport.objects.aggregate([
                     {
                         '$lookup': {
@@ -150,8 +128,6 @@ class AllUsersView(APIView):
                     }
                 ])
                 blog_reports = next(blog_reports, {}).get('total_reports', 0)
-                
-                # Calculate points
                 points = max(
                     (published_blogs * 10) + 
                     (user_comments * 5) + 
@@ -159,7 +135,6 @@ class AllUsersView(APIView):
                     (blog_reports * 3),
                     0
                 )
-                
                 user_data.append({
                     "username": user.username,
                     "email": user.email,
@@ -173,18 +148,18 @@ class AllUsersView(APIView):
                     "likes": blog_likes,
                     "reports": blog_reports
                 })
-            
             return Response({"users": user_data}, status=200)
         except Exception as e:
             return Response({"error": str(e)}, status=500)
-        
+
+
+
 
 class RegisterUser(APIView):
     def post(self, request):
         required_fields = ['username', 'email', 'password']
         if not all(field in request.data for field in required_fields):
             return Response({"error": "Missing required fields"}, status=400)
-
         try:
             if User.objects(username=request.data['username']).first():
                 return Response({"error": "Username already exists"}, status=400)
@@ -193,7 +168,6 @@ class RegisterUser(APIView):
 
             avatar_url = None
             avatar_public_id = None
-            
             if 'avatar' in request.FILES:
                 upload_result = cloudinary.uploader.upload(
                     request.FILES['avatar'],
@@ -223,6 +197,8 @@ class RegisterUser(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
+
+
 class LoginUser(APIView):
     def post(self, request):
         if 'username' not in request.data or 'password' not in request.data:
@@ -237,6 +213,8 @@ class LoginUser(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+
+
 
 class UserProfile(APIView):
     def get(self, request, username):
@@ -271,6 +249,8 @@ class UserProfile(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
+
+
 class UserSearch(APIView):
     def get(self, request):
         query = request.GET.get('q', '').strip()
@@ -282,6 +262,7 @@ class UserSearch(APIView):
             return Response([user.to_json() for user in users])
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+
 
 class SavedBlogsAPI(APIView):
     def post(self, request, username):
@@ -302,6 +283,7 @@ class SavedBlogsAPI(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+
 
     def delete(self, request, username):
         try:

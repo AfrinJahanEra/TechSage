@@ -4,13 +4,13 @@ import requests
 
 def check_plagiarism(request, blog_id):
     try:
-        # Get the blog by ID
+
         blog = Blog.objects.get(id=blog_id)
         
-        # Prepare the text to check
+
         user_text = blog.content
         
-        # API configuration
+
         api_url = "https://api.gowinston.ai/v2/plagiarism"
         headers = {
             "Authorization": "Bearer QYzfumAWrxP4SYGnSZh8y7hY5HxLpBVIzKXB5Jhbb5b2cee6", 
@@ -22,7 +22,7 @@ def check_plagiarism(request, blog_id):
             "country": "us"
         }
 
-        # Make the API request
+
         resp = requests.post(api_url, json=payload, headers=headers)
         
         if resp.status_code == 200:
