@@ -17,9 +17,21 @@ class Badge(Document):
 
     @classmethod
     def assign_badges(cls, user):
-        """Assign all badges user qualifies for"""
-        qualified_badges = cls.objects(points_required__lte=user.points)
-        for badge in qualified_badges:
-            if badge.name not in user.badges:
-                user.badges.append(badge.name)
-        return user.save()
+        """Assign all badges user qualifies for based on points"""
+        # Get all badges ordered by points_required
+        all_badges = cls.objects.order_by('points_required')
+        
+        # Clear existing badges
+        user.badges = []
+        
+        # Assign all badges user qualifies for
+        for badge in all_badges:
+            if user.points >= badge.points_required:
+                user.badges.append({
+                    'name': badge.name,
+                    'title': badge.title,
+                    'image_url': badge.image_url
+                })
+        
+        user.save()
+        return user

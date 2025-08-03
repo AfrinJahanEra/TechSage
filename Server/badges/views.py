@@ -1,112 +1,52 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser
+from .models import Badge
 from users.models import User
-from .models import Badge, UserBadge
-from django.core.exceptions import ValidationError
 import cloudinary.uploader
 
-class BadgeAPIView(APIView):
-    parser_classes = (MultiPartParser, FormParser)
+class BadgeAPI(APIView):
+    parser_classes = (MultiPartParser,)
 
     def get(self, request):
         badges = Badge.objects.all()
         return Response([{
-            'id': str(badge.id),
-            'name': badge.name,
-            'image_url': badge.image_url,
-            'points_required': badge.points_required,
-            'description': badge.description,
-            'created_at': badge.created_at.isoformat()
-        } for badge in badges])
+            'name': b.name,
+            'image_url': b.image_url,
+            'points_required': b.points_required,
+            'title': b.title
+        } for b in badges])
 
     def post(self, request):
         try:
-            badge_file = request.FILES.get('image')
-            
-            if not badge_file:
-                return Response({"error": "Image file is required"}, status=400)
-
-            upload_result = cloudinary.uploader.upload(
-                badge_file,
-                folder="techsage/badges",
-                allowed_formats=['png', 'jpg', 'jpeg', 'svg']
+            # Upload image to Cloudinary
+            result = cloudinary.uploader.upload(
+                request.FILES['image'],
+                folder="badges"
             )
-
+            
             badge = Badge(
-                name=request.data.get('name'),
-                image_url=upload_result['secure_url'],
-                points_required=int(request.data.get('points_required')),
-                description=request.data.get('description', '')
-            )
-            badge.save()
-
+                name=request.data['level'],  # ruby, bronze, etc.
+                image_url=result['secure_url'],
+                points_required=int(request.data['points']),
+                title=request.data['title']
+            ).save()
+            
             return Response({
-                "id": str(badge.id),
-                "name": badge.name,
-                "image_url": badge.image_url,
-                "points_required": badge.points_required
+                'name': badge.name,
+                'image': badge.image_url,
+                'points': badge.points_required,
+                'title': badge.title
             }, status=201)
-
         except Exception as e:
-            return Response({"error": str(e)}, status=400)
+            return Response({'error': str(e)}, status=400)
 
-class BadgeDetailAPIView(APIView):
-    def delete(self, request, badge_id):
-        try:
-            badge = Badge.objects.get(id=badge_id)
-            
-            # Delete image from Cloudinary
-            if badge.image_url:
-                public_id = badge.image_url.split('/')[-1].split('.')[0]
-                cloudinary.uploader.destroy(f"techsage/badges/{public_id}")
-            
-            badge.delete()
-            return Response({"message": "Badge deleted successfully"})
-        except Badge.DoesNotExist:
-            return Response({"error": "Badge not found"}, status=404)
-        except Exception as e:
-            return Response({"error": str(e)}, status=400)
-
-class UserBadgeAPIView(APIView):
+class UserBadgesAPI(APIView):
     def get(self, request, username):
-        try:
-            user = User.objects.get(username=username)
-            user_badges = UserBadge.objects(user=user).order_by('-awarded_at')
-            
-            return Response([{
-                'id': str(ub.id),
-                'badge': {
-                    'name': ub.badge.name,
-                    'image_url': ub.badge.image_url
-                },
-                'awarded_at': ub.awarded_at.isoformat()
-            } for ub in user_badges])
-        except User.DoesNotExist:
-            return Response({"error": "User not found"}, status=404)
-
-class AssignBadgeAPIView(APIView):
-    def post(self, request):
-        username = request.data.get("username")
-        
-        if not username:
-            return Response({"error": "username is required"}, status=400)
-
-        try:
-            user = User.objects.get(username=username)
-            user_badge = UserBadge.assign_appropriate_badge(user)
-            
-            if user_badge:
-                return Response({
-                    "message": f"Badge {user_badge.badge.name} assigned to {username}",
-                    "badge": {
-                        "name": user_badge.badge.name,
-                        "image_url": user_badge.badge.image_url
-                    }
-                })
-            return Response({"message": "No new badge assigned"})
-        except User.DoesNotExist:
-            return Response({"error": "User not found"}, status=404)
-        except Exception as e:
-            return Response({"error": str(e)}, status=400)
+        user = User.objects.get(username=username)
+        badges = Badge.objects(name__in=user.badges)
+        return Response([{
+            'name': b.name,
+            'image_url': b.image_url,
+            'title': b.title
+        } for b in badges])
