@@ -20,7 +20,6 @@ const LoginForm = () => {
       ...prev,
       [name]: value
     }));
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -75,7 +74,7 @@ const LoginForm = () => {
     }
   };
 
-  // Animation variants
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -146,7 +145,6 @@ const LoginForm = () => {
           >
             Log in to explore more.
           </motion.p>
-          {/* Floating Shapes */}
           <motion.div
             className="absolute top-10 right-10 w-20 h-20 bg-white bg-opacity-20 rounded-full"
             animate={{
