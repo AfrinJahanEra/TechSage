@@ -81,30 +81,90 @@ class DeleteUserAccount(APIView):
             return Response({"error": str(e)}, status=500)
 
 
+# users/views.py
+from mongoengine.queryset.visitor import Q
+
 class AllUsersView(APIView):
     def get(self, request):
         try:
-            users = User.objects.only('username', 'email', 'role', 'job_title', 'points', 'avatar_url', 'created_at')
+            users = User.objects.all()
             
-            # Get blog counts for each user
-            from blogs.models import Blog
             user_data = []
             for user in users:
-                blog_count = Blog.objects(
+                # Published blogs count
+                published_blogs = Blog.objects(
                     authors__in=[user],
                     is_published=True,
                     is_deleted=False
                 ).count()
+                
+                # User comments count
+                user_comments = Comment.objects(
+                    author=user,
+                    is_deleted=False
+                ).count()
+                
+                # Likes on user's blogs (aggregation)
+                blog_likes = Blog.objects(authors__in=[user]).aggregate([
+                    {
+                        '$project': {
+                            'likes_count': { '$size': '$upvotes' }
+                        }
+                    },
+                    {
+                        '$group': {
+                            '_id': None,
+                            'total_likes': { '$sum': '$likes_count' }
+                        }
+                    }
+                ])
+                blog_likes = next(blog_likes, {}).get('total_likes', 0)
+                
+                # Reports on user's blogs (aggregation with lookup)
+                blog_reports = BlogReport.objects.aggregate([
+                    {
+                        '$lookup': {
+                            'from': 'blogs',
+                            'localField': 'blog',
+                            'foreignField': '_id',
+                            'as': 'blog_data'
+                        }
+                    },
+                    {
+                        '$unwind': '$blog_data'
+                    },
+                    {
+                        '$match': {
+                            'blog_data.authors': user.id
+                        }
+                    },
+                    {
+                        '$count': 'total_reports'
+                    }
+                ])
+                blog_reports = next(blog_reports, {}).get('total_reports', 0)
+                
+                # Calculate points
+                points = max(
+                    (published_blogs * 10) + 
+                    (user_comments * 5) + 
+                    (blog_likes * 2) - 
+                    (blog_reports * 3),
+                    0
+                )
                 
                 user_data.append({
                     "username": user.username,
                     "email": user.email,
                     "role": user.role,
                     "job_title": user.job_title,
-                    "points": user.points,
                     "avatar_url": user.avatar_url,
                     "created_at": user.created_at.isoformat(),
-                    "blog_count": blog_count  # Add blog count
+                    "points": points,
+                    "published_blogs": published_blogs,
+                    "comments": user_comments,
+                    "likes": blog_likes,
+                    "reports": blog_reports
                 })
             
             return Response({"users": user_data}, status=200)

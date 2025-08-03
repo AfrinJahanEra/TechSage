@@ -26,6 +26,10 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [badges, setBadges] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [newBadge, setNewBadge] = useState({
+    name: '',
+    image_url: ''
+  });
   const navigate = useNavigate();
 
   // Fetch all users
@@ -54,26 +58,74 @@ const AdminDashboard = () => {
     }
   };
 
-  // Fetch badges (mock implementation - adjust according to your backend)
+  // Fetch badges
   const fetchBadges = async () => {
     setLoading(true);
     try {
-      // Assuming an endpoint exists for fetching badges
       const response = await api.get('/badges/');
-      setBadges(response.data.badges || [
-        { id: 1, name: 'Ruby', criteria: '10 posts', color: '#e0115f' },
-        { id: 2, name: 'Bronze', criteria: '25 posts', color: '#cd7f32' },
-        { id: 3, name: 'Sapphire', criteria: '50 posts', color: '#0f52ba' },
-        { id: 4, name: 'Silver', criteria: '100 posts', color: '#c0c0c0' },
-        { id: 5, name: 'Gold', criteria: '250 posts', color: '#ffd700' },
-        { id: 6, name: 'Diamond', criteria: '500 posts', color: '#b9f2ff' }
-      ]);
+      setBadges(response.data.badges || []);
     } catch (error) {
       console.error('Error fetching badges:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  // Get badge threshold requirements
+  const getBadgeThreshold = (badgeName) => {
+    const thresholds = {
+      "ruby": 100,
+      "bronze": 200,
+      "sapphire": 350,
+      "silver": 300,
+      "gold": 400,
+      "diamond": 500
+    };
+    return thresholds[badgeName] || 'N/A';
+  };
+
+  // Create new badge
+  const handleCreateBadge = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await api.post('/badges/', newBadge);
+      setBadges([...badges, response.data.badge]);
+      setActiveSection('badges');
+      setNewBadge({ name: '', image_url: '' });
+      alert('Badge created successfully!');
+    } catch (error) {
+      console.error('Error creating badge:', error);
+      alert(`Failed to create badge: ${error.response?.data?.error || 'Unknown error'}`);
+    }
+  };
+
+  // Delete badge
+  const handleDeleteBadge = async (badgeId) => {
+    confirmAlert({
+      title: 'Delete Badge',
+      message: 'Are you sure you want to delete this badge? This action cannot be undone.',
+      buttons: [
+        {
+          label: 'Yes',
+          onClick: async () => {
+            try {
+              await api.delete(`/badges/${badgeId}/`);
+              setBadges(badges.filter(badge => badge._id !== badgeId && badge.id !== badgeId));
+              alert('Badge deleted successfully');
+            } catch (error) {
+              console.error('Error deleting badge:', error);
+              alert(`Failed to delete badge: ${error.response?.data?.error || 'Unknown error'}`);
+            }
+          }
+        },
+        {
+          label: 'No',
+          onClick: () => {}
+        }
+      ]
+    });
+  };
+
   const handleDeleteUser = async (username) => {
     confirmAlert({
       title: 'Delete User',
@@ -183,7 +235,7 @@ const AdminDashboard = () => {
               alert('Badge assigned successfully');
             } catch (error) {
               console.error('Error assigning badge:', error);
-              alert('Failed to assign badge');
+              alert(`Failed to assign badge: ${error.response?.data?.error || 'Unknown error'}`);
             }
           }
         },
@@ -471,9 +523,18 @@ const AdminDashboard = () => {
 
             {activeSection === 'badges' && !loading && (
               <div>
-                <h1 className={`text-2xl font-bold mb-6 pb-2 border-b-2 border-teal-500 inline-block ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                  Badges Management
-                </h1>
+                <div className="flex justify-between items-center mb-6">
+                  <h1 className={`text-2xl font-bold pb-2 border-b-2 border-teal-500 inline-block ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                    Badges Management
+                  </h1>
+                  <button 
+                    onClick={() => setActiveSection('create-badge')}
+                    className={`px-4 py-2 rounded-lg ${darkMode ? 'bg-teal-600 hover:bg-teal-700' : 'bg-teal-500 hover:bg-teal-600'} text-white`}
+                  >
+                    <i className="fas fa-plus mr-2"></i> Create New Badge
+                  </button>
+                </div>
+
                 <div className="space-y-6">
                   {badges.length === 0 ? (
                     <div className={`text-center py-10 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -481,38 +542,120 @@ const AdminDashboard = () => {
                       <p>No badges found</p>
                     </div>
                   ) : (
-                    badges.map(badge => (
-                      <div key={badge.id} className={`p-4 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-gray-50'} mb-4 flex items-center justify-between`}>
-                        <div>
-                          <h4 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                            {badge.name}
-                            <span
-                              className="ml-2 px-2 py-0.5 rounded text-xs font-semibold"
-                              style={{ backgroundColor: badge.color, color: darkMode ? '#fff' : '#000' }}
-                            >
-                              {badge.criteria}
-                            </span>
-                          </h4>
-                          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                            Assign to user:
-                          </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {badges.map(badge => (
+                        <div key={badge._id || badge.id} className={`p-4 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-gray-50'} flex flex-col`}>
+                          <div className="flex items-center mb-4">
+                            {badge.image_url && (
+                              <img 
+                                src={badge.image_url} 
+                                alt={badge.name} 
+                                className="w-16 h-16 object-contain mr-4"
+                              />
+                            )}
+                            <div>
+                              <h4 className={`font-semibold text-lg capitalize ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                                {badge.name}
+                              </h4>
+                              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                Minimum points: {getBadgeThreshold(badge.name)}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="mt-auto">
+                            <div className="flex justify-between items-center">
+                              <select
+                                className={`px-3 py-1 rounded mr-2 flex-grow ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-800'}`}
+                                onChange={(e) => {
+                                  if (e.target.value) {
+                                    handleAssignBadge(e.target.value, badge._id || badge.id);
+                                    e.target.value = ''; // Reset selection
+                                  }
+                                }}
+                              >
+                                <option value="">Assign to user...</option>
+                                {users.map(user => (
+                                  <option key={user.username} value={user.username}>
+                                    {user.username} ({user.points || 0} pts)
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                onClick={() => handleDeleteBadge(badge._id || badge.id)}
+                                className="text-red-500 hover:text-red-700 ml-2"
+                                title="Delete badge"
+                              >
+                                <i className="fas fa-trash"></i>
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex space-x-2">
-                          <select
-                            className={`px-2 py-1 rounded ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-800'}`}
-                            onChange={(e) => handleAssignBadge(e.target.value, badge.id)}
-                          >
-                            <option value="">Select User</option>
-                            {users.map(user => (
-                              <option key={user.username} value={user.username}>
-                                {user.username}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    ))
+                      ))}
+                    </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {activeSection === 'create-badge' && (
+              <div>
+                <h1 className={`text-2xl font-bold mb-6 pb-2 border-b-2 border-teal-500 inline-block ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                  Create New Badge
+                </h1>
+                
+                <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+                  <form onSubmit={handleCreateBadge}>
+                    <div className="mb-4">
+                      <label className={`block mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        Badge Name
+                      </label>
+                      <select
+                        className={`w-full px-3 py-2 rounded ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-800'}`}
+                        value={newBadge.name}
+                        onChange={(e) => setNewBadge({...newBadge, name: e.target.value})}
+                        required
+                      >
+                        <option value="">Select badge level</option>
+                        <option value="ruby">Ruby</option>
+                        <option value="bronze">Bronze</option>
+                        <option value="sapphire">Sapphire</option>
+                        <option value="silver">Silver</option>
+                        <option value="gold">Gold</option>
+                        <option value="diamond">Diamond</option>
+                      </select>
+                    </div>
+                    
+                    <div className="mb-4">
+                      <label className={`block mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        Image URL
+                      </label>
+                      <input
+                        type="url"
+                        className={`w-full px-3 py-2 rounded ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-800'}`}
+                        placeholder="https://example.com/badge-image.png"
+                        value={newBadge.image_url}
+                        onChange={(e) => setNewBadge({...newBadge, image_url: e.target.value})}
+                        required
+                      />
+                    </div>
+                    
+                    <div className="flex justify-end space-x-3">
+                      <button
+                        type="button"
+                        onClick={() => setActiveSection('badges')}
+                        className={`px-4 py-2 rounded-lg ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'} text-white`}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className={`px-4 py-2 rounded-lg ${darkMode ? 'bg-teal-600 hover:bg-teal-700' : 'bg-teal-500 hover:bg-teal-600'} text-white`}
+                      >
+                        Create Badge
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
             )}

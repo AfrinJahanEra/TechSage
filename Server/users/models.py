@@ -80,6 +80,79 @@ class User(me.Document):
             is_deleted=False
         ).count()
     
+    def calculate_points(self):
+        from blogs.models import Blog
+        from comments.models import Comment
+        from reports.models import BlogReport
+        
+        # Published blogs count
+        published_blogs = Blog.objects(
+            authors__in=[self],
+            is_published=True,
+            is_deleted=False
+        ).count()
+        
+        # User comments count
+        user_comments = Comment.objects(
+            author=self,
+            is_deleted=False
+        ).count()
+        
+        # Likes on user's blogs (using aggregation)
+        blog_likes = Blog.objects(authors__in=[self]).aggregate([
+            {
+                '$project': {
+                    'likes_count': { '$size': '$upvotes' }
+                }
+            },
+            {
+                '$group': {
+                    '_id': None,
+                    'total_likes': { '$sum': '$likes_count' }
+                }
+            }
+        ])
+        blog_likes = next(blog_likes, {}).get('total_likes', 0)
+        
+        # Reports on user's blogs (using aggregation)
+        blog_reports = BlogReport.objects.aggregate([
+            {
+                '$lookup': {
+                    'from': 'blogs',
+                    'localField': 'blog',
+                    'foreignField': '_id',
+                    'as': 'blog_data'
+                }
+            },
+            {
+                '$unwind': '$blog_data'
+            },
+            {
+                '$match': {
+                    'blog_data.authors': self.id
+                }
+            },
+            {
+                '$count': 'total_reports'
+            }
+        ])
+        blog_reports = next(blog_reports, {}).get('total_reports', 0)
+        
+        # Calculate total points
+        points = (
+            (published_blogs * 10) + 
+            (user_comments * 5) + 
+            (blog_likes * 2) - 
+            (blog_reports * 3)
+        )
+        
+        return max(points, 0)
+    
+    def update_points(self):
+        self.points = self.calculate_points()
+        self.save()
+        return self.points
+    
 
     def to_json(self):
         return {
