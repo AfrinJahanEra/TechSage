@@ -98,8 +98,8 @@ $${\color{lightblue}Create, \space \color{#5EEAD4}manage \space \color{#FBF3D4}a
 
 <h3>$\large\textbf{\color{#00E0FF}{Moderation and Admin Capabilities}}$</h3>
 <ul>
-<li>Admin can manage categories, moderators</li>
-<li>Admins and moderators can assign badges, flag spam, review citations, and handle plagiarism reports</li>
+<li>Admin can manage categories, moderators, assing badges</li>
+<li>Moderators can flag spam, review citations, and handle plagiarism reports</li>
 <br>
 </ul>
 
