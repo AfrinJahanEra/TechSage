@@ -1,4 +1,3 @@
-// src/App.jsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import CreateBlogs from './pages/CreateBlogs.jsx';
 import Home from './pages/Home.jsx';
