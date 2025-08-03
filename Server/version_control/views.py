@@ -18,12 +18,12 @@ class SaveVersion(APIView):
             
             user = User.objects.get(username=username)
             
-            # Ensure user is added to authors if not already
+ 
             if user not in blog.authors:
                 blog.authors.append(user)
                 blog.save()
             
-            # Get or create VersionedBlog
+ 
             versioned_blog, _ = VersionedBlog.objects.get_or_create(blog=blog)
             versioned_blog.save_version(user)
             

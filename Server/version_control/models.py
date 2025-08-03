@@ -9,8 +9,8 @@ class BlogVersion(EmbeddedDocument):
     content = fields.StringField(required=True)
     thumbnail_url = fields.StringField()
     updated_at = fields.DateTimeField(default=datetime.utcnow)
-    updated_by = fields.StringField()  # Username for quick reference
-    author = fields.ReferenceField(User)  # Links to User model
+    updated_by = fields.StringField()  
+    author = fields.ReferenceField(User) 
     is_draft = fields.BooleanField(default=True)
     categories = fields.ListField(fields.StringField())
     tags = fields.ListField(fields.StringField())
@@ -49,9 +49,9 @@ class VersionedBlog(Document):
         """Roll back to a specific version"""
         try:
             version = self.versions[version_number - 1]
-            self.save_version(user)  # Save current state before reverting
+            self.save_version(user)  
             
-            # Update the original Blog document
+
             blog = self.blog
             blog.title = version.title
             blog.content = version.content
