@@ -310,7 +310,6 @@ class PublishBlog(APIView):
             
             blog.publish(username)
             
-            # Update user's total publications count
             for author in blog.authors:
                 author.update(inc__total_publications=1)
             
@@ -321,6 +320,35 @@ class PublishBlog(APIView):
             
         except Blog.DoesNotExist:
             return Response({"error": "Blog not found"}, status=404)
+
+class UnpublishBlog(APIView):
+    def post(self, request, blog_id):
+        try:
+            blog = Blog.objects.get(id=blog_id)
+            username = request.data.get('username')
+            
+            if not username:
+                return Response({"error": "username is required"}, status=400)
+                
+            user = User.objects(username=username).first()
+            if not user:
+                return Response({"error": "User not found"}, status=404)
+                
+            if user not in blog.authors:
+                return Response({"error": "You are not authorized to unpublish this blog"}, 
+                              status=403)
+            
+            if blog.is_published:
+                for author in blog.authors:
+                    author.update(dec__total_publications=1)
+            
+            blog.unpublish(username)
+            return Response({"message": "Blog unpublished and moved to drafts"})
+            
+        except Blog.DoesNotExist:
+            return Response({"error": "Blog not found"}, status=404)
+        
+
 
 class UnpublishBlog(APIView):
     def post(self, request, blog_id):

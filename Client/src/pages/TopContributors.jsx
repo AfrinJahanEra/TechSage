@@ -49,7 +49,7 @@ const TopContributors = () => {
               name: user.username,
               field: user.job_title || 'Researcher',
               publications: user.blog_count || 0,
-              rating: (user.points / 100).toFixed(1) || 0,
+              rating: user.points || 0,
               badge: getBadgeType(index + 1),
               points: user.points || 0
             }));
@@ -66,6 +66,7 @@ const TopContributors = () => {
 
     fetchTopContributors();
   }, [api]);
+
 
 
   const getBadgeType = (rank) => {
@@ -163,7 +164,6 @@ const TopContributors = () => {
                     <th className="px-4 py-3 text-left">Researcher</th>
                     <th className="px-4 py-3 text-left">Field</th>
                     <th className="px-4 py-3 text-left">Publications</th>
-                    <th className="px-4 py-3 text-left">Rating</th>
                     <th className="px-4 py-3 text-left">Points</th>
                   </tr>
                 </thead>
@@ -193,7 +193,6 @@ const TopContributors = () => {
                       </td>
                       <td className="px-4 py-3">{contributor.field}</td>
                       <td className="px-4 py-3">{contributor.publications}</td>
-                      <td className="px-4 py-3">{contributor.rating}</td>
                       <td className="px-4 py-3">{contributor.points}</td>
                     </tr>
                   ))}

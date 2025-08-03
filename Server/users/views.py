@@ -111,7 +111,7 @@ class AllUsersView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
         
-        
+
 class RegisterUser(APIView):
     def post(self, request):
         required_fields = ['username', 'email', 'password']

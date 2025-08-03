@@ -9,7 +9,8 @@ from users.views import (
     UserProfile,
     UserSearch,
     SavedBlogsAPI,
-    UserListByRole
+    UserListByRole,
+
 )
 from blogs.views import (
     CreateBlog, ListBlogs, GetBlog, 
@@ -31,6 +32,7 @@ urlpatterns = [
     path('user/<str:username>/', UserProfile.as_view(), name='user-profile'),
     path('user/<str:username>/saved-blogs/', SavedBlogsAPI.as_view(), name='saved-blogs'),
     path('search/', UserSearch.as_view(), name='user-search'),
+
 
     path('blogs/', ListBlogs.as_view()),
     path('blogs/create/', CreateBlog.as_view()),

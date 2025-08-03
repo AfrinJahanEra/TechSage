@@ -79,6 +79,7 @@ class User(me.Document):
             is_published=True,
             is_deleted=False
         ).count()
+    
 
     def to_json(self):
         return {
