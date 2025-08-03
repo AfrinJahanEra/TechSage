@@ -44,15 +44,16 @@ $${\color{lightblue}Create, \space \color{#5EEAD4}manage \space \color{#FBF3D4}a
 
 <br>
 
-<h1>$\large\textbf{\color{#2196F3}{User Roles}}$</h1>
 
-<div align="center">
-  
-  | $\large\text{\color{#DAA5A4}{Role}}$ | $\large\text{\color{#D6C8FF}{Role}}$ | $\large\text{\color{#C8A2C8}{Role}}$ |
-|--------------------------------------|------------------------------------------------|----------------------------------------------|
-| Admin | Moderator | User |
-  
-</div>
+<h1>$\large\textbf{\color{#2196F3}{User Roles}}$</h1><br>
+
+| $\large\text{\color{#76DCF1}{Role}}$ | $\large\text{\color{#FD8FAB}{Description}}$ |
+| ------------- | --------------------------------------------------------------------------- |
+| **User**      | Can write, co-author, comment, upvote, and view academic profiles           |
+| **Moderator** | Reviews content, flags issues, validates badges and manages roles           |
+| **Admin**     | Manages the entire platform, including topic categories and user governance |
+
+<br>
 
 
 <br>
@@ -103,16 +104,6 @@ $${\color{lightblue}Create, \space \color{#5EEAD4}manage \space \color{#FBF3D4}a
 </ul>
 
 
-
-<h1>$\large\textbf{\color{#2196F3}{User Roles}}$</h1><br>
-
-| $\large\text{\color{#76DCF1}{Role}}$ | $\large\text{\color{#FD8FAB}{Description}}$ |
-| ------------- | --------------------------------------------------------------------------- |
-| **User**      | Can write, co-author, comment, upvote, and view academic profiles           |
-| **Moderator** | Reviews content, flags issues, validates badges and manages roles           |
-| **Admin**     | Manages the entire platform, including topic categories and user governance |
-
-<br>
 
 <h1>$\large\textbf{\color{#2196F3}{Target Users}}$</h1><br>
 
