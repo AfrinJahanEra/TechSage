@@ -10,6 +10,7 @@ import {
     normalizeBlog,
     getBadge
 } from '../utils/blogUtils.js';
+import avatar from '../../src/assets/default-avatar.png';
 
 const Dashboard = () => {
     const { user, api } = useAuth();
@@ -309,7 +310,7 @@ const Dashboard = () => {
                                     <div className={`rounded-lg p-6 shadow-sm transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
                                         <div className="flex flex-col md:flex-row items-center mb-6">
                                             <img
-                                                src={user?.avatar_url || "https://randomuser.me/api/portraits/women/44.jpg"}
+                                                src={user?.avatar_url || avatar}
                                                 alt="Profile"
                                                 className="w-20 h-20 rounded-full border-4 object-cover mr-0 md:mr-6 mb-4 md:mb-0"
                                                 style={{ borderColor: primaryColor }}

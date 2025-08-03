@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import Navbar from '../components/Navbar.jsx';
 import Footer from '../components/Footer.jsx';
-import HomeSidebar from '../components/HomeSidebar.jsx';
 import SearchForm from '../components/SearchForm.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -9,6 +8,7 @@ import { normalizeBlog, getThumbnailUrl, formatDate, calculateReadTime, getConte
 import BlogLink from '../components/BlogLink.jsx';
 import TopContributor from '../components/TopContributor.jsx';
 import Sidebar from '../components/Sidebar.jsx';
+
 
 const Home = () => {
   const { darkMode, primaryColor, shadeColor } = useTheme();

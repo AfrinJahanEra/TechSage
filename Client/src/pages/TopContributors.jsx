@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import Sidebar from '../components/Sidebar';
 import SearchForm from '../components/SearchForm';
+import avatar from '../../src/assets/default-avatar.png';
 
 const TopContributors = () => {
   const { primaryColor, darkMode, shadeColor } = useTheme();
@@ -26,64 +27,58 @@ const TopContributors = () => {
     {
       id: 1,
       rank: 1,
-      image: 'https://randomuser.me/api/portraits/women/44.jpg',
+      image: avatar,
       name: 'Ramisa Anan Rahman',
       field: 'Quantum Computing',
       publications: 42,
-      citations: 1250,
       rating: 4.9,
       badge: 'gold'
     },
     {
       id: 2,
       rank: 2,
-      image: 'https://randomuser.me/api/portraits/men/32.jpg',
+      image: avatar,
       name: 'Ridika Naznin',
       field: 'Machine Learning',
       publications: 38,
-      citations: 980,
       rating: 4.8,
       badge: 'silver'
     },
     {
       id: 3,
       rank: 3,
-      image: 'https://randomuser.me/api/portraits/women/68.jpg',
+      image: avatar,
       name: 'Afrin Jahan Era',
       field: 'Biotechnology',
       publications: 35,
-      citations: 850,
       rating: 4.7,
       badge: 'bronze'
     },
     {
       id: 4,
       rank: 4,
-      image: 'https://randomuser.me/api/portraits/men/75.jpg',
+      image: avatar,
       name: 'Dr. Tahira Jannat',
       field: 'Renewable Energy',
       publications: 28,
-      citations: 720,
       rating: 4.6
     },
     {
       id: 5,
       rank: 5,
-      image: 'https://randomuser.me/api/portraits/women/33.jpg',
+      image: avatar,
       name: 'Sabikunnahar Tabassom',
       field: 'Neuroscience',
       publications: 25,
-      citations: 680,
       rating: 4.5
     },
     {
       id: 6,
       rank: 6,
-      image: 'https://randomuser.me/api/portraits/men/45.jpg',
+      image: avatar,
       name: 'Ayesha Siddika Juthi',
       field: 'Cybersecurity',
       publications: 22,
-      citations: 620,
       rating: 4.4
     }
   ];
@@ -150,7 +145,6 @@ const TopContributors = () => {
                     <th className="px-4 py-3 text-left">Researcher</th>
                     <th className="px-4 py-3 text-left">Field</th>
                     <th className="px-4 py-3 text-left">Publications</th>
-                    <th className="px-4 py-3 text-left">Citations</th>
                     <th className="px-4 py-3 text-left">Rating</th>
                   </tr>
                 </thead>
@@ -180,7 +174,6 @@ const TopContributors = () => {
                       </td>
                       <td className="px-4 py-3">{contributor.field}</td>
                       <td className="px-4 py-3">{contributor.publications}</td>
-                      <td className="px-4 py-3">{contributor.citations.toLocaleString()}</td>
                       <td className="px-4 py-3">{contributor.rating}</td>
                     </tr>
                   ))}

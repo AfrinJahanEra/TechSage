@@ -2,6 +2,7 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 
+
 const WelcomePage = () => {
   const [fadeIn, setFadeIn] = useState(false);
 

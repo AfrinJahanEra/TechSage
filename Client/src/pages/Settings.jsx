@@ -4,6 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { toast } from 'react-hot-toast';
+import avatar from '../../src/assets/default-avatar.png';
 
 const Settings = () => {
   const { user, api, logout, updateUser } = useAuth();
@@ -320,7 +321,7 @@ const Settings = () => {
                 <div className="mb-6 flex items-center">
                   <div className="relative mr-6">
                     <img
-                      src={avatarPreview || profileData.avatar_url || '/default-avatar.png'}
+                      src={avatarPreview || profileData.avatar_url || avatar}
                       alt="Profile"
                       className={`w-24 h-24 rounded-full object-cover border-2 ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}
                       style={{ borderColor: primaryColor }}

@@ -6,7 +6,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import Sidebar from '../components/Sidebar';
 import { Chart } from 'chart.js/auto';
-
+import avatar from '../../src/assets/default-avatar.png';
 const OtherDashboard = () => {
   const { username } = useParams();
   const { primaryColor, darkMode, shadeColor } = useTheme();
@@ -237,7 +237,7 @@ const OtherDashboard = () => {
                     <div className={`rounded-lg p-6 shadow-sm transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
                       <div className="flex flex-col md:flex-row items-center mb-6">
                         <img
-                          src={userData.avatar_url || "https://randomuser.me/api/portraits/women/44.jpg"}
+                          src={userData.avatar_url || avatar}
                           alt="Profile"
                           className="w-20 h-20 rounded-full border-4 object-cover mr-0 md:mr-6 mb-4 md:mb-0"
                           style={{ borderColor: primaryColor }}
