@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import axios from 'axios';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { toast } from 'react-hot-toast';
@@ -200,7 +199,7 @@ const Settings = () => {
   // Handle account deletion
   const handleDeleteAccount = async () => {
     try {
-      await api.delete(`/user/${user.username}/`);
+      await api.delete(`/user/${user.username}/delete`);
       logout();
       toast.success('Account deleted successfully');
       window.location.href = '/';

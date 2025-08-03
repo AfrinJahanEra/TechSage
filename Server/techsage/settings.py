@@ -4,39 +4,38 @@ from dotenv import load_dotenv
 from mongoengine import connect
 import cloudinary
 
-# Load environment variables from .env file
+
 load_dotenv()
 
-# Build paths inside the project
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Security settings
+
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-STATIC_URL = '/static/'
+DEBUG = True  
 
-DEBUG = True  # Set to False in production
+ALLOWED_HOSTS = ['*']  
 
-ALLOWED_HOSTS = ['*']  # Specify hosts in production (e.g., ['tech-sage-5poh.vercel.app'])
 
-# Application definition
 INSTALLED_APPS = [
     'daphne',
     'django.contrib.admin',
-    'django.contrib.auth',  # Django's built-in auth
+    'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
-    'auth',
     'users',
     'blogs',
     'comments',
     'channels',
     'reports',
     'checker',
+    'auth.apps.CustomAuthConfig',
+    'collab',
     'badges',
 ]
 
@@ -72,18 +71,18 @@ TEMPLATES = [
 WSGI_APPLICATION = 'techsage.wsgi.application'
 ASGI_APPLICATION = 'techsage.asgi.application'
 
-# MongoDB Atlas configuration using mongoengine
+
 connect(
     db=os.getenv('MONGO_DB_NAME', 'techsage_db'),
     host=os.getenv('MONGO_URI'),
     alias='default',
-    ssl=True,  # Required for MongoDB Atlas
+    ssl=True,
     retryWrites=True,
     w='majority'
 )
 
-# Email configuration for OTP
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # Use 'console.EmailBackend' for debugging
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend' 
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
@@ -108,7 +107,7 @@ CHANNEL_LAYERS = {
     },
 }
 
-# Django REST Framework configuration
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [],
     'DEFAULT_PERMISSION_CLASSES': [
@@ -121,14 +120,14 @@ REST_FRAMEWORK = {
     'UNAUTHENTICATED_USER': None,
 }
 
-# CORS settings
+
 CORS_ALLOWED_ORIGINS = [
     'https://tech-sage-5poh.vercel.app',
-    'http://localhost:5173',  # Frontend dev server
+    'http://localhost:5173',  
 ]
 CORS_ALLOW_CREDENTIALS = True
 
-# Cloudinary configuration
+
 cloudinary.config(
     cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
     api_key=os.getenv('CLOUDINARY_API_KEY'),
@@ -136,33 +135,33 @@ cloudinary.config(
     secure=True
 )
 
-# Plagiarism checker API keys
+
 PLAGIARISM_CHECKER_API_KEY = os.getenv('PLAGIARISM_CHECKER_API_KEY')
 PLAGIARISM_API_KEY = os.getenv('PLAGIARISM_API_KEY')
 
-# Database configuration (no ORM, using MongoDB via mongoengine)
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.dummy',
     }
 }
 
-# Internationalization
+
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# Static and media files
+
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Default primary key field type
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Logging configuration
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,

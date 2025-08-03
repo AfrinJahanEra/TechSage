@@ -13,8 +13,8 @@ class Comment(me.Document):
     likes = me.ListField(me.ReferenceField(User))
     dislikes = me.ListField(me.ReferenceField(User))
     is_deleted = me.BooleanField(default=False)
-    is_reviewed = me.BooleanField(default=False)  # New field
-    reviewed_by = me.ReferenceField(User, null=True)  # New field
+    is_reviewed = me.BooleanField(default=False)  
+    reviewed_by = me.ReferenceField(User, null=True) 
 
     meta = {
         'ordering': ['-created_at'],

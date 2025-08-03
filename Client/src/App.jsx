@@ -17,6 +17,8 @@ import Dashboard from './pages/Dashboard.jsx';
 import Admin from './pages/Admin.jsx';
 import ModeratorDashboard from './pages/Moderator.jsx';
 import SearchForm from './components/SearchForm.jsx';
+import AdminDashboard from '../src/pages/Admin.jsx';
+import { useContext } from 'react';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastContainer } from 'react-toastify';
 
@@ -31,6 +33,7 @@ function AppRoutes() {
       <Route path="/top-contributors" element={<TopContributors />} />
       <Route path="/all-blogs" element={<AllBlogs />} />
       <Route path="/other-dashboard" element={<OtherDashboard />} />
+      <Route path="/admin-dashboard" element={<AdminDashboard />} />
       <Route path="/signup" element={<SignupForm />} />
       <Route path="/login" element={<LoginForm />} />
       <Route path="/create-blog" element={<CreateBlogs />} />
