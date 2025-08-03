@@ -65,26 +65,7 @@ const Sidebar = ({ type = 'default', currentBlogId = null }) => {
     fetchBlogs();
   }, [type, currentBlogId, api]);
 
-  const topContributors = [
-    {
-      id: 1,
-      image: 'https://randomuser.me/api/portraits/women/44.jpg',
-      name: 'Ramisa Anan Rahman',
-      blogs: '15 research blogs'
-    },
-    {
-      id: 2,
-      image: 'https://randomuser.me/api/portraits/men/32.jpg',
-      name: 'Ridika Naznin',
-      blogs: '12 research blogs'
-    },
-    {
-      id: 3,
-      image: 'https://randomuser.me/api/portraits/women/68.jpg',
-      name: 'Afrin Jahan Era',
-      blogs: '9 research blogs'
-    }
-  ];
+  
 
   const jobOpportunities = [
     {
@@ -224,26 +205,6 @@ const Sidebar = ({ type = 'default', currentBlogId = null }) => {
               )}
             </div>
           )}
-
-          {/* <div className="space-y-4">
-            <h3 className="uppercase text-sm font-semibold tracking-wider border-b pb-2" style={{ color: primaryColor, borderColor: darkMode ? '#374151' : '#e5e7eb' }}>
-              Top Contributors
-            </h3>
-            <div className="space-y-4">
-              {topContributors.map(contributor => (
-                <ContributorCard key={contributor.id} {...contributor} />
-              ))}
-            </div>
-            <div className="text-center">
-              <Link 
-                to="/top-contributors" 
-                className="font-semibold hover:underline"
-                style={{ color: primaryColor }}
-              >
-                See All Contributors →
-              </Link>
-            </div>
-          </div> */}
         </>
       )}
     </aside>

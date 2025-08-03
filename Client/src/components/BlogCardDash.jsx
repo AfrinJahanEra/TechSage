@@ -13,13 +13,13 @@ const BlogCardDash = ({
   onPublish,
   onRestore,
   onPermanentDelete,
-  onEdit, // Add this new prop
+  onEdit, 
   showDelete = false,
   showPublish = false,
   showRestore = false,
   showPermanentDelete = false,
   showUpvotes = true,
-  showEdit = false // Add this new prop
+  showEdit = false 
 }) => {
   return (
     <div className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-4 pb-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>

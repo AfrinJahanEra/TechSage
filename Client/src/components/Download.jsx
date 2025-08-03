@@ -37,7 +37,7 @@ const Download = ({ blog, onDownload }) => {
       const contentWidth = pageWidth - 2 * margin;
       let currentY = margin;
 
-      // Helper function to add new page
+     
       const addNewPage = () => {
         pdf.addPage();
         currentY = margin;
@@ -45,42 +45,42 @@ const Download = ({ blog, onDownload }) => {
         addFooter();
       };
 
-      // Helper function to check if new page is needed
+      
       const addNewPageIfNeeded = (requiredSpace) => {
         if (currentY + requiredSpace > pageHeight - margin - 20) {
           addNewPage();
         }
       };
 
-      // Add header (primary color line, centered)
+      
       const addHeader = () => {
         pdf.setDrawColor(primaryColor);
         pdf.setLineWidth(1);
         pdf.line(margin, margin - 10, pageWidth - margin, margin - 10);
       };
 
-      // Add footer (page number and blog title, aligned)
+      
       const addFooter = () => {
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(8);
-        pdf.setTextColor(102, 102, 102); // #666
+        pdf.setTextColor(102, 102, 102); 
         const pageNum = pdf.internal.getCurrentPageInfo().pageNumber;
         pdf.text(`Page ${pageNum}`, pageWidth - margin, pageHeight - margin + 10, { align: 'right' });
         pdf.text(blog.title.substring(0, 50), margin, pageHeight - margin + 10, { align: 'left' });
       };
 
-      // Cover Page
+      
       pdf.setFillColor(primaryColor);
       pdf.rect(0, 0, pageWidth, 120, 'F');
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(24);
-      pdf.setTextColor(255, 255, 255); // White
+      pdf.setTextColor(255, 255, 255); 
       const titleLines = pdf.splitTextToSize(blog.title, contentWidth);
       const titleHeight = titleLines.length * 28;
-      const titleY = 40 + (100 - titleHeight) / 2; // Center vertically in title bar
+      const titleY = 40 + (100 - titleHeight) / 2;
       pdf.text(titleLines, pageWidth / 2, titleY, { align: 'center', maxWidth: contentWidth });
 
-      // Thumbnail, centered
+      
       const imgUrl = getThumbnailUrl(blog);
       try {
         const img = new Image();
@@ -92,7 +92,7 @@ const Download = ({ blog, onDownload }) => {
         });
 
         const imgProps = pdf.getImageProperties(img);
-        const maxImgHeight = 200; // Limit thumbnail height
+        const maxImgHeight = 200;
         let imgWidth = contentWidth;
         let imgHeight = (imgProps.height * contentWidth) / imgProps.width;
         if (imgHeight > maxImgHeight) {
@@ -107,16 +107,16 @@ const Download = ({ blog, onDownload }) => {
         currentY = 150;
       }
 
-      // Metadata, centered
+      
       pdf.setFont('times', 'normal');
       pdf.setFontSize(11);
-      pdf.setTextColor(51, 51, 51); // #333
+      pdf.setTextColor(51, 51, 51); 
       const metadata = `By: ${blog.authors?.map(author => author.username).join(', ')} | Published: ${formatDate(blog.published_at)} | ${calculateReadTime(blog.content)}`;
       const metadataLines = pdf.splitTextToSize(metadata, contentWidth);
       pdf.text(metadataLines, pageWidth / 2, currentY, { align: 'center', maxWidth: contentWidth });
       currentY += metadataLines.length * 14 + 15;
 
-      // Categories, centered with wrapping
+      
       const categories = blog.categories || [];
       if (categories.length > 0) {
         let categoryX = margin;
@@ -129,12 +129,12 @@ const Download = ({ blog, onDownload }) => {
           const categoryText = ` ${category} `;
           const textWidth = pdf.getTextWidth(categoryText);
           if (rowWidth + textWidth > contentWidth) {
-            // Render current row centered
+   
             const rowStartX = (pageWidth - rowWidth) / 2;
             categoryRow.forEach(({ text, width, x }) => {
               pdf.setFillColor(primaryColor);
               pdf.setDrawColor(primaryColor);
-              pdf.setTextColor(255, 255, 255); // White
+              pdf.setTextColor(255, 255, 255); 
               pdf.roundedRect(rowStartX + x, currentY - 10, width, 14, 7, 7, 'FD');
               pdf.text(text, rowStartX + x, currentY - 2);
             });
@@ -148,13 +148,13 @@ const Download = ({ blog, onDownload }) => {
           categoryX += textWidth + 5;
         });
 
-        // Render last row
+
         if (categoryRow.length > 0) {
           const rowStartX = (pageWidth - rowWidth) / 2;
           categoryRow.forEach(({ text, width, x }) => {
             pdf.setFillColor(primaryColor);
             pdf.setDrawColor(primaryColor);
-            pdf.setTextColor(255, 255, 255); // White
+            pdf.setTextColor(255, 255, 255); 
             pdf.roundedRect(rowStartX + x, currentY - 10, width, 14, 7, 7, 'FD');
             pdf.text(text, rowStartX + x, currentY - 2);
           });
@@ -163,23 +163,23 @@ const Download = ({ blog, onDownload }) => {
       }
       currentY += 10;
 
-      // Blog Content (starts on cover page)
+    
       pdf.setFont('times', 'normal');
       pdf.setFontSize(11);
-      pdf.setTextColor(51, 51, 51); // #333
+      pdf.setTextColor(51, 51, 51); 
 
-      // Parse HTML content
+   
       const parser = new DOMParser();
       const doc = parser.parseFromString(blog.content, 'text/html');
 
-      // Process content nodes
+ 
       const processNode = (node) => {
         if (node.nodeType === Node.TEXT_NODE) {
           const text = node.textContent.trim();
           if (text) {
             pdf.setFont('times', 'normal');
             pdf.setFontSize(11);
-            pdf.setTextColor(51, 51, 51); // #333
+            pdf.setTextColor(51, 51, 51); 
             const lines = pdf.splitTextToSize(text, contentWidth);
             lines.forEach(line => {
               addNewPageIfNeeded(14);
@@ -223,10 +223,10 @@ const Download = ({ blog, onDownload }) => {
 
       doc.body.childNodes.forEach(node => processNode(node));
 
-      // Add footer to cover page (after content is added)
+
       addFooter();
 
-      // Save PDF
+
       pdf.save(`${blog.title.replace(/\s+/g, '_')}.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);

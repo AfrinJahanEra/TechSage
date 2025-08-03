@@ -4,18 +4,18 @@ import { useTheme } from '../context/ThemeContext';
 const Footer = () => {
   const { primaryColor, darkMode } = useTheme();
   
-  // Footer background style
+
   const footerStyle = {
     backgroundColor: darkMode ? '#111827' : '#1f2937',
   };
 
-  // Section title style
+
   const sectionTitleStyle = {
     color: primaryColor,
     borderBottomColor: primaryColor,
   };
 
-  // Social icon hover style
+
   const socialIconStyle = {
     backgroundColor: darkMode ? '#374151' : '#4b5563',
   };

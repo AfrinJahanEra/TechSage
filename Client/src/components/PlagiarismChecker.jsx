@@ -8,10 +8,10 @@ const PlagiarismChecker = () => {
 
   const checkPlagiarism = async () => {
     setIsChecking(true);
-    // Simulate API call
+
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Mock response
+
     const mockResponse = {
       score: Math.floor(Math.random() * 100),
       sources: [
