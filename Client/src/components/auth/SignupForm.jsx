@@ -24,7 +24,7 @@ const SignupForm = () => {
   const { register, api } = useAuth();
   const navigate = useNavigate();
 
-  // Password strength checker
+
   const checkPasswordStrength = (password) => {
     let score = 0;
     if (password.length >= 8) score++;
@@ -41,7 +41,7 @@ const SignupForm = () => {
     return { score, label };
   };
 
-  // Username format validator
+
   const validateUsernameFormat = (username) => {
     const usernameRegex = /^[a-zA-Z][a-zA-Z0-9_]*$/;
     if (!usernameRegex.test(username)) {
@@ -50,7 +50,7 @@ const SignupForm = () => {
     return null;
   };
 
-  // Update password strength on password change
+
   useEffect(() => {
     if (formData.password) {
       setPasswordStrength(checkPasswordStrength(formData.password));
@@ -70,7 +70,7 @@ const SignupForm = () => {
   const validate = async () => {
     let isValid = true;
 
-    // Validate username format and uniqueness
+
     if (!formData.name) {
       toast.error('Name is required', { position: 'top-right', autoClose: 3000, theme: 'light', toastId: 'name-error' });
       isValid = false;
@@ -199,15 +199,15 @@ const SignupForm = () => {
 
   const handleOtpChange = (index, value) => {
     const newOtp = [...otp];
-    newOtp[index] = value.slice(-1); // Limit to 1 character
+    newOtp[index] = value.slice(-1); 
     setOtp(newOtp);
 
-    // Move focus to next input
+
     if (value && index < 5) {
       document.getElementById(`otp-${index + 1}`).focus();
     }
 
-    // Move focus to previous input on backspace
+
     if (!value && index > 0) {
       document.getElementById(`otp-${index - 1}`).focus();
     }
@@ -218,13 +218,13 @@ const SignupForm = () => {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       const username = user.displayName?.replace(/\s+/g, '').toLowerCase() || 'googleuser';
-      // Check username format
+
       const usernameFormatError = validateUsernameFormat(username);
       if (usernameFormatError) {
         toast.error(usernameFormatError, { position: 'top-right', autoClose: 3000, theme: 'light', toastId: 'google-username-format-error' });
         return;
       }
-      // Check username uniqueness
+
       const response = await api.post('/api/auth/check-username/', { username });
       if (!response.data.available) {
         toast.error('Username is already taken. Please try a different name.', {
@@ -294,7 +294,7 @@ const SignupForm = () => {
     }
   };
 
-  // Animation variants
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -364,7 +364,7 @@ const SignupForm = () => {
           >
             Sign Up & Start Your Journey
           </motion.p>
-          {/* Floating Shapes */}
+
           <motion.div
             className="absolute top-10 right-10 w-20 h-20 bg-white bg-opacity-20 rounded-full"
             animate={{
@@ -392,7 +392,7 @@ const SignupForm = () => {
         className="lg:w-1/2 flex items-center justify-center p-4 sm:p-6 lg:p-8"
       >
         <div className="relative w-full max-w-sm">
-          {/* Animated Bubbles */}
+
           <motion.div
             className="absolute top-8 left-8 w-24 h-24 bg-teal-200 bg-opacity-30 rounded-full z-0"
             variants={floatingShapeVariants}
