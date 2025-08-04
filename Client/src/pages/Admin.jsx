@@ -7,8 +7,8 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { formatDate } from '../utils/blogUtils';
 import { confirmAlert } from 'react-confirm-alert';
+import BadgesSection from '../components/BadgesSection.jsx';
 import 'react-confirm-alert/src/react-confirm-alert.css';
-
 
 const AdminDashboard = () => {
   const performanceChartRef = useRef(null);
@@ -18,14 +18,10 @@ const AdminDashboard = () => {
   const [showProfilePanel, setShowProfilePanel] = useState(false);
   const [blogs, setBlogs] = useState([]);
   const [users, setUsers] = useState([]);
-  const [badges, setBadges] = useState([]);
+  const [badges, setBadges] = useState([]); // New state for badges
   const [loading, setLoading] = useState(false);
-  const [newBadge, setNewBadge] = useState({
-    name: '',
-    image_url: ''
-  });
-  const navigate = useNavigate();
 
+  const navigate = useNavigate();
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -51,72 +47,17 @@ const AdminDashboard = () => {
     }
   };
 
-
   const fetchBadges = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/');
-      setBadges(response.data.badges || []);
+      const response = await api.get('/badges/');
+      setBadges(response.data);
     } catch (error) {
       console.error('Error fetching badges:', error);
+      alert('Failed to fetch badges');
     } finally {
       setLoading(false);
     }
-  };
-
-
-  const getBadgeThreshold = (badgeName) => {
-    const thresholds = {
-      "ruby": 100,
-      "bronze": 200,
-      "sapphire": 350,
-      "silver": 300,
-      "gold": 400,
-      "diamond": 500
-    };
-    return thresholds[badgeName] || 'N/A';
-  };
-
-
-  const handleCreateBadge = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await api.post('/assign/', newBadge);
-      setBadges([...badges, response.data.badge]);
-      setActiveSection('badges');
-      setNewBadge({ name: '', image_url: '' });
-      alert('Badge created successfully!');
-    } catch (error) {
-      console.error('Error creating badge:', error);
-      alert(`Failed to create badge: ${error.response?.data?.error || 'Unknown error'}`);
-    }
-  };
-
-
-  const handleDeleteBadge = async (badgeId) => {
-    confirmAlert({
-      title: 'Delete Badge',
-      message: 'Are you sure you want to delete this badge? This action cannot be undone.',
-      buttons: [
-        {
-          label: 'Yes',
-          onClick: async () => {
-            try {
-              await api.delete(`/badges/${badgeId}/`);
-              setBadges(badges.filter(badge => badge._id !== badgeId && badge.id !== badgeId));
-              alert('Badge deleted successfully');
-            } catch (error) {
-              console.error('Error deleting badge:', error);
-              alert(`Failed to delete badge: ${error.response?.data?.error || 'Unknown error'}`);
-            }
-          }
-        },
-        {
-          label: 'No',
-          onClick: () => {}
-        }
-      ]
-    });
   };
 
   const handleDeleteUser = async (username) => {
@@ -139,12 +80,11 @@ const AdminDashboard = () => {
         },
         {
           label: 'No',
-          onClick: () => { }
+          onClick: () => {}
         }
       ]
     });
   };
-
 
   const handleApproveBlog = async (blogId) => {
     confirmAlert({
@@ -160,12 +100,11 @@ const AdminDashboard = () => {
                   blog.id === blogId
                     ? { ...blog, is_reviewed: true, reviewed_by: user.username }
                     : blog
-                )
-                  .sort((a, b) => {
-                    if (a.is_reviewed && !b.is_reviewed) return 1;
-                    if (!a.is_reviewed && b.is_reviewed) return -1;
-                    return 0;
-                  })
+                ).sort((a, b) => {
+                  if (a.is_reviewed && !b.is_reviewed) return 1;
+                  if (!a.is_reviewed && b.is_reviewed) return -1;
+                  return 0;
+                })
               );
               await api.post(`/blogs/review/${blogId}/`, {
                 reviewer: user.username
@@ -180,12 +119,11 @@ const AdminDashboard = () => {
         },
         {
           label: 'No',
-          onClick: () => { }
+          onClick: () => {}
         }
       ]
     });
   };
-
 
   const handleRejectBlog = async (blogId) => {
     confirmAlert({
@@ -207,47 +145,31 @@ const AdminDashboard = () => {
         },
         {
           label: 'No',
-          onClick: () => { }
-        }
-      ]
-    });
-  };
-
-
-  const handleAssignBadge = async (username, badgeId) => {
-    confirmAlert({
-      title: 'Assign Badge',
-      message: `Are you sure you want to assign this badge to ${username}?`,
-      buttons: [
-        {
-          label: 'Yes',
-          onClick: async () => {
-            try {
-              await api.post(`/badges/assign/${username}/`, { badge_id: badgeId });
-              fetchUsers();
-              alert('Badge assigned successfully');
-            } catch (error) {
-              console.error('Error assigning badge:', error);
-              alert(`Failed to assign badge: ${error.response?.data?.error || 'Unknown error'}`);
-            }
-          }
-        },
-        {
-          label: 'No',
-          onClick: () => { }
+          onClick: () => {}
         }
       ]
     });
   };
 
   useEffect(() => {
-    if (activeSection === 'users') {
-      fetchUsers();
-    } else if (activeSection === 'blogs') {
-      fetchBlogs();
-    } else if (activeSection === 'badges') {
-      fetchBadges();
-    }
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        if (activeSection === 'users') {
+          await fetchUsers();
+        } else if (activeSection === 'blogs') {
+          await fetchBlogs();
+        } else if (activeSection === 'badges') {
+          await fetchBadges();
+        }
+      } catch (error) {
+        console.error(`Error fetching ${activeSection} data:`, error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, [activeSection]);
 
   useEffect(() => {
@@ -307,13 +229,10 @@ const AdminDashboard = () => {
     }
   }, [activeSection, darkMode, primaryColor]);
 
-
-
   const toggleProfilePanel = (e) => {
     e.stopPropagation();
     setShowProfilePanel(!showProfilePanel);
   };
-
 
   useEffect(() => {
     const handleClickOutside = () => {
@@ -328,8 +247,6 @@ const AdminDashboard = () => {
     };
   }, [showProfilePanel]);
 
-
-
   const handleBlogClick = (blogId) => {
     navigate(`/blog/${blogId}`);
   };
@@ -341,7 +258,6 @@ const AdminDashboard = () => {
   return (
     <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-800'}`}>
       <Navbar activePage="admin" onProfileClick={toggleProfilePanel} />
-
       <div className="pt-20 min-h-screen">
         <div className="flex flex-col md:flex-row">
           <div className={`w-full md:w-64 ${darkMode ? 'bg-gray-800' : 'bg-white'} border-r border-gray-200`}>
@@ -384,14 +300,12 @@ const AdminDashboard = () => {
               </li>
             </ul>
           </div>
-
           <div className={`flex-1 p-6 ${darkMode ? 'bg-gray-900' : 'bg-white'}`}>
             {loading && (
               <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
               </div>
             )}
-
             {activeSection === 'users' && !loading && (
               <div>
                 <h1 className={`text-2xl font-bold mb-6 pb-2 border-b-2 border-teal-500 inline-block ${darkMode ? 'text-white' : 'text-gray-800'}`}>
@@ -439,7 +353,6 @@ const AdminDashboard = () => {
                 </div>
               </div>
             )}
-
             {activeSection === 'blogs' && !loading && (
               <div>
                 <h1 className={`text-2xl font-bold mb-6 pb-2 border-b-2 border-teal-500 inline-block ${darkMode ? 'text-white' : 'text-gray-800'}`}>
@@ -499,146 +412,9 @@ const AdminDashboard = () => {
                 </div>
               </div>
             )}
-
             {activeSection === 'badges' && !loading && (
-              <div>
-                <div className="flex justify-between items-center mb-6">
-                  <h1 className={`text-2xl font-bold pb-2 border-b-2 border-teal-500 inline-block ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                    Badges Management
-                  </h1>
-                  <button 
-                    onClick={() => setActiveSection('create-badge')}
-                    className={`px-4 py-2 rounded-lg ${darkMode ? 'bg-teal-600 hover:bg-teal-700' : 'bg-teal-500 hover:bg-teal-600'} text-white`}
-                  >
-                    <i className="fas fa-plus mr-2"></i> Create New Badge
-                  </button>
-                </div>
-
-                <div className="space-y-6">
-                  {badges.length === 0 ? (
-                    <div className={`text-center py-10 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      <i className="fas fa-award text-3xl mb-4"></i>
-                      <p>No badges found</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {badges.map(badge => (
-                        <div key={badge._id || badge.id} className={`p-4 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-gray-50'} flex flex-col`}>
-                          <div className="flex items-center mb-4">
-                            {badge.image_url && (
-                              <img 
-                                src={badge.image_url} 
-                                alt={badge.name} 
-                                className="w-16 h-16 object-contain mr-4"
-                              />
-                            )}
-                            <div>
-                              <h4 className={`font-semibold text-lg capitalize ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                                {badge.name}
-                              </h4>
-                              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                Minimum points: {getBadgeThreshold(badge.name)}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <div className="mt-auto">
-                            <div className="flex justify-between items-center">
-                              <select
-                                className={`px-3 py-1 rounded mr-2 flex-grow ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-800'}`}
-                                onChange={(e) => {
-                                  if (e.target.value) {
-                                    handleAssignBadge(e.target.value, badge._id || badge.id);
-                                    e.target.value = ''; // Reset selection
-                                  }
-                                }}
-                              >
-                                <option value="">Assign to user...</option>
-                                {users.map(user => (
-                                  <option key={user.username} value={user.username}>
-                                    {user.username} ({user.points || 0} pts)
-                                  </option>
-                                ))}
-                              </select>
-                              <button
-                                onClick={() => handleDeleteBadge(badge._id || badge.id)}
-                                className="text-red-500 hover:text-red-700 ml-2"
-                                title="Delete badge"
-                              >
-                                <i className="fas fa-trash"></i>
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+              <BadgesSection badges={badges} fetchBadges={fetchBadges} />
             )}
-
-            {activeSection === 'create-badge' && (
-              <div>
-                <h1 className={`text-2xl font-bold mb-6 pb-2 border-b-2 border-teal-500 inline-block ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                  Create New Badge
-                </h1>
-                
-                <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
-                  <form onSubmit={handleCreateBadge}>
-                    <div className="mb-4">
-                      <label className={`block mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                        Badge Name
-                      </label>
-                      <select
-                        className={`w-full px-3 py-2 rounded ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-800'}`}
-                        value={newBadge.name}
-                        onChange={(e) => setNewBadge({...newBadge, name: e.target.value})}
-                        required
-                      >
-                        <option value="">Select badge level</option>
-                        <option value="ruby">Ruby</option>
-                        <option value="bronze">Bronze</option>
-                        <option value="sapphire">Sapphire</option>
-                        <option value="silver">Silver</option>
-                        <option value="gold">Gold</option>
-                        <option value="diamond">Diamond</option>
-                      </select>
-                    </div>
-                    
-                    <div className="mb-4">
-                      <label className={`block mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                        Image URL
-                      </label>
-                      <input
-                        type="url"
-                        className={`w-full px-3 py-2 rounded ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-800'}`}
-                        placeholder="https://example.com/badge-image.png"
-                        value={newBadge.image_url}
-                        onChange={(e) => setNewBadge({...newBadge, image_url: e.target.value})}
-                        required
-                      />
-                    </div>
-                    
-                    <div className="flex justify-end space-x-3">
-                      <button
-                        type="button"
-                        onClick={() => setActiveSection('badges')}
-                        className={`px-4 py-2 rounded-lg ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'} text-white`}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        className={`px-4 py-2 rounded-lg ${darkMode ? 'bg-teal-600 hover:bg-teal-700' : 'bg-teal-500 hover:bg-teal-600'} text-white`}
-                      >
-                        Create Badge
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            )}
-
             {activeSection === 'profile' && (
               <div>
                 <h1 className={`text-2xl font-bold mb-6 pb-2 border-b-2 border-teal-500 inline-block ${darkMode ? 'text-white' : 'text-gray-800'}`}>

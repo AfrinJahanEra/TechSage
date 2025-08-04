@@ -1,9 +1,8 @@
 from django.urls import path
-from django.views.generic import TemplateView
-from .views import AssignBadgeView, UserBadgeView
+from .views import BadgeAPI, UserBadgesAPI
 
 urlpatterns = [
-    path('assign/', AssignBadgeView.as_view()),
-    path('user/<str:username>/', UserBadgeView.as_view()),
-    path('admin-panel/', TemplateView.as_view(template_name='badges/assign_badge.html')),
+    path('', BadgeAPI.as_view()),  # For GET (all badges) and POST
+    path('<str:badge_id>/', BadgeAPI.as_view()),  # For GET (single badge) and DELETE
+    path('users/<str:username>/', UserBadgesAPI.as_view()),
 ]

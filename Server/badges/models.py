@@ -1,35 +1,49 @@
-import mongoengine as me
-from users.models import User 
+from mongoengine import Document, StringField, IntField, ReferenceField, ListField
+from users.models import User
+import cloudinary.uploader
 
-class Badge(me.Document):
-    name = me.StringField(required=True, unique=True, choices=[
-        'ruby', 'bronze', 'sapphire', 'silver', 'gold', 'diamond'
+
+
+class Badge(Document):
+    name = StringField(required=True, choices=[
+        'ruby', 'bronze', 'silver', 'gold', 'diamond'
     ])
-    image_url = me.StringField(required=True)
-
+    image_url = StringField(required=True)
+    points_required = IntField(required=True, min_value=0)
+    title = StringField(required=True)
+    public_id = StringField()  # Store Cloudinary public_id for easier deletion
+    
     meta = {
-        'collection': 'badges'
+        'collection': 'badges',
+        'ordering': ['points_required']
     }
 
-    def __str__(self):
-        return self.name
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Update badges for all users when a new badge is created
+        for user in User.objects:
+            self.assign_badges(user)
+        return self
 
-class UserBadge(me.Document):
-    user = me.ReferenceField(User, required=True, unique=True)
-    badge = me.ReferenceField(Badge, required=True)
-
-    def clean(self):
-        thresholds = {
-            "ruby": 100,
-            "bronze": 200,
-            "sapphire": 350,
-            "silver": 300,
-            "gold": 400,
-            "diamond": 500
-        }
-        required_points = thresholds[self.badge.name]
-        if self.user.points < required_points:
-            raise ValueError(f"{self.badge.name.title()} badge requires at least {required_points} points. User has {self.user.points}.")
-
-    def __str__(self):
-        return f"{self.user.username} → {self.badge.name}"
+    @classmethod
+    def assign_badges(cls, user):
+        """Assign all badges user qualifies for based on points"""
+        try:
+            all_badges = cls.objects.order_by('points_required')
+            user.badges = []
+            
+            for badge in all_badges:
+                if user.points >= badge.points_required:
+                    user.badges.append({
+                        'id': str(badge.id),
+                        'name': badge.name,
+                        'title': badge.title,
+                        'image_url': badge.image_url,
+                        'points_required': badge.points_required
+                    })
+            
+            user.save()
+            return user
+        except Exception as e:
+            print(f"Error assigning badges: {e}")
+            return None
