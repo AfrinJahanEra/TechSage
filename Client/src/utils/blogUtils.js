@@ -51,6 +51,31 @@ export const normalizeBlog = (blog) => {
   };
 };
 
+// Add this new function to handle comment normalization
+export const normalizeComment = (comment) => {
+  if (!comment) return null;
+  
+  return {
+      id: comment.id?.toString() || comment._id?.toString() || '',
+      content: comment.content || '',
+      created_at: comment.created_at || new Date().toISOString(),
+      updated_at: comment.updated_at || comment.created_at || new Date().toISOString(),
+      is_deleted: comment.is_deleted || false,
+      is_reviewed: comment.is_reviewed || false,
+      reviewed_by: comment.reviewed_by || null,
+      author: {
+          username: comment.author?.username || 'Deleted User',
+          avatar_url: comment.author?.avatar_url || '',
+          id: comment.author?.id?.toString() || comment.author?._id?.toString() || ''
+      },
+      blog: {
+          id: comment.blog?.id?.toString() || comment.blog?._id?.toString() || '',
+          title: comment.blog?.title || 'Deleted Blog',
+          exists: !!comment.blog?.title // Flag to check if blog exists
+      }
+  };
+};
+
 const isValidUrl = (url) => {
   if (!url) return false;
   try {
