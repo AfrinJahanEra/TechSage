@@ -10,6 +10,7 @@ from users.views import (
     UserSearch,
     SavedBlogsAPI,
     UserListByRole,
+    DeleteUserAccount
 
 )
 from blogs.views import (
@@ -31,6 +32,7 @@ urlpatterns = [
     path('login/', LoginUser.as_view(), name='login'),
     path('user/<str:username>/', UserProfile.as_view(), name='user-profile'),
     path('user/<str:username>/saved-blogs/', SavedBlogsAPI.as_view(), name='saved-blogs'),
+    path('users/<str:username>/delete/', DeleteUserAccount.as_view(), name='delete-user'),
     path('search/', UserSearch.as_view(), name='user-search'),
 
 

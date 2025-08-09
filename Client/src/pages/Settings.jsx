@@ -200,7 +200,7 @@ const Settings = () => {
   // Handle account deletion
   const handleDeleteAccount = async () => {
     try {
-      await api.delete(`/user/${user.username}/delete`);
+      await api.delete(`/users/${user.username}/delete/`);
       logout();
       toast.success('Account deleted successfully');
       window.location.href = '/';

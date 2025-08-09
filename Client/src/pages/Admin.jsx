@@ -60,31 +60,44 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleDeleteUser = async (username) => {
-    confirmAlert({
-      title: 'Delete User',
-      message: 'Are you sure you want to permanently delete this user account?',
-      buttons: [
-        {
-          label: 'Yes',
-          onClick: async () => {
-            try {
-              await api.delete(`/user/${username}/delete/`);
-              fetchUsers();
-              alert('User deleted successfully');
-            } catch (error) {
-              console.error('Error deleting user:', error);
-              alert(`Failed to delete user: ${error.response?.data?.error || 'Unknown error'}`);
+const handleDeleteUser = async (username) => {
+  confirmAlert({
+    title: 'Delete User',
+    message: 'Are you sure you want to permanently delete this user account and all associated data?',
+    buttons: [
+      {
+        label: 'Yes',
+        onClick: async () => {
+          try {
+            // First check if current user is admin
+            if (user?.role !== 'admin') {
+              alert('Only admins can delete users');
+              return;
             }
+
+            // Make the delete request
+            await api.delete(`/users/${username}/delete/`, {
+              data: {
+                username: user.username, // Send admin's username for verification
+                password: prompt('Please enter your admin password to confirm:') // Ask for password confirmation
+              }
+            });
+            
+            fetchUsers(); // Refresh the user list
+            alert('User and all associated data deleted successfully');
+          } catch (error) {
+            console.error('Error deleting user:', error);
+            alert(`Failed to delete user: ${error.response?.data?.error || error.message}`);
           }
-        },
-        {
-          label: 'No',
-          onClick: () => {}
         }
-      ]
-    });
-  };
+      },
+      {
+        label: 'No',
+        onClick: () => {}
+      }
+    ]
+  });
+};
 
   const handleApproveBlog = async (blogId) => {
     confirmAlert({
