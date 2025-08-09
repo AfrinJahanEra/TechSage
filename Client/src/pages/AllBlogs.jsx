@@ -35,7 +35,7 @@ const AllBlogs = () => {
     has_previous: false,
   });
   const [recPage, setRecPage] = useState(1);
-  const recPerPage = 1000; // High per_page to fetch all for client-side handling
+  const recPerPage = 1000;
 
   const primaryDark = shadeColor(primaryColor, -20);
   const primaryLight = shadeColor(primaryColor, 20);
@@ -44,6 +44,10 @@ const AllBlogs = () => {
     '--primary-color': primaryColor,
     '--primary-dark': primaryDark,
     '--primary-light': primaryLight,
+    '--text-color': darkMode ? '#f3f4f6' : '#1f2937',
+    '--muted-text': darkMode ? '#9ca3af' : '#6b7280',
+    '--border-color': darkMode ? '#374151' : '#e5e7eb',
+    '--background-color': darkMode ? '#111827' : '#ffffff',
   };
 
   const fetchBlogs = async (view, page = 1, query = '', category = 'all') => {
@@ -115,7 +119,6 @@ const AllBlogs = () => {
         if (currentView === 'community') {
           fetchBlogs(currentView, 1, searchQuery);
         }
-        // For recommendations, search is client-side
       } else {
         fetchBlogs(currentView, 1, '', activeCategory);
       }
@@ -136,14 +139,18 @@ const AllBlogs = () => {
   };
 
   const handlePageChange = (page) => {
-    fetchBlogs(currentView, page, searchQuery, activeCategory);
+    if (currentView === 'recommendations') {
+      setRecPage(page);
+    } else {
+      fetchBlogs(currentView, page, searchQuery, activeCategory);
+    }
   };
 
   const renderPosts = (posts) => {
     let filteredPosts = posts;
     if (currentView === 'recommendations' && searchQuery) {
       const lowerQuery = searchQuery.toLowerCase();
-      filteredPosts = posts.filter(post => 
+      filteredPosts = posts.filter(post =>
         post.title.toLowerCase().includes(lowerQuery) ||
         post.content.toLowerCase().includes(lowerQuery)
       );
@@ -151,7 +158,7 @@ const AllBlogs = () => {
 
     let displayedPosts = filteredPosts;
     if (currentView === 'recommendations') {
-      const start = (recPage - 1) * 10; // Client-side pagination with 10 per page
+      const start = (recPage - 1) * 10;
       const end = start + 10;
       displayedPosts = filteredPosts.slice(start, end);
     }
@@ -160,19 +167,14 @@ const AllBlogs = () => {
       <Link
         to={`/inside-blog/${post.id}`}
         key={post.id}
-        className="block"
-        state={{ blog: post }}
+        className="block group"
       >
-        <div
-          className="flex flex-col md:flex-row gap-6 pb-6 border-b transition-colors"
-          style={{ borderColor: 'var(--border-color)' }}
-        >
+        <div className="flex flex-col md:flex-row gap-6 py-6 border-b border-[var(--border-color)] hover:bg-[var(--primary-light)]/10 transition-all duration-200">
           {!post.categories?.some(cat => cat.toLowerCase() === 'job') && (
             <div
-              className="w-full md:w-48 h-40 rounded-lg bg-cover bg-center"
+              className="w-full md:w-48 h-40 rounded-lg bg-cover bg-center transition-transform duration-300 group-hover:scale-[1.02]"
               style={{
                 backgroundImage: `url(${getThumbnailUrl(post)})`,
-                backgroundColor: 'var(--card-bg)',
               }}
             ></div>
           )}
@@ -183,15 +185,13 @@ const AllBlogs = () => {
             >
               {post.categories?.[0] || 'Uncategorized'}
             </span>
-            <h3
-              className="text-xl font-bold mb-2 hover:text-[var(--primary-color)] transition-colors"
-            >
+            <h3 className="text-xl md:text-2xl font-semibold mb-2 transition-colors duration-200 group-hover:text-[var(--primary-color)]">
               {post.title}
             </h3>
-            <p className="mb-4" style={{ color: 'var(--muted-text)' }}>
+            <p className="text-sm md:text-base leading-relaxed mb-4" style={{ color: 'var(--muted-text)' }}>
               {(getContentPreview(post.content) || 'No content available').substring(0, 150)}...
             </p>
-            <div className="flex justify-between text-sm" style={{ color: 'var(--muted-text)' }}>
+            <div className="flex justify-between text-xs md:text-sm" style={{ color: 'var(--muted-text)' }}>
               <span>{formatDate(post.published_at)}</span>
               <span>{calculateReadTime(post.content)}</span>
             </div>
@@ -202,52 +202,46 @@ const AllBlogs = () => {
   };
 
   const getRecTotalPages = () => {
-    const filtered = recommendationPosts.filter(post => 
+    const filtered = recommendationPosts.filter(post =>
       post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       post.content.toLowerCase().includes(searchQuery.toLowerCase())
     );
-    return Math.ceil(filtered.length / 10); // Client-side pagination with 10 per page
+    return Math.ceil(filtered.length / 10);
   };
 
   return (
     <div
-      className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-800'}`}
+      className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-[var(--background-color)] text-[var(--text-color)]' : 'bg-[var(--background-color)] text-[var(--text-color)]'}`}
       style={themeStyles}
     >
       <Navbar activePage="all-blogs" />
 
-      <main className="container mx-auto px-4 md:px-20 py-20 pt-28">
-        <div className="flex flex-col lg:flex-row gap-8">
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 pt-24">
+        <div className="flex flex-col lg:flex-row gap-12">
           {/* Main Content */}
           <div className="flex-1">
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-bold">
+            <div className="flex justify-between items-center mb-8">
+              <h1 className="text-3xl font-bold tracking-tight">
                 {currentView === 'community' ? 'Community Updates' : 'Recommended Research'}
               </h1>
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <button
                   onClick={() => handleViewToggle('community')}
-                  className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                     currentView === 'community'
-                      ? 'text-white'
-                      : 'hover:bg-[var(--card-bg)]'
+                      ? 'text-white bg-[var(--primary-color)]'
+                      : 'text-[var(--text-color)] hover:bg-[var(--primary-light)]/20'
                   }`}
-                  style={{
-                    backgroundColor: currentView === 'community' ? 'var(--primary-color)' : 'transparent',
-                  }}
                 >
                   Community
                 </button>
                 <button
                   onClick={() => handleViewToggle('recommendations')}
-                  className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                     currentView === 'recommendations'
-                      ? 'text-white'
-                      : 'hover:bg-[var(--card-bg)]'
+                      ? 'text-white bg-[var(--primary-color)]'
+                      : 'text-[var(--text-color)] hover:bg-[var(--primary-light)]/20'
                   }`}
-                  style={{
-                    backgroundColor: currentView === 'recommendations' ? 'var(--primary-color)' : 'transparent',
-                  }}
                 >
                   Recommendations
                 </button>
@@ -255,20 +249,19 @@ const AllBlogs = () => {
             </div>
 
             {/* Search Bar */}
-            <div className="relative mb-6">
+            <div className="relative mb-8">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <i className="fas fa-search" style={{ color: 'var(--muted-text)' }}></i>
+                <i className="fas fa-search text-[var(--muted-text)]"></i>
               </div>
               <input
                 type="text"
-                className="block w-full pl-10 pr-3 py-2 border rounded-full shadow-sm focus:outline-none focus:ring-2 focus:border-transparent transition-colors"
+                className="block w-full pl-10 pr-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent transition-all duration-200"
                 style={{
-                  backgroundColor: 'var(--card-bg)',
+                  backgroundColor: 'var(--background-color)',
                   borderColor: 'var(--border-color)',
                   color: 'var(--text-color)',
-                  '--tw-ring-color': 'var(--primary-color)',
                 }}
-                placeholder={currentView === 'community' ? "Search updates..." : "Search research..."}
+                placeholder={currentView === 'community' ? 'Search updates...' : 'Search research...'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -276,19 +269,16 @@ const AllBlogs = () => {
 
             {/* Filters - only for community */}
             {currentView === 'community' && (
-              <div className="flex flex-wrap gap-2 mb-6">
+              <div className="flex flex-wrap gap-2 mb-8">
                 {['all', ...availableCategories].map(category => (
                   <button
                     key={category}
                     onClick={() => setActiveCategory(category)}
-                    className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                       activeCategory === category
-                        ? 'text-white'
-                        : 'hover:bg-[var(--card-bg)]'
+                        ? 'text-white bg-[var(--primary-color)]'
+                        : 'text-[var(--text-color)] hover:bg-[var(--primary-light)]/20'
                     }`}
-                    style={{
-                      backgroundColor: activeCategory === category ? 'var(--primary-color)' : 'transparent',
-                    }}
                   >
                     {category === 'all' ? 'All' : category}
                   </button>
@@ -297,18 +287,17 @@ const AllBlogs = () => {
             )}
 
             {/* Content Display */}
-            <div className="space-y-8 mb-8">
+            <div className="space-y-6">
               {loading ? (
-                <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
                 </div>
               ) : error ? (
-                <div className="text-center py-8">
-                  <p>{error}</p>
+                <div className="text-center py-12">
+                  <p className="text-[var(--muted-text)]">{error}</p>
                   <button
                     onClick={() => fetchBlogs(currentView, pagination.current_page, searchQuery, activeCategory)}
-                    className="mt-4 px-4 py-2 rounded text-white"
-                    style={{ backgroundColor: 'var(--primary-color)' }}
+                    className="mt-4 px-6 py-2 rounded-lg text-white bg-[var(--primary-color)] hover:bg-[var(--primary-dark)] transition-all duration-200"
                   >
                     Retry
                   </button>
@@ -320,11 +309,11 @@ const AllBlogs = () => {
 
             {/* Pagination */}
             {(currentView === 'community' || (currentView === 'recommendations' && getRecTotalPages() > 1)) && (
-              <div className="flex justify-center gap-1">
-                { (currentView === 'community' ? pagination.has_previous : recPage > 1) && (
+              <div className="flex justify-center gap-2 mt-10">
+                {(currentView === 'community' ? pagination.has_previous : recPage > 1) && (
                   <button
                     onClick={() => handlePageChange(currentView === 'community' ? pagination.current_page - 1 : recPage - 1)}
-                    className="w-10 h-10 flex items-center justify-center rounded hover:bg-[var(--card-bg)] transition-colors"
+                    className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-[var(--primary-light)]/20 transition-all duration-200"
                     style={{ color: 'var(--text-color)' }}
                   >
                     <i className="fas fa-chevron-left text-sm"></i>
@@ -334,21 +323,19 @@ const AllBlogs = () => {
                   <button
                     key={page}
                     onClick={() => handlePageChange(page)}
-                    className={`w-10 h-10 flex items-center justify-center rounded transition-colors ${
-                      (currentView === 'community' ? pagination.current_page : recPage) === page ? 'text-white' : 'hover:bg-[var(--card-bg)]'
+                    className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all duration-200 ${
+                      (currentView === 'community' ? pagination.current_page : recPage) === page
+                        ? 'text-white bg-[var(--primary-color)]'
+                        : 'text-[var(--text-color)] hover:bg-[var(--primary-light)]/20'
                     }`}
-                    style={{
-                      backgroundColor: (currentView === 'community' ? pagination.current_page : recPage) === page ? 'var(--primary-color)' : 'transparent',
-                      color: 'var(--text-color)',
-                    }}
                   >
                     {page}
                   </button>
                 ))}
-                { (currentView === 'community' ? pagination.has_next : recPage < getRecTotalPages()) && (
+                {(currentView === 'community' ? pagination.has_next : recPage < getRecTotalPages()) && (
                   <button
                     onClick={() => handlePageChange(currentView === 'community' ? pagination.current_page + 1 : recPage + 1)}
-                    className="w-10 h-10 flex items-center justify-center rounded hover:bg-[var(--card-bg)] transition-colors"
+                    className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-[var(--primary-light)]/20 transition-all duration-200"
                     style={{ color: 'var(--text-color)' }}
                   >
                     <i className="fas fa-chevron-right text-sm"></i>
@@ -359,11 +346,11 @@ const AllBlogs = () => {
           </div>
 
           {/* Sidebar */}
-          <div className="lg:w-80 space-y-8">
+          <aside className="lg:w-80 space-y-8">
             <Sidebar />
             <TopContributor />
             <SearchForm />
-          </div>
+          </aside>
         </div>
       </main>
 
