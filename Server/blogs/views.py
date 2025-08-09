@@ -588,19 +588,30 @@ class BlogSearch(APIView):
     def get(self, request):
         query = request.GET.get('q', '').strip()
         status_filter = request.GET.get('status', None)
+        search_fields = request.GET.get('search_fields', 'title,content').split(',')
         
         if not query:
-            return Response({"error": "Search query 'q' parameter required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Search query 'q' parameter required"}, 
+                          status=status.HTTP_400_BAD_REQUEST)
             
         try:
             from mongoengine.queryset.visitor import Q
             
-            search_query = (
-                Q(title__icontains=query) |
-                Q(content__icontains=query) |
-                Q(tags__icontains=query) |
-                Q(categories__icontains=query)
-            ) & Q(is_deleted=False)
+            # Start with an empty Q object
+            search_query = Q()
+            
+            # Build the search query based on requested fields
+            if 'title' in search_fields:
+                search_query |= Q(title__icontains=query)
+            if 'content' in search_fields:
+                search_query |= Q(content__icontains=query)
+            if 'tags' in search_fields:
+                search_query |= Q(tags__icontains=query)
+            if 'categories' in search_fields:
+                search_query |= Q(categories__icontains=query)
+            
+            # Always exclude deleted blogs
+            search_query &= Q(is_deleted=False)
             
             if status_filter == 'published':
                 search_query &= Q(is_published=True, is_draft=False)
@@ -620,13 +631,33 @@ class BlogSearch(APIView):
                     "tags": blog.tags,
                     "thumbnail_url": blog.thumbnail_url,
                     "status": "published" if blog.is_published else "draft",
-                    "created_at": blog.created_at.isoformat()
+                    "created_at": blog.created_at.isoformat(),
+                    "match_field": self.get_match_field(blog, query, search_fields)
                 })
+            
+            # Sort by relevance (simple version - blogs with matches in more fields come first)
+            results.sort(key=lambda x: len(x['match_field']), reverse=True)
             
             return Response(results)
             
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def get_match_field(self, blog, query, search_fields):
+        """Determine which fields matched the search query"""
+        matched_fields = []
+        query_lower = query.lower()
+        
+        if 'title' in search_fields and query_lower in blog.title.lower():
+            matched_fields.append('title')
+        if 'content' in search_fields and query_lower in blog.content.lower():
+            matched_fields.append('content')
+        if 'tags' in search_fields and any(query_lower in tag.lower() for tag in blog.tags):
+            matched_fields.append('tags')
+        if 'categories' in search_fields and any(query_lower in cat.lower() for cat in blog.categories):
+            matched_fields.append('categories')
+            
+        return matched_fields
 
 class AddAuthorToBlog(APIView):
     def post(self, request, blog_id):
