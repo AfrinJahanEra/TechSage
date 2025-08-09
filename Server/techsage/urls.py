@@ -46,7 +46,7 @@ urlpatterns = [
     
     path('blogs/add-author/<str:blog_id>/', AddAuthorToBlog.as_view()),
     
-    path('blogs/search/', BlogSearch.as_view(), name='blog-search'),
+    path('published-blogs/search/', BlogSearch.as_view(), name='blog-search'),#search string matching if status=published 
     
     path('blogs/versions/<str:blog_id>/', GetBlogVersions.as_view()),
     path('blogs/revert/<str:blog_id>/<int:version_number>/', RevertBlogVersion.as_view()),
@@ -61,15 +61,15 @@ urlpatterns = [
     path('blogs/vote/<str:blog_id>/', VoteBlog.as_view(), name='vote-blog'),
     
 
-    path('blogs/', ListBlogs.as_view()),  
-    path('jobs/', JobBlogs.as_view()),
+    path('blogs/', ListBlogs.as_view()),  #all published unpublished blogs
+    path('jobs/', JobBlogs.as_view()), #job tags blogs
 
     path('admin/', admin.site.urls),
     path('api/auth/', include('auth.urls')),
 
     
-    path('blogs/<str:blog_id>/', GetBlog.as_view()),
-    path('published-blogs/', PublishedBlogs.as_view(), name='published_blogs'),
+    path('blogs/<str:blog_id>/', GetBlog.as_view()), #one blogs all things
+    path('published-blogs/', PublishedBlogs.as_view(), name='published_blogs'),#all published blogs
     path('blogs/review/<str:blog_id>/', ReviewBlog.as_view(), name='review-blog'),
 
 

@@ -51,7 +51,7 @@ const CreateBlogPage = () => {
 
 
   const availableCategories = [
-    'Technology', 'Science', 'Programming', 'AI', 'Web Development', 'Mobile', 'Job'
+    'Technology', 'Science', 'Programming', 'AI', 'Web Development', 'Mobile', 'Job', 'Fluid Mechanics', 'Data Science'
   ];
 
  
