@@ -10,7 +10,7 @@ import Sidebar from '../components/Sidebar.jsx';
 import TopContributor from '../components/TopContributor.jsx';
 
 const availableCategories = [
-  'Technology', 'Science', 'Programming', 'AI', 'Web Development', 'Mobile', 'Job', 'Fluid Mechanics', 'Data Science'
+  'Technology', 'Science', 'Programming', 'AI', 'Web Development', 'Mobile', 'Fluid Mechanics', 'Data Science'
 ];
 
 const AllBlogs = () => {
@@ -168,7 +168,7 @@ const AllBlogs = () => {
           className="flex flex-col md:flex-row gap-6 pb-6 border-b transition-colors"
           style={{ borderColor: 'var(--border-color)' }}
         >
-          {!post.categories?.includes('Job') && (
+          {!post.categories?.includes('job') && (
             <div
               className="w-full md:w-48 h-40 rounded-lg bg-cover bg-center"
               style={{
