@@ -93,7 +93,7 @@ const ModeratorDashboard = () => {
                                         : blog
                                 )
                                     .sort((a, b) => {
-                             
+
                                         if (a.is_reviewed && !b.is_reviewed) return 1;
                                         if (!a.is_reviewed && b.is_reviewed) return -1;
                                         return 0;
@@ -105,12 +105,12 @@ const ModeratorDashboard = () => {
                                 reviewer: user.username
                             });
 
-                      
+
                             fetchBlogs();
                         } catch (error) {
                             console.error('Error approving blog:', error);
                             alert('Failed to approve blog');
-                        
+
                             fetchBlogs();
                         }
                     }
@@ -124,7 +124,7 @@ const ModeratorDashboard = () => {
     };
 
 
-   
+
     const handleRejectBlog = async (blogId) => {
         confirmAlert({
             title: 'Reject Blog',
@@ -181,6 +181,8 @@ const ModeratorDashboard = () => {
     };
 
 
+
+
     const handleRejectComment = async (commentId) => {
         confirmAlert({
             title: 'Reject Comment',
@@ -190,12 +192,32 @@ const ModeratorDashboard = () => {
                     label: 'Yes',
                     onClick: async () => {
                         try {
-                            await api.delete(`/comments/${commentId}/delete`);
-                            fetchComments();
+                            // Optimistic update
+                            setComments(prevComments =>
+                                prevComments.filter(comment => comment.id !== commentId)
+                            );
+
+                            // Send delete request with username in body
+                            await api.delete(`/comments/${commentId}/delete/`, {
+                                data: { username: user.username }
+                            });
+
+                            // Show success message
                             alert('Comment deleted successfully');
+
+                            // Optional: Refresh comments list
+                            fetchComments();
                         } catch (error) {
                             console.error('Error deleting comment:', error);
-                            alert('Failed to delete comment');
+
+                            // Revert optimistic update on error
+                            fetchComments();
+
+                            // Show error message
+                            const errorMsg = error.response?.data?.error ||
+                                error.message ||
+                                'Failed to delete comment';
+                            alert(errorMsg);
                         }
                     }
                 },
@@ -207,7 +229,7 @@ const ModeratorDashboard = () => {
         });
     };
 
-  
+
     const handleBlogClick = (blogId) => {
         navigate(`/blog/${blogId}`);
     };
@@ -215,7 +237,7 @@ const ModeratorDashboard = () => {
 
 
     useEffect(() => {
- 
+
         if (activeSection === 'profile') {
             const ctx = document.getElementById('performanceChart');
             if (ctx) {

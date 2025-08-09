@@ -59,23 +59,34 @@ class LikeComment(View):
         comment.save()
         return JsonResponse(comment.to_json())
 
+
+
 @method_decorator(csrf_exempt, name='dispatch')
 class DeleteComment(View):
-    def post(self, request, comment_id):
-        data = json.loads(request.body)
-        user = User.objects(username=data['username']).first()
-        comment = Comment.objects(id=comment_id).first()
+    def delete(self, request, comment_id):
+        try:
+            data = json.loads(request.body)
+            user = User.objects(username=data['username']).first()
+            comment = Comment.objects(id=comment_id).first()
 
-        if not comment or not user:
-            return JsonResponse({'error': 'Invalid comment or user'}, status=400)
+            if not comment or not user:
+                return JsonResponse({'error': 'Invalid comment or user'}, status=400)
 
+            if comment.author.username != user.username and user.role not in ['admin', 'moderator']:
+                return JsonResponse({'error': 'Unauthorized'}, status=403)
 
-        if comment.author.username != user.username and user.role != 'moderator':
-            return JsonResponse({'error': 'Unauthorized'}, status=403)
+            comment.is_deleted = True
+            comment.save()
+            
+            return JsonResponse({'message': 'Comment marked as deleted'})
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=500)
 
-        comment.is_deleted = True
-        comment.save()
-        return JsonResponse({'message': 'Comment marked as deleted'})
+# ... (keep all your other view classes as they are)
     
 
 class GetAllComments(View):
