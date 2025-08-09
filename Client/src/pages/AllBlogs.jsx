@@ -164,19 +164,19 @@ const AllBlogs = () => {
         state={{ blog: post }}
       >
         <div
-          className="flex flex-col md:flex-row gap-6 pb-6 border-b transition-colors"
+          className="flex flex-col sm:flex-row gap-4 sm:gap-6 pb-6 border-b transition-colors"
           style={{ borderColor: 'var(--border-color)' }}
         >
           {!post.categories?.some(cat => cat.toLowerCase() === 'job') && (
             <div
-              className="w-full md:w-48 h-40 rounded-lg bg-cover bg-center"
+              className="w-full sm:w-60 h-20 sm:h-40 rounded-lg bg-cover bg-center flex-shrink-0"
               style={{
                 backgroundImage: `url(${getThumbnailUrl(post)})`,
                 backgroundColor: 'var(--card-bg)',
               }}
             ></div>
           )}
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <span
               className="inline-block text-xs font-semibold uppercase tracking-wider mb-2"
               style={{ color: 'var(--primary-color)' }}
@@ -184,14 +184,14 @@ const AllBlogs = () => {
               {post.categories?.[0] || 'Uncategorized'}
             </span>
             <h3
-              className="text-xl font-bold mb-2 hover:text-[var(--primary-color)] transition-colors"
+              className="text-lg sm:text-xl font-bold mb-2 hover:text-[var(--primary-color)] transition-colors truncate"
             >
               {post.title}
             </h3>
-            <p className="mb-4" style={{ color: 'var(--muted-text)' }}>
-              {(getContentPreview(post.content) || 'No content available').substring(0, 150)}...
+            <p className="mb-4 text-sm sm:text-base line-clamp-2" style={{ color: 'var(--muted-text)' }}>
+              {(getContentPreview(post.content) || 'No content available')}
             </p>
-            <div className="flex justify-between text-sm" style={{ color: 'var(--muted-text)' }}>
+            <div className="flex justify-between text-xs sm:text-sm" style={{ color: 'var(--muted-text)' }}>
               <span>{formatDate(post.published_at)}</span>
               <span>{calculateReadTime(post.content)}</span>
             </div>
@@ -216,12 +216,12 @@ const AllBlogs = () => {
     >
       <Navbar activePage="all-blogs" />
 
-      <main className="container mx-auto px-4 md:px-20 py-20 pt-28">
-        <div className="flex flex-col lg:flex-row gap-8">
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 pt-24 sm:pt-28">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Main Content */}
           <div className="flex-1">
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-bold">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+              <h1 className="text-xl sm:text-2xl font-bold">
                 {currentView === 'community' ? 'Community Updates' : 'Recommended Research'}
               </h1>
               <div className="flex gap-2">
@@ -257,11 +257,11 @@ const AllBlogs = () => {
             {/* Search Bar */}
             <div className="relative mb-6">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <i className="fas fa-search" style={{ color: 'var(--muted-text)' }}></i>
+                <i className="fas fa-search text-sm" style={{ color: 'var(--muted-text)' }}></i>
               </div>
               <input
                 type="text"
-                className="block w-full pl-10 pr-3 py-2 border rounded-full shadow-sm focus:outline-none focus:ring-2 focus:border-transparent transition-colors"
+                className="block w-full pl-10 pr-3 py-2 border rounded-full shadow-sm focus:outline-none focus:ring-2 focus:border-transparent transition-colors text-sm sm:text-base"
                 style={{
                   backgroundColor: 'var(--card-bg)',
                   borderColor: 'var(--border-color)',
@@ -276,12 +276,12 @@ const AllBlogs = () => {
 
             {/* Filters - only for community */}
             {currentView === 'community' && (
-              <div className="flex flex-wrap gap-2 mb-6">
+              <div className="flex flex-wrap gap-2 mb-6 overflow-x-auto pb-2">
                 {['all', ...availableCategories].map(category => (
                   <button
                     key={category}
                     onClick={() => setActiveCategory(category)}
-                    className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                    className={`px-3 py-1 rounded-full text-xs sm:text-sm transition-colors whitespace-nowrap ${
                       activeCategory === category
                         ? 'text-white'
                         : 'hover:bg-[var(--card-bg)]'
@@ -297,17 +297,17 @@ const AllBlogs = () => {
             )}
 
             {/* Content Display */}
-            <div className="space-y-8 mb-8">
+            <div className="space-y-6 sm:space-y-8 mb-6 sm:mb-8">
               {loading ? (
                 <div className="flex justify-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
                 </div>
               ) : error ? (
                 <div className="text-center py-8">
-                  <p>{error}</p>
+                  <p className="text-sm sm:text-base">{error}</p>
                   <button
                     onClick={() => fetchBlogs(currentView, pagination.current_page, searchQuery, activeCategory)}
-                    className="mt-4 px-4 py-2 rounded text-white"
+                    className="mt-4 px-4 py-2 rounded text-white text-sm sm:text-base"
                     style={{ backgroundColor: 'var(--primary-color)' }}
                   >
                     Retry
@@ -324,17 +324,17 @@ const AllBlogs = () => {
                 { (currentView === 'community' ? pagination.has_previous : recPage > 1) && (
                   <button
                     onClick={() => handlePageChange(currentView === 'community' ? pagination.current_page - 1 : recPage - 1)}
-                    className="w-10 h-10 flex items-center justify-center rounded hover:bg-[var(--card-bg)] transition-colors"
+                    className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded hover:bg-[var(--card-bg)] transition-colors"
                     style={{ color: 'var(--text-color)' }}
                   >
-                    <i className="fas fa-chevron-left text-sm"></i>
+                    <i className="fas fa-chevron-left text-xs sm:text-sm"></i>
                   </button>
                 )}
                 {Array.from({ length: currentView === 'community' ? pagination.total_pages : getRecTotalPages() }, (_, i) => i + 1).map(page => (
                   <button
                     key={page}
                     onClick={() => handlePageChange(page)}
-                    className={`w-10 h-10 flex items-center justify-center rounded transition-colors ${
+                    className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded transition-colors text-xs sm:text-sm ${
                       (currentView === 'community' ? pagination.current_page : recPage) === page ? 'text-white' : 'hover:bg-[var(--card-bg)]'
                     }`}
                     style={{
@@ -348,18 +348,18 @@ const AllBlogs = () => {
                 { (currentView === 'community' ? pagination.has_next : recPage < getRecTotalPages()) && (
                   <button
                     onClick={() => handlePageChange(currentView === 'community' ? pagination.current_page + 1 : recPage + 1)}
-                    className="w-10 h-10 flex items-center justify-center rounded hover:bg-[var(--card-bg)] transition-colors"
+                    className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded hover:bg-[var(--card-bg)] transition-colors"
                     style={{ color: 'var(--text-color)' }}
                   >
-                    <i className="fas fa-chevron-right text-sm"></i>
+                    <i className="fas fa-chevron-right text-xs sm:text-sm"></i>
                   </button>
                 )}
               </div>
             )}
           </div>
 
-          {/* Sidebar */}
-          <div className="lg:w-80 space-y-8">
+          {/* Sidebar - hidden on small screens */}
+          <div className="hidden lg:block lg:w-80 space-y-8">
             <Sidebar />
             <TopContributor />
             <SearchForm />
