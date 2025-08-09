@@ -35,7 +35,7 @@ const AllBlogs = () => {
     has_previous: false,
   });
   const [recPage, setRecPage] = useState(1);
-  const recPerPage = 10;
+  const recPerPage = 1000; // High per_page to fetch all for client-side handling
 
   const primaryDark = shadeColor(primaryColor, -20);
   const primaryLight = shadeColor(primaryColor, 20);
@@ -51,10 +51,12 @@ const AllBlogs = () => {
       setLoading(true);
       setError(null);
 
-      let endpoint = view === 'community' ? '/published-blogs/' : '/jobs/';
-      let params = view === 'community' ? { page, per_page: 10 } : {};
+      let endpoint = '/published-blogs/';
+      let params = { page, per_page: view === 'recommendations' ? recPerPage : 10 };
 
-      if (view === 'community') {
+      if (view === 'recommendations') {
+        params.category = 'Job';
+      } else {
         if (query) {
           endpoint = '/published-blogs/search/';
           params.q = query;
@@ -76,12 +78,13 @@ const AllBlogs = () => {
           has_previous: data.pagination.has_previous,
         });
       } else {
-        setRecommendationPosts(data.results?.map(normalizeBlog) || []);
+        setRecommendationPosts(data.blogs?.map(normalizeBlog) || []);
         setPagination({
-          current_page: 1,
-          total_pages: 1,
-          has_next: false,
-          has_previous: false,
+          current_page: data.pagination.current_page,
+          total_pages: data.pagination.total_pages,
+          per_page: data.pagination.per_page,
+          has_next: data.pagination.has_next,
+          has_previous: data.pagination.has_previous,
         });
       }
     } catch (err) {
@@ -94,8 +97,8 @@ const AllBlogs = () => {
 
   const fetchJobOpportunities = async () => {
     try {
-      const response = await api.get('/jobs/', { params: { limit: 5 } });
-      setJobOpportunities(response.data.results?.map(normalizeBlog) || []);
+      const response = await api.get('/published-blogs/', { params: { category: 'Job', limit: 5 } });
+      setJobOpportunities(response.data.blogs?.map(normalizeBlog) || []);
     } catch (err) {
       console.error('Error fetching job opportunities:', err);
     }
@@ -108,14 +111,14 @@ const AllBlogs = () => {
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      if (currentView === 'community') {
-        if (searchQuery) {
+      if (searchQuery) {
+        if (currentView === 'community') {
           fetchBlogs(currentView, 1, searchQuery);
-        } else {
-          fetchBlogs(currentView, 1, '', activeCategory);
         }
+        // For recommendations, search is client-side
+      } else {
+        fetchBlogs(currentView, 1, '', activeCategory);
       }
-      // For recommendations, search is client-side, no fetch
     }, 500);
 
     return () => clearTimeout(delayDebounceFn);
@@ -133,11 +136,7 @@ const AllBlogs = () => {
   };
 
   const handlePageChange = (page) => {
-    if (currentView === 'community') {
-      fetchBlogs(currentView, page, searchQuery, activeCategory);
-    } else {
-      setRecPage(page);
-    }
+    fetchBlogs(currentView, page, searchQuery, activeCategory);
   };
 
   const renderPosts = (posts) => {
@@ -152,8 +151,8 @@ const AllBlogs = () => {
 
     let displayedPosts = filteredPosts;
     if (currentView === 'recommendations') {
-      const start = (recPage - 1) * recPerPage;
-      const end = start + recPerPage;
+      const start = (recPage - 1) * 10; // Client-side pagination with 10 per page
+      const end = start + 10;
       displayedPosts = filteredPosts.slice(start, end);
     }
 
@@ -168,7 +167,7 @@ const AllBlogs = () => {
           className="flex flex-col md:flex-row gap-6 pb-6 border-b transition-colors"
           style={{ borderColor: 'var(--border-color)' }}
         >
-          {!post.categories?.includes('job') && (
+          {!post.categories?.some(cat => cat.toLowerCase() === 'job') && (
             <div
               className="w-full md:w-48 h-40 rounded-lg bg-cover bg-center"
               style={{
@@ -207,7 +206,7 @@ const AllBlogs = () => {
       post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       post.content.toLowerCase().includes(searchQuery.toLowerCase())
     );
-    return Math.ceil(filtered.length / recPerPage);
+    return Math.ceil(filtered.length / 10); // Client-side pagination with 10 per page
   };
 
   return (
