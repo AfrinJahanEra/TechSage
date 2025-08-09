@@ -11,6 +11,8 @@ import pytz
 from django.core.paginator import Paginator, EmptyPage
 from rest_framework import status
 from mongoengine import DoesNotExist
+from reports.models import BlogReport
+
 
 class CreateBlog(APIView):
     def post(self, request):
@@ -396,14 +398,20 @@ class DeleteBlog(APIView):
                 return Response({"error": "You can only delete your own blogs"}, 
                                status=status.HTTP_403_FORBIDDEN)
             
-            blog.soft_delete(username)
-            Comment.objects(blog=blog).update(set__is_deleted=True)
+            # Delete all comments on this blog first
+            Comment.objects(blog=blog).delete()
+            
+            # Delete all reports on this blog
+            BlogReport.objects(blog=blog).delete()
+            
+            # Now delete the blog
+            blog.delete()
 
             return Response({
-                "message": "Blog moved to trash and all associated comments marked as deleted",
-                "deleted_at": blog.deleted_at.isoformat()
-            })
-        
+                "message": "Blog and all associated comments and reports deleted successfully",
+                "deleted_comments": Comment.objects(blog=blog).count(),
+                "deleted_reports": BlogReport.objects(blog=blog).count()
+            }, status=200)
             
         except DoesNotExist:
             return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -518,11 +526,25 @@ class ModeratorDeleteBlog(APIView):
     def delete(self, request, blog_id):
         try:
             blog = Blog.objects.get(id=blog_id)
+            
+            # Delete all comments first
             Comment.objects(blog=blog).delete()
-            blog.hard_delete()
-            return Response({"message": "Blog and all associated comments permanently deleted"})
+            
+            # Delete all reports
+            BlogReport.objects(blog=blog).delete()
+            
+            # Then delete the blog
+            blog.delete()
+            
+            return Response({
+                "message": "Blog and all associated comments and reports permanently deleted",
+                "deleted_comments": Comment.objects(blog=blog).count(),
+                "deleted_reports": BlogReport.objects(blog=blog).count()
+            })
         except Blog.DoesNotExist:
             return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        
 
 class VoteBlog(APIView):
     def post(self, request, blog_id):

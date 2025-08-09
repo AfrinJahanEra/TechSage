@@ -39,8 +39,10 @@ class DeleteUserAccount(APIView):
         try:
             req_username = request.data.get('username')
             req_password = request.data.get('password')
+            
             if not req_username:
                 return Response({"error": "Username is required"}, status=400)
+                
             requesting_user = User.objects(username=req_username).first()
             if not requesting_user:
                 return Response({"error": "Requesting user not found"}, status=404)
@@ -49,9 +51,8 @@ class DeleteUserAccount(APIView):
             if not target_user:
                 return Response({"error": "Target user not found"}, status=404)
 
-            if requesting_user.role == 'admin':
-                pass 
-            else:
+            # Authorization check
+            if requesting_user.role != 'admin':
                 if req_username != username:
                     return Response({"error": "You can only delete your own account"}, status=403)
                 if not req_password:
@@ -59,18 +60,40 @@ class DeleteUserAccount(APIView):
                 if not check_password(req_password, requesting_user.password):
                     return Response({"error": "Incorrect password"}, status=401)
 
-            user_blogs = Blog.objects(authors=target_user)
+            # Delete all blogs where user is the sole author
+            user_blogs = Blog.objects(authors__in=[target_user])
             for blog in user_blogs:
-                if len(blog.authors) == 1:
+                if len(blog.authors) == 1:  # User is the only author
+                    # Delete all comments on this blog first
+                    Comment.objects(blog=blog).delete()
+                    # Delete all reports on this blog
+                    BlogReport.objects(blog=blog).delete()
+                    # Delete the blog
                     blog.delete()
                 else:
+                    # Remove user from authors list if there are other authors
                     blog.authors.remove(target_user)
                     blog.save()
 
-            Comment.objects(author=target_user).update(set__is_deleted=True)
+            # Delete all comments by this user
+            Comment.objects(author=target_user).delete()
+            
+            # Delete all reports by this user
             BlogReport.objects(reported_by=target_user).delete()
+            
+            # Delete all reports targeting this user's blogs
+            BlogReport.objects(blog__authors__in=[target_user]).delete()
+            
+            # Finally delete the user
             target_user.delete()
-            return Response({"message": f"User '{username}' and associated data deleted successfully"}, status=200)
+            
+            return Response({
+                "message": f"User '{username}' and all associated data deleted successfully",
+                "deleted_blogs": user_blogs.count(),
+                "deleted_comments": Comment.objects(author=target_user).count(),
+                "deleted_reports": BlogReport.objects(Q(reported_by=target_user) | Q(blog__authors__in=[target_user])).count()
+            }, status=200)
+            
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
