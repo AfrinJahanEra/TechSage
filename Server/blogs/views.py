@@ -5,6 +5,7 @@ from rest_framework import status
 from mongoengine import ValidationError
 import cloudinary.uploader
 from .models import Blog
+from .models import Vote
 from users.models import User
 from comments.models import Comment
 import pytz
@@ -796,6 +797,7 @@ class GetBlog(APIView):
             username = request.GET.get('username')
             has_upvoted = False
             has_downvoted = False
+            is_saved = False
             
             if username:
                 user = User.objects(username=username).first()
@@ -804,6 +806,8 @@ class GetBlog(APIView):
                     if vote:
                         has_upvoted = vote.vote_type == 'upvote'
                         has_downvoted = vote.vote_type == 'downvote'
+                    # Check if blog is in user's saved_blogs
+                    is_saved = str(blog.id) in user.saved_blogs
             
             return Response({
                 "id": str(blog.id),
@@ -822,6 +826,7 @@ class GetBlog(APIView):
                 "downvotes": blog.downvote_count,
                 "has_upvoted": has_upvoted,
                 "has_downvoted": has_downvoted,
+                "is_saved": is_saved,  # Add is_saved field
                 "versions": blog.current_version,
                 "is_draft": blog.is_draft,
                 "is_published": blog.is_published

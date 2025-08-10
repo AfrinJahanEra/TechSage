@@ -48,7 +48,8 @@ const InsideBlog = () => {
 
       const fetchFreshData = async () => {
         try {
-          const response = await api.get(`/blogs/${id}`);
+          const query = user ? `?username=${user.username}` : '';
+          const response = await api.get(`/blogs/${id}${query}`);
           setBlog(response.data);
         } catch (err) {
           console.error('Error fetching fresh blog data:', err);
@@ -59,7 +60,8 @@ const InsideBlog = () => {
       const fetchBlog = async () => {
         try {
           setLoading(true);
-          const response = await api.get(`/blogs/${id}`);
+          const query = user ? `?username=${user.username}` : '';
+          const response = await api.get(`/blogs/${id}${query}`);
           setBlog(response.data);
           setLoading(false);
         } catch (err) {
@@ -69,7 +71,7 @@ const InsideBlog = () => {
       };
       fetchBlog();
     }
-  }, [id, api, location.state]);
+  }, [id, api, location.state, user]);
 
   useEffect(() => {
     if (blog && blog.categories && blog.categories.length > 0) {
@@ -207,8 +209,8 @@ const InsideBlog = () => {
             </div>
 
             <BlogActions
-              upvotes={blog.upvotes?.length || 0}
-              downvotes={blog.downvotes?.length || 0}
+              upvotes={blog.upvotes || 0}
+              downvotes={blog.downvotes || 0}
               onReport={() => setShowReportModal(true)}
               blogId={blog.id}
               blogTitle={blog.title}

@@ -321,7 +321,6 @@ class SavedBlogsAPI(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
-
     def delete(self, request, username):
         try:
             user = User.objects(username=username).first()
