@@ -14,12 +14,14 @@ const BlogCardDash = ({
   onRestore,
   onPermanentDelete,
   onEdit, 
+  onUnsave,
   showDelete = false,
   showPublish = false,
   showRestore = false,
   showPermanentDelete = false,
   showUpvotes = true,
-  showEdit = false 
+  showEdit = false,
+  showUnsave = false
 }) => {
   return (
     <div className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-4 pb-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
@@ -106,6 +108,16 @@ const BlogCardDash = ({
             <i className="fas fa-edit mr-1"></i> Edit
           </button>
         )}
+
+         {showUnsave && (
+            <button 
+              onClick={() => onUnsave(blog.id)}
+              className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
+              style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
+            >
+              <i className="fas fa-bookmark mr-1"></i> Unsave
+            </button>
+          )}
         </div>
       </div>
     </div>

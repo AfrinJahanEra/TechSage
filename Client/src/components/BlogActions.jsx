@@ -165,7 +165,7 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog, on
     }
   };
 
-  const shareBlog = (platform) => {
+ const shareBlog = (platform) => {
     if (!user) {
       showLoginToast();
       return;
@@ -173,13 +173,14 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog, on
     const url = `${window.location.origin}/blog/${blogId}`;
     const text = `Check out this research: ${blogTitle}`;
     const hashtags = blog.categories?.map(cat => cat.replace(/\s+/g, '')).join(',') || 'blog,research';
-    const description = blog.excerpt || text;
+    const description = blog.excerpt || text; 
     switch (platform) {
       case 'facebook':
+      
         window.open(
           `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
           '_blank',
-          'noopener,noreferrer'
+          'noopener,noreferrer' 
         );
         break;
       case 'twitter':
@@ -204,16 +205,18 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog, on
             url: url
           }).catch(err => {
             console.error('Error sharing (native):', err);
+         
             copyToClipboard(url);
           });
         } else {
+
           copyToClipboard(url);
         }
     }
   };
 
   const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text).then(
+    navigator.clipboard.writeText(text).then( 
       () => {
         toast.success('Link copied to clipboard!', {
           position: "top-right",
