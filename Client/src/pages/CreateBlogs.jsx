@@ -1,339 +1,766 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import Navbar from '../components/Navbar';
+import { useState, useRef, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { FiUpload, FiX, FiPlus, FiCheck, FiUsers, FiClock, FiInfo, FiSave, FiTrash2, FiSearch } from 'react-icons/fi';
+import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import Tiptap from '../components/CreateBlogComponents/Tiptap';
 import Footer from '../components/Footer';
-import SearchForm from '../components/SearchForm';
-import { useTheme } from '../context/ThemeContext.jsx';
-import { useAuth } from '../context/AuthContext.jsx';
-import { formatDate, calculateReadTime, getThumbnailUrl, normalizeBlog, getContentPreview } from '../utils/blogUtils.js';
-import Sidebar from '../components/Sidebar.jsx';
-import TopContributor from '../components/TopContributor.jsx';
-import { PER_PAGE, AVAILABLE_CATEGORIES } from '../constants.js';
+import PopupModal from '../components/PopupModal';
+import Navbar from '../components/Navbar';
 
-const AllBlogs = () => {
+const CreateBlogPage = () => {
+  const { primaryColor, darkMode } = useTheme();
+  const { user, api } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { darkMode, primaryColor, shadeColor } = useTheme();
-  const { api } = useAuth();
 
-  const [currentView, setCurrentView] = useState(location.state?.currentView || 'community');
+
+  const [title, setTitle] = useState('');
+  const [categories, setCategories] = useState([]);
+  const [tags, setTags] = useState([]);
+  const [newTag, setNewTag] = useState('');
+  const [thumbnail, setThumbnail] = useState(null);
+  const [thumbnailFile, setThumbnailFile] = useState(null);
+  const [content, setContent] = useState('');
+  const [blog, setBlog] = useState(null);
+  const [blogId, setBlogId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState('all');
-  const [communityPosts, setCommunityPosts] = useState([]);
-  const [recommendationPosts, setRecommendationPosts] = useState([]);
-  const [jobOpportunities, setJobOpportunities] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [pagination, setPagination] = useState({
-    current_page: 1,
-    total_pages: 1,
-    per_page: PER_PAGE,
-    has_next: false,
-    has_previous: false,
-  });
+  const [searchResults, setSearchResults] = useState([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [status, setStatus] = useState('draft');
+  const [lastSaved, setLastSaved] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [hoveredIcon, setHoveredIcon] = useState(null);
 
-  const primaryDark = shadeColor(primaryColor, -20);
-  const primaryLight = shadeColor(primaryColor, 20);
+  const [popup, setPopup] = useState({ show: false, message: '', type: 'success' });
+  const popupTimerRef = useRef(null);
 
-  const themeStyles = {
-    '--primary-color': primaryColor,
-    '--primary-dark': primaryDark,
-    '--primary-light': primaryLight,
+  const showPopup = (message, type = 'success', duration = 3000) => {
+    clearTimeout(popupTimerRef.current);
+    setPopup({ show: true, message, type });
+    
+    popupTimerRef.current = setTimeout(() => {
+      setPopup(prev => ({ ...prev, show: false }));
+    }, duration);
   };
 
-  const fetchBlogs = async (view, page = 1, query = '', category = 'all') => {
-    try {
-      setLoading(true);
-      setError(null);
+  useEffect(() => {
+    return () => clearTimeout(popupTimerRef.current);
+  }, []);
 
-      let endpoint = '/published-blogs/';
-      let params = { page, per_page: PER_PAGE };
 
-      if (query) {
-        endpoint = '/published-blogs/search/';
-        params.q = query;
-      } else if (category !== 'all') {
-        params.category = category;
+  const availableCategories = [
+    'Technology', 'Science', 'Programming', 'AI', 'Web Development', 'Mobile', 'Job'
+  ];
+
+ 
+  const fileInputRef = useRef(null);
+  const searchRef = useRef(null);
+
+
+  useEffect(() => {
+    if (location.state?.draftData) {
+      const { draftData } = location.state;
+      setTitle(draftData.title);
+      setContent(draftData.content);
+      setCategories(draftData.categories || []);
+      setTags(draftData.tags || []);
+      setThumbnail(draftData.thumbnail_url);
+      setBlogId(draftData.id);
+      setBlog(draftData);
+      setIsEditing(true);
+      setStatus(draftData.is_published ? 'published' : 'draft');
+    }
+  }, [location.state]);
+
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSearchResults(false);
       }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
-      if (view === 'recommendations') {
-        params.category = category !== 'all' ? category : 'Job'; // Keep "Job" for recommendations
-      }
 
-      const response = await api.get(endpoint, { params });
-      const data = response.data;
+  const toggleCategory = (category) => {
+    setCategories(prev =>
+      prev.includes(category)
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
+  };
 
-      if (view === 'community') {
-        setCommunityPosts(data.blogs?.map(normalizeBlog) || []);
-      } else {
-        setRecommendationPosts(data.blogs?.map(normalizeBlog) || []);
-      }
-      setPagination({
-        current_page: data.pagination.current_page,
-        total_pages: data.pagination.total_pages,
-        per_page: data.pagination.per_page,
-        has_next: data.pagination.has_next,
-        has_previous: data.pagination.has_previous,
-      });
 
-      // Fetch job opportunities only if not already loaded
-      if (jobOpportunities.length === 0) {
-        const jobResponse = await api.get('/published-blogs/', { params: { category: 'Job', limit: 5 } });
-        setJobOpportunities(jobResponse.data.blogs?.map(normalizeBlog) || []);
-      }
-    } catch (err) {
-      console.error('Error fetching blogs:', err);
-      setError(err.response?.data?.error || 'Failed to load content. Please try again later.');
-    } finally {
-      setLoading(false);
+  const addTag = (e) => {
+    e.preventDefault();
+    if (newTag.trim() && !tags.includes(newTag.trim())) {
+      setTags([...tags, newTag.trim()]);
+      setNewTag('');
     }
   };
 
+
+  const removeTag = (tagToRemove) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setThumbnailFile(file);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setThumbnail(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+
+  const searchUsers = async (query) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    try {
+      const response = await api.get(`search/?q=${query.trim()}`);
+      setSearchResults(response.data);
+      setShowSearchResults(true);
+    } catch (error) {
+      console.error('Error searching users:', error);
+      showPopup('Failed to search users', 'error');
+    }
+  };
+
+
+  const sendAuthorRequest = async (username) => {
+    if (!blogId) {
+      try {
+        const newBlogId = await createDraft();
+        setBlogId(newBlogId);
+        await sendCollaborationRequest(newBlogId, username);
+      } catch (error) {
+        console.error('Error creating draft before sending request:', error);
+        showPopup('Failed to create draft before sending request', 'error');
+      }
+    } else {
+      await sendCollaborationRequest(blogId, username);
+    }
+  };
+
+ 
+  const sendCollaborationRequest = async (blogId, username) => {
+    try {
+      const response = await api.post('/collaboration-request/request-author/', {
+        username: user.username,
+        requested_username: username,
+        blog_id: blogId
+      });
+
+      showPopup('Collaboration request sent successfully', 'success');
+      setSearchQuery('');
+      setSearchResults([]);
+      setShowSearchResults(false);
+    } catch (error) {
+      console.error('Error sending author request:', error);
+      showPopup(error.response?.data?.error || 'Failed to send request', 'error');
+    }
+  };
+
+ 
+  const removeCollaborator = async (username) => {
+    if (!blogId) {
+      showPopup('No blog selected', 'error');
+      return;
+    }
+
+    try {
+      const response = await api.delete(`/blogs/remove-author/${blogId}/`, {
+        data: {
+          username: user.username,
+          author_to_remove: username
+        }
+      });
+
+      if (response.data.success) {
+        setBlog(prev => ({
+          ...prev,
+          authors: prev.authors.filter(a => a.username !== username)
+        }));
+        showPopup('Collaborator removed successfully', 'success');
+      }
+    } catch (error) {
+      console.error('Error removing collaborator:', error);
+      showPopup(error.response?.data?.error || 'Failed to remove collaborator', 'error');
+    }
+  };
+
+
+  const createDraft = async () => {
+    try {
+      setIsSubmitting(true);
+
+      const response = await api.post('/blogs/create-draft/', {
+        username: user.username,
+        title: title || "Untitled Draft",
+        content: content || ""
+      });
+
+      setBlogId(response.data.id);
+      setStatus('draft');
+      setLastSaved(new Date());
+      return response.data.id;
+    } catch (error) {
+      console.error('Error creating draft:', error);
+      showPopup(error.response?.data?.error || 'Failed to create draft', 'error');
+      throw error;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+
+  const saveAsDraft = async () => {
+    try {
+      setIsSubmitting(true);
+
+      let currentBlogId = blogId;
+      if (!currentBlogId) {
+        currentBlogId = await createDraft();
+      }
+
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('content', content);
+      formData.append('username', user.username);
+
+      categories.forEach(cat => formData.append('categories[]', cat));
+      tags.forEach(tag => formData.append('tags[]', tag));
+
+      if (thumbnailFile) {
+        formData.append('thumbnail', thumbnailFile);
+      }
+
+      const response = await api.put(`/blogs/update-draft/${currentBlogId}/`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      if (!blogId) {
+        setBlogId(currentBlogId);
+      }
+      setStatus('draft');
+      setLastSaved(new Date());
+      showPopup('Draft saved successfully', 'success');
+    } catch (error) {
+      console.error('Error saving draft:', error);
+      showPopup(error.response?.data?.error || 'Failed to save draft', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const publishBlog = async () => {
+    if (!title.trim()) {
+      showPopup('Please enter a blog title', 'error');
+      return;
+    }
+
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = content;
+    const textOnly = tempDiv.textContent.trim();
+
+    if (!textOnly) {
+      showPopup('Please add some content to your blog', 'error');
+      return;
+    }
+
+    if (!categories.length) {
+      showPopup('Please select at least one category', 'error');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('content', content);
+      formData.append('username', user.username);
+      formData.append('is_published', true);
+      
+      categories.forEach(cat => formData.append('categories[]', cat));
+      tags.forEach(tag => formData.append('tags[]', tag));
+
+      if (thumbnailFile) {
+        formData.append('thumbnail', thumbnailFile);
+      }
+
+      let response;
+      response = await api.post('/blogs/create/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      setStatus('published');
+      showPopup('Blog published successfully', 'success');
+      
+      setTimeout(() => {
+        navigate(`/blogs/${response.data.id || blogId}`);
+      }, 2000);
+    } catch (error) {
+      console.error('Publish error:', error);
+      showPopup(error.response?.data?.error || 'Failed to publish blog', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+
+  const discardBlog = async () => {
+    if (window.confirm('Are you sure you want to discard this blog? It will be moved to trash.')) {
+      try {
+        setIsSubmitting(true);
+
+        if (!blogId) {
+          navigate('/blogs/drafts');
+          return;
+        }
+
+        await api.post(`/blogs/delete/${blogId}/`, {
+          username: user.username
+        });
+
+        showPopup('Blog moved to trash', 'success');
+        navigate('/blogs/drafts');
+      } catch (error) {
+        console.error('Error discarding blog:', error);
+        showPopup(error.response?.data?.error || 'Failed to discard blog', 'error');
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+  };
+
+  
+  const formatLastSaved = () => {
+    if (!lastSaved) return 'Not saved yet';
+
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - new Date(lastSaved)) / 1000);
+
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    return `${Math.floor(diffInSeconds / 86400)} days ago`;
+  };
+
+  
   useEffect(() => {
-    fetchBlogs(currentView, 1, searchQuery, activeCategory);
-  }, [currentView, activeCategory]);
+    const timer = setTimeout(() => {
+      if ((title || content) && status === 'draft') {
+        saveAsDraft();
+      }
+    }, 30000); 
 
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      fetchBlogs(currentView, 1, searchQuery, activeCategory);
-    }, searchQuery ? 500 : 0);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery, currentView, activeCategory]);
-
-  const handleViewToggle = (view) => {
-    setCurrentView(view);
-    setSearchQuery('');
-    setActiveCategory('all'); // Reset to 'all', excluding 'Job' from UI
-    navigate('/all-blogs', {
-      state: { currentView: view },
-      replace: true,
-    });
-  };
-
-  const handlePageChange = (page) => {
-    fetchBlogs(currentView, page, searchQuery, activeCategory);
-  };
-
-  const renderPosts = (posts) => {
-    return posts.map(post => (
-      <Link
-        to={`/inside-blog/${post.id}`}
-        key={post.id}
-        className="block"
-        state={{ blog: post }}
-      >
-        <div
-          className="flex flex-col md:flex-row gap-6 pb-6 border-b transition-colors"
-          style={{ borderColor: 'var(--border-color)' }}
-        >
-          {!post.categories?.some(cat => cat.toLowerCase() === 'job') && (
-            <div
-              className="w-full md:w-48 h-40 rounded-lg bg-cover bg-center"
-              style={{
-                backgroundImage: `url(${getThumbnailUrl(post)})`,
-                backgroundColor: 'var(--card-bg)',
-              }}
-            ></div>
-          )}
-          <div className="flex-1">
-            <span
-              className="inline-block text-xs font-semibold uppercase tracking-wider mb-2"
-              style={{ color: 'var(--primary-color)' }}
-            >
-              {post.categories?.[0] || 'Uncategorized'}
-            </span>
-            <h3
-              className="text-xl font-bold mb-2 hover:text-[var(--primary-color)] transition-colors"
-            >
-              {post.title}
-            </h3>
-            <p className="mb-4" style={{ color: 'var(--muted-text)' }}>
-              {(getContentPreview(post.content) || 'No content available').substring(0, 150)}...
-            </p>
-            <div className="flex justify-between text-sm" style={{ color: 'var(--muted-text)' }}>
-              <span>{formatDate(post.published_at)}</span>
-              <span>{calculateReadTime(post.content)}</span>
-            </div>
-          </div>
-        </div>
-      </Link>
-    ));
-  };
+    return () => clearTimeout(timer);
+  }, [title, content, categories, tags, thumbnail]);
 
   return (
-    <div
-      className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-800'}`}
-      style={themeStyles}
-    >
-      <Navbar activePage="all-blogs" />
+    <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-50 text-gray-800'}`}>
+      <Navbar />
+      <PopupModal
+        show={popup.show}
+        message={popup.message}
+        type={popup.type}
+        onClose={() => setPopup({ ...popup, show: false })}
+      />
 
-      <main className="container mx-auto px-4 md:px-20 py-20 pt-28">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Main Content */}
-          <div className="flex-1">
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-bold">
-                {currentView === 'community' ? 'Community Updates' : 'Recommended Research'}
+      <div className="flex flex-1 pt-16">
+        {/* Main Content */}
+        <main className="flex-1 p-6 overflow-auto">
+          <div className={`max-w-5xl mx-auto rounded-xl shadow-sm overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            {/* Page Header */}
+            <div className={`px-8 py-6 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                {isEditing ? 'Edit Blog' : 'Create New Blog'}
               </h1>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleViewToggle('community')}
-                  className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                    currentView === 'community'
-                      ? 'text-white'
-                      : 'hover:bg-[var(--card-bg)]'
-                  }`}
-                  style={{
-                    backgroundColor: currentView === 'community' ? 'var(--primary-color)' : 'transparent',
-                  }}
-                  aria-pressed={currentView === 'community'}
-                  aria-label="View community updates"
-                >
-                  Community
-                </button>
-                <button
-                  onClick={() => handleViewToggle('recommendations')}
-                  className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                    currentView === 'recommendations'
-                      ? 'text-white'
-                      : 'hover:bg-[var(--card-bg)]'
-                  }`}
-                  style={{
-                    backgroundColor: currentView === 'recommendations' ? 'var(--primary-color)' : 'transparent',
-                  }}
-                  aria-pressed={currentView === 'recommendations'}
-                  aria-label="View recommended research"
-                >
-                  Recommendations
-                </button>
+            </div>
+
+            <div className="p-8">
+              {/* Blog Title */}
+              <div className="mb-8">
+                <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Blog Title *
+                </label>
+                <input
+                  type="text"
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:!border-[var(--primary-color)] transition-colors ${darkMode
+                    ? 'bg-gray-700 border-gray-600 text-white'
+                    : 'border-gray-300 text-gray-800'
+                    }`}
+                  placeholder="Enter your blog title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  required
+                />
               </div>
-            </div>
 
-            {/* Search Bar */}
-            <div className="relative mb-6">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span aria-hidden="true">
-                  <i className="fas fa-search" style={{ color: 'var(--muted-text)' }}></i>
-                </span>
-              </div>
-              <input
-                type="text"
-                className="block w-full pl-10 pr-3 py-2 border rounded-full shadow-sm focus:outline-none focus:ring-2 focus:border-transparent transition-colors"
-                style={{
-                  backgroundColor: 'var(--card-bg)',
-                  borderColor: 'var(--border-color)',
-                  color: 'var(--text-color)',
-                  '--tw-ring-color': 'var(--primary-color)',
-                }}
-                placeholder={currentView === 'community' ? "Search updates..." : "Search research..."}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                aria-label={currentView === 'community' ? "Search community updates" : "Search recommended research"}
-              />
-            </div>
-
-            {/* Filters */}
-            <div className="flex flex-wrap gap-2 mb-6">
-              {['all', ...AVAILABLE_CATEGORIES].filter(category => category.toLowerCase() !== 'job').map(category => (
-                <button
-                  key={category}
-                  onClick={() => setActiveCategory(category)}
-                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                    activeCategory === category
-                      ? 'text-white'
-                      : 'hover:bg-[var(--card-bg)]'
-                  }`}
-                  style={{
-                    backgroundColor: activeCategory === category ? 'var(--primary-color)' : 'transparent',
-                  }}
-                  aria-pressed={activeCategory === category}
-                  aria-label={`Filter by ${category === 'all' ? 'all categories' : category}`}
+              {/* Thumbnail Upload */}
+              <div className="mb-8">
+                <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Thumbnail Image
+                </label>
+                <div
+                  className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${thumbnail
+                    ? darkMode ? 'border-gray-700' : 'border-gray-200'
+                    : darkMode ? 'border-gray-600 hover:border-[var(--primary-color)]' : 'border-gray-300 hover:border-[var(--primary-color)]'
+                    }`}
+                  onClick={() => fileInputRef.current.click()}
                 >
-                  {category === 'all' ? 'All' : category}
-                </button>
-              ))}
-            </div>
-
-            {/* Content Display */}
-            <div className="space-y-8 mb-8">
-              {loading ? (
-                <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
+                  {thumbnail ? (
+                    <div className="relative">
+                      <img
+                        src={thumbnail}
+                        alt="Preview"
+                        className="max-h-60 mx-auto rounded-md object-cover"
+                      />
+                      <button
+                        type="button"
+                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setThumbnail(null);
+                          setThumbnailFile(null);
+                        }}
+                      >
+                        <FiX size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <FiUpload className={`mx-auto h-12 w-12 mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        Click to upload or drag and drop
+                      </p>
+                      <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                        Recommended size: 1200×630px
+                      </p>
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                  />
                 </div>
-              ) : error ? (
-                <div className="text-center py-8">
-                  <p>{error}</p>
+              </div>
+
+              {/* Category Selection */}
+              <div className="mb-8">
+                <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Categories *
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {availableCategories.map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      className={`
+                        px-4 py-2 rounded-full border text-sm font-medium flex items-center transition-colors duration-200
+                        ${categories.includes(cat)
+                          ? 'text-white border-[var(--primary-color)]'
+                          : darkMode
+                            ? 'bg-gray-700 text-gray-200 border-gray-600'
+                            : 'bg-white text-gray-700 border-gray-300'
+                        }
+                      `}
+                      style={{
+                        backgroundColor: categories.includes(cat) ? primaryColor : '',
+                        borderColor: hoveredIcon === cat ? `var(--primary-color)` : categories.includes(cat) ? `var(--primary-color)` : darkMode ? '#4b5563' : '#e5e7eb',
+                      }}
+                      onClick={() => toggleCategory(cat)}
+                      onMouseEnter={() => setHoveredIcon(cat)}
+                      onMouseLeave={() => setHoveredIcon(null)}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tags Input */}
+              <div className="mb-8">
+                <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Tags
+                </label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {tags.map((tag) => (
+                    <div
+                      key={tag}
+                      className={`px-3 py-1 rounded-full text-sm flex items-center ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'}`}
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        className="ml-1.5 hover:text-red-500 transition-colors"
+                        onClick={() => removeTag(tag)}
+                      >
+                        <FiX size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <form onSubmit={addTag} className="flex">
+                  <input
+                    type="text"
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.target.value)}
+                    className={`flex-1 px-3 py-2 border text-sm rounded-l-lg focus:outline-none focus:!border-[var(--primary-color)] transition-colors ${darkMode
+                      ? 'bg-gray-700 border-gray-600 text-white'
+                      : 'border-gray-300 text-gray-800'
+                      }`}
+                    placeholder="Add tags (press Enter)"
+                  />
                   <button
-                    onClick={() => fetchBlogs(currentView, pagination.current_page, searchQuery, activeCategory)}
-                    className="mt-4 px-4 py-2 rounded text-white"
-                    style={{ backgroundColor: 'var(--primary-color)' }}
-                    aria-label="Retry loading content"
+                    type="submit"
+                    className="px-3 py-2 text-white rounded-r-lg hover:opacity-90 transition-colors"
+                    style={{ backgroundColor: primaryColor }}
                   >
-                    Retry
+                    <FiPlus />
+                  </button>
+                </form>
+              </div>
+
+              {/* Blog Content Editor */}
+              <div className="mb-8">
+                <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Blog Content *
+                </label>
+                <Tiptap content={content} setContent={setContent} primaryColor={primaryColor} darkMode={darkMode} />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-8">
+                <div className={`text-sm flex items-center gap-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <div className="flex items-center gap-1">
+                    <FiInfo className="text-[var(--primary-color)]" />
+                    <span>
+                      Status: <span className="font-medium text-amber-500 capitalize">{status}</span>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <FiClock className="text-[var(--primary-color)]" />
+                    <span>
+                      Last Saved: <span className="font-medium">{formatLastSaved()}</span>
+                    </span>
+                  </div>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    disabled={isSubmitting}
+                    className={`px-6 py-2 border rounded-lg transition-colors w-full sm:w-auto flex items-center justify-center gap-2 ${darkMode
+                      ? 'border-gray-600 text-gray-200 hover:bg-gray-700'
+                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    onClick={discardBlog}
+                  >
+                    <FiTrash2 />
+                    Discard
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isSubmitting}
+                    className="px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors w-full sm:w-auto flex items-center justify-center gap-2"
+                    onClick={isEditing ? saveAsDraft : saveAsDraft}
+                  >
+                    <FiSave />
+                    {isEditing ? 'Update Draft' : 'Save Draft'}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isSubmitting}
+                    className="px-6 py-2 text-white rounded-lg hover:opacity-90 transition-colors w-full sm:w-auto flex items-center justify-center gap-2"
+                    style={{ backgroundColor: primaryColor }}
+                    onClick={publishBlog}
+                  >
+                    <FiCheck />
+                    Publish
                   </button>
                 </div>
-              ) : (
-                renderPosts(currentView === 'community' ? communityPosts : recommendationPosts)
+              </div>
+            </div>
+          </div>
+        </main>
+
+        {/* Sidebar */}
+        <aside className={`hidden lg:block w-80 border-l p-6 overflow-y-auto ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
+          {/* Collaborators Section */}
+          <div className="mb-8">
+            <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+              <FiUsers className="text-[var(--primary-color)]" />
+              Collaborators
+            </h3>
+
+            {/* Current user and collaborators */}
+            {user && (
+              <div className="space-y-3">
+                {/* Current user as primary author */}
+                <div className={`flex items-center p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-white'}`}>
+                  <img
+                    src={user.avatar_url || `https://ui-avatars.com/api/?name=${user.username}&background=random`}
+                    alt={user.username}
+                    className="h-10 w-10 rounded-full object-cover mr-3"
+                  />
+                  <div>
+                    <p className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                      {user.username} (You)
+                    </p>
+                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      Primary Author
+                    </p>
+                  </div>
+                </div>
+
+                {/* Collaborators */}
+                {blog?.authors?.filter(author => author.username !== user.username).map((author) => (
+                  <div
+                    key={author.username}
+                    className={`flex justify-between items-center p-3 rounded-lg ${darkMode ? 'bg-gray-700 hover:shadow-md' : 'bg-white hover:shadow-sm'}`}
+                  >
+                    <div className="flex items-center">
+                      <img
+                        src={author.avatar_url || `https://ui-avatars.com/api/?name=${author.username}&background=random`}
+                        alt={author.username}
+                        className="h-10 w-10 rounded-full object-cover mr-3"
+                      />
+                      <div>
+                        <p className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                          {author.username}
+                        </p>
+                        <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          Collaborator
+                        </p>
+                      </div>
+                    </div>
+                    {user.username === blog.authors[0].username && (
+                      <button
+                        className={`transition-colors ${darkMode ? 'text-gray-400 hover:text-red-400' : 'text-gray-400 hover:text-red-500'}`}
+                        onClick={() => removeCollaborator(author.username)}
+                      >
+                        <FiX />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Search for collaborators */}
+            <div className="mt-4 relative" ref={searchRef}>
+              <div className="flex">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    searchUsers(e.target.value);
+                  }}
+                  onFocus={() => setShowSearchResults(true)}
+                  className={`flex-1 px-3 py-2 border text-sm rounded-l-lg focus:outline-none focus:!border-[var(--primary-color)] transition-colors ${darkMode
+                    ? 'bg-gray-700 border-gray-600 text-white'
+                    : 'border-gray-300 text-gray-800'
+                    }`}
+                  placeholder="Search users to collaborate"
+                />
+                <button
+                  className="px-3 py-2 text-white rounded-r-lg hover:opacity-90 transition-colors"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  <FiSearch />
+                </button>
+              </div>
+
+              {/* Search results dropdown */}
+              {showSearchResults && searchResults.length > 0 && (
+                <div className={`absolute z-10 mt-1 w-full rounded-lg shadow-lg py-1 ${darkMode ? 'bg-gray-700' : 'bg-white'}`}>
+                  {searchResults.map((user) => (
+                    <div
+                      key={user._id}
+                      className={`px-4 py-2 text-sm cursor-pointer flex items-center justify-between ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-100'}`}
+                    >
+                      <div className="flex items-center">
+                        <img
+                          src={user.avatar_url || `https://ui-avatars.com/api/?name=${user.username}&background=random`}
+                          alt={user.username}
+                          className="h-8 w-8 rounded-full object-cover mr-3"
+                        />
+                        <span className={darkMode ? 'text-gray-200' : 'text-gray-800'}>
+                          {user.username}
+                        </span>
+                      </div>
+                      <button
+                        className={`p-1 rounded-full ${darkMode ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-500 hover:bg-gray-200'}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          sendAuthorRequest(user.username);
+                        }}
+                      >
+                        <FiPlus />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
 
-            {/* Pagination */}
-            {pagination.total_pages > 1 && (
-              <div className="flex justify-center gap-1">
-                {pagination.has_previous && (
-                  <button
-                    onClick={() => handlePageChange(pagination.current_page - 1)}
-                    className="w-10 h-10 flex items-center justify-center rounded hover:bg-[var(--card-bg)] transition-colors"
-                    style={{ color: 'var(--text-color)' }}
-                    aria-label="Previous page"
-                  >
-                    <i className="fas fa-chevron-left text-sm"></i>
-                  </button>
-                )}
-                {Array.from({ length: pagination.total_pages }, (_, i) => i + 1).map(page => (
-                  <button
-                    key={page}
-                    onClick={() => handlePageChange(page)}
-                    className={`w-10 h-10 flex items-center justify-center rounded transition-colors ${
-                      pagination.current_page === page ? 'text-white' : 'hover:bg-[var(--card-bg)]'
-                    }`}
-                    style={{
-                      backgroundColor: pagination.current_page === page ? 'var(--primary-color)' : 'transparent',
-                      color: 'var(--text-color)',
-                    }}
-                    aria-label={`Go to page ${page}`}
-                    aria-current={pagination.current_page === page ? 'page' : undefined}
-                  >
-                    {page}
-                  </button>
-                ))}
-                {pagination.has_next && (
-                  <button
-                    onClick={() => handlePageChange(pagination.current_page + 1)}
-                    className="w-10 h-10 flex items-center justify-center rounded hover:bg-[var(--card-bg)] transition-colors"
-                    style={{ color: 'var(--text-color)' }}
-                    aria-label="Next page"
-                  >
-                    <i className="fas fa-chevron-right text-sm"></i>
-                  </button>
-                )}
-              </div>
-            )}
+            <div className="mt-4">
+              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                Search for users and send them collaboration requests. They'll need to accept your request to become co-authors.
+              </p>
+            </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="lg:w-80 space-y-8">
-            <Sidebar />
-            <TopContributor />
-            <SearchForm />
+          {/* Blog Status */}
+          <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-white'}`}>
+            <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+              <FiInfo className="text-[var(--primary-color)]" />
+              Blog Status
+            </h3>
+            <div className={`space-y-2 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+              <div className="flex justify-between">
+                <span>Status:</span>
+                <span className="font-medium text-amber-500 capitalize">{status}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Last Saved:</span>
+                <span className="font-medium">{formatLastSaved()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Created:</span>
+                <span className="font-medium">{lastSaved ? new Date(lastSaved).toLocaleString() : 'Not saved yet'}</span>
+              </div>
+            </div>
           </div>
-        </div>
-      </main>
+        </aside>
+      </div>
 
       <Footer />
     </div>
   );
 };
 
-export default AllBlogs;
+export default CreateBlogPage;

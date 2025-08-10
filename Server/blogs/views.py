@@ -10,8 +10,16 @@ from comments.models import Comment
 import pytz
 from django.core.paginator import Paginator, EmptyPage
 from rest_framework import status
-from mongoengine import DoesNotExist
+from mongoengine import DoesNotExist,NotUniqueError
 from reports.models import BlogReport
+# At the top of views.py, add or ensure these imports:
+from .models import Blog, Vote
+from mongoengine.errors import NotUniqueError
+from django.utils import timezone
+import mongoengine
+
+
+
 
 
 class CreateBlog(APIView):
@@ -210,32 +218,6 @@ class JobBlogs(APIView):
                 "details": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-class GetBlog(APIView):
-    def get(self, request, blog_id):
-        try:
-            blog = Blog.objects.get(id=blog_id, is_deleted=False)
-            
-            return Response({
-                "id": str(blog.id),
-                "title": blog.title,
-                "content": blog.content,
-                "thumbnail_url": blog.thumbnail_url,
-                "authors": [{"username": author.username, "avatar": getattr(author, 'avatar_url', None)} 
-                           for author in blog.authors],
-                "categories": blog.categories,
-                "tags": blog.tags,
-                "created_at": blog.created_at.isoformat(),
-                "updated_at": blog.updated_at.isoformat(),
-                "status": "published" if blog.is_published else "draft",
-                "published_at": blog.published_at.isoformat() if blog.published_at else None,
-                "upvotes": len(blog.upvotes),
-                "downvotes": len(blog.downvotes),
-                "versions": blog.current_version,
-                "is_draft": blog.is_draft,
-                "is_published": blog.is_published
-            })
-        except DoesNotExist:
-            return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
 
 class UpdateBlog(APIView):
     def put(self, request, blog_id):
@@ -546,43 +528,6 @@ class ModeratorDeleteBlog(APIView):
         
         
 
-class VoteBlog(APIView):
-    def post(self, request, blog_id):
-        data = request.data
-        try:
-            blog = Blog.objects.get(id=blog_id)
-            user = User.objects(username=data.get('username')).first()
-            
-            if not user:
-                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-                
-            vote_type = data.get('type')
-            
-            if vote_type == 'upvote':
-                if user in blog.upvotes:
-                    blog.upvotes.remove(user)
-                else:
-                    blog.upvotes.append(user)
-                    if user in blog.downvotes:
-                        blog.downvotes.remove(user)
-            elif vote_type == 'downvote':
-                if user in blog.downvotes:
-                    blog.downvotes.remove(user)
-                else:
-                    blog.downvotes.append(user)
-                    if user in blog.upvotes:
-                        blog.upvotes.remove(user)
-            else:
-                return Response({"error": "Invalid vote type"}, status=status.HTTP_400_BAD_REQUEST)
-                
-            blog.save()
-            return Response({
-                "upvotes": len(blog.upvotes),
-                "downvotes": len(blog.downvotes)
-            })
-            
-        except Blog.DoesNotExist:
-            return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
 
 class BlogSearch(APIView):
     def get(self, request):
@@ -847,3 +792,110 @@ class UpdateDraft(APIView):
             return Response({"error": "Draft not found"}, status=404)
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+        
+
+class GetBlog(APIView):
+    def get(self, request, blog_id):
+        try:
+            blog = Blog.objects.get(id=blog_id, is_deleted=False)
+            
+            username = request.GET.get('username')
+            has_upvoted = False
+            has_downvoted = False
+            
+            if username:
+                user = User.objects(username=username).first()
+                if user:
+                    vote = Vote.objects(blog=blog, user=user).first()
+                    if vote:
+                        has_upvoted = vote.vote_type == 'upvote'
+                        has_downvoted = vote.vote_type == 'downvote'
+            
+            return Response({
+                "id": str(blog.id),
+                "title": blog.title,
+                "content": blog.content,
+                "thumbnail_url": blog.thumbnail_url,
+                "authors": [{"username": author.username, "avatar": getattr(author, 'avatar_url', None)} 
+                           for author in blog.authors],
+                "categories": blog.categories,
+                "tags": blog.tags,
+                "created_at": blog.created_at.isoformat(),
+                "updated_at": blog.updated_at.isoformat(),
+                "status": "published" if blog.is_published else "draft",
+                "published_at": blog.published_at.isoformat() if blog.published_at else None,
+                "upvotes": blog.upvote_count,
+                "downvotes": blog.downvote_count,
+                "has_upvoted": has_upvoted,
+                "has_downvoted": has_downvoted,
+                "versions": blog.current_version,
+                "is_draft": blog.is_draft,
+                "is_published": blog.is_published
+            })
+        except Blog.DoesNotExist:
+            return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
+
+class VoteBlog(APIView):
+    def post(self, request, blog_id):
+        data = request.data
+        try:
+            blog = Blog.objects.get(id=blog_id)
+            user = User.objects(username=data.get('username')).first()
+            
+            if not user:
+                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+                
+            vote_type = data.get('type')
+            if vote_type not in ['upvote', 'downvote']:
+                return Response({"error": "Invalid vote type"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Check existing vote
+            existing_vote = Vote.objects(blog=blog, user=user).first()
+
+            # Use a context manager for atomic operations (MongoDB session/transaction)
+            with mongoengine.get_connection().start_session() as session:
+                with session.start_transaction():
+                    if existing_vote:
+                        if existing_vote.vote_type == vote_type:
+                            # Undo vote
+                            existing_vote.delete()
+                            if vote_type == 'upvote':
+                                blog.upvote_count -= 1
+                            else:
+                                blog.downvote_count -= 1
+                        else:
+                            # Switch vote
+                            existing_vote.vote_type = vote_type
+                            existing_vote.created_at = timezone.now()
+                            existing_vote.save()
+                            if vote_type == 'upvote':
+                                blog.upvote_count += 1
+                                blog.downvote_count -= 1
+                            else:
+                                blog.downvote_count += 1
+                                blog.upvote_count -= 1
+                    else:
+                        # New vote
+                        Vote(blog=blog, user=user, vote_type=vote_type).save()
+                        if vote_type == 'upvote':
+                            blog.upvote_count += 1
+                        else:
+                            blog.downvote_count += 1
+
+                    blog.save()
+
+            return Response({
+                "upvotes": blog.upvote_count,
+                "downvotes": blog.downvote_count,
+                "has_upvoted": vote_type == 'upvote' and not existing_vote or (existing_vote and existing_vote.vote_type == 'upvote'),
+                "has_downvoted": vote_type == 'downvote' and not existing_vote or (existing_vote and existing_vote.vote_type == 'downvote')
+            })
+            
+        except Blog.DoesNotExist:
+            return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
+        except NotUniqueError:
+            return Response({"error": "User has already voted"}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# ... (other views remain the same)
