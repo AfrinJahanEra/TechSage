@@ -7,7 +7,7 @@ import Footer from '../components/Footer.jsx';
 import Navbar from '../components/Navbar.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
 import BlogCardDash from '../components/BlogCardDash.jsx';
-import 'chartjs-plugin-annotation'; // Import the plugin directly
+import 'chartjs-plugin-annotation';
 import {
     normalizeBlog,
     getBadge
@@ -42,7 +42,8 @@ const Dashboard = () => {
         likes: [],
         reports: []
     });
-    const chartRef = useRef(null);
+    const barChartRef = useRef(null);
+    const pieChartRef = useRef(null);
 
     const primaryDark = shadeColor(primaryColor, -20);
     const primaryLight = shadeColor(primaryColor, 20);
@@ -267,10 +268,11 @@ const Dashboard = () => {
     }, [viewedUser, viewUsername, api]);
 
     useEffect(() => {
-        const ctx = document.getElementById('performanceChart');
-        let performanceChart = null;
-        if (ctx) {
-            performanceChart = new Chart(ctx, {
+        // Bar Chart
+        const barCtx = document.getElementById('performanceBarChart');
+        let barChart = null;
+        if (barCtx) {
+            barChart = new Chart(barCtx, {
                 type: 'bar',
                 data: {
                     labels: activityData.labels,
@@ -379,9 +381,73 @@ const Dashboard = () => {
             });
         }
 
+        // Pie Chart
+        const pieCtx = document.getElementById('performancePieChart');
+        let pieChart = null;
+        if (pieCtx) {
+            const totalPosts = activityData.posts.reduce((sum, val) => sum + val, 0);
+            const totalComments = activityData.comments.reduce((sum, val) => sum + val, 0);
+            const totalLikes = activityData.likes.reduce((sum, val) => sum + val, 0);
+            const totalReports = activityData.reports.reduce((sum, val) => sum + val, 0);
+
+            pieChart = new Chart(pieCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Blog Posts', 'Comments', 'Likes Received', 'Reports'],
+                    datasets: [{
+                        data: [totalPosts, totalComments, totalLikes, totalReports],
+                        backgroundColor: [
+                            `${primaryColor}80`,
+                            `${primaryDark}80`,
+                            `${primaryLight}80`,
+                            `${darkMode ? '#ef4444' : '#f87171'}80`
+                        ],
+                        borderColor: [
+                            primaryColor,
+                            primaryDark,
+                            primaryLight,
+                            darkMode ? '#ef4444' : '#f87171'
+                        ],
+                        borderWidth: 1,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: darkMode ? '#e2e8f0' : '#4a5568',
+                                boxWidth: 20,
+                                padding: 20,
+                            },
+                        },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: darkMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+                            titleColor: darkMode ? '#ffffff' : '#000000',
+                            bodyColor: darkMode ? '#e2e8f0' : '#4a5568',
+                            borderColor: primaryColor,
+                            borderWidth: 1,
+                            padding: 12,
+                            cornerRadius: 4,
+                        },
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart',
+                    }
+                },
+            });
+        }
+
         return () => {
-            if (performanceChart) {
-                performanceChart.destroy();
+            if (barChart) {
+                barChart.destroy();
+            }
+            if (pieChart) {
+                pieChart.destroy();
             }
         };
     }, [activityData, darkMode, primaryColor, primaryDark, primaryLight]);
@@ -713,14 +779,21 @@ const Dashboard = () => {
                                     </div>
                                 </div>
 
-                                <div className={`rounded-lg p-6 shadow-sm mb-6 h-96 transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                                <div className={`rounded-lg p-6 shadow-sm mb-6 transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
                                     <h3 className={`text-lg font-semibold mb-4 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
                                         User Activity
                                     </h3>
-                                    <canvas id="performanceChart"></canvas>
+                                    <div className="flex flex-col md:flex-row gap-6">
+                                        <div className="flex-1 h-96">
+                                            <canvas id="performanceBarChart"></canvas>
+                                        </div>
+                                        <div className="flex-1 h-96">
+                                            <canvas id="performancePieChart"></canvas>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div>
+                                {/* <div>
                                     <div className="flex justify-between items-center mb-4">
                                         <h2
                                             className="text-xl font-bold pb-2 border-b-2 inline-block"
@@ -750,7 +823,7 @@ const Dashboard = () => {
                                             ))}
                                         </div>
                                     ) : renderEmptyMessage()}
-                                </div>
+                                </div> */}
                             </div>
                         )}
 
