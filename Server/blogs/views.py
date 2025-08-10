@@ -12,14 +12,8 @@ from django.core.paginator import Paginator, EmptyPage
 from rest_framework import status
 from mongoengine import DoesNotExist,NotUniqueError
 from reports.models import BlogReport
-# At the top of views.py, add or ensure these imports:
-from .models import Blog, Vote
-from mongoengine.errors import NotUniqueError
 from django.utils import timezone
 import mongoengine
-
-
-
 
 
 class CreateBlog(APIView):
@@ -898,4 +892,3 @@ class VoteBlog(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-# ... (other views remain the same)
