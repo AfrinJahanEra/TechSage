@@ -11,6 +11,14 @@ from datetime import datetime
 from mongoengine.queryset.visitor import Q
 from blogs.models import Blog
 from comments.models import Comment
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.contrib.auth.hashers import check_password
+
+
+
+
 
 load_dotenv()
 
@@ -34,46 +42,75 @@ class UserListByRole(APIView):
             return Response({"error": str(e)}, status=500)
 
 
+
 class DeleteUserAccount(APIView):
     def delete(self, request, username):
         try:
             req_username = request.data.get('username')
             req_password = request.data.get('password')
+            
             if not req_username:
-                return Response({"error": "Username is required"}, status=400)
+                return Response({"error": "Username is required"}, status=status.HTTP_400_BAD_REQUEST)
+                
             requesting_user = User.objects(username=req_username).first()
             if not requesting_user:
-                return Response({"error": "Requesting user not found"}, status=404)
+                return Response({"error": "Requesting user not found"}, status=status.HTTP_404_NOT_FOUND)
 
             target_user = User.objects(username=username).first()
             if not target_user:
-                return Response({"error": "Target user not found"}, status=404)
+                return Response({"error": "Target user not found"}, status=status.HTTP_404_NOT_FOUND)
 
-            if requesting_user.role == 'admin':
-                pass 
-            else:
+            # Authorization check
+            if requesting_user.role != 'admin':
                 if req_username != username:
-                    return Response({"error": "You can only delete your own account"}, status=403)
+                    return Response({"error": "You can only delete your own account"}, 
+                                  status=status.HTTP_403_FORBIDDEN)
                 if not req_password:
-                    return Response({"error": "Password required"}, status=400)
+                    return Response({"error": "Password required"}, 
+                                  status=status.HTTP_400_BAD_REQUEST)
                 if not check_password(req_password, requesting_user.password):
-                    return Response({"error": "Incorrect password"}, status=401)
+                    return Response({"error": "Incorrect password"}, 
+                                  status=status.HTTP_401_UNAUTHORIZED)
 
-            user_blogs = Blog.objects(authors=target_user)
+            # Get all blogs where user is an author
+            user_blogs = Blog.objects(authors__in=[target_user])
+            
+            # Delete all comments by this user
+            Comment.objects(author=target_user).delete()
+            
+            # Delete all reports by this user
+            BlogReport.objects(reported_by=target_user).delete()
+            
+            # Delete reports on user's blogs (alternative approach without join)
+            blog_ids = [str(blog.id) for blog in user_blogs]
+            BlogReport.objects(blog__in=blog_ids).delete()
+            
+            # Handle blogs where user is an author
             for blog in user_blogs:
-                if len(blog.authors) == 1:
+                if len(blog.authors) == 1:  # User is the only author
+                    # Delete all comments on this blog
+                    Comment.objects(blog=blog).delete()
+                    # Delete all reports on this blog
+                    BlogReport.objects(blog=blog).delete()
+                    # Delete the blog
                     blog.delete()
                 else:
+                    # Remove user from authors list if there are other authors
                     blog.authors.remove(target_user)
                     blog.save()
 
-            Comment.objects(author=target_user).update(set__is_deleted=True)
-            BlogReport.objects(reported_by=target_user).delete()
+            # Finally delete the user
             target_user.delete()
-            return Response({"message": f"User '{username}' and associated data deleted successfully"}, status=200)
+            
+            return Response({
+                "message": f"User '{username}' and all associated data deleted successfully",
+                "deleted_blogs": len([b for b in user_blogs if len(b.authors) == 1]),
+                "deleted_comments": Comment.objects(author=target_user).count(),
+                "deleted_reports": BlogReport.objects(Q(reported_by=target_user) | Q(blog__in=blog_ids)).count()
+            }, status=status.HTTP_200_OK)
+            
         except Exception as e:
-            return Response({"error": str(e)}, status=500)
-
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 
@@ -264,42 +301,91 @@ class UserSearch(APIView):
             return Response({"error": str(e)}, status=500)
 
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .models import User
+from blogs.models import Blog
+from bson import ObjectId
+
 class SavedBlogsAPI(APIView):
+    def get(self, request, username):
+        try:
+            user = User.objects(username=username).first()
+            if not user:
+                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            # Fetch full blog details for saved_blogs IDs
+            saved_blogs = []
+            for blog_id in user.saved_blogs:
+                try:
+                    blog = Blog.objects(id=ObjectId(blog_id), is_deleted=False).first()
+                    if blog:
+                        saved_blogs.append({
+                            "id": str(blog.id),
+                            "title": blog.title,
+                            "content": blog.content,
+                            "thumbnail_url": blog.thumbnail_url,
+                            "authors": [{"username": author.username, "avatar": getattr(author, 'avatar_url', None)}
+                                       for author in blog.authors],
+                            "categories": blog.categories,
+                            "tags": blog.tags,
+                            "created_at": blog.created_at.isoformat(),
+                            "updated_at": blog.updated_at.isoformat(),
+                            "status": "published" if blog.is_published else "draft",
+                            "published_at": blog.published_at.isoformat() if blog.published_at else None,
+                            "upvotes": blog.upvote_count,
+                            "downvotes": blog.downvote_count,
+                            "is_draft": blog.is_draft,
+                            "is_published": blog.is_published
+                        })
+                except Exception:
+                    continue  # Skip invalid or deleted blog IDs
+
+            return Response(saved_blogs, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     def post(self, request, username):
         try:
             user = User.objects(username=username).first()
             if not user:
-                return Response({"error": "User not found"}, status=404)
+                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
             blog_id = request.data.get('blog_id')
             if not blog_id:
-                return Response({"error": "blog_id required"}, status=400)
+                return Response({"error": "blog_id required"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Verify blog exists and is not deleted
+            blog = Blog.objects(id=ObjectId(blog_id), is_deleted=False).first()
+            if not blog:
+                return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
 
             if blog_id not in user.saved_blogs:
                 user.saved_blogs.append(blog_id)
                 user.save()
 
-            return Response(user.to_json())
+            return Response({"message": "Blog saved successfully"}, status=status.HTTP_200_OK)
 
         except Exception as e:
-            return Response({"error": str(e)}, status=500)
-
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def delete(self, request, username):
         try:
             user = User.objects(username=username).first()
             if not user:
-                return Response({"error": "User not found"}, status=404)
+                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
             blog_id = request.data.get('blog_id')
             if not blog_id:
-                return Response({"error": "blog_id required"}, status=400)
+                return Response({"error": "blog_id required"}, status=status.HTTP_400_BAD_REQUEST)
 
             if blog_id in user.saved_blogs:
                 user.saved_blogs.remove(blog_id)
                 user.save()
 
-            return Response(user.to_json())
+            return Response({"message": "Blog removed from saved list"}, status=status.HTTP_200_OK)
 
         except Exception as e:
-            return Response({"error": str(e)}, status=500)
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

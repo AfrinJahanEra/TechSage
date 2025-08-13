@@ -434,8 +434,8 @@ const CommentSection = ({ blogId }) => {
           parent_id: isReply ? commentId : null
         }));
       } else {
-        await api.post(`/comments/${targetId}/delete/`, {
-          username: user.username
+        await api.delete(`/comments/${targetId}/delete/`, {
+          data: { username: user.username }
         });
       }
     } catch (err) {
@@ -546,7 +546,7 @@ const CommentSection = ({ blogId }) => {
                     <span className={`text-xs sm:text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                       {comment.date}
                     </span>
-                    {user && (user.username === comment.author.username || user.role === 'admin') && (
+                    {user && (user.username === comment.author.username || user.role === 'admin' || user.role === 'moderator') && (
                       <button 
                         onClick={() => handleDeleteComment(comment.id)}
                         className={`text-xs sm:text-sm ml-auto ${darkMode ? 'text-red-400 hover:text-red-300' : 'text-red-500 hover:text-red-700'}`}
@@ -649,7 +649,7 @@ const CommentSection = ({ blogId }) => {
                             <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                               {reply.date}
                             </span>
-                            {user && (user.username === reply.author.username || user.role === 'admin') && (
+                            {user && (user.username === reply.author.username || user.role === 'admin' || user.role === 'moderator') && (
                               <button 
                                 onClick={() => handleDeleteComment(comment.id, true, reply.id)}
                                 className={`text-xs ml-auto ${darkMode ? 'text-red-400 hover:text-red-300' : 'text-red-500 hover:text-red-700'}`}

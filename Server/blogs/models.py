@@ -1,5 +1,5 @@
 from datetime import datetime
-from mongoengine import Document, fields, EmbeddedDocument, ValidationError
+from mongoengine import Document, fields, EmbeddedDocument, ValidationError, CASCADE
 from users.models import User
 import cloudinary.uploader
 
@@ -36,6 +36,8 @@ class Blog(Document):
     draft_history = fields.ListField(fields.DateTimeField())
     is_reviewed = fields.BooleanField(default=False)
     reviewed_by = fields.ReferenceField(User, null=True)
+    upvote_count = fields.IntField(default=0)
+    downvote_count = fields.IntField(default=0)
     
 
     meta = {
@@ -151,3 +153,15 @@ class Blog(Document):
         self.save()
         self.save_version(username)
         return self
+    
+class Vote(Document):
+    blog = fields.ReferenceField(Blog, reverse_delete_rule=CASCADE)
+    user = fields.ReferenceField(User, reverse_delete_rule=CASCADE)
+    vote_type = fields.StringField(choices=['upvote', 'downvote'], required=True)
+    created_at = fields.DateTimeField(default=datetime.utcnow)
+    
+    meta = {
+        'indexes': [
+            {'fields': ['blog', 'user'], 'unique': True}
+        ]
+    }

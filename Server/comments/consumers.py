@@ -45,7 +45,7 @@ class CommentConsumer(AsyncWebsocketConsumer):
             author=author,
             content=data['content'],
             parent=parent,
-            is_reviewed=False,  # New comments start as unreviewed
+            is_reviewed=False,
             reviewed_by=None  
         )
         comment.save()
@@ -91,7 +91,7 @@ class CommentConsumer(AsyncWebsocketConsumer):
         if not comment or not user:
             return
 
-        if comment.author.username != user.username and user.role != 'admin':
+        if comment.author.username != user.username and user.role not in ['admin', 'moderator']:
             return
 
         comment.is_deleted = True
@@ -102,7 +102,8 @@ class CommentConsumer(AsyncWebsocketConsumer):
             {
                 'type': 'send_comment',
                 'action': 'delete_comment',
-                'comment_id': str(comment.id)
+                'comment_id': str(comment.id),
+                'parent_id': str(comment.parent.id) if comment.parent else None
             }
         )
 

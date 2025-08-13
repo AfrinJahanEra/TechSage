@@ -12,6 +12,18 @@ export const normalizeBlog = (blog) => {
           avatar_url: blog.authors?.avatar || ''
       }];
 
+  // Ensure categories is always an array
+  let categories = [];
+  if (blog.categories) {
+    categories = Array.isArray(blog.categories) ? blog.categories : [blog.categories];
+  }
+
+  // Ensure tags is always an array
+  let tags = [];
+  if (blog.tags) {
+    tags = Array.isArray(blog.tags) ? blog.tags : [blog.tags];
+  }
+
   return {
       id: blog.id?.toString() || blog._id?.toString() || '',
       title: blog.title || 'Untitled Blog',
@@ -22,6 +34,8 @@ export const normalizeBlog = (blog) => {
       deleted_at: blog.deleted_at || null,
       published_at: blog.published_at || null,
       authors,
+      categories,
+      tags,
       upvotes: Array.isArray(blog.upvotes) 
           ? blog.upvotes 
           : (blog.stats?.upvotes ? Array(blog.stats.upvotes).fill({}) : []),

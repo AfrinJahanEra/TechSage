@@ -1,25 +1,49 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTheme } from '../context/ThemeContext';
 import { toast } from 'react-toastify';
 import Download from './Download.jsx';
-import { FaArrowUp, FaArrowDown, FaShareAlt, FaFlag, FaSearch, FaSpinner, FaFacebookF, FaTwitter, FaLinkedinIn } from 'react-icons/fa';
+import { FaArrowUp, FaArrowDown, FaShareAlt, FaFlag, FaSearch, FaSpinner, FaFacebookF, FaTwitter, FaLinkedinIn, FaBookmark, FaRegBookmark } from 'react-icons/fa';
 import 'react-toastify/dist/ReactToastify.css';
-import { ImArrowUp } from "react-icons/im";
-import { TbArrowBigUpLinesFilled , TbArrowBigDownLineFilled} from "react-icons/tb";
+import { TbArrowBigUpLinesFilled, TbArrowBigDownLineFilled } from "react-icons/tb";
 
-const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog }) => {
+const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog, onVoteUpdate }) => {
   const [votes, setVotes] = useState({
-    up: upvotes,
-    down: downvotes,
-    userVote: null
+    up: upvotes || 0,
+    down: downvotes || 0,
+    userVote: null // 'up', 'down', or null
   });
+  const [isSaved, setIsSaved] = useState(blog.is_saved || false); // Track saved state
+  const [loadingVote, setLoadingVote] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState(false);
   const [plagiarismResult, setPlagiarismResult] = useState(null);
   const [loadingPlagiarism, setLoadingPlagiarism] = useState(false);
   const [error, setError] = useState(null);
   const { user, api } = useAuth();
   const { primaryColor, darkMode } = useTheme();
+
+  useEffect(() => {
+    const fetchBlogData = async () => {
+      try {
+        const query = user ? `?username=${user.username}` : '';
+        const response = await api.get(`/blogs/${blogId}${query}`, {
+          headers: { 'Cache-Control': 'no-cache' }
+        });
+        const blogData = response.data;
+        setVotes({
+          up: blogData.upvotes,
+          down: blogData.downvotes,
+          userVote: blogData.has_upvoted ? 'up' : blogData.has_downvoted ? 'down' : null
+        });
+        setIsSaved(blogData.is_saved); // Update saved state
+      } catch (err) {
+        console.error('Error fetching blog data:', err);
+        setVotes({ up: blog.upvotes || 0, down: blog.downvotes || 0, userVote: null });
+        setIsSaved(blog.is_saved || false);
+      }
+    };
+    fetchBlogData();
+  }, [user, blogId, api, blog]);
 
   const showLoginToast = () => {
     toast.error('Please login to perform this action', {
@@ -51,57 +75,97 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog }) 
     }
   };
 
-  const handleVote = (type) => {
+  const handleVote = async (type) => {
     if (!user) {
       showLoginToast();
       return;
     }
-    if (type === 'up') {
-      if (votes.userVote === 'up') {
-        setVotes(prev => ({
-          ...prev,
-          up: prev.up - 1,
-          userVote: null
-        }));
-      } else if (votes.userVote === 'down') {
-        setVotes(prev => ({
-          ...prev,
-          up: prev.up + 1,
-          down: prev.down - 1,
-          userVote: 'up'
-        }));
-      } else {
-        setVotes(prev => ({
-          ...prev,
-          up: prev.up + 1,
-          userVote: 'up'
-        }));
-      }
-    } else {
-      if (votes.userVote === 'down') {
-        setVotes(prev => ({
-          ...prev,
-          down: prev.down - 1,
-          userVote: null
-        }));
-      } else if (votes.userVote === 'up') {
-        setVotes(prev => ({
-          ...prev,
-          down: prev.down + 1,
-          up: prev.up - 1,
-          userVote: 'down'
-        }));
-      } else {
-        setVotes(prev => ({
-          ...prev,
-          down: prev.down + 1,
-          userVote: 'down'
-        }));
-      }
+    if (loadingVote) return;
+
+    setLoadingVote(true);
+    try {
+      setVotes(prev => ({
+        ...prev,
+        up: type === 'up' ? (prev.userVote === 'up' ? prev.up - 1 : prev.up + (prev.userVote === 'down' ? 1 : 0)) : prev.up - (prev.userVote === 'up' ? 1 : 0),
+        down: type === 'down' ? (prev.userVote === 'down' ? prev.down - 1 : prev.down + (prev.userVote === 'up' ? 1 : 0)) : prev.down - (prev.userVote === 'down' ? 1 : 0),
+        userVote: prev.userVote === type ? null : type
+      }));
+
+      const response = await api.post(`/blogs/vote/${blogId}/`, {
+        username: user.username,
+        type
+      });
+
+      setVotes({
+        up: response.data.upvotes,
+        down: response.data.downvotes,
+        userVote: response.data.has_upvoted ? 'up' : response.data.has_downvoted ? 'down' : null
+      });
+
+      if (onVoteUpdate) onVoteUpdate();
+
+      toast.success(`${type === 'up' ? 'Upvote' : 'Downvote'} recorded!`, {
+        position: "top-right",
+        autoClose: 2000,
+        theme: darkMode ? 'dark' : 'light'
+      });
+    } catch (err) {
+      setVotes(prev => ({
+        up: blog.upvotes || 0,
+        down: blog.downvotes || 0,
+        userVote: prev.userVote
+      }));
+      toast.error(err.response?.data?.error || 'Failed to record vote. Please try again.', {
+        position: "top-right",
+        autoClose: 3000,
+        theme: darkMode ? 'dark' : 'light'
+      });
+      console.error('Vote error:', err);
+    } finally {
+      setLoadingVote(false);
     }
   };
 
-  const shareBlog = (platform) => {
+  const handleSaveToggle = async () => {
+    if (!user) {
+      showLoginToast();
+      return;
+    }
+    try {
+      if (isSaved) {
+        // Unsave the blog
+        await api.delete(`/user/${user.username}/saved-blogs/`, {
+          data: { blog_id: blogId }
+        });
+        setIsSaved(false);
+        toast.success('Blog removed from saved list!', {
+          position: "top-right",
+          autoClose: 2000,
+          theme: darkMode ? 'dark' : 'light'
+        });
+      } else {
+        // Save the blog
+        await api.post(`/user/${user.username}/saved-blogs/`, {
+          blog_id: blogId
+        });
+        setIsSaved(true);
+        toast.success('Blog saved!', {
+          position: "top-right",
+          autoClose: 2000,
+          theme: darkMode ? 'dark' : 'light'
+        });
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to update saved blogs. Please try again.', {
+        position: "top-right",
+        autoClose: 3000,
+        theme: darkMode ? 'dark' : 'light'
+      });
+      console.error('Save blog error:', err);
+    }
+  };
+
+ const shareBlog = (platform) => {
     if (!user) {
       showLoginToast();
       return;
@@ -184,24 +248,24 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog }) 
       <div className="flex flex-row sm:flex-row justify-between items-center gap-3 sm:gap-6">
         <div className="flex space-x-2 sm:space-x-4">
           <button
-            onClick={() => handleVote('up')}
-            className={`flex items-center justify-center space-x-2 px-2 sm:px-4 py-1 sm:py-2 border rounded-full text-sm sm:text-base font-medium transition-all duration-200 w-10 sm:w-auto h-10 sm:h-auto ${
-              votes.userVote === 'up'
+            onClick={() => handleVote('upvote')}
+            disabled={loadingVote}
+            className={`flex items-center justify-center space-x-2 px-2 sm:px-4 py-1 sm:py-2 border rounded-full text-sm sm:text-base font-medium transition-all duration-200 w-10 sm:w-auto h-10 sm:h-auto ${votes.userVote === 'up'
                 ? `border-green-500 bg-green-500/10 text-green-500 hover:bg-green-500/20`
                 : `${darkMode ? 'border-gray-600 hover:border-green-400 hover:bg-green-400/10' : 'border-gray-300 hover:border-green-400 hover:bg-green-400/10'} hover:text-green-500`
-            }`}
+              } ${loadingVote ? 'opacity-50 cursor-not-allowed' : ''}`}
             title="Upvote"
           >
             <TbArrowBigUpLinesFilled className="text-base sm:text-lg" />
             <span className="hidden sm:inline">{votes.up}</span>
           </button>
           <button
-            onClick={() => handleVote('down')}
-            className={`flex items-center justify-center space-x-2 px-2 sm:px-4 py-1 sm:py-2 border rounded-full text-sm sm:text-base font-medium transition-all duration-200 w-10 sm:w-auto h-10 sm:h-auto ${
-              votes.userVote === 'down'
+            onClick={() => handleVote('downvote')}
+            disabled={loadingVote}
+            className={`flex items-center justify-center space-x-2 px-2 sm:px-4 py-1 sm:py-2 border rounded-full text-sm sm:text-base font-medium transition-all duration-200 w-10 sm:w-auto h-10 sm:h-auto ${votes.userVote === 'down'
                 ? `border-red-500 bg-red-500/10 text-red-500 hover:bg-red-500/20`
                 : `${darkMode ? 'border-gray-600 hover:border-red-400 hover:bg-red-400/10' : 'border-gray-300 hover:border-red-400 hover:bg-red-400/10'} hover:text-red-500`
-            }`}
+              } ${loadingVote ? 'opacity-50 cursor-not-allowed' : ''}`}
             title="Downvote"
           >
             <TbArrowBigDownLineFilled className="text-base sm:text-lg" />
@@ -210,6 +274,21 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog }) 
         </div>
         <div className="flex space-x-2 sm:space-x-4">
           <Download blog={blog} />
+          <button
+            onClick={handleSaveToggle}
+            className={`flex items-center justify-center space-x-2 px-2 sm:px-4 py-1 sm:py-2 border rounded-full text-sm sm:text-base font-medium transition-all duration-200 w-10 sm:w-auto h-10 sm:h-auto ${isSaved
+                ? `border-yellow-500 bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20`
+                : `${darkMode ? 'border-gray-600 hover:border-yellow-400 hover:bg-yellow-400/10' : 'border-gray-300 hover:border-yellow-400 hover:bg-yellow-400/10'} hover:text-yellow-500`
+              }`}
+            title={isSaved ? "Unsave" : "Save"}
+          >
+            {isSaved ? (
+              <FaBookmark className="text-base sm:text-lg" />
+            ) : (
+              <FaRegBookmark className="text-base sm:text-lg" />
+            )}
+            <span className="hidden sm:inline">{isSaved ? 'Unsave' : 'Save'}</span>
+          </button>
           <div className="relative">
             <button
               onClick={() => {
@@ -298,7 +377,7 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog }) 
         </div>
       )}
       {plagiarismResult && (
-        <div className={`mt-4 sm:mt-6 p-3 sm:p-4 rounded-md ${darkMode ? 'bg-gray-800' : 'bg-blue-50'}`}>
+        <div className={`mt-4 sm:mt-6 p-3 sm:p-4 rounded-md ${darkMode ? 'bg-blue-900/30' : 'bg-blue-50'}`}>
           <h3 className="font-bold text-sm sm:text-base mb-2 flex items-center">
             <FaSearch className="mr-2 text-base sm:text-lg" />
             Plagiarism Check Results

@@ -32,6 +32,7 @@
     "ace-builds": "^1.43.2",
     "axios": "^1.10.0",
     "chart.js": "^4.5.0",
+    "chartjs-plugin-annotation": "^3.1.0",
     "date-fns": "^4.1.0",
     "firebase": "^11.10.0",
     "framer-motion": "^12.15.0",
