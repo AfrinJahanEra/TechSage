@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FiUpload, FiX, FiPlus, FiCheck, FiUsers, FiClock, FiInfo, FiSave, FiTrash2, FiSearch } from 'react-icons/fi';
@@ -201,6 +200,7 @@ const CreateBlogs = () => {
         content: content || ""
       });
 
+      console.log('Create Draft Response:', response.data); // Debug: Log draft creation response
       setBlogId(response.data.id);
       setStatus('draft');
       setLastSaved(new Date());
@@ -241,6 +241,7 @@ const CreateBlogs = () => {
         }
       });
 
+      console.log('Update Draft Response:', response.data); // Debug: Log update response
       if (!blogId) {
         setBlogId(currentBlogId);
       }
@@ -291,13 +292,13 @@ const CreateBlogs = () => {
         formData.append('thumbnail', thumbnailFile);
       }
 
-      let response;
-      response = await api.post('/blogs/create/', formData, {
+      const response = await api.post('/blogs/create/', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
 
+      console.log('Publish Blog Response:', response.data); // Debug: Log publish response
       setStatus('published');
       showPopup('Blog published successfully', 'success');
       

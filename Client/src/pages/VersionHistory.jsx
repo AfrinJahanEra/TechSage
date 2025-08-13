@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
@@ -32,7 +32,17 @@ const VersionHistory = () => {
     setLoading(true);
     api.get(`/blogs/versions/${blogId}`)
       .then(response => {
-        setVersions(response.data.versions);
+        console.log('API Response:', response.data); // Debug: Log the full API response
+        const versionsData = response.data.versions || [];
+        console.log('Versions Data:', versionsData); // Debug: Log versions array
+        // Sort versions by updated_at in descending order (newest first)
+        const sortedVersions = versionsData.sort((a, b) => {
+          const dateA = a.updated_at ? new Date(a.updated_at) : new Date(0);
+          const dateB = b.updated_at ? new Date(b.updated_at) : new Date(0);
+          return dateB - dateA; // Descending order
+        });
+        console.log('Sorted Versions:', sortedVersions); // Debug: Log sorted versions
+        setVersions(sortedVersions);
         setCurrentVersion(response.data.current_version);
       })
       .catch(error => {
