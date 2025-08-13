@@ -32,6 +32,7 @@ const CreateBlogs = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [hoveredIcon, setHoveredIcon] = useState(null);
+  const [isHistoryHovered, setIsHistoryHovered] = useState(false);
 
   const [popup, setPopup] = useState({ show: false, message: '', type: 'success' });
   const popupTimerRef = useRef(null);
@@ -555,19 +556,6 @@ const CreateBlogs = () => {
                   </button>
                   <button
                     type="button"
-                    disabled={isSubmitting || !blogId}
-                    className={`px-6 py-2 border rounded-lg transition-colors w-full sm:w-auto flex items-center justify-center gap-2 ${
-                      darkMode
-                        ? 'border-gray-600 text-gray-200 hover:bg-gray-700'
-                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
-                    onClick={() => navigate(`/blogs/${blogId}/history`)}
-                  >
-                    <FiClock />
-                    View History
-                  </button>
-                  <button
-                    type="button"
                     disabled={isSubmitting}
                     className="px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors w-full sm:w-auto flex items-center justify-center gap-2"
                     onClick={isEditing ? saveAsDraft : saveAsDraft}
@@ -717,6 +705,28 @@ const CreateBlogs = () => {
                 Search for users and send them collaboration requests. They'll need to accept your request to become co-authors.
               </p>
             </div>
+          </div>
+
+          {/* View History Button */}
+          <div className="mb-8">
+            <button
+              type="button"
+              disabled={isSubmitting || !blogId}
+              className={`w-full px-4 py-2 rounded-lg border flex items-center justify-center gap-2 transition-colors duration-200 ${
+                darkMode
+                  ? 'border-gray-600 text-gray-200'
+                  : 'border-gray-300 text-gray-700'
+              } ${isSubmitting || !blogId ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[var(--primary-color)] hover:text-white'}`}
+              onClick={() => navigate(`/blogs/${blogId}/history`)}
+              onMouseEnter={() => setIsHistoryHovered(true)}
+              onMouseLeave={() => setIsHistoryHovered(false)}
+            >
+              <FiClock
+                className="text-[var(--primary-color)]"
+                style={{ color: isHistoryHovered && !(isSubmitting || !blogId) ? 'white' : 'var(--primary-color)' }}
+              />
+              View History
+            </button>
           </div>
 
           {/* Blog Status */}
