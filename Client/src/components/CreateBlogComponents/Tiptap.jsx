@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -107,7 +108,7 @@ const CustomOrderedList = OrderedList.extend({
   },
 });
 
-const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
+const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false }) => {
   const [tooltip, setTooltip] = useState('');
   const [hoveredIcon, setHoveredIcon] = useState(null);
   const [showLinkModal, setShowLinkModal] = useState(false);
@@ -169,7 +170,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             },
           },
           onClick: (node, pos) => {
-            setShowLatexModal(true);
+            if (!readOnly) setShowLatexModal(true);
           },
         },
       }),
@@ -188,15 +189,15 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
       }),
     ],
     content,
-    onUpdate: ({ editor }) => {
-      const html = editor.getHTML();
-      setContent(html);
+    editable: !readOnly,
+    onUpdate: readOnly ? null : ({ editor }) => {
+      setContent(editor.getHTML());
     },
     onCreate: ({ editor }) => {
       console.log('Editor initialized:', editor);
     },
     onFocus: () => {
-      setIsEditorFocused(true);
+      if (!readOnly) setIsEditorFocused(true);
     },
     onBlur: () => {
       setIsEditorFocused(false);
@@ -210,7 +211,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
   }, [content, editor]);
 
   useEffect(() => {
-    if (!editor) return;
+    if (!editor || readOnly) return;
 
     let animationFrameId;
     const updateTablePositions = () => {
@@ -267,15 +268,15 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
       editor.off('update', handleUpdate);
       editor.off('selectionUpdate', handleUpdate);
     };
-  }, [editor]);
+  }, [editor, readOnly]);
 
   const handleImageUpload = () => {
-    fileInputRef.current.click();
+    if (!readOnly) fileInputRef.current.click();
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
+    if (file && !readOnly) {
       const reader = new FileReader();
       reader.onload = (event) => {
         editor.chain().focus().setImage({ src: event.target.result }).run();
@@ -286,31 +287,33 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
   };
 
   const toggleTableDropdown = (tableId) => {
-    setShowTableDropdown((prev) => ({
-      ...prev,
-      [tableId]: !prev[tableId],
-    }));
+    if (!readOnly) {
+      setShowTableDropdown((prev) => ({
+        ...prev,
+        [tableId]: !prev[tableId],
+      }));
+    }
   };
 
   const buttons = [
     { 
       icon: <FiBold />, 
       action: () => editor.chain().focus().toggleBold().run(), 
-      disabled: !editor.can().toggleBold(), 
+      disabled: !editor.can().toggleBold() || readOnly, 
       active: editor.isActive('bold'), 
       name: 'Bold' 
     },
     { 
       icon: <FiItalic />, 
       action: () => editor.chain().focus().toggleItalic().run(), 
-      disabled: !editor.can().toggleItalic(), 
+      disabled: !editor.can().toggleItalic() || readOnly, 
       active: editor.isActive('italic'), 
       name: 'Italic' 
     },
     { 
       icon: <FiUnderline />, 
       action: () => editor.chain().focus().toggleUnderline().run(), 
-      disabled: !editor.can().toggleUnderline(), 
+      disabled: !editor.can().toggleUnderline() || readOnly, 
       active: editor.isActive('underline'), 
       name: 'Underline' 
     },
@@ -318,61 +321,69 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
       icon: <BiSolidQuoteRight />, 
       action: () => editor.chain().focus().toggleBlockquote().run(), 
       active: editor.isActive('blockquote'), 
+      disabled: readOnly,
       name: 'Blockquote' 
     },
     { 
       icon: <FiLink />, 
       action: () => setShowLinkModal(true), 
       active: editor.isActive('link'), 
+      disabled: readOnly,
       name: 'Insert/Edit Link' 
     },
     { 
       icon: <FiImage />, 
       action: handleImageUpload, 
       active: false, 
+      disabled: readOnly,
       name: 'Insert Image' 
     },
     { 
       icon: <FiPieChart />, 
       action: () => setShowDiagramModal(true), 
       active: false, 
+      disabled: readOnly,
       name: 'Insert Diagram' 
     },
     { 
       icon: <FiCode />, 
       action: () => setShowCodeModal(true), 
       active: editor.isActive('codeBlock'), 
+      disabled: readOnly,
       name: 'Insert Code' 
     },
     { 
       icon: <BiMath />, 
       action: () => setShowLatexModal(true), 
       active: editor.isActive('mathematics'), 
+      disabled: readOnly,
       name: 'Insert LaTeX' 
     },
     { 
       icon: <FiMinus />, 
       action: () => editor.chain().focus().setHorizontalRule().run(), 
       active: editor.isActive('horizontalRule'), 
+      disabled: readOnly,
       name: 'Horizontal Rule' 
     },
     { 
       icon: <FiLayout />, 
       action: () => setShowTableGrid(!showTableGrid), 
       active: showTableGrid, 
+      disabled: readOnly,
       name: 'Insert Table',
       ref: tableButtonRef 
     },
     { 
       icon: <FiRotateCcw />, 
       action: () => editor.chain().focus().undo().run(), 
-      disabled: !editor.can().undo(), 
+      disabled: !editor.can().undo() || readOnly, 
       name: 'Undo' 
     },
     { 
       icon: <FiRotateCw />, 
       action: () => editor.chain().focus().redo().run(), 
-      disabled: !editor.can().redo(), 
+      disabled: !editor.can().redo() || readOnly, 
       name: 'Redo' 
     },
   ];
@@ -477,7 +488,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             background-color: ${darkMode ? '#4b5563' : '#f3f4f6'};
             padding: 0.3em 0.4em;
             border-radius: 4px;
-            cursor: pointer;
+            cursor: ${readOnly ? 'default' : 'pointer'};
             display: inline-block;
             margin: 0.2em 0.1em;
             font-family: monospace;
@@ -485,7 +496,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             line-height: 1.6;
           }
           .tiptap-mathematics-render--editable {
-            cursor: text;
+            cursor: ${readOnly ? 'default' : 'text'};
           }
           .tiptap-mathematics-render[data-type="inline-math"] {
             display: inline-block;
@@ -528,7 +539,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
           }
         `}
       </style>
-      <div className={`flex items-center gap-1.5 mb-4 p-3 rounded-lg border ${darkMode ? 'border-gray-600' : 'border-gray-300'} focus-within:!border-[var(--primary-color)] transition-colors duration-200`}>
+      <div className={`flex items-center gap-1.5 mb-4 p-3 rounded-lg border ${darkMode ? 'border-gray-600' : 'border-gray-300'} focus-within:!border-[var(--primary-color)] transition-colors duration-200 ${readOnly ? 'hidden' : ''}`}>
         {buttons.map((button) => (
           <div className="relative" key={button.name}>
             <button
@@ -572,9 +583,9 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
             )}
           </div>
         ))}
-        <ListControls editor={editor} primaryColor={primaryColor} darkMode={darkMode} />
-        <HeadingControls editor={editor} primaryColor={primaryColor} darkMode={darkMode} />
-        {showTableGrid && (
+        <ListControls editor={editor} primaryColor={primaryColor} darkMode={darkMode} readOnly={readOnly} />
+        <HeadingControls editor={editor} primaryColor={primaryColor} darkMode={darkMode} readOnly={readOnly} />
+        {showTableGrid && !readOnly && (
           <TableGridSelector
             editor={editor}
             primaryColor={primaryColor}
@@ -593,10 +604,10 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
       </div>
       <div className="editor-container" style={{ position: 'relative' }}>
         <EditorContent
-          className={`relative min-h-[300px] border rounded-lg prose max-w-none focus:outline-none transition-colors duration-200 ${darkMode ? 'text-gray-200 border-gray-600 bg-gray-800' : 'text-gray-800 border-gray-300 bg-gray-50'} ${isEditorFocused ? '!border-[var(--primary-color)]' : ''}`}
+          className={`relative min-h-[300px] border rounded-lg prose max-w-none focus:outline-none transition-colors duration-200 ${darkMode ? 'text-gray-200 border-gray-600 bg-gray-800' : 'text-gray-800 border-gray-300 bg-gray-50'} ${isEditorFocused && !readOnly ? '!border-[var(--primary-color)]' : ''}`}
           editor={editor}
         />
-        {editor && tablePositions.map((position) => (
+        {editor && !readOnly && tablePositions.map((position) => (
           <div
             key={position.id}
             className="table-format-button"
@@ -628,34 +639,38 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode }) => {
           </div>
         ))}
       </div>
-      <LinkModal
-        editor={editor}
-        primaryColor={primaryColor}
-        darkMode={darkMode}
-        isOpen={showLinkModal}
-        setIsOpen={setShowLinkModal}
-      />
-      <LatexModal
-        editor={editor}
-        primaryColor={primaryColor}
-        darkMode={darkMode}
-        isOpen={showLatexModal}
-        setIsOpen={setShowLatexModal}
-      />
-      <CodeModal
-        editor={editor}
-        primaryColor={primaryColor}
-        darkMode={darkMode}
-        isOpen={showCodeModal}
-        setIsOpen={setShowCodeModal}
-      />
-      <DiagramModal
-        editor={editor}
-        primaryColor={primaryColor}
-        darkMode={darkMode}
-        isOpen={showDiagramModal}
-        setIsOpen={setShowDiagramModal}
-      />
+      {!readOnly && (
+        <>
+          <LinkModal
+            editor={editor}
+            primaryColor={primaryColor}
+            darkMode={darkMode}
+            isOpen={showLinkModal}
+            setIsOpen={setShowLinkModal}
+          />
+          <LatexModal
+            editor={editor}
+            primaryColor={primaryColor}
+            darkMode={darkMode}
+            isOpen={showLatexModal}
+            setIsOpen={setShowLatexModal}
+          />
+          <CodeModal
+            editor={editor}
+            primaryColor={primaryColor}
+            darkMode={darkMode}
+            isOpen={showCodeModal}
+            setIsOpen={setShowCodeModal}
+          />
+          <DiagramModal
+            editor={editor}
+            primaryColor={primaryColor}
+            darkMode={darkMode}
+            isOpen={showDiagramModal}
+            setIsOpen={setShowDiagramModal}
+          />
+        </>
+      )}
     </>
   );
 };
