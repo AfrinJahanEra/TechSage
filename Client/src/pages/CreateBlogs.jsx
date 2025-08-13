@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FiUpload, FiX, FiPlus, FiCheck, FiUsers, FiClock, FiInfo, FiSave, FiTrash2, FiSearch } from 'react-icons/fi';
@@ -8,12 +9,11 @@ import Footer from '../components/Footer';
 import PopupModal from '../components/PopupModal';
 import Navbar from '../components/Navbar';
 
-const CreateBlogPage = () => {
+const CreateBlogs = () => {
   const { primaryColor, darkMode } = useTheme();
   const { user, api } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-
 
   const [title, setTitle] = useState('');
   const [categories, setCategories] = useState([]);
@@ -35,6 +35,8 @@ const CreateBlogPage = () => {
 
   const [popup, setPopup] = useState({ show: false, message: '', type: 'success' });
   const popupTimerRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const searchRef = useRef(null);
 
   const showPopup = (message, type = 'success', duration = 3000) => {
     clearTimeout(popupTimerRef.current);
@@ -49,15 +51,9 @@ const CreateBlogPage = () => {
     return () => clearTimeout(popupTimerRef.current);
   }, []);
 
-
   const availableCategories = [
     'Technology', 'Science', 'Programming', 'AI', 'Web Development', 'Mobile', 'Job'
   ];
-
- 
-  const fileInputRef = useRef(null);
-  const searchRef = useRef(null);
-
 
   useEffect(() => {
     if (location.state?.draftData) {
@@ -74,7 +70,6 @@ const CreateBlogPage = () => {
     }
   }, [location.state]);
 
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -87,7 +82,6 @@ const CreateBlogPage = () => {
     };
   }, []);
 
-
   const toggleCategory = (category) => {
     setCategories(prev =>
       prev.includes(category)
@@ -95,7 +89,6 @@ const CreateBlogPage = () => {
         : [...prev, category]
     );
   };
-
 
   const addTag = (e) => {
     e.preventDefault();
@@ -105,11 +98,9 @@ const CreateBlogPage = () => {
     }
   };
 
-
   const removeTag = (tagToRemove) => {
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
-
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -122,7 +113,6 @@ const CreateBlogPage = () => {
       reader.readAsDataURL(file);
     }
   };
-
 
   const searchUsers = async (query) => {
     if (!query.trim()) {
@@ -140,7 +130,6 @@ const CreateBlogPage = () => {
     }
   };
 
-
   const sendAuthorRequest = async (username) => {
     if (!blogId) {
       try {
@@ -156,7 +145,6 @@ const CreateBlogPage = () => {
     }
   };
 
- 
   const sendCollaborationRequest = async (blogId, username) => {
     try {
       const response = await api.post('/collaboration-request/request-author/', {
@@ -175,7 +163,6 @@ const CreateBlogPage = () => {
     }
   };
 
- 
   const removeCollaborator = async (username) => {
     if (!blogId) {
       showPopup('No blog selected', 'error');
@@ -203,7 +190,6 @@ const CreateBlogPage = () => {
     }
   };
 
-
   const createDraft = async () => {
     try {
       setIsSubmitting(true);
@@ -226,7 +212,6 @@ const CreateBlogPage = () => {
       setIsSubmitting(false);
     }
   };
-
 
   const saveAsDraft = async () => {
     try {
@@ -260,7 +245,7 @@ const CreateBlogPage = () => {
       }
       setStatus('draft');
       setLastSaved(new Date());
-      showPopup('Draft saved successfully', 'success');
+      showPopup(`Draft saved successfully (Version ${response.data.version})`, 'success');
     } catch (error) {
       console.error('Error saving draft:', error);
       showPopup(error.response?.data?.error || 'Failed to save draft', 'error');
@@ -326,7 +311,6 @@ const CreateBlogPage = () => {
     }
   };
 
-
   const discardBlog = async () => {
     if (window.confirm('Are you sure you want to discard this blog? It will be moved to trash.')) {
       try {
@@ -352,7 +336,6 @@ const CreateBlogPage = () => {
     }
   };
 
-  
   const formatLastSaved = () => {
     if (!lastSaved) return 'Not saved yet';
 
@@ -364,17 +347,6 @@ const CreateBlogPage = () => {
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
     return `${Math.floor(diffInSeconds / 86400)} days ago`;
   };
-
-  
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if ((title || content) && status === 'draft') {
-        saveAsDraft();
-      }
-    }, 30000); 
-
-    return () => clearTimeout(timer);
-  }, [title, content, categories, tags, thumbnail]);
 
   return (
     <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-50 text-gray-800'}`}>
@@ -583,6 +555,19 @@ const CreateBlogPage = () => {
                   </button>
                   <button
                     type="button"
+                    disabled={isSubmitting || !blogId}
+                    className={`px-6 py-2 border rounded-lg transition-colors w-full sm:w-auto flex items-center justify-center gap-2 ${
+                      darkMode
+                        ? 'border-gray-600 text-gray-200 hover:bg-gray-700'
+                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                    onClick={() => navigate(`/blogs/${blogId}/history`)}
+                  >
+                    <FiClock />
+                    View History
+                  </button>
+                  <button
+                    type="button"
                     disabled={isSubmitting}
                     className="px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors w-full sm:w-auto flex items-center justify-center gap-2"
                     onClick={isEditing ? saveAsDraft : saveAsDraft}
@@ -763,4 +748,4 @@ const CreateBlogPage = () => {
   );
 };
 
-export default CreateBlogPage;
+export default CreateBlogs;
