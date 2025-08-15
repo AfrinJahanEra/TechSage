@@ -1,3 +1,4 @@
+# Server/blogs/views.py
 from datetime import datetime
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -11,11 +12,10 @@ from comments.models import Comment
 import pytz
 from django.core.paginator import Paginator, EmptyPage
 from rest_framework import status
-from mongoengine import DoesNotExist,NotUniqueError
+from mongoengine import DoesNotExist, NotUniqueError
 from reports.models import BlogReport
 from django.utils import timezone
 import mongoengine
-
 
 class CreateBlog(APIView):
     def post(self, request):
@@ -63,8 +63,8 @@ class CreateBlog(APIView):
                 is_draft=False,
                 is_deleted=False,
                 is_published=True,
-                is_reviewed = False,
-                reviewed_by = None  
+                is_reviewed=False,
+                reviewed_by=None  
             )
             
             if not is_draft:
@@ -104,7 +104,6 @@ class ListBlogs(APIView):
 
         query = Blog.objects.all()
         
-
         if status_filter == 'draft':
             query = query.filter(is_draft=True, is_published=False, is_deleted=False)
         elif status_filter == 'published':
@@ -114,7 +113,6 @@ class ListBlogs(APIView):
         else: 
             query = query.filter(is_deleted=False)
         
- 
         if author_filter:
             try:
                 author = User.objects.get(username=author_filter)
@@ -122,7 +120,6 @@ class ListBlogs(APIView):
             except User.DoesNotExist:
                 return Response({"error": "Author not found"}, status=status.HTTP_404_NOT_FOUND)
         
-
         if category_filter:
             query = query.filter(categories__in=[category_filter])
         
@@ -130,7 +127,6 @@ class ListBlogs(APIView):
             blogs = query.order_by('-created_at')
             blogs_list = []
             for blog in blogs:
-        
                 created_at_dhaka = blog.created_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)
                 updated_at_dhaka = blog.updated_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)
                 published_at_dhaka = blog.published_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz) if blog.published_at else None
@@ -174,7 +170,6 @@ class JobBlogs(APIView):
     def get(self, request):
         dhaka_tz = pytz.timezone('Asia/Dhaka')
         try:
-  
             blogs = Blog.objects(
                 categories__in=["job"],
                 is_published=True,
@@ -213,7 +208,6 @@ class JobBlogs(APIView):
                 "details": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
 class UpdateBlog(APIView):
     def put(self, request, blog_id):
         data = request.data
@@ -241,7 +235,6 @@ class UpdateBlog(APIView):
                 upload_result = cloudinary.uploader.upload(request.FILES['thumbnail'])
                 blog.thumbnail_url = upload_result['secure_url']
             
- 
             blog.title = data.get('title', blog.title)
             blog.content = data.get('content', blog.content)
             blog.categories = data.get('categories', blog.categories)
@@ -326,36 +319,6 @@ class UnpublishBlog(APIView):
             
         except Blog.DoesNotExist:
             return Response({"error": "Blog not found"}, status=404)
-        
-
-
-class UnpublishBlog(APIView):
-    def post(self, request, blog_id):
-        try:
-            blog = Blog.objects.get(id=blog_id)
-            username = request.data.get('username')
-            
-            if not username:
-                return Response({"error": "username is required"}, status=400)
-                
-            user = User.objects(username=username).first()
-            if not user:
-                return Response({"error": "User not found"}, status=404)
-                
-            if user not in blog.authors:
-                return Response({"error": "You are not authorized to unpublish this blog"}, 
-                              status=403)
-            
-            # Only decrement if the blog was previously published
-            if blog.is_published:
-                for author in blog.authors:
-                    author.update(dec__total_publications=1)
-            
-            blog.unpublish(username)
-            return Response({"message": "Blog unpublished and moved to drafts"})
-            
-        except Blog.DoesNotExist:
-            return Response({"error": "Blog not found"}, status=404)
 
 class DeleteBlog(APIView):
     def delete(self, request, blog_id):
@@ -370,18 +333,14 @@ class DeleteBlog(APIView):
             if not user:
                 return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
             
-            # Only authors can delete
             if user not in blog.authors:
                 return Response({"error": "You can only delete your own blogs"}, 
                                status=status.HTTP_403_FORBIDDEN)
             
-            # Delete all comments on this blog first
             Comment.objects(blog=blog).delete()
             
-            # Delete all reports on this blog
             BlogReport.objects(blog=blog).delete()
             
-            # Now delete the blog
             blog.delete()
 
             return Response({
@@ -396,27 +355,83 @@ class DeleteBlog(APIView):
 class SaveAsDraft(APIView):
     def post(self, request, blog_id):
         try:
-            blog = Blog.objects.get(id=blog_id)
+            # Fetch the blog
+            blog = Blog.objects.get(id=blog_id, is_deleted=False)
             username = request.data.get('username')
             
+            # Validate username
             if not username:
                 return Response({"error": "username is required"}, status=status.HTTP_400_BAD_REQUEST)
-                
+            
+            # Validate user exists and is authorized
             user = User.objects(username=username).first()
             if not user:
                 return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-                
             if user not in blog.authors:
                 return Response({"error": "You are not authorized to modify this blog"}, 
                                status=status.HTTP_403_FORBIDDEN)
-                
-            blog.save_as_draft(username)
+            
+            # Handle thumbnail upload if provided
+            if 'thumbnail' in request.FILES:
+                if blog.thumbnail_url:  # Delete old thumbnail if exists
+                    public_id = blog.thumbnail_url.split('/')[-1].split('.')[0]
+                    cloudinary.uploader.destroy(public_id)
+                upload_result = cloudinary.uploader.upload(request.FILES['thumbnail'])
+                blog.thumbnail_url = upload_result['secure_url']
+            
+            # Update blog fields if provided in request data
+            data = request.data
+            if 'title' in data:
+                blog.title = data['title']
+            if 'content' in data:
+                blog.content = data['content']
+            if 'categories[]' in data:
+                blog.categories = data['categories[]'] if isinstance(data['categories[]'], list) else [data['categories[]']]
+            if 'tags[]' in data:
+                blog.tags = data['tags[]'] if isinstance(data['tags[]'], list) else [data['tags[]']]
+            
+            # Ensure blog is marked as draft
+            blog.is_draft = True
+            blog.is_published = False
+            blog.updated_at = datetime.utcnow()
+            
+            # Add to draft history
+            if not blog.draft_history:
+                blog.draft_history = []
+            blog.draft_history.append(datetime.utcnow())
+            
+            # Save the current state as a new version
+            blog.save_version(username)
+            
+            # Save the blog
+            blog.save()
+            
+            # Prepare response
+            dhaka_tz = pytz.timezone('Asia/Dhaka')
+            updated_at_dhaka = blog.updated_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)
+            
             return Response({
                 "message": "Blog saved as draft",
-                "draft_saved_at": blog.draft_history[-1].isoformat() if blog.draft_history else None
-            })
-        except Blog.DoesNotExist:
+                "id": str(blog.id),
+                "title": blog.title,
+                "content": blog.content,
+                "thumbnail_url": blog.thumbnail_url,
+                "categories": blog.categories,
+                "tags": blog.tags,
+                "status": "draft",
+                "version": blog.current_version,
+                "draft_saved_at": updated_at_dhaka.isoformat(),
+                "timezone": "Asia/Dhaka (UTC+6)"
+            }, status=status.HTTP_200_OK)
+        
+        except DoesNotExist:
             return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except cloudinary.exceptions.Error as e:
+            return Response({"error": f"Image upload failed: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class GetBlogVersions(APIView):
     def get(self, request, blog_id):
@@ -481,7 +496,6 @@ class RestoreBlog(APIView):
             if not user:
                 return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
             
-    
             if user not in blog.authors:
                 return Response({"error": "You can only restore your own blogs"}, 
                                status=status.HTTP_403_FORBIDDEN)
@@ -504,13 +518,10 @@ class ModeratorDeleteBlog(APIView):
         try:
             blog = Blog.objects.get(id=blog_id)
             
-            # Delete all comments first
             Comment.objects(blog=blog).delete()
             
-            # Delete all reports
             BlogReport.objects(blog=blog).delete()
             
-            # Then delete the blog
             blog.delete()
             
             return Response({
@@ -521,9 +532,6 @@ class ModeratorDeleteBlog(APIView):
         except Blog.DoesNotExist:
             return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
         
-        
-
-
 class BlogSearch(APIView):
     def get(self, request):
         query = request.GET.get('q', '').strip()
@@ -604,7 +612,7 @@ class AddAuthorToBlog(APIView):
         except Blog.DoesNotExist:
             return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
         
-class PublishedBlogs(APIView):#sidebar
+class PublishedBlogs(APIView):
     def get(self, request):
         """
         Get ALL published blogs with pagination
@@ -616,14 +624,12 @@ class PublishedBlogs(APIView):#sidebar
         - reviewed: Filter by review status (true/false)
         """
         try:
-            # Base query
             query = Blog.objects(
                 is_published=True,
                 is_draft=False,
                 is_deleted=False
             ).order_by('-published_at')
 
-            # Apply filters
             category = request.GET.get('category')
             if category:
                 query = query.filter(categories__in=[category])
@@ -636,7 +642,6 @@ class PublishedBlogs(APIView):#sidebar
             if reviewed is not None:
                 query = query.filter(is_reviewed=(reviewed.lower() == 'true'))
 
-            # Pagination setup
             page_number = int(request.GET.get('page', 1))
             per_page = int(request.GET.get('per_page', 10))
             paginator = Paginator(query, per_page)
@@ -649,7 +654,6 @@ class PublishedBlogs(APIView):#sidebar
                     "error": "Page not found"
                 }, status=status.HTTP_404_NOT_FOUND)
 
-            # Prepare response data
             dhaka_tz = pytz.timezone('Asia/Dhaka')
             blogs_list = []
             for blog in current_page:
@@ -788,7 +792,6 @@ class UpdateDraft(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
         
-
 class GetBlog(APIView):
     def get(self, request, blog_id):
         try:
@@ -806,7 +809,6 @@ class GetBlog(APIView):
                     if vote:
                         has_upvoted = vote.vote_type == 'upvote'
                         has_downvoted = vote.vote_type == 'downvote'
-                    # Check if blog is in user's saved_blogs
                     is_saved = str(blog.id) in user.saved_blogs
             
             return Response({
@@ -826,7 +828,7 @@ class GetBlog(APIView):
                 "downvotes": blog.downvote_count,
                 "has_upvoted": has_upvoted,
                 "has_downvoted": has_downvoted,
-                "is_saved": is_saved,  # Add is_saved field
+                "is_saved": is_saved,
                 "versions": blog.current_version,
                 "is_draft": blog.is_draft,
                 "is_published": blog.is_published
@@ -848,22 +850,17 @@ class VoteBlog(APIView):
             if vote_type not in ['upvote', 'downvote']:
                 return Response({"error": "Invalid vote type"}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Check existing vote
-            existing_vote = Vote.objects(blog=blog, user=user).first()
-
-            # Use a context manager for atomic operations (MongoDB session/transaction)
             with mongoengine.get_connection().start_session() as session:
                 with session.start_transaction():
+                    existing_vote = Vote.objects(blog=blog, user=user).first()
                     if existing_vote:
                         if existing_vote.vote_type == vote_type:
-                            # Undo vote
                             existing_vote.delete()
                             if vote_type == 'upvote':
                                 blog.upvote_count -= 1
                             else:
                                 blog.downvote_count -= 1
                         else:
-                            # Switch vote
                             existing_vote.vote_type = vote_type
                             existing_vote.created_at = timezone.now()
                             existing_vote.save()
@@ -874,7 +871,6 @@ class VoteBlog(APIView):
                                 blog.downvote_count += 1
                                 blog.upvote_count -= 1
                     else:
-                        # New vote
                         Vote(blog=blog, user=user, vote_type=vote_type).save()
                         if vote_type == 'upvote':
                             blog.upvote_count += 1
@@ -896,4 +892,3 @@ class VoteBlog(APIView):
             return Response({"error": "User has already voted"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-

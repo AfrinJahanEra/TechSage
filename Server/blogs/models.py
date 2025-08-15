@@ -1,3 +1,4 @@
+# Server/blogs/models.py
 from datetime import datetime
 from mongoengine import Document, fields, EmbeddedDocument, ValidationError, CASCADE
 from users.models import User
@@ -39,7 +40,6 @@ class Blog(Document):
     upvote_count = fields.IntField(default=0)
     downvote_count = fields.IntField(default=0)
     
-
     meta = {
         'collection': 'blogs',
         'ordering': ['-created_at'],
@@ -69,7 +69,10 @@ class Blog(Document):
             title=self.title,
             content=self.content,
             thumbnail_url=self.thumbnail_url,
-            updated_by=username
+            updated_by=username,
+            is_draft=self.is_draft,
+            categories=self.categories,  # Include categories
+            tags=self.tags  # Include tags
         )
         if not self.versions:
             self.versions = []
@@ -83,6 +86,8 @@ class Blog(Document):
             self.title = version.title
             self.content = version.content
             self.thumbnail_url = version.thumbnail_url
+            self.categories = version.categories  # Restore categories
+            self.tags = version.tags  # Restore tags
             self.save()
             return True
         except IndexError:
@@ -119,7 +124,6 @@ class Blog(Document):
             cloudinary.uploader.destroy(public_id)
         self.delete()
 
-    
     def add_author(self, user):
         """Add an author to the blog if not already present"""
         if user not in self.authors:
