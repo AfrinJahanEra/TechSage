@@ -88,6 +88,8 @@ class Blog(Document):
             self.thumbnail_url = version.thumbnail_url
             self.categories = version.categories  # Restore categories
             self.tags = version.tags  # Restore tags
+            self.is_draft = version.is_draft
+            self.is_published = not self.is_draft
             self.save()
             return True
         except IndexError:
