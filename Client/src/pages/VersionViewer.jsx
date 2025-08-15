@@ -86,75 +86,77 @@ const VersionViewer = () => {
         type={popup.type}
         onClose={() => setPopup({ ...popup, show: false })}
       />
-      <main className="flex-1 p-6">
-        <div className={`max-w-5xl mx-auto rounded-xl shadow-sm overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-          <div className={`px-8 py-6 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                  Version {version?.version}: {version?.title || 'Loading...'}
-                </h1>
-                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Updated by {version?.updated_by || 'N/A'} on {formatTimestamp(version?.updated_at)}
-                </p>
-                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Categories: {version?.categories.length > 0 ? version.categories.join(', ') : 'None'}
-                </p>
-                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Tags: {version?.tags.length > 0 ? version.tags.join(', ') : 'None'}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  className="p-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
-                  onClick={() => navigate(`/blogs/${blogId}/history`)}
-                  title="Back to History"
-                >
-                  <FiArrowLeft />
-                </button>
-                <button
-                  className="p-2 bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors"
-                  onClick={revertVersion}
-                  title="Revert to Version"
-                >
-                  <FiRotateCcw />
-                </button>
+      <div className="flex flex-1 pt-16">
+        <main className="flex-1 p-6 overflow-auto">
+          <div className={`max-w-5xl mx-auto rounded-xl shadow-sm overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            <div className={`px-8 py-6 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                    Version {version?.version}: {version?.title || 'Loading...'}
+                  </h1>
+                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    Updated by {version?.updated_by || 'N/A'} on {formatTimestamp(version?.updated_at)}
+                  </p>
+                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    Categories: {version?.categories.length > 0 ? version.categories.join(', ') : 'None'}
+                  </p>
+                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    Tags: {version?.tags.length > 0 ? version.tags.join(', ') : 'None'}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    className="p-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+                    onClick={() => navigate(`/blogs/${blogId}/history`)}
+                    title="Back to History"
+                  >
+                    <FiArrowLeft />
+                  </button>
+                  <button
+                    className="p-2 bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors"
+                    onClick={revertVersion}
+                    title="Revert to Version"
+                  >
+                    <FiRotateCcw />
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="p-8">
-            {version?.thumbnail_url && (
-              <div className="mb-8">
-                <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Thumbnail
-                </label>
-                <img
-                  src={version.thumbnail_url}
-                  alt="Version Thumbnail"
-                  className="max-h-60 rounded-md object-cover"
+            <div className="p-8">
+              {version?.thumbnail_url && (
+                <div className="mb-8">
+                  <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    Thumbnail
+                  </label>
+                  <img
+                    src={version.thumbnail_url}
+                    alt="Version Thumbnail"
+                    className="max-h-60 rounded-md object-cover"
+                  />
+                </div>
+              )}
+              {loading ? (
+                <div className="flex justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
+                </div>
+              ) : version ? (
+                <Tiptap
+                  content={version.content}
+                  setContent={() => {}} // No-op for read-only
+                  primaryColor={primaryColor}
+                  darkMode={darkMode}
+                  readOnly
                 />
-              </div>
-            )}
-            {loading ? (
-              <div className="flex justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
-              </div>
-            ) : version ? (
-              <Tiptap
-                content={version.content}
-                setContent={() => {}} // No-op for read-only
-                primaryColor={primaryColor}
-                darkMode={darkMode}
-                readOnly
-              />
-            ) : (
-              <p className={`text-center ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                Version not found.
-              </p>
-            )}
+              ) : (
+                <p className={`text-center ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Version not found.
+                </p>
+              )}
+            </div>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
       <Footer />
     </div>
   );

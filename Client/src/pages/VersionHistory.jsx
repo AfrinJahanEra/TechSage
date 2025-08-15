@@ -86,67 +86,69 @@ const VersionHistory = () => {
         type={popup.type}
         onClose={() => setPopup({ ...popup, show: false })}
       />
-      <main className="flex-1 p-6">
-        <div className={`max-w-5xl mx-auto rounded-xl shadow-sm overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-          <div className={`px-8 py-6 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-            <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-              Version History
-            </h1>
-            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Current Version: {currentVersion || 'N/A'}
-            </p>
-          </div>
-          <div className="p-8">
-            {loading ? (
-              <div className="flex justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
-              </div>
-            ) : versions.length === 0 ? (
-              <p className={`text-center ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                No versions found for this blog.
+      <div className="flex flex-1 pt-16">
+        <main className="flex-1 p-6 overflow-auto">
+          <div className={`max-w-5xl mx-auto rounded-xl shadow-sm overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            <div className={`px-8 py-6 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                Version History
+              </h1>
+              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Current Version: {currentVersion || 'N/A'}
               </p>
-            ) : (
-              <table className={`w-full ${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg`}>
-                <thead>
-                  <tr className={darkMode ? 'bg-gray-700' : 'bg-gray-100'}>
-                    <th className="p-4 text-left text-sm font-semibold">Version</th>
-                    <th className="p-4 text-left text-sm font-semibold">Title</th>
-                    <th className="p-4 text-left text-sm font-semibold">Updated By</th>
-                    <th className="p-4 text-left text-sm font-semibold">Updated At</th>
-                    <th className="p-4 text-left text-sm font-semibold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {versions.map(version => (
-                    <tr key={version.version} className={`border-t ${darkMode ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-200 hover:bg-gray-50'}`}>
-                      <td className="p-4">{version.version}</td>
-                      <td className="p-4">{version.title}</td>
-                      <td className="p-4">{version.updated_by}</td>
-                      <td className="p-4">{formatTimestamp(version.updated_at)}</td>
-                      <td className="p-4 flex gap-2">
-                        <button
-                          className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-                          onClick={() => navigate(`/blogs/${blogId}/versions/${version.version}`)}
-                          title="View Version"
-                        >
-                          <FiEye />
-                        </button>
-                        <button
-                          className="p-2 bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors"
-                          onClick={() => revertVersion(version.version)}
-                          title="Revert to Version"
-                        >
-                          <FiRotateCcw />
-                        </button>
-                      </td>
+            </div>
+            <div className="p-8">
+              {loading ? (
+                <div className="flex justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
+                </div>
+              ) : versions.length === 0 ? (
+                <p className={`text-center ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  No versions found for this blog.
+                </p>
+              ) : (
+                <table className={`w-full ${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg`}>
+                  <thead>
+                    <tr className={darkMode ? 'bg-gray-700' : 'bg-gray-100'}>
+                      <th className="p-4 text-left text-sm font-semibold">Version</th>
+                      <th className="p-4 text-left text-sm font-semibold">Title</th>
+                      <th className="p-4 text-left text-sm font-semibold">Updated By</th>
+                      <th className="p-4 text-left text-sm font-semibold">Updated At</th>
+                      <th className="p-4 text-left text-sm font-semibold">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                  </thead>
+                  <tbody>
+                    {versions.map(version => (
+                      <tr key={version.version} className={`border-t ${darkMode ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-200 hover:bg-gray-50'}`}>
+                        <td className="p-4">{version.version}</td>
+                        <td className="p-4">{version.title}</td>
+                        <td className="p-4">{version.updated_by}</td>
+                        <td className="p-4">{formatTimestamp(version.updated_at)}</td>
+                        <td className="p-4 flex gap-2">
+                          <button
+                            className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                            onClick={() => navigate(`/blogs/${blogId}/versions/${version.version}`)}
+                            title="View Version"
+                          >
+                            <FiEye />
+                          </button>
+                          <button
+                            className="p-2 bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors"
+                            onClick={() => revertVersion(version.version)}
+                            title="Revert to Version"
+                          >
+                            <FiRotateCcw />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
       <Footer />
     </div>
   );
