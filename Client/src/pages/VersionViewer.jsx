@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
@@ -32,9 +31,16 @@ const VersionViewer = () => {
     setLoading(true);
     api.get(`/blogs/versions/${blogId}`)
       .then(response => {
+        console.log('API Response:', response.data); // Debug: Log the full API response
         const selectedVersion = response.data.versions.find(v => v.version === parseInt(versionNumber));
         if (selectedVersion) {
-          setVersion(selectedVersion);
+          console.log('Selected Version:', selectedVersion); // Debug: Log the selected version
+          setVersion({
+            ...selectedVersion,
+            categories: Array.isArray(selectedVersion.categories) ? selectedVersion.categories : selectedVersion.categories ? [selectedVersion.categories] : [],
+            tags: Array.isArray(selectedVersion.tags) ? selectedVersion.tags : selectedVersion.tags ? [selectedVersion.tags] : [],
+            thumbnail_url: selectedVersion.thumbnail_url || null
+          });
         } else {
           showPopup('Version not found', 'error');
         }
@@ -64,6 +70,13 @@ const VersionViewer = () => {
     }
   };
 
+  // Format timestamp in +06 timezone
+  const formatTimestamp = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', { timeZone: 'Asia/Dhaka' });
+  };
+
   return (
     <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-50 text-gray-800'}`}>
       <Navbar />
@@ -82,7 +95,13 @@ const VersionViewer = () => {
                   Version {version?.version}: {version?.title || 'Loading...'}
                 </h1>
                 <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Updated by {version?.updated_by || 'N/A'} on {version?.updated_at ? new Date(version.updated_at).toLocaleString() : 'N/A'}
+                  Updated by {version?.updated_by || 'N/A'} on {formatTimestamp(version?.updated_at)}
+                </p>
+                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Categories: {version?.categories.length > 0 ? version.categories.join(', ') : 'None'}
+                </p>
+                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Tags: {version?.tags.length > 0 ? version.tags.join(', ') : 'None'}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -104,6 +123,18 @@ const VersionViewer = () => {
             </div>
           </div>
           <div className="p-8">
+            {version?.thumbnail_url && (
+              <div className="mb-8">
+                <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Thumbnail
+                </label>
+                <img
+                  src={version.thumbnail_url}
+                  alt="Version Thumbnail"
+                  className="max-h-60 rounded-md object-cover"
+                />
+              </div>
+            )}
             {loading ? (
               <div className="flex justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>

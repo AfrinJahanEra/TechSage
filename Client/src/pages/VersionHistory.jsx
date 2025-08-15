@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
@@ -71,6 +70,13 @@ const VersionHistory = () => {
     }
   };
 
+  // Format timestamp in +06 timezone
+  const formatTimestamp = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', { timeZone: 'Asia/Dhaka' });
+  };
+
   return (
     <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-50 text-gray-800'}`}>
       <Navbar />
@@ -116,7 +122,7 @@ const VersionHistory = () => {
                       <td className="p-4">{version.version}</td>
                       <td className="p-4">{version.title}</td>
                       <td className="p-4">{version.updated_by}</td>
-                      <td className="p-4">{new Date(version.updated_at).toLocaleString()}</td>
+                      <td className="p-4">{formatTimestamp(version.updated_at)}</td>
                       <td className="p-4 flex gap-2">
                         <button
                           className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"

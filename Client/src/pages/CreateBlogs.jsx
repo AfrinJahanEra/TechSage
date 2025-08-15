@@ -235,18 +235,32 @@ const CreateBlogs = () => {
         formData.append('thumbnail', thumbnailFile);
       }
 
-      const response = await api.put(`/blogs/update-draft/${currentBlogId}/`, formData, {
+      const response = await api.post(`/blogs/draft/${currentBlogId}/`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
 
-      console.log('Update Draft Response:', response.data); // Debug: Log update response
+      console.log('Save Draft Response:', response.data); // Debug: Log save response
       if (!blogId) {
         setBlogId(currentBlogId);
       }
-      setStatus('draft');
-      setLastSaved(new Date());
+      setStatus(response.data.status);
+      setLastSaved(new Date(response.data.draft_saved_at));
+      setCategories(response.data.categories || []);
+      setTags(response.data.tags || []);
+      setThumbnail(response.data.thumbnail_url);
+      setBlog(prev => ({
+        ...prev,
+        id: response.data.id,
+        title: response.data.title,
+        content: response.data.content,
+        thumbnail_url: response.data.thumbnail_url,
+        categories: response.data.categories,
+        tags: response.data.tags,
+        status: response.data.status,
+        version: response.data.version
+      }));
       showPopup(`Draft saved successfully (Version ${response.data.version})`, 'success');
     } catch (error) {
       console.error('Error saving draft:', error);
