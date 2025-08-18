@@ -16,6 +16,7 @@ const VersionViewer = () => {
   const [version, setVersion] = useState(null);
   const [loading, setLoading] = useState(false);
   const [popup, setPopup] = useState({ show: false, message: '', type: 'success' });
+  const [confirmModal, setConfirmModal] = useState({ show: false, message: '', versionNumber: null });
   const popupTimerRef = useRef(null);
 
   const showPopup = (message, type = 'success', duration = 3000) => {
@@ -25,6 +26,14 @@ const VersionViewer = () => {
     popupTimerRef.current = setTimeout(() => {
       setPopup(prev => ({ ...prev, show: false }));
     }, duration);
+  };
+
+  const showConfirmModal = (versionNumber) => {
+    setConfirmModal({
+      show: true,
+      message: `Are you sure you want to revert to version ${versionNumber}? This will save the current state as a new version.`,
+      versionNumber,
+    });
   };
 
   useEffect(() => {
@@ -55,18 +64,18 @@ const VersionViewer = () => {
   }, [blogId, versionNumber, api]);
 
   const revertVersion = async () => {
-    if (window.confirm(`Are you sure you want to revert to version ${versionNumber}? This will save the current state as a new version.`)) {
-      try {
-        const response = await api.post(`/blogs/revert/${blogId}/${versionNumber}/`, {
-          username: user.username,
-        });
-        showPopup(`Reverted to version ${versionNumber} (New Version ${response.data.new_version})`, 'success');
-        const blogResponse = await api.get(`/blogs/${blogId}`);
-        navigate(`/blogs/${blogId}/edit`, { state: { draftData: blogResponse.data } });
-      } catch (error) {
-        console.error('Error reverting version:', error);
-        showPopup(error.response?.data?.error || 'Failed to revert version', 'error');
-      }
+    try {
+      const response = await api.post(`/blogs/revert/${blogId}/${versionNumber}/`, {
+        username: user.username,
+      });
+      showPopup(`Reverted to version ${versionNumber} (New Version ${response.data.new_version})`, 'success');
+      const blogResponse = await api.get(`/blogs/${blogId}`);
+      navigate(`/blogs/${blogId}/edit`, { state: { draftData: blogResponse.data } });
+    } catch (error) {
+      console.error('Error reverting version:', error);
+      showPopup(error.response?.data?.error || 'Failed to revert version', 'error');
+    } finally {
+      setConfirmModal({ show: false, message: '', versionNumber: null });
     }
   };
 
@@ -85,6 +94,20 @@ const VersionViewer = () => {
         message={popup.message}
         type={popup.type}
         onClose={() => setPopup({ ...popup, show: false })}
+        primaryColor={primaryColor}
+        darkMode={darkMode}
+      />
+      <PopupModal
+        show={confirmModal.show}
+        message={confirmModal.message}
+        type="confirm"
+        onConfirm={() => revertVersion(confirmModal.versionNumber)}
+        onCancel={() => setConfirmModal({ show: false, message: '', versionNumber: null })}
+        primaryColor={primaryColor}
+        darkMode={darkMode}
+        confirmText="Revert"
+        cancelText="Cancel"
+        title="Revert Version Confirmation"
       />
       <div className="flex flex-1 pt-16">
         <main className="flex-1 p-6 overflow-auto">
@@ -115,7 +138,7 @@ const VersionViewer = () => {
                   </button>
                   <button
                     className="p-2 bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors"
-                    onClick={revertVersion}
+                    onClick={() => showConfirmModal(versionNumber)}
                     title="Revert to Version"
                   >
                     <FiRotateCcw />
