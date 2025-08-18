@@ -31,7 +31,6 @@ class CreateBlog(APIView):
         try:
             user = User.objects.get(username=username)
             categories = data.getlist('categories[]', [])
-            
             tags = data.getlist('tags[]', [])
             
             thumbnail_url = None
@@ -228,11 +227,11 @@ class UpdateBlog(APIView):
                 blog.title = data['title']
             if 'content' in data:
                 blog.content = data['content']
-            # Merge new categories and tags with existing ones, avoiding duplicates
-            new_categories = data.getlist('categories[]', [])
-            blog.categories = list(set(blog.categories + new_categories))
-            new_tags = data.getlist('tags[]', [])
-            blog.tags = list(set(blog.tags + new_tags))
+            # Replace categories and tags with new lists if provided, otherwise keep existing
+            if 'categories[]' in data:
+                blog.categories = data.getlist('categories[]', [])
+            if 'tags[]' in data:
+                blog.tags = data.getlist('tags[]', [])
             blog.updated_at = datetime.utcnow()
             
             if 'is_published' in data:
@@ -381,11 +380,11 @@ class SaveAsDraft(APIView):
                 blog.title = data['title']
             if 'content' in data:
                 blog.content = data['content']
-            # Merge new categories and tags with existing ones, avoiding duplicates
-            new_categories = data.getlist('categories[]', [])
-            blog.categories = list(set(blog.categories + new_categories))
-            new_tags = data.getlist('tags[]', [])
-            blog.tags = list(set(blog.tags + new_tags))
+            # Replace categories and tags with new lists if provided, otherwise keep existing
+            if 'categories[]' in data:
+                blog.categories = data.getlist('categories[]', [])
+            if 'tags[]' in data:
+                blog.tags = data.getlist('tags[]', [])
             
             # Ensure blog is marked as draft
             blog.is_draft = True
@@ -774,11 +773,11 @@ class UpdateDraft(APIView):
                 blog.title = data['title']
             if 'content' in data:
                 blog.content = data['content']
-            # Merge new categories and tags with existing ones, avoiding duplicates
-            new_categories = data.getlist('categories[]', [])
-            blog.categories = list(set(blog.categories + new_categories))
-            new_tags = data.getlist('tags[]', [])
-            blog.tags = list(set(blog.tags + new_tags))
+            # Replace categories and tags with new lists if provided, otherwise keep existing
+            if 'categories[]' in data:
+                blog.categories = data.getlist('categories[]', [])
+            if 'tags[]' in data:
+                blog.tags = data.getlist('tags[]', [])
             
             blog.save()
             blog.save_version(username)

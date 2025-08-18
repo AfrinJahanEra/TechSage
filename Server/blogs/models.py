@@ -151,11 +151,11 @@ class Blog(Document):
             self.title = data['title']
         if 'content' in data:
             self.content = data['content']
-        # Merge new categories and tags with existing ones, avoiding duplicates
-        new_categories = data.getlist('categories[]', []) if hasattr(data, 'getlist') else (data.get('categories[]', []) if isinstance(data.get('categories[]'), list) else [data.get('categories[]', '')] if data.get('categories[]') else [])
-        self.categories = list(set(self.categories + new_categories))
-        new_tags = data.getlist('tags[]', []) if hasattr(data, 'getlist') else (data.get('tags[]', []) if isinstance(data.get('tags[]'), list) else [data.get('tags[]', '')] if data.get('tags[]') else [])
-        self.tags = list(set(self.tags + new_tags))
+        # Replace categories and tags with new lists if provided, otherwise keep existing
+        if 'categories[]' in data:
+            self.categories = data.getlist('categories[]', []) if hasattr(data, 'getlist') else (data.get('categories[]', []) if isinstance(data.get('categories[]'), list) else [data.get('categories[]', '')] if data.get('categories[]') else [])
+        if 'tags[]' in data:
+            self.tags = data.getlist('tags[]', []) if hasattr(data, 'getlist') else (data.get('tags[]', []) if isinstance(data.get('tags[]'), list) else [data.get('tags[]', '')] if data.get('tags[]') else [])
         self.save()
         self.save_version(username)
         return self
