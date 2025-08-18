@@ -1,4 +1,3 @@
-# Server/blogs/models.py
 from datetime import datetime
 from mongoengine import Document, fields, EmbeddedDocument, ValidationError, CASCADE
 from users.models import User
@@ -71,8 +70,8 @@ class Blog(Document):
             thumbnail_url=self.thumbnail_url,
             updated_by=username,
             is_draft=self.is_draft,
-            categories=self.categories,  # Include categories
-            tags=self.tags  # Include tags
+            categories=self.categories,
+            tags=self.tags
         )
         if not self.versions:
             self.versions = []
@@ -86,8 +85,8 @@ class Blog(Document):
             self.title = version.title
             self.content = version.content
             self.thumbnail_url = version.thumbnail_url
-            self.categories = version.categories  # Restore categories
-            self.tags = version.tags  # Restore tags
+            self.categories = version.categories
+            self.tags = version.tags
             self.is_draft = version.is_draft
             self.is_published = not self.is_draft
             self.save()
@@ -152,10 +151,8 @@ class Blog(Document):
             self.title = data['title']
         if 'content' in data:
             self.content = data['content']
-        if 'categories[]' in data:
-            self.categories = data['categories[]'] if isinstance(data['categories[]'], list) else [data['categories[]']]
-        if 'tags[]' in data:
-            self.tags = data['tags[]'] if isinstance(data['tags[]'], list) else [data['tags[]']]
+        self.categories = data.getlist('categories[]', self.categories) if hasattr(data, 'getlist') else (data.get('categories[]', self.categories) if isinstance(data.get('categories[]'), list) else [data.get('categories[]', [])])
+        self.tags = data.getlist('tags[]', self.tags) if hasattr(data, 'getlist') else (data.get('tags[]', self.tags) if isinstance(data.get('tags[]'), list) else [data.get('tags[]', [])])
         self.save()
         self.save_version(username)
         return self

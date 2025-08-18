@@ -1,4 +1,3 @@
-# Server/blogs/views.py
 from datetime import datetime
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -31,19 +30,9 @@ class CreateBlog(APIView):
 
         try:
             user = User.objects.get(username=username)
-            categories = []
-            if 'categories[]' in data:
-                if isinstance(data['categories[]'], list):
-                    categories = data['categories[]']
-                else:
-                    categories = [data['categories[]']]
+            categories = data.getlist('categories[]', [])
             
-            tags = []
-            if 'tags[]' in data:
-                if isinstance(data['tags[]'], list):
-                    tags = data['tags[]']
-                else:
-                    tags = [data['tags[]']]
+            tags = data.getlist('tags[]', [])
             
             thumbnail_url = None
             if 'thumbnail' in request.FILES:
@@ -237,8 +226,8 @@ class UpdateBlog(APIView):
             
             blog.title = data.get('title', blog.title)
             blog.content = data.get('content', blog.content)
-            blog.categories = data.get('categories', blog.categories)
-            blog.tags = data.get('tags', blog.tags)
+            blog.categories = data.getlist('categories[]', blog.categories)
+            blog.tags = data.getlist('tags[]', blog.tags)
             blog.updated_at = datetime.utcnow()
             
             if 'is_published' in data:
@@ -385,14 +374,8 @@ class SaveAsDraft(APIView):
                 blog.title = data['title']
             if 'content' in data:
                 blog.content = data['content']
-            if 'categories[]' in data:
-                # Handle multiple categories
-                categories = data['categories[]']
-                blog.categories = categories if isinstance(categories, list) else [categories]
-            if 'tags[]' in data:
-                # Handle multiple tags
-                tags = data['tags[]']
-                blog.tags = tags if isinstance(tags, list) else [tags]
+            blog.categories = data.getlist('categories[]', blog.categories)
+            blog.tags = data.getlist('tags[]', blog.tags)
             
             # Ensure blog is marked as draft
             blog.is_draft = True
@@ -776,7 +759,16 @@ class UpdateDraft(APIView):
             if user not in blog.authors:
                 return Response({"error": "Not authorized"}, status=403)
             
-            blog = blog.update_draft(request.data, username)
+            data = request.data
+            if 'title' in data:
+                blog.title = data['title']
+            if 'content' in data:
+                blog.content = data['content']
+            blog.categories = data.getlist('categories[]', blog.categories)
+            blog.tags = data.getlist('tags[]', blog.tags)
+            
+            blog.save()
+            blog.save_version(username)
             
             if 'thumbnail' in request.FILES:
                 upload_result = cloudinary.uploader.upload(request.FILES['thumbnail'])
