@@ -386,9 +386,13 @@ class SaveAsDraft(APIView):
             if 'content' in data:
                 blog.content = data['content']
             if 'categories[]' in data:
-                blog.categories = data['categories[]'] if isinstance(data['categories[]'], list) else [data['categories[]']]
+                # Handle multiple categories
+                categories = data['categories[]']
+                blog.categories = categories if isinstance(categories, list) else [categories]
             if 'tags[]' in data:
-                blog.tags = data['tags[]'] if isinstance(data['tags[]'], list) else [data['tags[]']]
+                # Handle multiple tags
+                tags = data['tags[]']
+                blog.tags = tags if isinstance(tags, list) else [tags]
             
             # Ensure blog is marked as draft
             blog.is_draft = True
@@ -445,7 +449,9 @@ class GetBlogVersions(APIView):
                     "content": version.content,
                     "updated_at": version.updated_at.isoformat(),
                     "updated_by": version.updated_by,
-                    "thumbnail_url": version.thumbnail_url
+                    "thumbnail_url": version.thumbnail_url,
+                    "categories": version.categories,
+                    "tags": version.tags
                 })
             return Response({
                 "blog_id": str(blog.id),
