@@ -67,11 +67,30 @@ const CreateBlogs = () => {
     websocket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        if (data.error) {
+          showToast(data.error, 'error');
+          return;
+        }
+        // Update state only if data is provided and different from current state
+        if (data.title && data.title !== title) {
+          setTitle(data.title);
+        }
         if (data.content && data.content !== content) {
-          setContent(data.content); // Sync content from other collaborators
+          setContent(data.content);
+        }
+        if (data.categories && JSON.stringify(data.categories) !== JSON.stringify(categories)) {
+          setCategories(data.categories);
+        }
+        if (data.tags && JSON.stringify(data.tags) !== JSON.stringify(tags)) {
+          setTags(data.tags);
+        }
+        if (data.thumbnail_url && data.thumbnail_url !== thumbnail) {
+          setThumbnail(data.thumbnail_url);
+          setThumbnailFile(null); // Clear local file to avoid re-uploading
         }
       } catch (error) {
         console.error('WebSocket message parse error:', error);
+        showToast('Error processing real-time update', 'error');
       }
     };
 
@@ -91,16 +110,22 @@ const CreateBlogs = () => {
     };
   }, [blogId, user]);
 
-  // Send content updates via WebSocket with debouncing
+  // Send updates via WebSocket with debouncing
   useEffect(() => {
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
 
     const timeout = setTimeout(() => {
-      ws.send(JSON.stringify({ content }));
+      ws.send(JSON.stringify({
+        title,
+        content,
+        categories,
+        tags,
+        thumbnail_url: thumbnail,
+      }));
     }, 300); // Debounce to reduce WebSocket messages
 
     return () => clearTimeout(timeout);
-  }, [content, ws]);
+  }, [title, content, categories, tags, thumbnail, ws]);
 
   // Load draft data if editing
   useEffect(() => {
@@ -149,12 +174,44 @@ const CreateBlogs = () => {
     setTags(tags.filter((tag) => tag !== tagToRemove));
   };
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
       setThumbnailFile(file);
       const reader = new FileReader();
-      reader.onload = (event) => setThumbnail(event.target.result);
+      reader.onload = async (event) => {
+        setThumbnail(event.target.result);
+        // Upload thumbnail to backend and get URL
+        try {
+          const formData = new FormData();
+          formData.append('thumbnail', file);
+          formData.append('username', user.username);
+          let currentBlogId = blogId;
+          if (!currentBlogId) {
+            currentBlogId = await createDraft();
+            setBlogId(currentBlogId);
+          }
+          const response = await api.post(`/blogs/draft/${currentBlogId}/`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+          setThumbnail(response.data.thumbnail_url);
+          // Send updated thumbnail_url via WebSocket
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+              title,
+              content,
+              categories,
+              tags,
+              thumbnail_url: response.data.thumbnail_url,
+            }));
+          }
+        } catch (error) {
+          console.error('Error uploading thumbnail:', error);
+          showToast('Failed to upload thumbnail', 'error');
+          setThumbnail(null);
+          setThumbnailFile(null);
+        }
+      };
       reader.readAsDataURL(file);
     }
   };
@@ -284,6 +341,16 @@ const CreateBlogs = () => {
         status: response.data.status,
         version: response.data.version,
       });
+      // Send updated state via WebSocket
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          title: response.data.title,
+          content,
+          categories: response.data.categories,
+          tags: response.data.tags,
+          thumbnail_url: response.data.thumbnail_url,
+        }));
+      }
       showToast(`Draft saved (Version ${response.data.version})`, 'success');
     } catch (error) {
       console.error('Error saving draft:', error);
@@ -324,6 +391,16 @@ const CreateBlogs = () => {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setStatus('published');
+      // Send updated state via WebSocket
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          title: response.data.title,
+          content: response.data.content,
+          categories: response.data.categories,
+          tags: response.data.tags,
+          thumbnail_url: response.data.thumbnail_url,
+        }));
+      }
       showToast('Blog published successfully', 'success');
       setTimeout(() => {
         navigate(`/blogs/${response.data.id || blogId}`);
@@ -413,6 +490,16 @@ const CreateBlogs = () => {
                           e.stopPropagation();
                           setThumbnail(null);
                           setThumbnailFile(null);
+                          // Send null thumbnail_url via WebSocket
+                          if (ws && ws.readyState === WebSocket.OPEN) {
+                            ws.send(JSON.stringify({
+                              title,
+                              content,
+                              categories,
+                              tags,
+                              thumbnail_url: null,
+                            }));
+                          }
                         }}
                       >
                         <FiX size={16} />
