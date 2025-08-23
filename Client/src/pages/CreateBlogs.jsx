@@ -5,8 +5,9 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import Tiptap from '../components/CreateBlogComponents/Tiptap';
 import Footer from '../components/Footer';
-import PopupModal from '../components/PopupModal';
 import Navbar from '../components/Navbar';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const CreateBlogs = () => {
   const { primaryColor, darkMode } = useTheme();
@@ -33,27 +34,26 @@ const CreateBlogs = () => {
   const [hoveredIcon, setHoveredIcon] = useState(null);
   const [isHistoryHovered, setIsHistoryHovered] = useState(false);
 
-  const [popup, setPopup] = useState({ show: false, message: '', type: 'success' });
-  const popupTimerRef = useRef(null);
   const fileInputRef = useRef(null);
   const searchRef = useRef(null);
 
-  const showPopup = (message, type = 'success', duration = 3000) => {
-    clearTimeout(popupTimerRef.current);
-    setPopup({ show: true, message, type });
-    
-    popupTimerRef.current = setTimeout(() => {
-      setPopup(prev => ({ ...prev, show: false }));
-    }, duration);
+  const showToast = (message, type = 'success') => {
+    const toastOptions = {
+      position: 'top-right',
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      theme: darkMode ? 'dark' : 'light',
+    };
+
+    if (type === 'success') {
+      toast.success(message, toastOptions);
+    } else {
+      toast.error(message, toastOptions);
+    }
   };
-
-  useEffect(() => {
-    return () => clearTimeout(popupTimerRef.current);
-  }, []);
-
-  const availableCategories = [
-    'Technology', 'Science', 'Programming', 'AI', 'Web Development', 'Mobile', 'Job'
-  ];
 
   useEffect(() => {
     if (location.state?.draftData) {
@@ -126,7 +126,7 @@ const CreateBlogs = () => {
       setShowSearchResults(true);
     } catch (error) {
       console.error('Error searching users:', error);
-      showPopup('Failed to search users', 'error');
+      showToast('Failed to search users', 'error');
     }
   };
 
@@ -138,7 +138,7 @@ const CreateBlogs = () => {
         await sendCollaborationRequest(newBlogId, username);
       } catch (error) {
         console.error('Error creating draft before sending request:', error);
-        showPopup('Failed to create draft before sending request', 'error');
+        showToast('Failed to create draft before sending request', 'error');
       }
     } else {
       await sendCollaborationRequest(blogId, username);
@@ -153,19 +153,19 @@ const CreateBlogs = () => {
         blog_id: blogId
       });
 
-      showPopup('Collaboration request sent successfully', 'success');
+      showToast('Collaboration request sent successfully', 'success');
       setSearchQuery('');
       setSearchResults([]);
       setShowSearchResults(false);
     } catch (error) {
       console.error('Error sending author request:', error);
-      showPopup(error.response?.data?.error || 'Failed to send request', 'error');
+      showToast(error.response?.data?.error || 'Failed to send request', 'error');
     }
   };
 
   const removeCollaborator = async (username) => {
     if (!blogId) {
-      showPopup('No blog selected', 'error');
+      showToast('No blog selected', 'error');
       return;
     }
 
@@ -182,11 +182,11 @@ const CreateBlogs = () => {
           ...prev,
           authors: prev.authors.filter(a => a.username !== username)
         }));
-        showPopup('Collaborator removed successfully', 'success');
+        showToast('Collaborator removed successfully', 'success');
       }
     } catch (error) {
       console.error('Error removing collaborator:', error);
-      showPopup(error.response?.data?.error || 'Failed to remove collaborator', 'error');
+      showToast(error.response?.data?.error || 'Failed to remove collaborator', 'error');
     }
   };
 
@@ -200,14 +200,14 @@ const CreateBlogs = () => {
         content: content || ""
       });
 
-      console.log('Create Draft Response:', response.data); // Debug: Log draft creation response
+      console.log('Create Draft Response:', response.data);
       setBlogId(response.data.id);
       setStatus('draft');
       setLastSaved(new Date());
       return response.data.id;
     } catch (error) {
       console.error('Error creating draft:', error);
-      showPopup(error.response?.data?.error || 'Failed to create draft', 'error');
+      showToast(error.response?.data?.error || 'Failed to create draft', 'error');
       throw error;
     } finally {
       setIsSubmitting(false);
@@ -241,7 +241,7 @@ const CreateBlogs = () => {
         }
       });
 
-      console.log('Save Draft Response:', response.data); // Debug: Log save response
+      console.log('Save Draft Response:', response.data);
       if (!blogId) {
         setBlogId(currentBlogId);
       }
@@ -261,10 +261,10 @@ const CreateBlogs = () => {
         status: response.data.status,
         version: response.data.version
       }));
-      showPopup(`Draft saved successfully (Version ${response.data.version})`, 'success');
+      showToast(`Draft saved successfully (Version ${response.data.version})`, 'success');
     } catch (error) {
       console.error('Error saving draft:', error);
-      showPopup(error.response?.data?.error || 'Failed to save draft', 'error');
+      showToast(error.response?.data?.error || 'Failed to save draft', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -272,7 +272,7 @@ const CreateBlogs = () => {
 
   const publishBlog = async () => {
     if (!title.trim()) {
-      showPopup('Please enter a blog title', 'error');
+      showToast('Please enter a blog title', 'error');
       return;
     }
 
@@ -281,12 +281,12 @@ const CreateBlogs = () => {
     const textOnly = tempDiv.textContent.trim();
 
     if (!textOnly) {
-      showPopup('Please add some content to your blog', 'error');
+      showToast('Please add some content to your blog', 'error');
       return;
     }
 
     if (!categories.length) {
-      showPopup('Please select at least one category', 'error');
+      showToast('Please select at least one category', 'error');
       return;
     }
 
@@ -312,16 +312,16 @@ const CreateBlogs = () => {
         }
       });
 
-      console.log('Publish Blog Response:', response.data); // Debug: Log publish response
+      console.log('Publish Blog Response:', response.data);
       setStatus('published');
-      showPopup('Blog published successfully', 'success');
+      showToast('Blog published successfully', 'success');
       
       setTimeout(() => {
         navigate(`/blogs/${response.data.id || blogId}`);
       }, 2000);
     } catch (error) {
       console.error('Publish error:', error);
-      showPopup(error.response?.data?.error || 'Failed to publish blog', 'error');
+      showToast(error.response?.data?.error || 'Failed to publish blog', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -341,11 +341,11 @@ const CreateBlogs = () => {
           username: user.username
         });
 
-        showPopup('Blog moved to trash', 'success');
+        showToast('Blog moved to trash', 'success');
         navigate('/blogs/drafts');
       } catch (error) {
         console.error('Error discarding blog:', error);
-        showPopup(error.response?.data?.error || 'Failed to discard blog', 'error');
+        showToast(error.response?.data?.error || 'Failed to discard blog', 'error');
       } finally {
         setIsSubmitting(false);
       }
@@ -364,14 +364,24 @@ const CreateBlogs = () => {
     return `${Math.floor(diffInSeconds / 86400)} days ago`;
   };
 
+  const availableCategories = [
+    'Technology', 'Science', 'Programming', 'AI', 'Web Development', 'Mobile', 'Job'
+  ];
+
   return (
     <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-50 text-gray-800'}`}>
       <Navbar />
-      <PopupModal
-        show={popup.show}
-        message={popup.message}
-        type={popup.type}
-        onClose={() => setPopup({ ...popup, show: false })}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme={darkMode ? 'dark' : 'light'}
       />
 
       <div className="flex flex-1 pt-16">
