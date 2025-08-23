@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -122,6 +121,8 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
   const fileInputRef = useRef(null);
   const tableButtonRef = useRef(null);
   const tableFormatButtonRefs = useRef({});
+  const lastContentRef = useRef(content);
+  const isTypingRef = useRef(false);
 
   const editor = useEditor({
     extensions: [
@@ -204,11 +205,46 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
     },
   });
 
+  // Detect typing to prevent disruptive updates
   useEffect(() => {
-    if (editor && content !== editor.getHTML()) {
-      editor.commands.setContent(content);
+    if (!editor || readOnly) return;
+
+    const handleTyping = () => {
+      isTypingRef.current = true;
+      clearTimeout(window.typingTimeout);
+      window.typingTimeout = setTimeout(() => {
+        isTypingRef.current = false;
+      }, 500); // Stop considering typing after 500ms of inactivity
+    };
+
+    editor.on('transaction', handleTyping);
+    return () => {
+      editor.off('transaction', handleTyping);
+      clearTimeout(window.typingTimeout);
+    };
+  }, [editor, readOnly]);
+
+  // Handle incoming WebSocket content updates
+  useEffect(() => {
+    if (!editor || readOnly || content === lastContentRef.current) return;
+
+    // Skip update if user is actively typing
+    if (isTypingRef.current) {
+      lastContentRef.current = content;
+      return;
     }
-  }, [content, editor]);
+
+    // Get current cursor position
+    const { from, to } = editor.state.selection;
+
+    // Apply new content while preserving cursor
+    editor.commands.setContent(content, false, {
+      preserveWhitespace: true,
+      selection: { from, to },
+    });
+
+    lastContentRef.current = content;
+  }, [content, editor, readOnly]);
 
   useEffect(() => {
     if (!editor || readOnly) return;
