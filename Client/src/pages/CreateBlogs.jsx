@@ -33,6 +33,7 @@ const CreateBlogs = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [hoveredIcon, setHoveredIcon] = useState(null);
   const [isHistoryHovered, setIsHistoryHovered] = useState(false);
+  const [ws, setWs] = useState(null);
 
   const fileInputRef = useRef(null);
   const searchRef = useRef(null);
@@ -47,29 +48,77 @@ const CreateBlogs = () => {
       draggable: true,
       theme: darkMode ? 'dark' : 'light',
     };
-
-    if (type === 'success') {
-      toast.success(message, toastOptions);
-    } else {
-      toast.error(message, toastOptions);
-    }
+    type === 'success' ? toast.success(message, toastOptions) : toast.error(message, toastOptions);
   };
 
+  // Initialize WebSocket connection
+  useEffect(() => {
+    if (!user) return;
+
+    const wsUrl = blogId
+      ? `ws://localhost:8000/ws/blogs/update/${blogId}/`
+      : `ws://localhost:8000/ws/blogs/create/`;
+    const websocket = new WebSocket(wsUrl);
+
+    websocket.onopen = () => {
+      console.log('WebSocket connected:', wsUrl);
+    };
+
+    websocket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.content && data.content !== content) {
+          setContent(data.content); // Sync content from other collaborators
+        }
+      } catch (error) {
+        console.error('WebSocket message parse error:', error);
+      }
+    };
+
+    websocket.onclose = () => {
+      console.log('WebSocket disconnected');
+    };
+
+    websocket.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      showToast('Real-time collaboration failed to connect', 'error');
+    };
+
+    setWs(websocket);
+
+    return () => {
+      if (websocket) websocket.close();
+    };
+  }, [blogId, user]);
+
+  // Send content updates via WebSocket with debouncing
+  useEffect(() => {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+    const timeout = setTimeout(() => {
+      ws.send(JSON.stringify({ content }));
+    }, 300); // Debounce to reduce WebSocket messages
+
+    return () => clearTimeout(timeout);
+  }, [content, ws]);
+
+  // Load draft data if editing
   useEffect(() => {
     if (location.state?.draftData) {
       const { draftData } = location.state;
-      setTitle(draftData.title);
-      setContent(draftData.content);
+      setTitle(draftData.title || '');
+      setContent(draftData.content || '');
       setCategories(draftData.categories || []);
       setTags(draftData.tags || []);
-      setThumbnail(draftData.thumbnail_url);
-      setBlogId(draftData.id);
+      setThumbnail(draftData.thumbnail_url || null);
+      setBlogId(draftData.id || null);
       setBlog(draftData);
       setIsEditing(true);
       setStatus(draftData.is_published ? 'published' : 'draft');
     }
   }, [location.state]);
 
+  // Handle click outside search results
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -77,15 +126,13 @@ const CreateBlogs = () => {
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const toggleCategory = (category) => {
-    setCategories(prev =>
+    setCategories((prev) =>
       prev.includes(category)
-        ? prev.filter(c => c !== category)
+        ? prev.filter((c) => c !== category)
         : [...prev, category]
     );
   };
@@ -99,7 +146,7 @@ const CreateBlogs = () => {
   };
 
   const removeTag = (tagToRemove) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
+    setTags(tags.filter((tag) => tag !== tagToRemove));
   };
 
   const handleImageUpload = (e) => {
@@ -107,9 +154,7 @@ const CreateBlogs = () => {
     if (file) {
       setThumbnailFile(file);
       const reader = new FileReader();
-      reader.onload = (event) => {
-        setThumbnail(event.target.result);
-      };
+      reader.onload = (event) => setThumbnail(event.target.result);
       reader.readAsDataURL(file);
     }
   };
@@ -119,7 +164,6 @@ const CreateBlogs = () => {
       setSearchResults([]);
       return;
     }
-
     try {
       const response = await api.get(`search/?q=${query.trim()}`);
       setSearchResults(response.data);
@@ -131,29 +175,23 @@ const CreateBlogs = () => {
   };
 
   const sendAuthorRequest = async (username) => {
-    if (!blogId) {
+    let currentBlogId = blogId;
+    if (!currentBlogId) {
       try {
-        const newBlogId = await createDraft();
-        setBlogId(newBlogId);
-        await sendCollaborationRequest(newBlogId, username);
+        currentBlogId = await createDraft();
+        setBlogId(currentBlogId);
       } catch (error) {
-        console.error('Error creating draft before sending request:', error);
-        showToast('Failed to create draft before sending request', 'error');
+        showToast('Failed to create draft for collaboration', 'error');
+        return;
       }
-    } else {
-      await sendCollaborationRequest(blogId, username);
     }
-  };
-
-  const sendCollaborationRequest = async (blogId, username) => {
     try {
-      const response = await api.post('/collaboration-request/request-author/', {
+      await api.post('/collaboration-request/request-author/', {
         username: user.username,
         requested_username: username,
-        blog_id: blogId
+        blog_id: currentBlogId,
       });
-
-      showToast('Collaboration request sent successfully', 'success');
+      showToast('Collaboration request sent', 'success');
       setSearchQuery('');
       setSearchResults([]);
       setShowSearchResults(false);
@@ -168,21 +206,17 @@ const CreateBlogs = () => {
       showToast('No blog selected', 'error');
       return;
     }
-
     try {
-      const response = await api.delete(`/blogs/remove-author/${blogId}/`, {
-        data: {
-          username: user.username,
-          author_to_remove: username
-        }
+      const response = await api.post(`/collaboration-request/remove-author/${blogId}/`, {
+        username: user.username,
+        author_to_remove: username,
       });
-
       if (response.data.success) {
-        setBlog(prev => ({
+        setBlog((prev) => ({
           ...prev,
-          authors: prev.authors.filter(a => a.username !== username)
+          authors: prev.authors.filter((a) => a.username !== username),
         }));
-        showToast('Collaborator removed successfully', 'success');
+        showToast('Collaborator removed', 'success');
       }
     } catch (error) {
       console.error('Error removing collaborator:', error);
@@ -193,16 +227,11 @@ const CreateBlogs = () => {
   const createDraft = async () => {
     try {
       setIsSubmitting(true);
-
       const response = await api.post('/blogs/create-draft/', {
         username: user.username,
-        title: title || "Untitled Draft",
-        content: content || ""
+        title: title || 'Untitled Draft',
+        content: content || '',
       });
-
-      console.log('Create Draft Response:', response.data);
-      setBlogId(response.data.id);
-      setStatus('draft');
       setLastSaved(new Date());
       return response.data.id;
     } catch (error) {
@@ -215,53 +244,47 @@ const CreateBlogs = () => {
   };
 
   const saveAsDraft = async () => {
+    let currentBlogId = blogId;
+    if (!currentBlogId) {
+      try {
+        currentBlogId = await createDraft();
+        setBlogId(currentBlogId);
+      } catch (error) {
+        return;
+      }
+    }
     try {
       setIsSubmitting(true);
-
-      let currentBlogId = blogId;
-      if (!currentBlogId) {
-        currentBlogId = await createDraft();
-      }
-
       const formData = new FormData();
       formData.append('title', title);
       formData.append('content', content);
       formData.append('username', user.username);
-
-      categories.forEach(cat => formData.append('categories[]', cat));
-      tags.forEach(tag => formData.append('tags[]', tag));
-
+      categories.forEach((cat) => formData.append('categories[]', cat));
+      tags.forEach((tag) => formData.append('tags[]', tag));
       if (thumbnailFile) {
         formData.append('thumbnail', thumbnailFile);
       }
-
       const response = await api.post(`/blogs/draft/${currentBlogId}/`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
-
-      console.log('Save Draft Response:', response.data);
-      if (!blogId) {
-        setBlogId(currentBlogId);
-      }
       setStatus(response.data.status);
       setLastSaved(new Date(response.data.draft_saved_at));
       setCategories(response.data.categories || []);
       setTags(response.data.tags || []);
-      setThumbnail(response.data.thumbnail_url);
-      setBlog(prev => ({
-        ...prev,
+      setThumbnail(response.data.thumbnail_url || thumbnail);
+      setBlog({
+        ...blog,
         id: response.data.id,
         title: response.data.title,
-        content: response.data.content,
+        content,
         thumbnail_url: response.data.thumbnail_url,
         categories: response.data.categories,
         tags: response.data.tags,
+        authors: response.data.authors || blog?.authors || [],
         status: response.data.status,
-        version: response.data.version
-      }));
-      showToast(`Draft saved successfully (Version ${response.data.version})`, 'success');
+        version: response.data.version,
+      });
+      showToast(`Draft saved (Version ${response.data.version})`, 'success');
     } catch (error) {
       console.error('Error saving draft:', error);
       showToast(error.response?.data?.error || 'Failed to save draft', 'error');
@@ -275,47 +298,33 @@ const CreateBlogs = () => {
       showToast('Please enter a blog title', 'error');
       return;
     }
-
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = content;
-    const textOnly = tempDiv.textContent.trim();
-
-    if (!textOnly) {
+    if (!tempDiv.textContent.trim()) {
       showToast('Please add some content to your blog', 'error');
       return;
     }
-
     if (!categories.length) {
       showToast('Please select at least one category', 'error');
       return;
     }
-
     try {
       setIsSubmitting(true);
-
       const formData = new FormData();
       formData.append('title', title);
       formData.append('content', content);
       formData.append('username', user.username);
       formData.append('is_published', true);
-      
-      categories.forEach(cat => formData.append('categories[]', cat));
-      tags.forEach(tag => formData.append('tags[]', tag));
-
+      categories.forEach((cat) => formData.append('categories[]', cat));
+      tags.forEach((tag) => formData.append('tags[]', tag));
       if (thumbnailFile) {
         formData.append('thumbnail', thumbnailFile);
       }
-
-      const response = await api.post('/blogs/create/', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+      const response = await api.post(blogId ? `/blogs/update/${blogId}/` : '/blogs/create/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
-
-      console.log('Publish Blog Response:', response.data);
       setStatus('published');
       showToast('Blog published successfully', 'success');
-      
       setTimeout(() => {
         navigate(`/blogs/${response.data.id || blogId}`);
       }, 2000);
@@ -328,36 +337,28 @@ const CreateBlogs = () => {
   };
 
   const discardBlog = async () => {
-    if (window.confirm('Are you sure you want to discard this blog? It will be moved to trash.')) {
-      try {
-        setIsSubmitting(true);
-
-        if (!blogId) {
-          navigate('/blogs/drafts');
-          return;
-        }
-
-        await api.post(`/blogs/delete/${blogId}/`, {
-          username: user.username
-        });
-
-        showToast('Blog moved to trash', 'success');
+    if (!window.confirm('Are you sure you want to discard this blog? It will be moved to trash.')) return;
+    try {
+      setIsSubmitting(true);
+      if (!blogId) {
         navigate('/blogs/drafts');
-      } catch (error) {
-        console.error('Error discarding blog:', error);
-        showToast(error.response?.data?.error || 'Failed to discard blog', 'error');
-      } finally {
-        setIsSubmitting(false);
+        return;
       }
+      await api.post(`/blogs/delete/${blogId}/`, { username: user.username });
+      showToast('Blog moved to trash', 'success');
+      navigate('/blogs/drafts');
+    } catch (error) {
+      console.error('Error discarding blog:', error);
+      showToast(error.response?.data?.error || 'Failed to discard blog', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const formatLastSaved = () => {
     if (!lastSaved) return 'Not saved yet';
-
     const now = new Date();
     const diffInSeconds = Math.floor((now - new Date(lastSaved)) / 1000);
-
     if (diffInSeconds < 60) return 'Just now';
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
@@ -371,68 +372,40 @@ const CreateBlogs = () => {
   return (
     <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-50 text-gray-800'}`}>
       <Navbar />
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme={darkMode ? 'dark' : 'light'}
-      />
-
+      <ToastContainer />
       <div className="flex flex-1 pt-16">
-        {/* Main Content */}
         <main className="flex-1 p-6 overflow-auto">
           <div className={`max-w-5xl mx-auto rounded-xl shadow-sm overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-            {/* Page Header */}
             <div className={`px-8 py-6 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
               <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                 {isEditing ? 'Edit Blog' : 'Create New Blog'}
               </h1>
             </div>
-
             <div className="p-8">
-              {/* Blog Title */}
               <div className="mb-8">
                 <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   Blog Title *
                 </label>
                 <input
                   type="text"
-                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:!border-[var(--primary-color)] transition-colors ${darkMode
-                    ? 'bg-gray-700 border-gray-600 text-white'
-                    : 'border-gray-300 text-gray-800'
-                    }`}
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:!border-[var(--primary-color)] transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300 text-gray-800'}`}
                   placeholder="Enter your blog title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   required
                 />
               </div>
-
-              {/* Thumbnail Upload */}
               <div className="mb-8">
                 <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   Thumbnail Image
                 </label>
                 <div
-                  className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${thumbnail
-                    ? darkMode ? 'border-gray-700' : 'border-gray-200'
-                    : darkMode ? 'border-gray-600 hover:border-[var(--primary-color)]' : 'border-gray-300 hover:border-[var(--primary-color)]'
-                    }`}
+                  className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${thumbnail ? (darkMode ? 'border-gray-700' : 'border-gray-200') : (darkMode ? 'border-gray-600 hover:border-[var(--primary-color)]' : 'border-gray-300 hover:border-[var(--primary-color)]')}`}
                   onClick={() => fileInputRef.current.click()}
                 >
                   {thumbnail ? (
                     <div className="relative">
-                      <img
-                        src={thumbnail}
-                        alt="Preview"
-                        className="max-h-60 mx-auto rounded-md object-cover"
-                      />
+                      <img src={thumbnail} alt="Preview" className="max-h-60 mx-auto rounded-md object-cover" />
                       <button
                         type="button"
                         className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
@@ -448,12 +421,8 @@ const CreateBlogs = () => {
                   ) : (
                     <>
                       <FiUpload className={`mx-auto h-12 w-12 mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
-                      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                        Click to upload or drag and drop
-                      </p>
-                      <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                        Recommended size: 1200×630px
-                      </p>
+                      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Click to upload or drag and drop</p>
+                      <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>Recommended size: 1200×630px</p>
                     </>
                   )}
                   <input
@@ -465,8 +434,6 @@ const CreateBlogs = () => {
                   />
                 </div>
               </div>
-
-              {/* Category Selection */}
               <div className="mb-8">
                 <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   Categories *
@@ -476,46 +443,26 @@ const CreateBlogs = () => {
                     <button
                       key={cat}
                       type="button"
-                      className={`
-                        px-4 py-2 rounded-full border text-sm font-medium flex items-center transition-colors duration-200
-                        ${categories.includes(cat)
-                          ? 'text-white border-[var(--primary-color)]'
-                          : darkMode
-                            ? 'bg-gray-700 text-gray-200 border-gray-600'
-                            : 'bg-white text-gray-700 border-gray-300'
-                        }
-                      `}
-                      style={{
-                        backgroundColor: categories.includes(cat) ? primaryColor : '',
-                        borderColor: hoveredIcon === cat ? `var(--primary-color)` : categories.includes(cat) ? `var(--primary-color)` : darkMode ? '#4b5563' : '#e5e7eb',
-                      }}
+                      className={`px-4 py-2 rounded-full border text-sm font-medium flex items-center transition-colors duration-200 ${categories.includes(cat) ? 'bg-[var(--primary-color)] text-white border-[var(--primary-color)]' : (darkMode ? 'bg-gray-700 text-gray-200 border-gray-600' : 'bg-gray-100 text-gray-700 border-gray-300')}`}
                       onClick={() => toggleCategory(cat)}
                       onMouseEnter={() => setHoveredIcon(cat)}
                       onMouseLeave={() => setHoveredIcon(null)}
+                      style={{ borderColor: hoveredIcon === cat && !categories.includes(cat) ? `var(--primary-color)` : undefined }}
                     >
                       {cat}
                     </button>
                   ))}
                 </div>
               </div>
-
-              {/* Tags Input */}
               <div className="mb-8">
                 <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   Tags
                 </label>
                 <div className="flex flex-wrap gap-2 mb-2">
                   {tags.map((tag) => (
-                    <div
-                      key={tag}
-                      className={`px-3 py-1 rounded-full text-sm flex items-center ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'}`}
-                    >
+                    <div key={tag} className={`px-3 py-1 rounded-full text-sm flex items-center ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'}`}>
                       {tag}
-                      <button
-                        type="button"
-                        className="ml-1.5 hover:text-red-500 transition-colors"
-                        onClick={() => removeTag(tag)}
-                      >
+                      <button type="button" className="ml-1.5 hover:text-red-500 transition-colors" onClick={() => removeTag(tag)}>
                         <FiX size={14} />
                       </button>
                     </div>
@@ -526,54 +473,36 @@ const CreateBlogs = () => {
                     type="text"
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
-                    className={`flex-1 px-3 py-2 border text-sm rounded-l-lg focus:outline-none focus:!border-[var(--primary-color)] transition-colors ${darkMode
-                      ? 'bg-gray-700 border-gray-600 text-white'
-                      : 'border-gray-300 text-gray-800'
-                      }`}
+                    className={`flex-1 px-3 py-2 border text-sm rounded-l-lg focus:outline-none focus:!border-[var(--primary-color)] transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300 text-gray-800'}`}
                     placeholder="Add tags (press Enter)"
                   />
-                  <button
-                    type="submit"
-                    className="px-3 py-2 text-white rounded-r-lg hover:opacity-90 transition-colors"
-                    style={{ backgroundColor: primaryColor }}
-                  >
+                  <button type="submit" className="px-3 py-2 text-white rounded-r-lg hover:opacity-90 transition-colors" style={{ backgroundColor: primaryColor }}>
                     <FiPlus />
                   </button>
                 </form>
               </div>
-
-              {/* Blog Content Editor */}
               <div className="mb-8">
                 <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   Blog Content *
                 </label>
                 <Tiptap content={content} setContent={setContent} primaryColor={primaryColor} darkMode={darkMode} />
               </div>
-
-              {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-8">
                 <div className={`text-sm flex items-center gap-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   <div className="flex items-center gap-1">
                     <FiInfo className="text-[var(--primary-color)]" />
-                    <span>
-                      Status: <span className="font-medium text-amber-500 capitalize">{status}</span>
-                    </span>
+                    <span>Status: <span className="font-medium text-amber-500 capitalize">{status}</span></span>
                   </div>
                   <div className="flex items-center gap-1">
                     <FiClock className="text-[var(--primary-color)]" />
-                    <span>
-                      Last Saved: <span className="font-medium">{formatLastSaved()}</span>
-                    </span>
+                    <span>Last Saved: <span className="font-medium">{formatLastSaved()}</span></span>
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                   <button
                     type="button"
                     disabled={isSubmitting}
-                    className={`px-6 py-2 border rounded-lg transition-colors w-full sm:w-auto flex items-center justify-center gap-2 ${darkMode
-                      ? 'border-gray-600 text-gray-200 hover:bg-gray-700'
-                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                      }`}
+                    className={`px-6 py-2 border rounded-lg transition-colors w-full sm:w-auto flex items-center justify-center gap-2 ${darkMode ? 'border-gray-600 text-gray-200 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                     onClick={discardBlog}
                   >
                     <FiTrash2 />
@@ -583,7 +512,7 @@ const CreateBlogs = () => {
                     type="button"
                     disabled={isSubmitting}
                     className="px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors w-full sm:w-auto flex items-center justify-center gap-2"
-                    onClick={isEditing ? saveAsDraft : saveAsDraft}
+                    onClick={saveAsDraft}
                   >
                     <FiSave />
                     {isEditing ? 'Update Draft' : 'Save Draft'}
@@ -603,20 +532,14 @@ const CreateBlogs = () => {
             </div>
           </div>
         </main>
-
-        {/* Sidebar */}
         <aside className={`hidden lg:block w-80 border-l p-6 overflow-y-auto ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
-          {/* Collaborators Section */}
           <div className="mb-8">
             <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <FiUsers className="text-[var(--primary-color)]" />
               Collaborators
             </h3>
-
-            {/* Current user and collaborators */}
             {user && (
               <div className="space-y-3">
-                {/* Current user as primary author */}
                 <div className={`flex items-center p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-white'}`}>
                   <img
                     src={user.avatar_url || `https://ui-avatars.com/api/?name=${user.username}&background=random`}
@@ -624,21 +547,12 @@ const CreateBlogs = () => {
                     className="h-10 w-10 rounded-full object-cover mr-3"
                   />
                   <div>
-                    <p className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                      {user.username} (You)
-                    </p>
-                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      Primary Author
-                    </p>
+                    <p className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>{user.username} (You)</p>
+                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Primary Author</p>
                   </div>
                 </div>
-
-                {/* Collaborators */}
-                {blog?.authors?.filter(author => author.username !== user.username).map((author) => (
-                  <div
-                    key={author.username}
-                    className={`flex justify-between items-center p-3 rounded-lg ${darkMode ? 'bg-gray-700 hover:shadow-md' : 'bg-white hover:shadow-sm'}`}
-                  >
+                {blog?.authors?.filter((author) => author.username !== user.username).map((author) => (
+                  <div key={author.username} className={`flex justify-between items-center p-3 rounded-lg ${darkMode ? 'bg-gray-700 hover:shadow-md' : 'bg-white hover:shadow-sm'}`}>
                     <div className="flex items-center">
                       <img
                         src={author.avatar_url || `https://ui-avatars.com/api/?name=${author.username}&background=random`}
@@ -646,15 +560,11 @@ const CreateBlogs = () => {
                         className="h-10 w-10 rounded-full object-cover mr-3"
                       />
                       <div>
-                        <p className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                          {author.username}
-                        </p>
-                        <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                          Collaborator
-                        </p>
+                        <p className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>{author.username}</p>
+                        <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Collaborator</p>
                       </div>
                     </div>
-                    {user.username === blog.authors[0].username && (
+                    {user.username === blog.authors[0]?.username && (
                       <button
                         className={`transition-colors ${darkMode ? 'text-gray-400 hover:text-red-400' : 'text-gray-400 hover:text-red-500'}`}
                         onClick={() => removeCollaborator(author.username)}
@@ -666,8 +576,6 @@ const CreateBlogs = () => {
                 ))}
               </div>
             )}
-
-            {/* Search for collaborators */}
             <div className="mt-4 relative" ref={searchRef}>
               <div className="flex">
                 <input
@@ -678,44 +586,28 @@ const CreateBlogs = () => {
                     searchUsers(e.target.value);
                   }}
                   onFocus={() => setShowSearchResults(true)}
-                  className={`flex-1 px-3 py-2 border text-sm rounded-l-lg focus:outline-none focus:!border-[var(--primary-color)] transition-colors ${darkMode
-                    ? 'bg-gray-700 border-gray-600 text-white'
-                    : 'border-gray-300 text-gray-800'
-                    }`}
+                  className={`flex-1 px-3 py-2 border text-sm rounded-l-lg focus:outline-none focus:!border-[var(--primary-color)] transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300 text-gray-800'}`}
                   placeholder="Search users to collaborate"
                 />
-                <button
-                  className="px-3 py-2 text-white rounded-r-lg hover:opacity-90 transition-colors"
-                  style={{ backgroundColor: primaryColor }}
-                >
+                <button className="px-3 py-2 text-white rounded-r-lg hover:opacity-90 transition-colors" style={{ backgroundColor: primaryColor }}>
                   <FiSearch />
                 </button>
               </div>
-
-              {/* Search results dropdown */}
               {showSearchResults && searchResults.length > 0 && (
                 <div className={`absolute z-10 mt-1 w-full rounded-lg shadow-lg py-1 ${darkMode ? 'bg-gray-700' : 'bg-white'}`}>
                   {searchResults.map((user) => (
-                    <div
-                      key={user._id}
-                      className={`px-4 py-2 text-sm cursor-pointer flex items-center justify-between ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-100'}`}
-                    >
+                    <div key={user._id} className={`px-4 py-2 text-sm cursor-pointer flex items-center justify-between ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-100'}`}>
                       <div className="flex items-center">
                         <img
                           src={user.avatar_url || `https://ui-avatars.com/api/?name=${user.username}&background=random`}
                           alt={user.username}
                           className="h-8 w-8 rounded-full object-cover mr-3"
                         />
-                        <span className={darkMode ? 'text-gray-200' : 'text-gray-800'}>
-                          {user.username}
-                        </span>
+                        <span className={darkMode ? 'text-gray-200' : 'text-gray-800'}>{user.username}</span>
                       </div>
                       <button
                         className={`p-1 rounded-full ${darkMode ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-500 hover:bg-gray-200'}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          sendAuthorRequest(user.username);
-                        }}
+                        onClick={() => sendAuthorRequest(user.username)}
                       >
                         <FiPlus />
                       </button>
@@ -724,37 +616,25 @@ const CreateBlogs = () => {
                 </div>
               )}
             </div>
-
             <div className="mt-4">
               <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                 Search for users and send them collaboration requests. They'll need to accept your request to become co-authors.
               </p>
             </div>
           </div>
-
-          {/* View History Button */}
           <div className="mb-8">
             <button
               type="button"
               disabled={isSubmitting || !blogId}
-              className={`w-full px-4 py-2 rounded-lg border flex items-center justify-center gap-2 transition-colors duration-200 ${
-                darkMode
-                  ? 'border-gray-600 text-gray-200'
-                  : 'border-gray-300 text-gray-700'
-              } ${isSubmitting || !blogId ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[var(--primary-color)] hover:text-white'}`}
+              className={`w-full px-4 py-2 rounded-lg border flex items-center justify-center gap-2 transition-colors duration-200 ${darkMode ? 'border-gray-600 text-gray-200' : 'border-gray-300 text-gray-700'} ${isSubmitting || !blogId ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[var(--primary-color)] hover:text-white'}`}
               onClick={() => navigate(`/blogs/${blogId}/history`)}
               onMouseEnter={() => setIsHistoryHovered(true)}
               onMouseLeave={() => setIsHistoryHovered(false)}
             >
-              <FiClock
-                className="text-[var(--primary-color)]"
-                style={{ color: isHistoryHovered && !(isSubmitting || !blogId) ? 'white' : 'var(--primary-color)' }}
-              />
+              <FiClock className="text-[var(--primary-color)]" style={{ color: isHistoryHovered && !(isSubmitting || !blogId) ? 'white' : 'var(--primary-color)' }} />
               View History
             </button>
           </div>
-
-          {/* Blog Status */}
           <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-white'}`}>
             <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <FiInfo className="text-[var(--primary-color)]" />
@@ -777,7 +657,6 @@ const CreateBlogs = () => {
           </div>
         </aside>
       </div>
-
       <Footer />
     </div>
   );
