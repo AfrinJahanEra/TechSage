@@ -20,12 +20,15 @@ from blogs.views import (
     ModeratorDeleteBlog, VoteBlog, 
     BlogSearch, PublishBlog, UnpublishBlog,
     SaveAsDraft, RestoreBlog, AddAuthorToBlog,JobBlogs,
-    PublishedBlogs,ReviewBlog, CreateDraft, UpdateDraft
+    PublishedBlogs,ReviewBlog, CreateDraft, UpdateDraft, blog_test_view
 )
 
 
 
 urlpatterns = [
+    # path('blogs/test/', blog_test_view),
+
+
     path('all-users/', AllUsersView.as_view(), name='all-users'),
     path('users/by-role/', UserListByRole.as_view(), name='users-by-role'),
     path('register/', RegisterUser.as_view(), name='register'),
