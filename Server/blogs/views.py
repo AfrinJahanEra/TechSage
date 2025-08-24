@@ -3,6 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from mongoengine import ValidationError
+from django.shortcuts import render
 import cloudinary.uploader
 from .models import Blog
 from .models import Vote
@@ -15,6 +16,9 @@ from mongoengine import DoesNotExist, NotUniqueError
 from reports.models import BlogReport
 from django.utils import timezone
 import mongoengine
+
+def blog_test_view(request):
+    return render(request, "blog_update_test.html")
 
 class CreateBlog(APIView):
     def post(self, request):
