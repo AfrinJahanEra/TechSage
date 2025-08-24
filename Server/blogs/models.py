@@ -39,7 +39,6 @@ class Blog(Document):
     upvote_count = fields.IntField(default=0)
     downvote_count = fields.IntField(default=0)
     
-
     meta = {
         'collection': 'blogs',
         'ordering': ['-created_at'],
@@ -69,7 +68,10 @@ class Blog(Document):
             title=self.title,
             content=self.content,
             thumbnail_url=self.thumbnail_url,
-            updated_by=username
+            updated_by=username,
+            is_draft=self.is_draft,
+            categories=self.categories,
+            tags=self.tags
         )
         if not self.versions:
             self.versions = []
@@ -83,6 +85,10 @@ class Blog(Document):
             self.title = version.title
             self.content = version.content
             self.thumbnail_url = version.thumbnail_url
+            self.categories = version.categories
+            self.tags = version.tags
+            self.is_draft = version.is_draft
+            self.is_published = not self.is_draft
             self.save()
             return True
         except IndexError:
@@ -119,7 +125,6 @@ class Blog(Document):
             cloudinary.uploader.destroy(public_id)
         self.delete()
 
-    
     def add_author(self, user):
         """Add an author to the blog if not already present"""
         if user not in self.authors:
@@ -146,10 +151,11 @@ class Blog(Document):
             self.title = data['title']
         if 'content' in data:
             self.content = data['content']
+        # Replace categories and tags with new lists if provided, otherwise keep existing
         if 'categories[]' in data:
-            self.categories = data['categories[]'] if isinstance(data['categories[]'], list) else [data['categories[]']]
+            self.categories = data.getlist('categories[]', []) if hasattr(data, 'getlist') else (data.get('categories[]', []) if isinstance(data.get('categories[]'), list) else [data.get('categories[]', '')] if data.get('categories[]') else [])
         if 'tags[]' in data:
-            self.tags = data['tags[]'] if isinstance(data['tags[]'], list) else [data['tags[]']]
+            self.tags = data.getlist('tags[]', []) if hasattr(data, 'getlist') else (data.get('tags[]', []) if isinstance(data.get('tags[]'), list) else [data.get('tags[]', '')] if data.get('tags[]') else [])
         self.save()
         self.save_version(username)
         return self

@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import CreateBlogs from './pages/CreateBlogs.jsx';
 import Home from './pages/Home.jsx';
@@ -16,7 +17,9 @@ import Dashboard from './pages/Dashboard.jsx';
 import Admin from './pages/Admin.jsx';
 import ModeratorDashboard from './pages/Moderator.jsx';
 import SearchForm from './components/SearchForm.jsx';
-import AdminDashboard from '../src/pages/Admin.jsx';
+import AdminDashboard from './pages/Admin.jsx'; // Note: Duplicate import with Admin, using AdminDashboard
+import VersionHistory from './pages/VersionHistory.jsx';
+import VersionViewer from './pages/VersionViewer.jsx';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastContainer } from 'react-toastify';
 
@@ -34,8 +37,10 @@ function AppRoutes() {
       <Route path="/admin-dashboard" element={<AdminDashboard />} />
       <Route path="/signup" element={<SignupForm />} />
       <Route path="/login" element={<LoginForm />} />
-      <Route path="/create-blog" element={<CreateBlogs />} />
-      <Route path="/login" element={<LoginForm />} />
+      <Route path="/create-blog" element={<PrivateRoute><CreateBlogs /></PrivateRoute>} />
+      <Route path="/blogs/:blogId/edit" element={<PrivateRoute><CreateBlogs /></PrivateRoute>} />
+      <Route path="/blogs/:blogId/history" element={<PrivateRoute><VersionHistory /></PrivateRoute>} />
+      <Route path="/blogs/:blogId/versions/:versionNumber" element={<PrivateRoute><VersionViewer /></PrivateRoute>} />
       <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
       <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
       <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />

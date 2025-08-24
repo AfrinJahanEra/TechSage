@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Blog Content Real-Time Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    textarea { width: 100%; max-width: 600px; }
+    input { width: 200px; }
+  </style>
+</head>
+<body>
+  <h3>Real-time Blog Content Update Test</h3>
+
+  <label>Blog ID: <input type="text" id="blogId" value="put_blog_id_here" /></label><br><br>
+
+  <textarea id="content" rows="10" placeholder="Edit blog content here..."></textarea>
+
+  <script>
+    let socket;
+    const blogIdInput = document.getElementById('blogId');
+    const contentTextarea = document.getElementById('content');
+
+    function connectWebSocket(blogId) {
+      if (!blogId || blogId === "put_blog_id_here") return;
+
+      if (socket) {
+        socket.close();
+      }
+
+      const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+      const wsPath = `${wsScheme}://${window.location.host}/ws/blogs/update/${blogId}/`;
+      socket = new WebSocket(wsPath);
+
+      socket.onopen = () => {
+        console.log("WebSocket connected for blog:", blogId);
+      };
+
+      socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.content !== undefined && contentTextarea.value !== data.content) {
+          contentTextarea.value = data.content;
+          console.log("Received update:", data.content);
+        }
+      };
+
+      socket.onclose = () => {
+        console.log("WebSocket closed");
+      };
+
+      socket.onerror = (err) => {
+        console.error("WebSocket error:", err);
+      };
+    }
+
+    // Connect initially
+    connectWebSocket(blogIdInput.value);
+
+    // Reconnect when Blog ID changes
+    blogIdInput.addEventListener('change', () => {
+      connectWebSocket(blogIdInput.value);
+    });
+
+    // Send content changes to server
+    contentTextarea.addEventListener('input', () => {
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ content: contentTextarea.value }));
+      }
+    });
+  </script>
+</body>
+</html>
