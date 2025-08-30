@@ -43,7 +43,7 @@ const ListControls = ({ editor, primaryColor, darkMode }) => {
         <button
           type="button"
           className={`
-            p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold flex items-center gap-1
+            p-2.5 rounded-md border shadow-sm transition-colors duration-200 font-bold flex items-center gap-1
             ${editor.isActive('bulletList') ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
           `}
           onClick={() => setShowBulletDropdown(!showBulletDropdown)}
@@ -110,7 +110,7 @@ const ListControls = ({ editor, primaryColor, darkMode }) => {
         <button
           type="button"
           className={`
-            p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold flex items-center gap-1
+            p-2.5 rounded-md border shadow-sm transition-colors duration-200 font-bold flex items-center gap-1
             ${editor.isActive('orderedList') ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
           `}
           onClick={() => setShowNumberDropdown(!showNumberDropdown)}
