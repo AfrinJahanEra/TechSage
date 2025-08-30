@@ -391,7 +391,7 @@ const CreateBlogs = () => {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setStatus('published');
-      setLastSaved(response.data.updated_at); // Update lastSaved with updated_at
+      setLastSaved(response.data.updated_at);
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({
           title: response.data.title,
@@ -432,9 +432,21 @@ const CreateBlogs = () => {
     }
   };
 
-  const formatTimestamp = (timestamp) => {
+  const formatTimestamp = (timestamp, useDDMMYYYY = false) => {
     if (!timestamp) return 'Not saved yet';
-    return new Date(timestamp).toLocaleString('en-US', {
+    const date = new Date(timestamp);
+    if (useDDMMYYYY) {
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      const time = date.toLocaleString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      });
+      return `${day}/${month}/${year}, ${time}`;
+    }
+    return date.toLocaleString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -735,11 +747,11 @@ const CreateBlogs = () => {
               </div>
               <div className="flex justify-between">
                 <span>Last Saved:</span>
-                <span className="font-medium">{formatTimestamp(lastSaved)}</span>
+                <span className="font-medium">{formatTimestamp(lastSaved, true)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Created:</span>
-                <span className="font-medium">{formatTimestamp(createdAt)}</span>
+                <span className="font-medium">{formatTimestamp(createdAt, true)}</span>
               </div>
             </div>
           </div>
