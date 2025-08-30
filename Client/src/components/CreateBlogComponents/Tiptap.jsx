@@ -325,7 +325,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
   const toggleTableDropdown = (tableId) => {
     if (!readOnly) {
       setShowTableDropdown((prev) => ({
-        ...prev,
+ ...prev,
         [tableId]: !prev[tableId],
       }));
     }
@@ -576,7 +576,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
         `}
       </style>
       <div className={`flex items-center gap-1.5 mb-4 p-3 rounded-lg border ${darkMode ? 'border-gray-600' : 'border-gray-300'} focus-within:!border-[var(--primary-color)] transition-colors duration-200 ${readOnly ? 'hidden' : ''}`}>
-        {buttons.map((button) => (
+        {buttons.slice(0, -2).map((button) => (
           <div className="relative" key={button.name}>
             <button
               type="button"
@@ -621,6 +621,49 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
         ))}
         <ListControls editor={editor} primaryColor={primaryColor} darkMode={darkMode} readOnly={readOnly} />
         <HeadingControls editor={editor} primaryColor={primaryColor} darkMode={darkMode} readOnly={readOnly} />
+        {buttons.slice(-2).map((button) => (
+          <div className="relative" key={button.name}>
+            <button
+              type="button"
+              onClick={button.action}
+              disabled={button.disabled}
+              ref={button.ref}
+              className={`
+                p-2.5 rounded-md border shadow-sm transition-all duration-200 font-bold
+                ${button.active ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
+              `}
+              onMouseEnter={() => {
+                setTooltip(button.name);
+                setHoveredIcon(button.name);
+              }}
+              onMouseLeave={() => {
+                setTooltip('');
+                setHoveredIcon(null);
+              }}
+              style={{
+                backgroundColor: button.active || hoveredIcon === button.name
+                  ? primaryColor
+                  : darkMode
+                    ? '#374151'
+                    : 'white',
+                borderColor: button.active || hoveredIcon === button.name
+                  ? primaryColor
+                  : darkMode
+                    ? '#4b5563'
+                    : '#e5e7eb',
+              }}
+            >
+              {button.icon}
+            </button>
+            {tooltip === button.name && (
+              <div
+                className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
+              >
+                {button.name}
+              </div>
+            )}
+          </div>
+        ))}
         {showTableGrid && !readOnly && (
           <TableGridSelector
             editor={editor}
