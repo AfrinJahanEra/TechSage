@@ -437,13 +437,15 @@ class GetBlogVersions(APIView):
     def get(self, request, blog_id):
         try:
             blog = Blog.objects.get(id=blog_id)
+            dhaka_tz = pytz.timezone('Asia/Dhaka')  # Define Asia/Dhaka timezone
             versions = []
             for idx, version in enumerate(blog.versions, 1):
+                updated_at_dhaka = version.updated_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)  # Convert to Asia/Dhaka
                 versions.append({
                     "version": idx,
                     "title": version.title,
                     "content": version.content,
-                    "updated_at": version.updated_at.isoformat(),
+                    "updated_at": updated_at_dhaka.isoformat(),  # Use converted timestamp
                     "updated_by": version.updated_by,
                     "thumbnail_url": version.thumbnail_url,
                     "categories": version.categories,
@@ -452,11 +454,12 @@ class GetBlogVersions(APIView):
             return Response({
                 "blog_id": str(blog.id),
                 "current_version": blog.current_version,
-                "versions": versions
+                "versions": versions,
+                "timezone": "Asia/Dhaka (UTC+6)"  # Indicate timezone in response
             })
         except Blog.DoesNotExist:
             return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
-
+        
 class RevertBlogVersion(APIView):
     def post(self, request, blog_id, version_number):
         try:
