@@ -361,6 +361,7 @@ const CreateBlogs = () => {
   };
 
   const publishBlog = async () => {
+    // Validate inputs
     if (!title.trim()) {
       showToast('Please enter a blog title', 'error');
       return;
@@ -375,39 +376,70 @@ const CreateBlogs = () => {
       showToast('Please select at least one category', 'error');
       return;
     }
+
     try {
       setIsSubmitting(true);
+      let currentBlogId = blogId;
+
+      // If no blogId, create a draft first
+      if (!currentBlogId) {
+        currentBlogId = await createDraft();
+        setBlogId(currentBlogId);
+      }
+
+      // Prepare form data
       const formData = new FormData();
       formData.append('title', title);
       formData.append('content', content);
       formData.append('username', user.username);
-      formData.append('is_published', true);
+      formData.append('is_published', 'true'); // Ensure string 'true' for backend compatibility
       categories.forEach((cat) => formData.append('categories[]', cat));
       tags.forEach((tag) => formData.append('tags[]', tag));
       if (thumbnailFile) {
         formData.append('thumbnail', thumbnailFile);
       }
-      const response = await api.post(blogId ? `/blogs/update/${blogId}/` : '/blogs/create/', formData, {
+
+      // Decide endpoint and method based on whether it's a new blog or an update
+      const endpoint = currentBlogId ? `/blogs/update/${currentBlogId}/` : '/blogs/create/';
+      const method = currentBlogId ? api.put : api.post;
+      const response = await method(endpoint, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
+
+      // Update state based on response
       setStatus('published');
-      setLastSaved(response.data.updated_at);
+      setLastSaved(response.data.updated_at || response.data.created_at);
+      setBlog({
+        ...blog,
+        id: response.data.id || currentBlogId,
+        title: response.data.title || title,
+        content,
+        thumbnail_url: response.data.thumbnail_url || thumbnail,
+        categories: response.data.categories || categories,
+        tags: response.data.tags || tags,
+        status: 'published',
+        version: response.data.version || blog?.version,
+      });
+
+      // Send WebSocket update
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({
-          title: response.data.title,
-          content: response.data.content,
-          categories: response.data.categories,
-          tags: response.data.tags,
-          thumbnail_url: response.data.thumbnail_url,
+          title: response.data.title || title,
+          content,
+          categories: response.data.categories || categories,
+          tags: response.data.tags || tags,
+          thumbnail_url: response.data.thumbnail_url || thumbnail,
         }));
       }
+
       showToast('Blog published successfully', 'success');
       setTimeout(() => {
-        navigate(`/blogs/${response.data.id || blogId}`);
+        navigate(`/blogs/${response.data.id || currentBlogId}`);
       }, 2000);
     } catch (error) {
       console.error('Publish error:', error);
-      showToast(error.response?.data?.error || 'Failed to publish blog', 'error');
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to publish blog';
+      showToast(`Failed to publish blog: ${errorMessage}`, 'error');
     } finally {
       setIsSubmitting(false);
     }
