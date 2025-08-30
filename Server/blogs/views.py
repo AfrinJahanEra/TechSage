@@ -64,6 +64,9 @@ class CreateBlog(APIView):
             
             blog.save()
             
+            dhaka_tz = pytz.timezone('Asia/Dhaka')  # Define Asia/Dhaka timezone
+            created_at_dhaka = blog.created_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)  # Convert to Asia/Dhaka
+            
             response_data = {
                 "id": str(blog.id),
                 "title": blog.title,
@@ -72,8 +75,9 @@ class CreateBlog(APIView):
                 "thumbnail_url": blog.thumbnail_url,
                 "categories": blog.categories,
                 "tags": blog.tags,
-                "created_at": blog.created_at.isoformat(),
-                "version": blog.current_version
+                "created_at": created_at_dhaka.isoformat(),
+                "version": blog.current_version,
+                "timezone": "Asia/Dhaka (UTC+6)"  # Indicate timezone
             }
             
             return Response(response_data, status=status.HTTP_201_CREATED)
@@ -284,9 +288,13 @@ class PublishBlog(APIView):
             for author in blog.authors:
                 author.update(inc__total_publications=1)
             
+            dhaka_tz = pytz.timezone('Asia/Dhaka')  # Define Asia/Dhaka timezone
+            published_at_dhaka = blog.published_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)  # Convert to Asia/Dhaka
+            
             return Response({
                 "message": "Blog published successfully",
-                "published_at": blog.published_at.isoformat()
+                "published_at": published_at_dhaka.isoformat(),
+                "timezone": "Asia/Dhaka (UTC+6)"  # Indicate timezone
             })
             
         except Blog.DoesNotExist:
@@ -459,7 +467,7 @@ class GetBlogVersions(APIView):
             })
         except Blog.DoesNotExist:
             return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
-        
+
 class RevertBlogVersion(APIView):
     def post(self, request, blog_id, version_number):
         try:
@@ -562,8 +570,10 @@ class BlogSearch(APIView):
             
             blogs = Blog.objects(search_query)
             
+            dhaka_tz = pytz.timezone('Asia/Dhaka')  # Define Asia/Dhaka timezone
             results = []
             for blog in blogs:
+                created_at_dhaka = blog.created_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)  # Convert to Asia/Dhaka
                 results.append({
                     "id": str(blog.id),
                     "title": blog.title,
@@ -573,7 +583,8 @@ class BlogSearch(APIView):
                     "tags": blog.tags,
                     "thumbnail_url": blog.thumbnail_url,
                     "status": "published" if blog.is_published else "draft",
-                    "created_at": blog.created_at.isoformat()
+                    "created_at": created_at_dhaka.isoformat(),
+                    "timezone": "Asia/Dhaka (UTC+6)"  # Indicate timezone
                 })
             
             return Response(results)
@@ -725,11 +736,15 @@ class ReviewBlog(APIView):
             blog.reviewed_by = reviewer
             blog.save()
             
+            dhaka_tz = pytz.timezone('Asia/Dhaka')  # Define Asia/Dhaka timezone
+            reviewed_at_dhaka = datetime.utcnow().replace(tzinfo=pytz.utc).astimezone(dhaka_tz)  # Convert to Asia/Dhaka
+            
             return Response({
                 "success": True,
                 "message": "Blog reviewed and approved",
                 "reviewed_by": reviewer.username,
-                "reviewed_at": datetime.utcnow().isoformat()
+                "reviewed_at": reviewed_at_dhaka.isoformat(),
+                "timezone": "Asia/Dhaka (UTC+6)"  # Indicate timezone
             })
             
         except Blog.DoesNotExist:
@@ -749,14 +764,18 @@ class CreateDraft(APIView):
             user = User.objects.get(username=username)
             blog = Blog().create_draft(user)
             
+            dhaka_tz = pytz.timezone('Asia/Dhaka')  # Define Asia/Dhaka timezone
+            created_at_dhaka = blog.created_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)  # Convert to Asia/Dhaka
+            
             return Response({
                 "id": str(blog.id),
                 "title": blog.title,
                 "status": "draft",
                 "is_draft": True,
                 "is_published": False,
-                "created_at": blog.created_at.isoformat(),
-                "version": blog.current_version
+                "created_at": created_at_dhaka.isoformat(),
+                "version": blog.current_version,
+                "timezone": "Asia/Dhaka (UTC+6)"  # Indicate timezone
             }, status=201)
             
         except Exception as e:
@@ -828,6 +847,11 @@ class GetBlog(APIView):
                         has_downvoted = vote.vote_type == 'downvote'
                     is_saved = str(blog.id) in user.saved_blogs
             
+            dhaka_tz = pytz.timezone('Asia/Dhaka')  # Define Asia/Dhaka timezone
+            created_at_dhaka = blog.created_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)  # Convert to Asia/Dhaka
+            updated_at_dhaka = blog.updated_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)  # Convert to Asia/Dhaka
+            published_at_dhaka = blog.published_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz) if blog.published_at else None  # Convert to Asia/Dhaka
+            
             return Response({
                 "id": str(blog.id),
                 "title": blog.title,
@@ -837,10 +861,10 @@ class GetBlog(APIView):
                            for author in blog.authors],
                 "categories": blog.categories,
                 "tags": blog.tags,
-                "created_at": blog.created_at.isoformat(),
-                "updated_at": blog.updated_at.isoformat(),
+                "created_at": created_at_dhaka.isoformat(),
+                "updated_at": updated_at_dhaka.isoformat(),
                 "status": "published" if blog.is_published else "draft",
-                "published_at": blog.published_at.isoformat() if blog.published_at else None,
+                "published_at": published_at_dhaka.isoformat() if published_at_dhaka else None,
                 "upvotes": blog.upvote_count,
                 "downvotes": blog.downvote_count,
                 "has_upvoted": has_upvoted,
@@ -848,7 +872,8 @@ class GetBlog(APIView):
                 "is_saved": is_saved,
                 "versions": blog.current_version,
                 "is_draft": blog.is_draft,
-                "is_published": blog.is_published
+                "is_published": blog.is_published,
+                "timezone": "Asia/Dhaka (UTC+6)"  # Indicate timezone
             })
         except Blog.DoesNotExist:
             return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
