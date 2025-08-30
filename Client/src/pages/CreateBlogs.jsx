@@ -29,6 +29,7 @@ const CreateBlogs = () => {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [status, setStatus] = useState('draft');
   const [lastSaved, setLastSaved] = useState(null);
+  const [createdAt, setCreatedAt] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [hoveredIcon, setHoveredIcon] = useState(null);
@@ -71,7 +72,6 @@ const CreateBlogs = () => {
           showToast(data.error, 'error');
           return;
         }
-        // Update state only if data is provided and different from current state
         if (data.title && data.title !== title) {
           setTitle(data.title);
         }
@@ -86,7 +86,7 @@ const CreateBlogs = () => {
         }
         if (data.thumbnail_url && data.thumbnail_url !== thumbnail) {
           setThumbnail(data.thumbnail_url);
-          setThumbnailFile(null); // Clear local file to avoid re-uploading
+          setThumbnailFile(null);
         }
       } catch (error) {
         console.error('WebSocket message parse error:', error);
@@ -122,7 +122,7 @@ const CreateBlogs = () => {
         tags,
         thumbnail_url: thumbnail,
       }));
-    }, 300); // Debounce to reduce WebSocket messages
+    }, 300);
 
     return () => clearTimeout(timeout);
   }, [title, content, categories, tags, thumbnail, ws]);
@@ -140,6 +140,8 @@ const CreateBlogs = () => {
       setBlog(draftData);
       setIsEditing(true);
       setStatus(draftData.is_published ? 'published' : 'draft');
+      setCreatedAt(draftData.created_at || null);
+      setLastSaved(draftData.draft_saved_at || draftData.updated_at || draftData.created_at || null);
     }
   }, [location.state]);
 
@@ -181,7 +183,6 @@ const CreateBlogs = () => {
       const reader = new FileReader();
       reader.onload = async (event) => {
         setThumbnail(event.target.result);
-        // Upload thumbnail to backend and get URL
         try {
           const formData = new FormData();
           formData.append('thumbnail', file);
@@ -195,7 +196,6 @@ const CreateBlogs = () => {
             headers: { 'Content-Type': 'multipart/form-data' },
           });
           setThumbnail(response.data.thumbnail_url);
-          // Send updated thumbnail_url via WebSocket
           if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({
               title,
@@ -289,7 +289,8 @@ const CreateBlogs = () => {
         title: title || 'Untitled Draft',
         content: content || '',
       });
-      setLastSaved(new Date());
+      setCreatedAt(response.data.created_at);
+      setLastSaved(response.data.created_at);
       return response.data.id;
     } catch (error) {
       console.error('Error creating draft:', error);
@@ -325,7 +326,7 @@ const CreateBlogs = () => {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setStatus(response.data.status);
-      setLastSaved(new Date(response.data.draft_saved_at));
+      setLastSaved(response.data.draft_saved_at);
       setCategories(response.data.categories || []);
       setTags(response.data.tags || []);
       setThumbnail(response.data.thumbnail_url || thumbnail);
@@ -341,7 +342,6 @@ const CreateBlogs = () => {
         status: response.data.status,
         version: response.data.version,
       });
-      // Send updated state via WebSocket
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({
           title: response.data.title,
@@ -391,7 +391,7 @@ const CreateBlogs = () => {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setStatus('published');
-      // Send updated state via WebSocket
+      setLastSaved(response.data.updated_at); // Update lastSaved with updated_at
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({
           title: response.data.title,
@@ -432,14 +432,16 @@ const CreateBlogs = () => {
     }
   };
 
-  const formatLastSaved = () => {
-    if (!lastSaved) return 'Not saved yet';
-    const now = new Date();
-    const diffInSeconds = Math.floor((now - new Date(lastSaved)) / 1000);
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
-    return `${Math.floor(diffInSeconds / 86400)} days ago`;
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return 'Not saved yet';
+    return new Date(timestamp).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
   };
 
   const availableCategories = [
@@ -490,7 +492,6 @@ const CreateBlogs = () => {
                           e.stopPropagation();
                           setThumbnail(null);
                           setThumbnailFile(null);
-                          // Send null thumbnail_url via WebSocket
                           if (ws && ws.readyState === WebSocket.OPEN) {
                             ws.send(JSON.stringify({
                               title,
@@ -582,7 +583,7 @@ const CreateBlogs = () => {
                   </div>
                   <div className="flex items-center gap-1">
                     <FiClock className="text-[var(--primary-color)]" />
-                    <span>Last Saved: <span className="font-medium">{formatLastSaved()}</span></span>
+                    <span>Last Saved: <span className="font-medium">{formatTimestamp(lastSaved)}</span></span>
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -734,11 +735,11 @@ const CreateBlogs = () => {
               </div>
               <div className="flex justify-between">
                 <span>Last Saved:</span>
-                <span className="font-medium">{formatLastSaved()}</span>
+                <span className="font-medium">{formatTimestamp(lastSaved)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Created:</span>
-                <span className="font-medium">{lastSaved ? new Date(lastSaved).toLocaleString() : 'Not saved yet'}</span>
+                <span className="font-medium">{formatTimestamp(createdAt)}</span>
               </div>
             </div>
           </div>
