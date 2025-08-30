@@ -337,35 +337,40 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
       action: () => editor.chain().focus().toggleBold().run(), 
       disabled: !editor.can().toggleBold() || readOnly, 
       active: editor.isActive('bold'), 
-      name: 'Bold' 
+      name: 'Bold',
+      shortcut: 'Ctrl + B'
     },
     { 
       icon: <FiItalic />, 
       action: () => editor.chain().focus().toggleItalic().run(), 
       disabled: !editor.can().toggleItalic() || readOnly, 
       active: editor.isActive('italic'), 
-      name: 'Italic' 
+      name: 'Italic',
+      shortcut: 'Ctrl + I'
     },
     { 
       icon: <FiUnderline />, 
       action: () => editor.chain().focus().toggleUnderline().run(), 
       disabled: !editor.can().toggleUnderline() || readOnly, 
       active: editor.isActive('underline'), 
-      name: 'Underline' 
+      name: 'Underline' ,
+      shortcut: 'Ctrl + U'
     },
     { 
       icon: <BiSolidQuoteRight />, 
       action: () => editor.chain().focus().toggleBlockquote().run(), 
       active: editor.isActive('blockquote'), 
       disabled: readOnly,
-      name: 'Blockquote' 
+      name: 'Blockquote' ,
+      shortcut: 'Ctrl + Shift + B'
     },
     { 
       icon: <FiLink />, 
       action: () => setShowLinkModal(true), 
       active: editor.isActive('link'), 
       disabled: readOnly,
-      name: 'Insert/Edit Link' 
+      name: 'Insert/Edit Link' ,
+      shortcut: 'Ctrl + K'
     },
     { 
       icon: <FiImage />, 
@@ -393,14 +398,17 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
       action: () => setShowLatexModal(true), 
       active: editor.isActive('mathematics'), 
       disabled: readOnly,
-      name: 'Insert LaTeX' 
+      name: 'Insert LaTeX',
+    
+      
     },
     { 
       icon: <FiMinus />, 
       action: () => editor.chain().focus().setHorizontalRule().run(), 
       active: editor.isActive('horizontalRule'), 
       disabled: readOnly,
-      name: 'Horizontal Rule' 
+      name: 'Horizontal Rule',
+      shortcut: '(---) or (___ )'
     },
     { 
       icon: <FiLayout />, 
@@ -414,13 +422,15 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
       icon: <FiRotateCcw />, 
       action: () => editor.chain().focus().undo().run(), 
       disabled: !editor.can().undo() || readOnly, 
-      name: 'Undo' 
+      name: 'Undo',
+      shortcut: 'Ctrl + Z'
     },
     { 
       icon: <FiRotateCw />, 
       action: () => editor.chain().focus().redo().run(), 
       disabled: !editor.can().redo() || readOnly, 
-      name: 'Redo' 
+      name: 'Redo',
+      shortcut: 'Ctrl + Y'
     },
   ];
 
@@ -615,6 +625,9 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
                 className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
               >
                 {button.name}
+                {button.shortcut && (
+      <span className="ml-2 text-gray-400">{`(${button.shortcut})`}</span>
+    )}
               </div>
             )}
           </div>
