@@ -325,7 +325,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
   const toggleTableDropdown = (tableId) => {
     if (!readOnly) {
       setShowTableDropdown((prev) => ({
- ...prev,
+        ...prev,
         [tableId]: !prev[tableId],
       }));
     }
@@ -338,7 +338,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
       disabled: !editor.can().toggleBold() || readOnly, 
       active: editor.isActive('bold'), 
       name: 'Bold',
-      shortcut: 'Ctrl + B'
+      shortcut: 'Ctrl+B'
     },
     { 
       icon: <FiItalic />, 
@@ -346,61 +346,59 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
       disabled: !editor.can().toggleItalic() || readOnly, 
       active: editor.isActive('italic'), 
       name: 'Italic',
-      shortcut: 'Ctrl + I'
+      shortcut: 'Ctrl+I'
     },
     { 
       icon: <FiUnderline />, 
       action: () => editor.chain().focus().toggleUnderline().run(), 
       disabled: !editor.can().toggleUnderline() || readOnly, 
       active: editor.isActive('underline'), 
-      name: 'Underline' ,
-      shortcut: 'Ctrl + U'
+      name: 'Underline',
+      shortcut: 'Ctrl+U'
     },
     { 
       icon: <BiSolidQuoteRight />, 
       action: () => editor.chain().focus().toggleBlockquote().run(), 
       active: editor.isActive('blockquote'), 
       disabled: readOnly,
-      name: 'Blockquote' ,
-      shortcut: 'Ctrl + Shift + B'
+      name: 'Blockquote',
+      shortcut: 'Ctrl+Shift+B'
     },
     { 
       icon: <FiLink />, 
       action: () => setShowLinkModal(true), 
       active: editor.isActive('link'), 
       disabled: readOnly,
-      name: 'Insert/Edit Link' ,
-      shortcut: 'Ctrl + K'
+      name: 'Insert/Edit Link',
+      shortcut: 'Ctrl+K'
     },
     { 
       icon: <FiImage />, 
       action: handleImageUpload, 
       active: false, 
       disabled: readOnly,
-      name: 'Insert Image' 
+      name: 'Insert Image'
     },
     { 
       icon: <FiPieChart />, 
       action: () => setShowDiagramModal(true), 
       active: false, 
       disabled: readOnly,
-      name: 'Insert Diagram' 
+      name: 'Insert Diagram'
     },
     { 
       icon: <FiCode />, 
       action: () => setShowCodeModal(true), 
       active: editor.isActive('codeBlock'), 
       disabled: readOnly,
-      name: 'Insert Code' 
+      name: 'Insert Code'
     },
     { 
       icon: <BiMath />, 
       action: () => setShowLatexModal(true), 
       active: editor.isActive('mathematics'), 
       disabled: readOnly,
-      name: 'Insert LaTeX',
-    
-      
+      name: 'Insert LaTeX'
     },
     { 
       icon: <FiMinus />, 
@@ -408,7 +406,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
       active: editor.isActive('horizontalRule'), 
       disabled: readOnly,
       name: 'Horizontal Rule',
-      shortcut: '(---) or (___ )'
+      shortcut: '[---] or [___ ]'
     },
     { 
       icon: <FiLayout />, 
@@ -423,14 +421,14 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
       action: () => editor.chain().focus().undo().run(), 
       disabled: !editor.can().undo() || readOnly, 
       name: 'Undo',
-      shortcut: 'Ctrl + Z'
+      shortcut: 'Ctrl+Z'
     },
     { 
       icon: <FiRotateCw />, 
       action: () => editor.chain().focus().redo().run(), 
       disabled: !editor.can().redo() || readOnly, 
       name: 'Redo',
-      shortcut: 'Ctrl + Y'
+      shortcut: 'Ctrl+Y'
     },
   ];
 
@@ -626,8 +624,8 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
               >
                 {button.name}
                 {button.shortcut && (
-      <span className="ml-2 text-gray-400">{`(${button.shortcut})`}</span>
-    )}
+                  <span className="ml-2 text-gray-400">{`(${button.shortcut})`}</span>
+                )}
               </div>
             )}
           </div>
@@ -673,6 +671,9 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
                 className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
               >
                 {button.name}
+                {button.shortcut && (
+                  <span className="ml-2 text-gray-400">{`(${button.shortcut})`}</span>
+                )}
               </div>
             )}
           </div>
