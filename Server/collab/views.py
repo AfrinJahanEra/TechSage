@@ -6,7 +6,7 @@ from rest_framework import status
 from .models import Blog, AuthorRequest
 from users.models import User
 from rest_framework import status
-
+import pytz
 
 class RequestAuthor(APIView):
     def post(self, request):
@@ -133,7 +133,7 @@ class GetAuthorRequests(APIView):
         try:
             user = User.objects.get(username=username)
             
-       
+            dhaka_tz = pytz.timezone('Asia/Dhaka')  # Define Asia/Dhaka timezone
             requests = AuthorRequest.objects(
                 requested_author=user,
                 status='pending'
@@ -141,12 +141,14 @@ class GetAuthorRequests(APIView):
             
             requests_data = []
             for req in requests:
+                created_at_dhaka = req.created_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)  # Convert to Asia/Dhaka
                 requests_data.append({
                     "request_id": str(req.id),
                     "blog_id": str(req.blog.id),
                     "blog_title": req.blog.title,
                     "requesting_author": req.requesting_author.username,
-                    "created_at": req.created_at.isoformat()
+                    "created_at": created_at_dhaka.isoformat(),
+                    "timezone": "Asia/Dhaka (UTC+6)"  # Indicate timezone
                 })
             
             return Response({
