@@ -71,6 +71,7 @@ const CreateBlogs = () => {
           showToast(data.error, 'error');
           return;
         }
+        // Update state only if data is provided and different from current state
         if (data.title && data.title !== title) {
           setTitle(data.title);
         }
@@ -85,7 +86,7 @@ const CreateBlogs = () => {
         }
         if (data.thumbnail_url && data.thumbnail_url !== thumbnail) {
           setThumbnail(data.thumbnail_url);
-          setThumbnailFile(null);
+          setThumbnailFile(null); // Clear local file to avoid re-uploading
         }
       } catch (error) {
         console.error('WebSocket message parse error:', error);
@@ -121,7 +122,7 @@ const CreateBlogs = () => {
         tags,
         thumbnail_url: thumbnail,
       }));
-    }, 300);
+    }, 300); // Debounce to reduce WebSocket messages
 
     return () => clearTimeout(timeout);
   }, [title, content, categories, tags, thumbnail, ws]);
@@ -180,6 +181,7 @@ const CreateBlogs = () => {
       const reader = new FileReader();
       reader.onload = async (event) => {
         setThumbnail(event.target.result);
+        // Upload thumbnail to backend and get URL
         try {
           const formData = new FormData();
           formData.append('thumbnail', file);
@@ -193,6 +195,7 @@ const CreateBlogs = () => {
             headers: { 'Content-Type': 'multipart/form-data' },
           });
           setThumbnail(response.data.thumbnail_url);
+          // Send updated thumbnail_url via WebSocket
           if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({
               title,
@@ -338,6 +341,7 @@ const CreateBlogs = () => {
         status: response.data.status,
         version: response.data.version,
       });
+      // Send updated state via WebSocket
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({
           title: response.data.title,
@@ -387,6 +391,7 @@ const CreateBlogs = () => {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setStatus('published');
+      // Send updated state via WebSocket
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({
           title: response.data.title,
@@ -445,15 +450,15 @@ const CreateBlogs = () => {
     <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-50 text-gray-800'}`}>
       <Navbar />
       <ToastContainer />
-      <div className="flex flex-1 pt-16 h-[calc(100vh-64px-64px)]">
-        <main className="flex-1 p-6 overflow-auto min-h-full">
-          <div className={`max-w-6xl mx-auto shadow-sm overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'} min-h-full flex flex-col`}>
+      <div className="flex flex-1 pt-16">
+        <main className="flex-1 p-6 overflow-auto">
+          <div className={`max-w-6xl mx-auto rounded-xl shadow-sm overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
             <div className={`px-8 py-6 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
               <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                 {isEditing ? 'Edit Blog' : 'Create New Blog'}
               </h1>
             </div>
-            <div className="p-8 flex-1 overflow-auto">
+            <div className="p-8">
               <div className="mb-8">
                 <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   Blog Title *
@@ -485,6 +490,7 @@ const CreateBlogs = () => {
                           e.stopPropagation();
                           setThumbnail(null);
                           setThumbnailFile(null);
+                          // Send null thumbnail_url via WebSocket
                           if (ws && ws.readyState === WebSocket.OPEN) {
                             ws.send(JSON.stringify({
                               title,
@@ -524,7 +530,7 @@ const CreateBlogs = () => {
                     <button
                       key={cat}
                       type="button"
-                      className={`px-4 py-2 rounded-lg border text-sm font-medium flex items-center transition-colors duration-200 ${categories.includes(cat) ? 'bg-[var(--primary-color)] text-white border-[var(--primary-color)]' : (darkMode ? 'bg-gray-700 text-gray-200 border-gray-600' : 'bg-gray-100 text-gray-700 border-gray-300')}`}
+                      className={`px-4 py-2 rounded-full border text-sm font-medium flex items-center transition-colors duration-200 ${categories.includes(cat) ? 'bg-[var(--primary-color)] text-white border-[var(--primary-color)]' : (darkMode ? 'bg-gray-700 text-gray-200 border-gray-600' : 'bg-gray-100 text-gray-700 border-gray-300')}`}
                       onClick={() => toggleCategory(cat)}
                       onMouseEnter={() => setHoveredIcon(cat)}
                       onMouseLeave={() => setHoveredIcon(null)}
@@ -541,7 +547,7 @@ const CreateBlogs = () => {
                 </label>
                 <div className="flex flex-wrap gap-2 mb-2">
                   {tags.map((tag) => (
-                    <div key={tag} className={`px-3 py-1 rounded-lg text-sm flex items-center ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'}`}>
+                    <div key={tag} className={`px-3 py-1 rounded-full text-sm flex items-center ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'}`}>
                       {tag}
                       <button type="button" className="ml-1.5 hover:text-red-500 transition-colors" onClick={() => removeTag(tag)}>
                         <FiX size={14} />
@@ -613,7 +619,7 @@ const CreateBlogs = () => {
             </div>
           </div>
         </main>
-        <aside className={`hidden lg:block w-80 border-l p-6 overflow-y-auto ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'} min-h-full`}>
+        <aside className={`hidden lg:block w-80 border-l p-6 overflow-y-auto ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
           <div className="mb-8">
             <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <FiUsers className="text-[var(--primary-color)]" />
