@@ -695,43 +695,58 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
           onChange={handleFileChange}
         />
       </div>
+
+
+      
       <div className="editor-container" style={{ position: 'relative' }}>
-        <EditorContent
-          className={`relative min-h-[300px] border rounded-lg prose max-w-none focus:outline-none transition-colors duration-200 ${darkMode ? 'text-gray-200 border-gray-600 bg-gray-800' : 'text-gray-800 border-gray-300 bg-gray-50'} ${isEditorFocused && !readOnly ? '!border-[var(--primary-color)]' : ''}`}
-          editor={editor}
-        />
-        {editor && !readOnly && tablePositions.map((position) => (
-          <div
-            key={position.id}
-            className="table-format-button"
-            style={{
-              top: `${position.top}px`,
-              left: `${position.left}px`,
-            }}
-          >
-            <button
-              type="button"
-              ref={(el) => (tableFormatButtonRefs.current[position.id] = el)}
-              onClick={() => toggleTableDropdown(position.id)}
-              className="w-full h-full flex items-center justify-center"
-              style={{
-                color: darkMode ? '#e5e7eb' : '#1f2937',
-              }}
-            >
-              <FiMenu />
-            </button>
-            {showTableDropdown[position.id] && (
-              <TableControls
-                editor={editor}
-                primaryColor={primaryColor}
-                darkMode={darkMode}
-                onClose={() => toggleTableDropdown(position.id)}
-                tableFormatButtonRef={tableFormatButtonRefs.current[position.id]}
-              />
-            )}
-          </div>
-        ))}
+  <EditorContent
+    className={`relative min-h-[300px] prose max-w-none focus:outline-none transition-colors duration-200 
+      ${
+        readOnly
+          ? '' // plain content, no box
+          : `border rounded-lg ${
+              darkMode
+                ? 'text-gray-200 border-gray-600 bg-gray-800'
+                : 'text-gray-800 border-gray-300 bg-gray-50'
+            } ${isEditorFocused ? '!border-[var(--primary-color)]' : ''}`
+      }`}
+    editor={editor}
+  />
+
+  {editor && !readOnly &&
+    tablePositions.map((position) => (
+      <div
+        key={position.id}
+        className="table-format-button"
+        style={{
+          top: `${position.top}px`,
+          left: `${position.left}px`,
+        }}
+      >
+        <button
+          type="button"
+          ref={(el) => (tableFormatButtonRefs.current[position.id] = el)}
+          onClick={() => toggleTableDropdown(position.id)}
+          className="w-full h-full flex items-center justify-center"
+          style={{
+            color: darkMode ? '#e5e7eb' : '#1f2937',
+          }}
+        >
+          <FiMenu />
+        </button>
+        {showTableDropdown[position.id] && (
+          <TableControls
+            editor={editor}
+            primaryColor={primaryColor}
+            darkMode={darkMode}
+            onClose={() => toggleTableDropdown(position.id)}
+            tableFormatButtonRef={tableFormatButtonRefs.current[position.id]}
+          />
+        )}
       </div>
+    ))}
+</div>
+
       {!readOnly && (
         <>
           <LinkModal
