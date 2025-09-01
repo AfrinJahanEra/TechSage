@@ -202,27 +202,25 @@
     text-decoration: underline;
     transition: color 0.2s ease;
     position: relative;
-    padding-right: 1.2em;
+    padding-left: 1.2em;
+  }
+
+  a::before {
+    content: '\1F517'; /* Unicode for link symbol */
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.8em;
+    color: var(--primary-color, #3b82f6);
+    transition: color 0.2s ease;
   }
 
   a:hover {
     color: color-mix(in srgb, var(--primary-color, #3b82f6) 80%, white);
   }
 
-  a::after {
-    content: '🔗';
-    position: absolute;
-    right: 0;
-    font-size: 0.8em;
-    line-height: inherit;
-    vertical-align: middle;
-    color: var(--primary-color, #3b82f6);
-    opacity: 0.7;
-    transition: opacity 0.2s ease, color 0.2s ease;
-  }
-
-  a:hover::after {
-    opacity: 1;
+  a:hover::before {
     color: color-mix(in srgb, var(--primary-color, #3b82f6) 80%, white);
   }
 
@@ -230,15 +228,15 @@
     color: var(--primary-color, #60a5fa);
   }
 
+  [data-theme='dark'] a::before {
+    color: var(--primary-color, #60a5fa);
+  }
+
   [data-theme='dark'] a:hover {
     color: color-mix(in srgb, var(--primary-color, #60a5fa) 80%, white);
   }
 
-  [data-theme='dark'] a::after {
-    color: var(--primary-color, #60a5fa);
-  }
-
-  [data-theme='dark'] a:hover::after {
+  [data-theme='dark'] a:hover::before {
     color: color-mix(in srgb, var(--primary-color, #60a5fa) 80%, white);
   }
 
