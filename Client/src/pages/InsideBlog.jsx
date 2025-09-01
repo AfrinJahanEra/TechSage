@@ -204,9 +204,10 @@ const InsideBlog = () => {
 
             <div className="mb-6 overflow-visible h-auto">
               <div
-                className="w-full max-w-2xl h-64 sm:h-80 bg-cover bg-center rounded-md mb-4 mx-auto"
+                className="w-full max-w-2xl h-64 sm:h-80 bg-cover bg-center rounded-md my-6 mx-auto"
                 style={{ backgroundImage: `url('${getThumbnailUrl(blog)}')` }}
               ></div>
+              <div className={`border-b mb-6 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}></div>
               <Tiptap
                 content={blog.content}
                 setContent={() => {}} // No-op for read-only
