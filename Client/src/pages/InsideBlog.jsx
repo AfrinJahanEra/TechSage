@@ -150,9 +150,9 @@ const InsideBlog = () => {
       style={themeStyles}
     >
       <Navbar activePage="home" />
-      <main className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-8 pt-24">
+      <main className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-8 pt-24 overflow-visible">
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-          <article className="flex-1">
+          <article className="flex-1 overflow-visible">
             <header className={`border-b pb-4 mb-6 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold leading-tight mb-3">
                 {blog.title}
@@ -202,7 +202,7 @@ const InsideBlog = () => {
               </div>
             </header>
 
-            <div className="mb-6">
+            <div className="mb-6 overflow-visible h-auto">
               <div
                 className="w-full sm:w-80 h-48 sm:h-60 bg-cover bg-center rounded-md mb-4"
                 style={{ backgroundImage: `url('${getThumbnailUrl(blog)}')` }}
@@ -213,6 +213,7 @@ const InsideBlog = () => {
                 primaryColor={primaryColor}
                 darkMode={darkMode}
                 readOnly
+                className="overflow-visible max-h-none h-auto"
               />
             </div>
 
