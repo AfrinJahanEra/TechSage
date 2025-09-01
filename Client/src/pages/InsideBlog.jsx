@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import Navbar from '../components/Navbar.jsx';
@@ -8,6 +8,7 @@ import BlogActions from '../components/BlogActions.jsx';
 import CommentSection from '../components/CommentSection.jsx';
 import SearchForm from '../components/SearchForm.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
+import Tiptap from '../components/CreateBlogComponents/Tiptap';
 import {
   getThumbnailUrl,
   formatDate,
@@ -16,6 +17,7 @@ import {
 } from '../utils/blogUtils.js';
 import BlogLink from '../components/BlogLink';
 import TopContributor from '../components/TopContributor.jsx';
+import 'katex/dist/katex.min.css';
 
 const InsideBlog = () => {
   const { id } = useParams();
@@ -200,12 +202,18 @@ const InsideBlog = () => {
               </div>
             </header>
 
-            <div className="prose max-w-none">
+            <div className="mb-6">
               <div
-                className="float-left mt-2 mr-4 mb-2 w-full sm:w-80 h-48 sm:h-60 bg-cover bg-center rounded-md"
+                className="w-full sm:w-80 h-48 sm:h-60 bg-cover bg-center rounded-md mb-4"
                 style={{ backgroundImage: `url('${getThumbnailUrl(blog)}')` }}
               ></div>
-              <div dangerouslySetInnerHTML={{ __html: blog.content }} />
+              <Tiptap
+                content={blog.content}
+                setContent={() => {}} // No-op for read-only
+                primaryColor={primaryColor}
+                darkMode={darkMode}
+                readOnly
+              />
             </div>
 
             <BlogActions
