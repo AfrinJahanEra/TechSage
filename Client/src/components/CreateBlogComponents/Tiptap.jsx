@@ -107,7 +107,7 @@ const CustomOrderedList = OrderedList.extend({
   },
 });
 
-const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false }) => {
+const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false, className }) => {
   const [tooltip, setTooltip] = useState('');
   const [hoveredIcon, setHoveredIcon] = useState(null);
   const [showLinkModal, setShowLinkModal] = useState(false);
@@ -453,14 +453,14 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
           }
           .ProseMirror {
             position: relative;
-            min-height: 300px;
-            max-height: 400px;
+            min-height: ${readOnly ? 'auto' : '300px'};
+            max-height: ${readOnly ? 'none' : '400px'};
             padding: 0.75rem 1rem;
             outline: none;
             background: transparent;
             color: inherit;
             line-height: 1.5;
-            overflow-y: auto;
+            overflow-y: ${readOnly ? 'visible' : 'auto'};
             transition: border-color 0.2s ease;
           }
           .ProseMirror-focused {
@@ -470,7 +470,8 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
             cursor: pointer;
           }
           .ProseMirror::-webkit-scrollbar {
-            width: 8px;
+            width: ${readOnly ? '0' : '8px'};
+            display: ${readOnly ? 'none' : 'block'};
           }
           .ProseMirror::-webkit-scrollbar-track {
             background: ${darkMode ? '#1f2937' : '#f9fafb'};
@@ -696,56 +697,54 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
         />
       </div>
 
+      <div className={`editor-container ${readOnly ? 'overflow-visible h-auto' : ''}`} style={{ position: 'relative' }}>
+        <EditorContent
+          className={`relative prose max-w-none focus:outline-none transition-colors duration-200 
+            ${
+              readOnly
+                ? 'min-h-auto max-h-none h-auto overflow-visible'
+                : `min-h-[300px] border rounded-lg ${
+                    darkMode
+                      ? 'text-gray-200 border-gray-600 bg-gray-800'
+                      : 'text-gray-800 border-gray-300 bg-gray-50'
+                  } ${isEditorFocused ? '!border-[var(--primary-color)]' : ''}`
+            } ${className || ''}`}
+          editor={editor}
+        />
 
-      
-      <div className="editor-container" style={{ position: 'relative' }}>
-  <EditorContent
-    className={`relative min-h-[300px] prose max-w-none focus:outline-none transition-colors duration-200 
-      ${
-        readOnly
-          ? '' // plain content, no box
-          : `border rounded-lg ${
-              darkMode
-                ? 'text-gray-200 border-gray-600 bg-gray-800'
-                : 'text-gray-800 border-gray-300 bg-gray-50'
-            } ${isEditorFocused ? '!border-[var(--primary-color)]' : ''}`
-      }`}
-    editor={editor}
-  />
-
-  {editor && !readOnly &&
-    tablePositions.map((position) => (
-      <div
-        key={position.id}
-        className="table-format-button"
-        style={{
-          top: `${position.top}px`,
-          left: `${position.left}px`,
-        }}
-      >
-        <button
-          type="button"
-          ref={(el) => (tableFormatButtonRefs.current[position.id] = el)}
-          onClick={() => toggleTableDropdown(position.id)}
-          className="w-full h-full flex items-center justify-center"
-          style={{
-            color: darkMode ? '#e5e7eb' : '#1f2937',
-          }}
-        >
-          <FiMenu />
-        </button>
-        {showTableDropdown[position.id] && (
-          <TableControls
-            editor={editor}
-            primaryColor={primaryColor}
-            darkMode={darkMode}
-            onClose={() => toggleTableDropdown(position.id)}
-            tableFormatButtonRef={tableFormatButtonRefs.current[position.id]}
-          />
-        )}
+        {editor && !readOnly &&
+          tablePositions.map((position) => (
+            <div
+              key={position.id}
+              className="table-format-button"
+              style={{
+                top: `${position.top}px`,
+                left: `${position.left}px`,
+              }}
+            >
+              <button
+                type="button"
+                ref={(el) => (tableFormatButtonRefs.current[position.id] = el)}
+                onClick={() => toggleTableDropdown(position.id)}
+                className="w-full h-full flex items-center justify-center"
+                style={{
+                  color: darkMode ? '#e5e7eb' : '#1f2937',
+                }}
+              >
+                <FiMenu />
+              </button>
+              {showTableDropdown[position.id] && (
+                <TableControls
+                  editor={editor}
+                  primaryColor={primaryColor}
+                  darkMode={darkMode}
+                  onClose={() => toggleTableDropdown(position.id)}
+                  tableFormatButtonRef={tableFormatButtonRefs.current[position.id]}
+                />
+              )}
+            </div>
+          ))}
       </div>
-    ))}
-</div>
 
       {!readOnly && (
         <>
