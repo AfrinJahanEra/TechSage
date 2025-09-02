@@ -9,15 +9,25 @@ import BlogCardDash from '../components/BlogCardDash';
 import { formatDate } from '../utils/blogUtils';
 import axios from 'axios';
 import { confirmAlert } from 'react-confirm-alert';
-import 'react-confirm-alert/src/react-confirm-alert.css';
 import ModeratorReports from '../components/ModeratorReports';
+import avatar from '../../src/assets/user.jpg';
+import 'react-confirm-alert/src/react-confirm-alert.css';
 
 const ModeratorDashboard = () => {
     const performanceChartRef = useRef(null);
     const [activeSection, setActiveSection] = useState('blogs');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { user, api } = useAuth();
-    const { darkMode, primaryColor } = useTheme();
+    const { darkMode, primaryColor, shadeColor } = useTheme();
+    
+    const primaryDark = shadeColor(primaryColor, -20);
+    const primaryLight = shadeColor(primaryColor, 20);
+
+    const themeStyles = {
+      '--primary-color': primaryColor,
+      '--primary-dark': primaryDark,
+      '--primary-light': primaryLight,
+    };
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
     const [showProfilePanel, setShowProfilePanel] = useState(false);
     const [blogs, setBlogs] = useState([]);
@@ -315,7 +325,10 @@ const ModeratorDashboard = () => {
 
 
     return (
-        <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-800'}`}>
+        <div 
+          className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-800'}`}
+          style={themeStyles}
+        >
             {/* Navbar */}
             <Navbar activePage="dashboard" onProfileClick={toggleProfilePanel} />
 
@@ -323,51 +336,110 @@ const ModeratorDashboard = () => {
             <div className="pt-20 min-h-screen">
                 <div className="flex flex-col md:flex-row">
                     {/* Sidebar */}
-                    <div className={`w-full md:w-64 ${darkMode ? 'bg-gray-800' : 'bg-white'} border-r border-gray-200`}>
-                        <ul className="space-y-1">
+                    <div className={`w-full md:w-64 transition-colors duration-300 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-r`}>
+                        <ul className="space-y-1 p-4">
                             <li>
                                 <button
                                     onClick={() => setActiveSection('profile')}
-                                    className={`w-full text-left px-4 py-3 rounded-lg flex items-center ${activeSection === 'profile' ? 'bg-teal-50 text-teal-600 border-l-4 border-teal-500' : 'hover:bg-gray-100'}`}
+                                    className={`w-full text-left px-4 py-3 rounded-lg flex items-center transition-all duration-200 ${
+                                      activeSection === 'profile' 
+                                        ? `${darkMode ? 'bg-gray-700 border-[var(--primary-color)]' : 'bg-[var(--primary-light)] border-[var(--primary-color)]'}` 
+                                        : `${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`
+                                    } border-l-4`}
+                                    style={{
+                                      color: activeSection === 'profile'
+                                        ? darkMode
+                                          ? primaryColor
+                                          : primaryDark
+                                        : 'inherit',
+                                      borderColor: activeSection === 'profile' ? primaryColor : 'transparent'
+                                    }}
                                 >
-                                    <i className="fas fa-user mr-3 text-teal-500"></i>
+                                    <i className="fas fa-user mr-3" style={{ color: primaryColor }}></i>
                                     My Profile
                                 </button>
                             </li>
                             <li>
                                 <button
                                     onClick={() => setActiveSection('blogs')}
-                                    className={`w-full text-left px-4 py-3 rounded-lg flex items-center ${activeSection === 'blogs' ? 'bg-teal-50 text-teal-600 border-l-4 border-teal-500' : 'hover:bg-gray-100'}`}
+                                    className={`w-full text-left px-4 py-3 rounded-lg flex items-center transition-all duration-200 ${
+                                      activeSection === 'blogs' 
+                                        ? `${darkMode ? 'bg-gray-700 border-[var(--primary-color)]' : 'bg-[var(--primary-light)] border-[var(--primary-color)]'}` 
+                                        : `${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`
+                                    } border-l-4`}
+                                    style={{
+                                      color: activeSection === 'blogs'
+                                        ? darkMode
+                                          ? primaryColor
+                                          : primaryDark
+                                        : 'inherit',
+                                      borderColor: activeSection === 'blogs' ? primaryColor : 'transparent'
+                                    }}
                                 >
-                                    <i className="fas fa-newspaper mr-3 text-teal-500"></i>
+                                    <i className="fas fa-newspaper mr-3" style={{ color: primaryColor }}></i>
                                     All Blogs
                                 </button>
                             </li>
                             <li>
                                 <button
                                     onClick={() => setActiveSection('reviewed')}
-                                    className={`w-full text-left px-4 py-3 rounded-lg flex items-center ${activeSection === 'reviewed' ? 'bg-teal-50 text-teal-600 border-l-4 border-teal-500' : 'hover:bg-gray-100'}`}
+                                    className={`w-full text-left px-4 py-3 rounded-lg flex items-center transition-all duration-200 ${
+                                      activeSection === 'reviewed' 
+                                        ? `${darkMode ? 'bg-gray-700 border-[var(--primary-color)]' : 'bg-[var(--primary-light)] border-[var(--primary-color)]'}` 
+                                        : `${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`
+                                    } border-l-4`}
+                                    style={{
+                                      color: activeSection === 'reviewed'
+                                        ? darkMode
+                                          ? primaryColor
+                                          : primaryDark
+                                        : 'inherit',
+                                      borderColor: activeSection === 'reviewed' ? primaryColor : 'transparent'
+                                    }}
                                 >
-                                    <i className="fas fa-check-circle mr-3 text-teal-500"></i>
+                                    <i className="fas fa-check-circle mr-3" style={{ color: primaryColor }}></i>
                                     Reviewed Blogs
                                 </button>
                             </li>
                             <li>
                                 <button
                                     onClick={() => setActiveSection('comments')}
-                                    className={`w-full text-left px-4 py-3 rounded-lg flex items-center ${activeSection === 'comments' ? 'bg-teal-50 text-teal-600 border-l-4 border-teal-500' : 'hover:bg-gray-100'}`}
+                                    className={`w-full text-left px-4 py-3 rounded-lg flex items-center transition-all duration-200 ${
+                                      activeSection === 'comments' 
+                                        ? `${darkMode ? 'bg-gray-700 border-[var(--primary-color)]' : 'bg-[var(--primary-light)] border-[var(--primary-color)]'}` 
+                                        : `${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`
+                                    } border-l-4`}
+                                    style={{
+                                      color: activeSection === 'comments'
+                                        ? darkMode
+                                          ? primaryColor
+                                          : primaryDark
+                                        : 'inherit',
+                                      borderColor: activeSection === 'comments' ? primaryColor : 'transparent'
+                                    }}
                                 >
-                                    <i className="fas fa-comments mr-3 text-teal-500"></i>
+                                    <i className="fas fa-comments mr-3" style={{ color: primaryColor }}></i>
                                     All Comments
                                 </button>
                             </li>
                             <li>
                                 <button
                                     onClick={() => setActiveSection('reports')}
-                                    className={`w-full text-left px-4 py-3 rounded-lg flex items-center ${activeSection === 'reports' ? 'bg-teal-50 text-teal-600 border-l-4 border-teal-500' : 'hover:bg-gray-100'
-                                        }`}
+                                    className={`w-full text-left px-4 py-3 rounded-lg flex items-center transition-all duration-200 ${
+                                      activeSection === 'reports' 
+                                        ? `${darkMode ? 'bg-gray-700 border-[var(--primary-color)]' : 'bg-[var(--primary-light)] border-[var(--primary-color)]'}` 
+                                        : `${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`
+                                    } border-l-4`}
+                                    style={{
+                                      color: activeSection === 'reports'
+                                        ? darkMode
+                                          ? primaryColor
+                                          : primaryDark
+                                        : 'inherit',
+                                      borderColor: activeSection === 'reports' ? primaryColor : 'transparent'
+                                    }}
                                 >
-                                    <i className="fas fa-flag mr-3 text-teal-500"></i>
+                                    <i className="fas fa-flag mr-3" style={{ color: primaryColor }}></i>
                                     Content Reports
                                 </button>
                             </li>
@@ -375,63 +447,74 @@ const ModeratorDashboard = () => {
                     </div>
 
                     {/* Main Content */}
-                    <div className={`flex-1 p-6 ${darkMode ? 'bg-gray-900' : 'bg-white'}`}>
+                    <div className={`flex-1 p-6 transition-colors duration-300 ${darkMode ? 'bg-gray-900' : 'bg-white'}`}>
                         {/* Loading State */}
                         {loading && (
                             <div className="flex justify-center items-center h-64">
-                                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
+                                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
                             </div>
                         )}
 
                         {/* All Blogs Section */}
                         {activeSection === 'blogs' && !loading && (
                             <div>
-                                <h1 className={`text-2xl font-bold mb-6 pb-2 border-b-2 border-teal-500 inline-block ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                                <h1 
+                                  className="text-2xl font-bold mb-6 pb-2 border-b-2 inline-block"
+                                  style={{ borderColor: primaryColor }}
+                                >
                                     All Blogs
                                 </h1>
 
                                 {/* Blog List */}
                                 <div className="space-y-6">
                                     {blogs.length === 0 ? (
-                                        <div className={`text-center py-10 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                        <div className={`text-center py-10 rounded-lg ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
                                             <i className="fas fa-newspaper text-3xl mb-4"></i>
                                             <p>No blogs found</p>
                                         </div>
                                     ) : (
                                         blogs.map(blog => (
-                                            <div key={blog.id} className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-5 items-center pb-6 ${darkMode ? 'border-gray-700' : 'border-gray-200'} border-b`}>
+                                            <div key={blog.id} className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-5 items-center p-5 rounded-lg transition-all duration-300 ${darkMode ? 'bg-gray-800 border border-gray-700 hover:bg-gray-750' : 'bg-white border border-gray-200 shadow-sm hover:shadow-md'}`}>
                                                 <div
-                                                    className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center cursor-pointer"
-                                                    style={{ backgroundImage: `url('${blog.thumbnail_url}')` }}
+                                                    className="h-24 md:h-full rounded-md bg-cover bg-center cursor-pointer transition-transform duration-300 hover:scale-105"
+                                                    style={{ backgroundImage: `url('${blog.thumbnail_url}')`, backgroundColor: darkMode ? '#374151' : '#e5e7eb' }}
                                                     onClick={() => handleBlogClick(blog.id)}
                                                 ></div>
                                                 <div>
                                                     <h3
-                                                        className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'} cursor-pointer hover:text-teal-500`}
+                                                        className={`text-lg font-semibold transition-colors duration-200 ${darkMode ? 'text-white' : 'text-gray-800'} cursor-pointer hover:text-[var(--primary-color)]`}
                                                         onClick={() => handleBlogClick(blog.id)}
                                                     >
                                                         {blog.title}
                                                     </h3>
-                                                    <div className={`flex justify-between text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                    <div className={`flex justify-between text-sm mt-1 transition-colors duration-200 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                                         <span>{formatDate(blog.published_at)}</span>
                                                         <span>{blog.read_time}</span>
                                                     </div>
                                                     <div className="flex space-x-4 mt-3">
                                                         {blog.is_reviewed ? (
-                                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                            <span 
+                                                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                                              style={{ 
+                                                                backgroundColor: darkMode ? 'rgba(34, 197, 94, 0.2)' : 'rgba(34, 197, 94, 0.1)',
+                                                                color: '#22c55e'
+                                                              }}
+                                                            >
                                                                 <i className="fas fa-check mr-1"></i> Approved
                                                             </span>
                                                         ) : (
                                                             <>
                                                                 <button
-                                                                    className="text-green-500 text-sm flex items-center hover:opacity-80"
+                                                                    className="text-green-500 text-sm flex items-center hover:opacity-80 transition-colors duration-200 px-3 py-1 rounded hover:bg-green-50 dark:hover:bg-green-900/20"
                                                                     onClick={() => handleApproveBlog(blog.id)}
+                                                                    style={{ color: darkMode ? '#22c55e' : '#22c55e' }}
                                                                 >
                                                                     <i className="fas fa-check mr-1"></i> Approve
                                                                 </button>
                                                                 <button
-                                                                    className="text-red-500 text-sm flex items-center hover:opacity-80"
+                                                                    className="text-red-500 text-sm flex items-center hover:opacity-80 transition-colors duration-200 px-3 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
                                                                     onClick={() => handleRejectBlog(blog.id)}
+                                                                    style={{ color: darkMode ? '#ef4444' : '#ef4444' }}
                                                                 >
                                                                     <i className="fas fa-trash mr-1"></i> Delete
                                                                 </button>
@@ -449,44 +532,54 @@ const ModeratorDashboard = () => {
                         {/* Reviewed Blogs Section */}
                         {activeSection === 'reviewed' && !loading && (
                             <div>
-                                <h1 className={`text-2xl font-bold mb-6 pb-2 border-b-2 border-teal-500 inline-block ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                                <h1 
+                                  className="text-2xl font-bold mb-6 pb-2 border-b-2 inline-block"
+                                  style={{ borderColor: primaryColor }}
+                                >
                                     Reviewed Blogs
                                 </h1>
 
                                 {/* Blog List */}
                                 <div className="space-y-6">
                                     {blogs.length === 0 ? (
-                                        <div className={`text-center py-10 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                        <div className={`text-center py-10 rounded-lg ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
                                             <i className="fas fa-check-circle text-3xl mb-4"></i>
                                             <p>No reviewed blogs found</p>
                                         </div>
                                     ) : (
                                         blogs.map(blog => (
-                                            <div key={blog.id} className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-5 items-center pb-6 ${darkMode ? 'border-gray-700' : 'border-gray-200'} border-b`}>
+                                            <div key={blog.id} className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-5 items-center p-5 rounded-lg transition-all duration-300 ${darkMode ? 'bg-gray-800 border border-gray-700 hover:bg-gray-750' : 'bg-white border border-gray-200 shadow-sm hover:shadow-md'}`}>
                                                 <div
-                                                    className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center cursor-pointer"
-                                                    style={{ backgroundImage: `url('${blog.thumbnail_url}')` }}
+                                                    className="h-24 md:h-full rounded-md bg-cover bg-center cursor-pointer transition-transform duration-300 hover:scale-105"
+                                                    style={{ backgroundImage: `url('${blog.thumbnail_url}')`, backgroundColor: darkMode ? '#374151' : '#e5e7eb' }}
                                                     onClick={() => handleBlogClick(blog.id)}
                                                 ></div>
                                                 <div>
                                                     <h3
-                                                        className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'} cursor-pointer hover:text-teal-500`}
+                                                        className={`text-lg font-semibold transition-colors duration-200 ${darkMode ? 'text-white' : 'text-gray-800'} cursor-pointer hover:text-[var(--primary-color)]`}
                                                         onClick={() => handleBlogClick(blog.id)}
                                                     >
                                                         {blog.title}
-                                                        <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold ml-2 bg-green-50 text-green-500">
+                                                        <span 
+                                                          className="inline-block px-2 py-0.5 rounded text-xs font-semibold ml-2"
+                                                          style={{ 
+                                                            backgroundColor: darkMode ? 'rgba(34, 197, 94, 0.2)' : 'rgba(34, 197, 94, 0.1)',
+                                                            color: '#22c55e'
+                                                          }}
+                                                        >
                                                             Approved
                                                         </span>
                                                     </h3>
-                                                    <div className={`flex justify-between text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                    <div className={`flex justify-between text-sm mt-1 transition-colors duration-200 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                                         <span>{formatDate(blog.published_at)}</span>
                                                         <span>{blog.read_time}</span>
                                                     </div>
                                                     <div className="flex space-x-4 mt-3">
                                                         <button
-                                                            className={`flex items-center text-sm ${darkMode ? 'text-gray-400 hover:text-teal-500' : 'text-gray-500 hover:text-teal-500'}`}
+                                                            className={`flex items-center text-sm transition-colors duration-200 px-3 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700`}
+                                                            style={{ color: primaryColor }}
                                                         >
-                                                            <i className="fas fa-eye mr-1"></i> {blog.stats?.upvotes || 0}
+                                                            <i className="fas fa-eye mr-1"></i> {blog.stats?.upvotes || 0} upvotes
                                                         </button>
                                                     </div>
                                                 </div>
@@ -500,55 +593,66 @@ const ModeratorDashboard = () => {
                         {/* Comments Section */}
                         {activeSection === 'comments' && !loading && (
                             <div>
-                                <h1 className={`text-2xl font-bold mb-6 pb-2 border-b-2 border-teal-500 inline-block ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                                <h1 
+                                  className="text-2xl font-bold mb-6 pb-2 border-b-2 inline-block"
+                                  style={{ borderColor: primaryColor }}
+                                >
                                     All Comments
                                 </h1>
 
                                 {/* Comments List */}
                                 <div className="space-y-6">
                                     {comments.length === 0 ? (
-                                        <div className={`text-center py-10 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                        <div className={`text-center py-10 rounded-lg ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
                                             <i className="fas fa-comments text-3xl mb-4"></i>
                                             <p>No comments found</p>
                                         </div>
                                     ) : (
                                         comments.map(comment => (
-                                            <div key={comment.id} className={`p-4 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-gray-50'} mb-4`}>
+                                            <div key={comment.id} className={`p-5 rounded-lg transition-all duration-300 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200 shadow-sm'}`}>
                                                 <div className="flex items-start mb-3">
                                                     <img
-                                                        src={comment.author.avatar_url || "https://randomuser.me/api/portraits/men/32.jpg"}
+                                                        src={comment.author.avatar_url || avatar}
                                                         alt={comment.author.username}
-                                                        className="w-10 h-10 rounded-full mr-3"
+                                                        className="w-10 h-10 rounded-full mr-3 object-cover"
                                                     />
                                                     <div>
-                                                        <h4 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                                                        <h4 className={`font-semibold transition-colors duration-200 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                                                             {comment.author.username}
                                                             {comment.is_reviewed && (
-                                                                <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold ml-2 bg-green-50 text-green-500">
+                                                                <span 
+                                                                  className="inline-block px-2 py-0.5 rounded text-xs font-semibold ml-2"
+                                                                  style={{ 
+                                                                    backgroundColor: darkMode ? 'rgba(34, 197, 94, 0.2)' : 'rgba(34, 197, 94, 0.1)',
+                                                                    color: '#22c55e'
+                                                                  }}
+                                                                >
                                                                     Approved
                                                                 </span>
                                                             )}
                                                         </h4>
-                                                        <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                        <p className={`text-xs transition-colors duration-200 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                                             {formatDate(comment.created_at)}
                                                         </p>
                                                     </div>
                                                 </div>
-                                                <p className={`mb-3 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                                <p className={`mb-3 transition-colors duration-200 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                                                     {comment.content}
                                                 </p>
                                                 <div className="flex space-x-4">
                                                     {!comment.is_reviewed && (
                                                         <>
                                                             <button
-                                                                className="text-green-500 text-sm flex items-center hover:opacity-80"
+                                                                className="text-green-500 text-sm flex items-center hover:opacity-80 transition-colors duration-200 px-3 py-1 rounded hover:bg-green-50 dark:hover:bg-green-900/20"
                                                                 onClick={() => handleApproveComment(comment.id)}
+                                                                style={{ color: darkMode ? '#22c55e' : '#22c55e' }}
                                                             >
                                                                 <i className="fas fa-check mr-1"></i> Approve
                                                             </button>
                                                             <button
-                                                                className="text-red-500 text-sm flex items-center hover:opacity-80"
+                                                                className="text-red-500 text-sm flex items-center hover:opacity-80 transition-colors duration-200 px-3 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
                                                                 onClick={() => handleRejectComment(comment.id)}
+                                                                style={{ color: darkMode ? '#ef4444' : '#ef4444' }}
                                                             >
                                                                 <i className="fas fa-trash mr-1"></i> Delete
                                                             </button>
@@ -556,8 +660,9 @@ const ModeratorDashboard = () => {
                                                     )}
                                                     {comment.is_reviewed && (
                                                         <button
-                                                            className="text-red-500 text-sm flex items-center hover:opacity-80"
+                                                            className="text-red-500 text-sm flex items-center hover:opacity-80 transition-colors duration-200 px-3 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
                                                             onClick={() => handleRejectComment(comment.id)}
+                                                            style={{ color: darkMode ? '#ef4444' : '#ef4444' }}
                                                         >
                                                             <i className="fas fa-trash mr-1"></i> Delete
                                                         </button>
@@ -575,24 +680,31 @@ const ModeratorDashboard = () => {
                         {/* Profile Section */}
                         {activeSection === 'profile' && (
                             <div>
-                                <h1 className={`text-2xl font-bold mb-6 pb-2 border-b-2 border-teal-500 inline-block ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                                <h1 
+                                  className="text-2xl font-bold mb-6 pb-2 border-b-2 inline-block"
+                                  style={{ borderColor: primaryColor }}
+                                >
                                     My Profile
                                 </h1>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                     {/* User Info Card */}
-                                    <div className={`rounded-lg p-6 shadow-sm ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+                                    <div className={`rounded-lg p-6 shadow-sm transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
                                         <div className="flex flex-col md:flex-row items-center mb-6">
                                             <img
-                                                src={user?.avatar_url || "https://randomuser.me/api/portraits/women/44.jpg"}
+                                                src={user?.avatar_url || avatar}
                                                 alt="Profile"
-                                                className="w-20 h-20 rounded-full border-4 border-teal-500 object-cover mr-0 md:mr-6 mb-4 md:mb-0"
+                                                className="w-20 h-20 rounded-full object-cover mr-0 md:mr-6 mb-4 md:mb-0"
+                                                style={{ borderColor: primaryColor, borderWidth: '4px' }}
                                             />
                                             <div className="text-center md:text-left">
-                                                <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{user?.username || 'Moderator'}</h2>
-                                                <p className={`mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{user?.job_title || 'Moderator'}</p>
+                                                <h2 className={`text-xl font-bold transition-colors duration-200 ${darkMode ? 'text-white' : 'text-gray-800'}`}>{user?.username || 'Moderator'}</h2>
+                                                <p className={`mb-2 transition-colors duration-200 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{user?.job_title || 'Moderator'}</p>
                                                 <div className="flex justify-center md:justify-start space-x-2">
-                                                    <span className="bg-teal-500 text-white px-3 py-1 rounded-full text-xs">
+                                                    <span 
+                                                      className="px-3 py-1 rounded-full text-xs text-white"
+                                                      style={{ backgroundColor: primaryColor }}
+                                                    >
                                                         {user?.university || 'TechSage'} {user?.role || 'Moderator'}
                                                     </span>
                                                     {user?.is_verified && (
@@ -605,8 +717,8 @@ const ModeratorDashboard = () => {
                                         </div>
 
                                         <div>
-                                            <h3 className={`text-lg font-semibold mb-3 pb-2 border-b ${darkMode ? 'border-gray-700 text-white' : 'border-gray-200'}`}>About</h3>
-                                            <p className={`mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                            <h3 className={`text-lg font-semibold mb-3 pb-2 border-b transition-colors duration-200 ${darkMode ? 'border-gray-700 text-white' : 'border-gray-200'}`}>About</h3>
+                                            <p className={`mb-4 transition-colors duration-200 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                                                 {user?.bio || 'No bio provided yet.'}
                                             </p>
                                         </div>
@@ -614,19 +726,29 @@ const ModeratorDashboard = () => {
 
                                     {/* Stats Cards */}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div className={`rounded-lg p-4 shadow-sm text-center ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
-                                            <div className="text-3xl font-bold text-teal-500 mb-1">{blogs.length}</div>
-                                            <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Blogs Reviewed</div>
+                                        <div className={`rounded-lg p-4 shadow-sm text-center transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+                                            <div 
+                                              className="text-3xl font-bold mb-1"
+                                              style={{ color: primaryColor }}
+                                            >
+                                                {blogs.length}
+                                            </div>
+                                            <div className={`text-sm transition-colors duration-200 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Blogs Reviewed</div>
                                         </div>
-                                        <div className={`rounded-lg p-4 shadow-sm text-center ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
-                                            <div className="text-3xl font-bold text-teal-500 mb-1">{comments.filter(c => c.is_reviewed).length}</div>
-                                            <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Comments Approved</div>
+                                        <div className={`rounded-lg p-4 shadow-sm text-center transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+                                            <div 
+                                              className="text-3xl font-bold mb-1"
+                                              style={{ color: primaryColor }}
+                                            >
+                                                {comments.filter(c => c.is_reviewed).length}
+                                            </div>
+                                            <div className={`text-sm transition-colors duration-200 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Comments Approved</div>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Performance Chart */}
-                                <div className={`rounded-lg p-4 mb-6 h-80 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                                <div className={`rounded-lg p-4 mb-6 h-80 transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm`}>
                                     <canvas id="performanceChart"></canvas>
                                 </div>
                             </div>

@@ -5,7 +5,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import Sidebar from '../components/Sidebar';
 import SearchForm from '../components/SearchForm';
-import avatar from '../../src/assets/default-avatar.png';
+import avatar from '../../src/assets/user.jpg';
 import { useAuth } from '../context/AuthContext';
 
 const TopContributors = () => {

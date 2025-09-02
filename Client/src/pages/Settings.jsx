@@ -4,7 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { toast } from 'react-hot-toast';
-import avatar from '../../src/assets/default-avatar.png';
+import avatar from '../../src/assets/user.jpg';
 
 const Settings = () => {
   const { user, api, logout, updateUser } = useAuth();

@@ -12,7 +12,7 @@ import {
     normalizeBlog,
     getBadge
 } from '../utils/blogUtils.js';
-import avatar from '../../src/assets/default-avatar.png';
+import avatar from '../../src/assets/user.jpg';
 import 'react-toastify/dist/ReactToastify.css';
 
 const Dashboard = () => {

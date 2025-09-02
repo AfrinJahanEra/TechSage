@@ -9,7 +9,7 @@ import BlogCardDash from '../components/BlogCardDash';
 import { Chart } from 'chart.js/auto';
 import 'chartjs-plugin-annotation';
 import { normalizeBlog } from '../utils/blogUtils';
-import avatar from '../../src/assets/default-avatar.png';
+import avatar from '../../src/assets/user.jpg';
 import 'react-toastify/dist/ReactToastify.css';
 import TopContributor from '../components/TopContributor';
 
