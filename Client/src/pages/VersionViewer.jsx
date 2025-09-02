@@ -14,6 +14,7 @@ const VersionViewer = () => {
   const navigate = useNavigate();
   const { darkMode, primaryColor } = useTheme();
   const [version, setVersion] = useState(null);
+  const [blogStatus, setBlogStatus] = useState(null); // New state for blog status
   const [loading, setLoading] = useState(false);
   const [popup, setPopup] = useState({ show: false, message: '', type: 'success' });
   const [confirmModal, setConfirmModal] = useState({ show: false, message: '', versionNumber: null });
@@ -38,18 +39,23 @@ const VersionViewer = () => {
 
   useEffect(() => {
     setLoading(true);
-    api.get(`/blogs/versions/${blogId}`)
-      .then(response => {
-        console.log('API Response:', response.data); // Debug: Log the full API response
-        const selectedVersion = response.data.versions.find(v => v.version === parseInt(versionNumber));
+    Promise.all([
+      api.get(`/blogs/versions/${blogId}`),
+      api.get(`/blogs/${blogId}`) // Fetch blog details to get status
+    ])
+      .then(([versionsResponse, blogResponse]) => {
+        console.log('API Response (Versions):', versionsResponse.data);
+        console.log('API Response (Blog):', blogResponse.data);
+        const selectedVersion = versionsResponse.data.versions.find(v => v.version === parseInt(versionNumber));
         if (selectedVersion) {
-          console.log('Selected Version:', selectedVersion); // Debug: Log the selected version
+          console.log('Selected Version:', selectedVersion);
           setVersion({
             ...selectedVersion,
             categories: Array.isArray(selectedVersion.categories) ? selectedVersion.categories : selectedVersion.categories ? [selectedVersion.categories] : [],
             tags: Array.isArray(selectedVersion.tags) ? selectedVersion.tags : selectedVersion.tags ? [selectedVersion.tags] : [],
             thumbnail_url: selectedVersion.thumbnail_url || null
           });
+          setBlogStatus(blogResponse.data.status); // Set blog status
         } else {
           showPopup('Version not found', 'error');
         }
@@ -138,13 +144,15 @@ const VersionViewer = () => {
                   >
                     <FiArrowLeft className="text-lg" />
                   </button>
-                  <button
-                    className="px-3 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors duration-500"
-                    onClick={() => showConfirmModal(versionNumber)}
-                    title="Revert to Version"
-                  >
-                    <FiRotateCcw className="text-lg" />
-                  </button>
+                  {blogStatus !== 'published' && (
+                    <button
+                      className="px-3 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors duration-500"
+                      onClick={() => showConfirmModal(versionNumber)}
+                      title="Revert to Version"
+                    >
+                      <FiRotateCcw className="text-lg" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

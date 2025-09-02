@@ -14,6 +14,7 @@ const VersionHistory = () => {
   const { darkMode, primaryColor } = useTheme();
   const [versions, setVersions] = useState([]);
   const [currentVersion, setCurrentVersion] = useState(null);
+  const [blogStatus, setBlogStatus] = useState(null); // New state for blog status
   const [loading, setLoading] = useState(false);
   const [popup, setPopup] = useState({ show: false, message: '', type: 'success' });
   const [confirmModal, setConfirmModal] = useState({ show: false, message: '', versionNumber: null });
@@ -38,23 +39,25 @@ const VersionHistory = () => {
 
   useEffect(() => {
     setLoading(true);
-    api.get(`/blogs/versions/${blogId}`)
-      .then(response => {
-        console.log('API Response:', response.data); // Debug: Log the full API response
-        const versionsData = response.data.versions || [];
-        console.log('Versions Data:', versionsData); // Debug: Log versions array
-        // Sort versions by updated_at in descending order (newest first)
+    Promise.all([
+      api.get(`/blogs/versions/${blogId}`),
+      api.get(`/blogs/${blogId}`) // Fetch blog details to get status
+    ])
+      .then(([versionsResponse, blogResponse]) => {
+        console.log('API Response (Versions):', versionsResponse.data);
+        console.log('API Response (Blog):', blogResponse.data);
+        const versionsData = versionsResponse.data.versions || [];
         const sortedVersions = versionsData.sort((a, b) => {
           const dateA = a.updated_at ? new Date(a.updated_at) : new Date(0);
           const dateB = b.updated_at ? new Date(b.updated_at) : new Date(0);
           return dateB - dateA; // Descending order
         });
-        console.log('Sorted Versions:', sortedVersions); // Debug: Log sorted versions
         setVersions(sortedVersions);
-        setCurrentVersion(response.data.current_version);
+        setCurrentVersion(versionsResponse.data.current_version);
+        setBlogStatus(blogResponse.data.status); // Set blog status
       })
       .catch(error => {
-        console.error('Error fetching versions:', error);
+        console.error('Error fetching data:', error);
         showPopup(error.response?.data?.error || 'Failed to load version history', 'error');
       })
       .finally(() => setLoading(false));
@@ -68,7 +71,6 @@ const VersionHistory = () => {
         username: user.username,
       });
       showPopup(`Reverted to version ${versionNumber} (New Version ${response.data.new_version})`, 'success');
-      // Fetch updated blog data to pass to the edit page
       const blogResponse = await api.get(`/blogs/${blogId}`);
       navigate(`/blogs/${blogId}/edit`, { state: { draftData: blogResponse.data } });
     } catch (error) {
@@ -155,13 +157,15 @@ const VersionHistory = () => {
                           >
                             <FiEye />
                           </button>
-                          <button
-                            className="p-2 bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors"
-                            onClick={() => showConfirmModal(version.version)}
-                            title="Revert to Version"
-                          >
-                            <FiRotateCcw />
-                          </button>
+                          {blogStatus !== 'published' && (
+                            <button
+                              className="p-2 bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors"
+                              onClick={() => showConfirmModal(version.version)}
+                              title="Revert to Version"
+                            >
+                              <FiRotateCcw />
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}
