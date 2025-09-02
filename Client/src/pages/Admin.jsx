@@ -696,183 +696,185 @@ const AdminDashboard = () => {
               )}
               {activeSection === 'profile' && (
                 <div>
-                  <h1 
-                    className="text-2xl font-bold mb-6 pb-2 border-b-2 inline-block"
-                    style={{ borderColor: primaryColor }}
-                  >
-                    My Profile
-                  </h1>
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                    <div className={`lg:col-span-2 rounded-2xl p-6 shadow-lg transition-all duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-                      <div className="flex flex-col md:flex-row items-center mb-6">
-                        <div className="relative">
-                          <img
-                            src={user?.avatar_url || avatar}
-                            alt="Profile"
-                            className="w-24 h-24 rounded-full object-cover mr-0 md:mr-6 mb-4 md:mb-0 shadow-lg border-4"
-                            style={{ borderColor: primaryColor }}
-                          />
-                          {user?.is_verified && (
-                            <div className="absolute bottom-2 right-2 bg-blue-500 rounded-full p-1 shadow-md">
-                              <i className="fas fa-check text-white text-xs"></i>
-                            </div>
-                          )}
-                        </div>
-                        <div className="text-center md:text-left md:ml-6">
-                          <h2 className={`text-2xl font-bold transition-colors duration-200 ${darkMode ? 'text-white' : 'text-gray-800'}`}>{user?.username || 'Admin'}</h2>
-                          <p className={`mb-2 transition-colors duration-200 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{user?.job_title || 'System Administrator'}</p>
-                          <div className="flex flex-wrap justify-center md:justify-start gap-2">
-                            <span 
-                              className="px-3 py-1 rounded-full text-xs font-semibold text-white shadow"
-                              style={{ backgroundColor: primaryColor }}
-                            >
-                              {user?.university || 'TechSage'} {user?.role || 'Admin'}
-                            </span>
-                            {user?.is_verified && (
-                              <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow">
-                                Verified
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div>
-                        <h3 className={`text-lg font-semibold mb-3 pb-2 border-b transition-colors duration-200 ${darkMode ? 'border-gray-700 text-white' : 'border-gray-200'}`}>About</h3>
-                        <p className={`mb-4 transition-colors duration-200 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                          {user?.bio || 'Responsible for maintaining the integrity and security of the TechSage platform.'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="space-y-4">
-                      <div className={`rounded-2xl p-4 shadow-md transition-all duration-300 hover:shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-                        <div className="flex items-center">
-                          <div className="flex justify-center mr-3">
-                            <i className="fas fa-users text-xl" style={{ color: primaryColor }}></i>
-                          </div>
-                          <div>
-                            <div 
-                              className="text-xl font-bold"
-                              style={{ color: primaryColor }}
-                            >
-                              {users.length}
-                            </div>
-                            <div className={`text-sm transition-colors duration-200 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Users Managed</div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className={`rounded-2xl p-4 shadow-md transition-all duration-300 hover:shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-                        <div className="flex items-center">
-                          <div className="flex justify-center mr-3">
-                            <i className="fas fa-newspaper text-xl" style={{ color: primaryColor }}></i>
-                          </div>
-                          <div>
-                            <div 
-                              className="text-xl font-bold"
-                              style={{ color: primaryColor }}
-                            >
-                              {blogs.length}
-                            </div>
-                            <div className={`text-sm transition-colors duration-200 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Blogs Reviewed</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Platform Activity Chart */}
-                  <div className={`rounded-2xl p-6 mb-6 h-80 transition-all duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
-                    <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-                      <i className="fas fa-chart-line mr-2" style={{ color: primaryColor }}></i>Platform Activity
-                    </h3>
-                    <canvas id="performanceChart"></canvas>
-                  </div>
-                  
-                  {/* Recent Activity Section */}
-                  <div className={`rounded-2xl p-6 mb-6 transition-all duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
-                    <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-                      <i className="fas fa-history mr-2" style={{ color: primaryColor }}></i>Recent Activity
-                    </h3>
-                    {recentActivity.length > 0 ? (
-                      <div className="space-y-3">
-                        {recentActivity.map(activity => (
-                          <div key={`activity-${activity.id}`} className={`p-3 rounded-lg ${darkMode ? 'bg-gray-750' : 'bg-gray-50'}`}>
-                            <div className="flex justify-between items-center">
-                              <div className="flex items-center">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
-                                  activity.type === 'login' ? 'bg-blue-500/20 text-blue-500' :
-                                  activity.type === 'signup' ? 'bg-green-500/20 text-green-500' :
-                                  activity.type === 'publish' ? 'bg-purple-500/20 text-purple-500' :
-                                  activity.type === 'comment' ? 'bg-yellow-500/20 text-yellow-500' :
-                                  activity.type === 'report' ? 'bg-orange-500/20 text-orange-500' : 'bg-gray-500/20 text-gray-500'
-                                }`}>
-                                  <i className={`fas ${
-                                    activity.type === 'login' ? 'fa-sign-in-alt' :
-                                    activity.type === 'signup' ? 'fa-user-plus' :
-                                    activity.type === 'publish' ? 'fa-book' :
-                                    activity.type === 'comment' ? 'fa-comment' :
-                                    activity.type === 'report' ? 'fa-flag' : 'fa-info-circle'
-                                  }`}></i>
+                    <h1 
+                        className="text-2xl font-bold mb-6 pb-2 border-b-2 inline-block"
+                        style={{ borderColor: primaryColor }}
+                    >
+                        My Profile
+                    </h1>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                        {/* User Info - Plain design instead of card */}
+                        <div className="lg:col-span-2">
+                            <div className="flex flex-col md:flex-row items-center mb-6">
+                                <div className="relative">
+                                    <img
+                                        src={user?.avatar_url || avatar}
+                                        alt="Profile"
+                                        className="w-24 h-24 rounded-full object-cover mr-0 md:mr-6 mb-4 md:mb-0 border-4"
+                                        style={{ borderColor: primaryColor }}
+                                    />
+                                    {user?.is_verified && (
+                                        <div className="absolute bottom-2 right-2 bg-blue-500 rounded-full p-1">
+                                            <i className="fas fa-check text-white text-xs"></i>
+                                        </div>
+                                    )}
                                 </div>
-                                <div>
-                                  <p className={`font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                                    {activity.description}
-                                  </p>
-                                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                    by {typeof activity.user === 'object' ? activity.user.username : activity.user}
-                                  </p>
+                                <div className="text-center md:text-left md:ml-6">
+                                    <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{user?.username || 'Admin'}</h2>
+                                    <p className={`mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{user?.job_title || 'System Administrator'}</p>
+                                    <div className="flex flex-wrap justify-center md:justify-start gap-2">
+                                        <span 
+                                            className="px-3 py-1 rounded-full text-xs font-semibold text-white"
+                                            style={{ backgroundColor: primaryColor }}
+                                        >
+                                            {user?.university || 'TechSage'} {user?.role || 'Admin'}
+                                        </span>
+                                        {user?.is_verified && (
+                                            <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                                                Verified
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
-                              </div>
-                              <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                {formatDate(activity.timestamp)}
-                              </span>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className={`text-center py-6 rounded-xl ${darkMode ? 'bg-gray-750 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
-                        <i className="fas fa-history text-2xl mb-2"></i>
-                        <p>No recent activity found</p>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Trending Blogs Section */}
-                  <div className={`rounded-2xl p-6 mb-6 transition-all duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
-                    <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-                      <i className="fas fa-fire mr-2" style={{ color: primaryColor }}></i>Trending Blogs
-                    </h3>
-                    {trendingBlogs.length > 0 ? (
-                      <div className="space-y-4">
-                        {trendingBlogs.map(blog => (
-                          <div 
-                            key={`trending-${blog.id}`} 
-                            className={`p-4 rounded-xl transition-all duration-300 hover:shadow-md cursor-pointer ${darkMode ? 'bg-gray-750 hover:bg-gray-700' : 'bg-gray-50 hover:bg-gray-100'}`}
-                            onClick={() => navigate(`/blog/${blog.id}`)}
-                          >
-                            <h4 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{blog.title}</h4>
-                            <div className="flex justify-between items-center mt-2">
-                              <div className="flex items-center">
-                                <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                  by {Array.isArray(blog.authors) ? blog.authors[0]?.username : 
-                                     typeof blog.author === 'object' ? blog.author.username : blog.author}
-                                </span>
-                              </div>
-                              <div className="flex items-center" title={`${blog.upvotes?.length || blog.upvote_count || 0} upvotes`}>
-                                <i className="fas fa-arrow-up mr-1 text-green-500"></i>
-                                <span className="text-sm font-medium">{blog.upvotes?.length || blog.upvote_count || 0}</span>
-                              </div>
+                            <div>
+                                <h3 className={`text-lg font-semibold mb-3 pb-2 border-b ${darkMode ? 'border-gray-700 text-white' : 'border-gray-200'}`}>About</h3>
+                                <p className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                    {user?.bio || 'Responsible for maintaining the integrity and security of the TechSage platform.'}
+                                </p>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className={`text-center py-6 rounded-xl ${darkMode ? 'bg-gray-750 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
-                        <i className="fas fa-book-open text-2xl mb-2"></i>
-                        <p>No trending blogs found</p>
-                      </div>
-                    )}
-                  </div>
+                        </div>
+                        {/* Statistics - Plain design instead of cards */}
+                        <div className="space-y-4">
+                            <div className={`p-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                                <div className="flex items-center">
+                                    <div className="flex justify-center mr-3">
+                                        <i className="fas fa-users text-xl" style={{ color: primaryColor }}></i>
+                                    </div>
+                                    <div>
+                                        <div 
+                                            className="text-xl font-bold"
+                                            style={{ color: primaryColor }}
+                                        >
+                                            {users.length}
+                                        </div>
+                                        <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Users Managed</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className={`p-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                                <div className="flex items-center">
+                                    <div className="flex justify-center mr-3">
+                                        <i className="fas fa-newspaper text-xl" style={{ color: primaryColor }}></i>
+                                    </div>
+                                    <div>
+                                        <div 
+                                            className="text-xl font-bold"
+                                            style={{ color: primaryColor }}
+                                        >
+                                            {blogs.length}
+                                        </div>
+                                        <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Blogs Reviewed</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* Platform Activity Chart - Plain design instead of card */}
+                    <div className={`p-6 mb-6 h-80 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                        <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                            <i className="fas fa-chart-line mr-2" style={{ color: primaryColor }}></i>Platform Activity
+                        </h3>
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                    
+                    {/* Recent Activity Section - Plain design instead of card */}
+                    <div className={`p-6 mb-6 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                        <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                            <i className="fas fa-history mr-2" style={{ color: primaryColor }}></i>Recent Activity
+                        </h3>
+                        {recentActivity.length > 0 ? (
+                            <div className="space-y-3">
+                                {recentActivity.map(activity => (
+                                    <div key={`activity-${activity.id}`} className={`p-3 rounded-lg ${darkMode ? 'bg-gray-750' : 'bg-gray-50'}`}>
+                                        <div className="flex justify-between items-center">
+                                            <div className="flex items-center">
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
+                                                    activity.type === 'login' ? 'bg-blue-500/20 text-blue-500' :
+                                                    activity.type === 'signup' ? 'bg-green-500/20 text-green-500' :
+                                                    activity.type === 'publish' ? 'bg-purple-500/20 text-purple-500' :
+                                                    activity.type === 'comment' ? 'bg-yellow-500/20 text-yellow-500' :
+                                                    activity.type === 'report' ? 'bg-orange-500/20 text-orange-500' : 'bg-gray-500/20 text-gray-500'
+                                                }`}>
+                                                    <i className={`fas ${
+                                                        activity.type === 'login' ? 'fa-sign-in-alt' :
+                                                        activity.type === 'signup' ? 'fa-user-plus' :
+                                                        activity.type === 'publish' ? 'fa-book' :
+                                                        activity.type === 'comment' ? 'fa-comment' :
+                                                        activity.type === 'report' ? 'fa-flag' : 'fa-info-circle'
+                                                    }`}></i>
+                                                </div>
+                                                <div>
+                                                    <p className={`font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                                                        {activity.description}
+                                                    </p>
+                                                    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                                        by {typeof activity.user === 'object' ? activity.user.username : activity.user}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                {formatDate(activity.timestamp)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className={`text-center py-6 rounded-xl ${darkMode ? 'bg-gray-750 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
+                                <i className="fas fa-history text-2xl mb-2"></i>
+                                <p>No recent activity found</p>
+                            </div>
+                        )}
+                    </div>
+                    
+                    {/* Trending Blogs Section - Plain design instead of card */}
+                    <div className={`p-6 mb-6 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                        <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                            <i className="fas fa-fire mr-2" style={{ color: primaryColor }}></i>Trending Blogs
+                        </h3>
+                        {trendingBlogs.length > 0 ? (
+                            <div className="space-y-4">
+                                {trendingBlogs.map(blog => (
+                                    <div 
+                                        key={`trending-${blog.id}`} 
+                                        className={`p-4 rounded-xl ${darkMode ? 'bg-gray-750 hover:bg-gray-700' : 'bg-gray-50 hover:bg-gray-100'}`}
+                                        onClick={() => navigate(`/blog/${blog.id}`)}
+                                    >
+                                        <h4 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{blog.title}</h4>
+                                        <div className="flex justify-between items-center mt-2">
+                                            <div className="flex items-center">
+                                                <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                                    by {Array.isArray(blog.authors) ? blog.authors[0]?.username : 
+                                                       typeof blog.author === 'object' ? blog.author.username : blog.author}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center" title={`${blog.upvotes?.length || blog.upvote_count || 0} upvotes`}>
+                                                <i className="fas fa-arrow-up mr-1 text-green-500"></i>
+                                                <span className="text-sm font-medium">{blog.upvotes?.length || blog.upvote_count || 0}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className={`text-center py-6 rounded-xl ${darkMode ? 'bg-gray-750 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
+                                <i className="fas fa-book-open text-2xl mb-2"></i>
+                                <p>No trending blogs found</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
               )}
             </div>

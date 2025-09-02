@@ -344,12 +344,8 @@ class DeleteBlog(APIView):
                 return Response({"error": "You can only delete your own blogs"}, 
                                status=status.HTTP_403_FORBIDDEN)
             
-            # Soft delete the blog instead of hard delete
+            # Use soft delete instead of hard delete
             blog.soft_delete(username)
-            
-            # Delete associated comments and reports
-            Comment.objects(blog=blog).delete()
-            BlogReport.objects(blog=blog).delete()
 
             return Response({
                 "message": "Blog moved to trash successfully"

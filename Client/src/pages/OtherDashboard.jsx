@@ -578,7 +578,7 @@ const OtherDashboard = () => {
                     </div>
                   </div>
 
-                  {/* <div>
+                  <div>
                     <div className="flex justify-between items-center mb-4">
                       <h2
                         className="text-xl font-bold pb-2 border-b-2 inline-block"
@@ -603,12 +603,11 @@ const OtherDashboard = () => {
                             darkMode={darkMode}
                             primaryColor={primaryColor}
                             primaryDark={primaryDark}
-                            showUpvotes={true}
                           />
                         ))}
                       </div>
                     ) : renderEmptyMessage()}
-                  </div> */}
+                  </div>
                 </div>
               )}
 
@@ -637,7 +636,6 @@ const OtherDashboard = () => {
                           darkMode={darkMode}
                           primaryColor={primaryColor}
                           primaryDark={primaryDark}
-                          showUpvotes={true}
                         />
                       ))}
                     </div>

@@ -95,13 +95,13 @@ const Home = () => {
     >
       <Navbar activePage="home" />
       
-      <main className="container mx-auto px-4 md:px-20 py-10 pt-28">
-        <div className="flex flex-col lg:flex-row gap-8">
+      <main className="container mx-auto px-4 md:px-16 py-2 pt-24">
+        <div className="flex flex-col lg:flex-row gap-6">
           {/* Main Content */}
           <article className="flex-1">
             {mostPopularBlog ? (
               <>
-                <header className={`border-b pb-10 mb-10 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                <header className={`border-b pb-8 mb-8 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                   <h1 className="text-3xl md:text-4xl font-bold leading-tight mb-3">
                     {mostPopularBlog.title}
                   </h1>
@@ -163,7 +163,7 @@ const Home = () => {
                   />
                 </div>
 
-                <div className="mt-8">
+                <div className="mt-6">
                   <BlogLink blog={mostPopularBlog}>
                     <a 
                       className="font-semibold hover:underline"
@@ -175,7 +175,7 @@ const Home = () => {
                 </div>
               </>
             ) : (
-              <div className={`text-center py-8 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              <div className={`text-center py-6 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 <p>No popular blogs available</p>
                 <button
                   onClick={fetchPopularBlogs}
@@ -189,7 +189,7 @@ const Home = () => {
           </article>
 
           {/* Sidebar */}
-          <div className="lg:w-80 space-y-8">
+          <div className="lg:w-96 space-y-6">
             <Sidebar />
             <TopContributor/>
             <SearchForm />
@@ -198,18 +198,18 @@ const Home = () => {
       </main>
 
       {/* Featured Research Section */}
-      <section className={`py-16 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
-        <div className="container mx-auto px-4 md:px-20">
+      <section className={`py-12 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+        <div className="container mx-auto px-4 md:px-16">
           <h2 className={`text-3xl font-bold mb-4 relative pb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
             Most Popular Blogs
             <span className="absolute bottom-0 left-0 w-16 h-1" style={{ backgroundColor: primaryColor }}></span>
           </h2>
-          <p className={`text-xl mb-8 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+          <p className={`text-xl mb-6 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
             Explore the 5 most popular academic blogs based on upvotes
           </p>
 
           {featuredBlogs.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               {featuredBlogs.slice(0, 5).map((blog) => {
                 const preview = getContentPreview(blog.content, '/home');
                 return (
@@ -223,7 +223,7 @@ const Home = () => {
                         aria-label={blog.title || 'Blog thumbnail'}
                       />
                       <div className={`absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${darkMode ? 'from-black/90' : 'from-black/80'}`} />
-                      <div className="absolute bottom-0 left-0 w-full p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                      <div className="absolute bottom-0 left-0 w-full p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
                         <h3 className="text-white text-lg font-semibold mb-1 line-clamp-2">
                           {blog.title || 'Untitled Blog'}
                         </h3>
@@ -243,7 +243,7 @@ const Home = () => {
               })}
             </div>
           ) : (
-            <div className={`text-center py-8 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            <div className={`text-center py-6 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               <p>No popular blogs available</p>
               <button
                 onClick={fetchPopularBlogs}

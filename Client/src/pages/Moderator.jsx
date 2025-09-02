@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Chart } from 'chart.js/auto';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -588,391 +588,426 @@ const ModeratorDashboard = () => {
                                 </div>
                             )}
 
-                            {/* Profile Section */}
-                            {activeSection === 'profile' && !loading && (
-                                <div>
-                                    <h1 
-                                        className="text-2xl font-bold mb-6 pb-2 border-b-2 inline-block"
-                                        style={{ borderColor: primaryColor }}
-                                    >
-                                        <i className="fas fa-user mr-2"></i>Moderator Profile
-                                    </h1>
-                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                                        <div className={`lg:col-span-2 rounded-2xl p-6 shadow-lg transition-all duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-                                            <div className="flex flex-col md:flex-row items-center mb-6">
-                                                <div className="relative">
-                                                    <img
-                                                        src={user?.avatar_url || avatar}
-                                                        alt="Profile"
-                                                        className="w-24 h-24 rounded-full object-cover mr-0 md:mr-6 mb-4 md:mb-0 shadow-lg border-4"
-                                                        style={{ borderColor: primaryColor }}
-                                                    />
-                                                    {user?.is_verified && (
-                                                        <div className="absolute bottom-2 right-2 bg-blue-500 rounded-full p-1 shadow-md">
-                                                            <i className="fas fa-check text-white text-xs"></i>
+                            {/* Memoized section content to prevent unnecessary re-renders */}
+                            {useMemo(() => {
+                                if (loading) return null;
+                                
+                                switch (activeSection) {
+                                    case 'profile':
+                                        return (
+                                            <div>
+                                                <h1 
+                                                    className="text-2xl font-bold mb-6 pb-2 border-b-2 inline-block"
+                                                    style={{ borderColor: primaryColor }}
+                                                >
+                                                    <i className="fas fa-user mr-2"></i>Moderator Profile
+                                                </h1>
+                                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                                                    {/* User Info - Plain design instead of card */}
+                                                    <div className="lg:col-span-2">
+                                                        <div className="flex flex-col md:flex-row items-center mb-6">
+                                                            <div className="relative">
+                                                                <img
+                                                                    src={user?.avatar_url || avatar}
+                                                                    alt="Profile"
+                                                                    className="w-24 h-24 rounded-full object-cover mr-0 md:mr-6 mb-4 md:mb-0 border-4"
+                                                                    style={{ borderColor: primaryColor }}
+                                                                />
+                                                                {user?.is_verified && (
+                                                                    <div className="absolute bottom-2 right-2 bg-blue-500 rounded-full p-1">
+                                                                        <i className="fas fa-check text-white text-xs"></i>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div className="text-center md:text-left md:ml-6">
+                                                                <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{user?.username || 'Moderator'}</h2>
+                                                                <p className={`mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{user?.job_title || 'Content Moderator'}</p>
+                                                                <div className="flex flex-wrap justify-center md:justify-start gap-2">
+                                                                    <span 
+                                                                        className="px-3 py-1 rounded-full text-xs font-semibold text-white"
+                                                                        style={{ backgroundColor: primaryColor }}
+                                                                    >
+                                                                        {user?.university || 'TechSage'} {user?.role || 'Moderator'}
+                                                                    </span>
+                                                                    {user?.is_verified && (
+                                                                        <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                                                                            Verified
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <h3 className={`text-lg font-semibold mb-3 pb-2 border-b ${darkMode ? 'border-gray-700 text-white' : 'border-gray-200'}`}>About</h3>
+                                                            <p className={`mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                                                {user?.bio || 'Responsible for maintaining the quality and integrity of content on the TechSage platform.'}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    {/* Statistics - Plain design instead of cards */}
+                                                    <div className="space-y-4">
+                                                        <div className={`p-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                                                            <div className="flex items-center">
+                                                                <div className="flex justify-center mr-3">
+                                                                    <i className="fas fa-book-open text-xl" style={{ color: primaryColor }}></i>
+                                                                </div>
+                                                                <div>
+                                                                    <div 
+                                                                        className="text-xl font-bold"
+                                                                        style={{ color: primaryColor }}
+                                                                    >
+                                                                        {blogs.filter(blog => blog.is_reviewed).length}
+                                                                    </div>
+                                                                    <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Blogs Reviewed</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className={`p-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                                                            <div className="flex items-center">
+                                                                <div className="flex justify-center mr-3">
+                                                                    <i className="fas fa-comments text-xl" style={{ color: primaryColor }}></i>
+                                                                </div>
+                                                                <div>
+                                                                    <div 
+                                                                        className="text-xl font-bold"
+                                                                        style={{ color: primaryColor }}
+                                                                    >
+                                                                        {comments.filter(comment => comment.is_reviewed).length}
+                                                                    </div>
+                                                                    <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Comments Reviewed</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                {/* Moderation Activity Chart - Plain design instead of card */}
+                                                <div className={`p-6 mb-6 h-80 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                                                    <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                                                        <i className="fas fa-chart-line mr-2" style={{ color: primaryColor }}></i>Moderation Activity
+                                                    </h3>
+                                                    <canvas id="performanceChart"></canvas>
+                                                </div>
+                                                
+                                                {/* Recent Activity Section - Plain design instead of card */}
+                                                <div className={`p-6 mb-6 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                                                    <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                                                        <i className="fas fa-history mr-2" style={{ color: primaryColor }}></i>Recent Activity
+                                                    </h3>
+                                                    {recentActivity.length > 0 ? (
+                                                        <div className="space-y-3">
+                                                            {recentActivity.map(activity => (
+                                                                <div key={`activity-${activity.id}`} className={`p-3 rounded-lg ${darkMode ? 'bg-gray-750' : 'bg-gray-50'}`}>
+                                                                    <div className="flex justify-between items-center">
+                                                                        <div className="flex items-center">
+                                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
+                                                                                activity.type === 'login' ? 'bg-blue-500/20 text-blue-500' :
+                                                                                activity.type === 'approve' ? 'bg-green-500/20 text-green-500' :
+                                                                                activity.type === 'reject' ? 'bg-orange-500/20 text-orange-500' :
+                                                                                activity.type === 'review' ? 'bg-purple-500/20 text-purple-500' :
+                                                                                activity.type === 'publish' ? 'bg-indigo-500/20 text-indigo-500' :
+                                                                                activity.type === 'comment' ? 'bg-yellow-500/20 text-yellow-500' :
+                                                                                activity.type === 'report' ? 'bg-teal-500/20 text-teal-500' : 'bg-gray-500/20 text-gray-500'
+                                                                            }`}>
+                                                                                <i className={`fas ${
+                                                                                    activity.type === 'login' ? 'fa-sign-in-alt' :
+                                                                                    activity.type === 'approve' ? 'fa-check-circle' :
+                                                                                    activity.type === 'reject' ? 'fa-times-circle' :
+                                                                                    activity.type === 'review' ? 'fa-eye' :
+                                                                                    activity.type === 'publish' ? 'fa-book' :
+                                                                                    activity.type === 'comment' ? 'fa-comment' :
+                                                                                    activity.type === 'report' ? 'fa-flag' : 'fa-info-circle'
+                                                                                }`}></i>
+                                                                            </div>
+                                                                            <div>
+                                                                                <p className={`font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                                                                                    {activity.description}
+                                                                                </p>
+                                                                                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                                                                    by {typeof activity.user === 'object' ? activity.user.username : activity.user}
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                                            {formatDate(activity.timestamp)}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <div className={`text-center py-6 rounded-xl ${darkMode ? 'bg-gray-750 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
+                                                            <i className="fas fa-history text-2xl mb-2"></i>
+                                                            <p>No recent activity found</p>
                                                         </div>
                                                     )}
                                                 </div>
-                                                <div className="text-center md:text-left md:ml-6">
-                                                    <h2 className={`text-2xl font-bold transition-colors duration-200 ${darkMode ? 'text-white' : 'text-gray-800'}`}>{user?.username || 'Moderator'}</h2>
-                                                    <p className={`mb-2 transition-colors duration-200 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{user?.job_title || 'Content Moderator'}</p>
-                                                    <div className="flex flex-wrap justify-center md:justify-start gap-2">
-                                                        <span 
-                                                            className="px-3 py-1 rounded-full text-xs font-semibold text-white shadow"
-                                                            style={{ backgroundColor: primaryColor }}
-                                                        >
-                                                            {user?.university || 'TechSage'} {user?.role || 'Moderator'}
-                                                        </span>
-                                                        {user?.is_verified && (
-                                                            <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow">
-                                                                Verified
-                                                            </span>
-                                                        )}
-                                                    </div>
+                                                
+                                                {/* Trending Blogs Section - Plain design instead of card */}
+                                                <div className={`p-6 mb-6 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                                                    <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                                                        <i className="fas fa-fire mr-2" style={{ color: primaryColor }}></i>Trending Blogs
+                                                    </h3>
+                                                    {trendingBlogs.length > 0 ? (
+                                                        <div className="space-y-4">
+                                                            {trendingBlogs.map(blog => (
+                                                                <div 
+                                                                    key={`trending-${blog.id}`} 
+                                                                    className={`p-4 rounded-xl ${darkMode ? 'bg-gray-750 hover:bg-gray-700' : 'bg-gray-50 hover:bg-gray-100'}`}
+                                                                    onClick={() => navigate(`/blog/${blog.id}`)}
+                                                                >
+                                                                    <h4 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{blog.title}</h4>
+                                                                    <div className="flex justify-between items-center mt-2">
+                                                                        <div className="flex items-center">
+                                                                            <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                                                              by {Array.isArray(blog.authors) ? blog.authors[0]?.username : 
+                                                                                 typeof blog.author === 'object' ? blog.author.username : blog.author}
+                                                                            </span>
+                                                                        </div>
+                                                                        <div className="flex items-center" title={`${blog.upvotes?.length || blog.upvote_count || 0} upvotes`}>
+                                                                            <i className="fas fa-arrow-up mr-1 text-green-500"></i>
+                                                                            <span className="text-sm font-medium">{blog.upvotes?.length || blog.upvote_count || 0}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <div className={`text-center py-6 rounded-xl ${darkMode ? 'bg-gray-750 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
+                                                            <i className="fas fa-book-open text-2xl mb-2"></i>
+                                                            <p>No trending blogs found</p>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
+                                        );
+                                    case 'blogs':
+                                        return (
                                             <div>
-                                                <h3 className={`text-lg font-semibold mb-3 pb-2 border-b transition-colors duration-200 ${darkMode ? 'border-gray-700 text-white' : 'border-gray-200'}`}>About</h3>
-                                                <p className={`mb-4 transition-colors duration-200 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                                    {user?.bio || 'Responsible for maintaining the quality and integrity of content on the TechSage platform.'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="space-y-4">
-                                            <div className={`rounded-2xl p-4 shadow-md transition-all duration-300 hover:shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-                                                <div className="flex items-center">
-                                                    <div className="flex justify-center mr-3">
-                                                        <i className="fas fa-book-open text-xl" style={{ color: primaryColor }}></i>
-                                                    </div>
-                                                    <div>
-                                                        <div 
-                                                            className="text-xl font-bold"
-                                                            style={{ color: primaryColor }}
-                                                        >
-                                                            {blogs.filter(blog => blog.is_reviewed).length}
+                                                <h1 
+                                                    className="text-2xl font-bold mb-6 pb-2 border-b-2 inline-block"
+                                                    style={{ borderColor: primaryColor }}
+                                                >
+                                                    <i className="fas fa-book-open mr-2"></i>Blogs to Review
+                                                </h1>
+                                                <div className="space-y-4">
+                                                    {blogs.filter(blog => !blog.is_reviewed).length === 0 ? (
+                                                        <div className={`text-center py-10 rounded-xl ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
+                                                            <i className="fas fa-book-open text-3xl mb-4"></i>
+                                                            <p>No blogs to review</p>
                                                         </div>
-                                                        <div className={`text-sm transition-colors duration-200 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Blogs Reviewed</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className={`rounded-2xl p-4 shadow-md transition-all duration-300 hover:shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-                                                <div className="flex items-center">
-                                                    <div className="flex justify-center mr-3">
-                                                        <i className="fas fa-comments text-xl" style={{ color: primaryColor }}></i>
-                                                    </div>
-                                                    <div>
-                                                        <div 
-                                                            className="text-xl font-bold"
-                                                            style={{ color: primaryColor }}
-                                                        >
-                                                            {comments.filter(comment => comment.is_reviewed).length}
-                                                        </div>
-                                                        <div className={`text-sm transition-colors duration-200 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Comments Reviewed</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    {/* Moderation Activity Chart */}
-                                    <div className={`rounded-2xl p-6 mb-6 h-80 transition-all duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
-                                        <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-                                            <i className="fas fa-chart-line mr-2" style={{ color: primaryColor }}></i>Moderation Activity
-                                        </h3>
-                                        <canvas id="performanceChart"></canvas>
-                                    </div>
-                                    
-                                    {/* Recent Activity Section */}
-                                    <div className={`rounded-2xl p-6 mb-6 transition-all duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
-                                        <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-                                            <i className="fas fa-history mr-2" style={{ color: primaryColor }}></i>Recent Activity
-                                        </h3>
-                                        {recentActivity.length > 0 ? (
-                                            <div className="space-y-3">
-                                                {recentActivity.map(activity => (
-                                                    <div key={`activity-${activity.id}`} className={`p-3 rounded-lg ${darkMode ? 'bg-gray-750' : 'bg-gray-50'}`}>
-                                                        <div className="flex justify-between items-center">
-                                                            <div className="flex items-center">
-                                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
-                                                                    activity.type === 'login' ? 'bg-blue-500/20 text-blue-500' :
-                                                                    activity.type === 'approve' ? 'bg-green-500/20 text-green-500' :
-                                                                    activity.type === 'reject' ? 'bg-orange-500/20 text-orange-500' :
-                                                                    activity.type === 'review' ? 'bg-purple-500/20 text-purple-500' :
-                                                                    activity.type === 'publish' ? 'bg-indigo-500/20 text-indigo-500' :
-                                                                    activity.type === 'comment' ? 'bg-yellow-500/20 text-yellow-500' :
-                                                                    activity.type === 'report' ? 'bg-teal-500/20 text-teal-500' : 'bg-gray-500/20 text-gray-500'
-                                                                }`}>
-                                                                    <i className={`fas ${
-                                                                        activity.type === 'login' ? 'fa-sign-in-alt' :
-                                                                        activity.type === 'approve' ? 'fa-check-circle' :
-                                                                        activity.type === 'reject' ? 'fa-times-circle' :
-                                                                        activity.type === 'review' ? 'fa-eye' :
-                                                                        activity.type === 'publish' ? 'fa-book' :
-                                                                        activity.type === 'comment' ? 'fa-comment' :
-                                                                        activity.type === 'report' ? 'fa-flag' : 'fa-info-circle'
-                                                                    }`}></i>
-                                                                </div>
+                                                    ) : (
+                                                        blogs.filter(blog => !blog.is_reviewed).map(blog => (
+                                                            <div key={blog.id} className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-4 p-4 rounded-xl transition-all duration-300 hover:shadow-md ${darkMode ? 'bg-gray-800 hover:bg-gray-750' : 'bg-white hover:bg-gray-50'}`}>
+                                                                <div
+                                                                    className="h-24 md:h-full rounded-lg bg-cover bg-center cursor-pointer transition-transform duration-300 hover:scale-105"
+                                                                    style={{ backgroundImage: `url('${blog.thumbnail_url}')`, backgroundColor: darkMode ? '#374151' : '#e5e7eb' }}
+                                                                    onClick={() => handleBlogClick(blog.id)}
+                                                                ></div>
                                                                 <div>
-                                                                    <p className={`font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                                                                        {activity.description}
-                                                                    </p>
-                                                                    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                                                        by {typeof activity.user === 'object' ? activity.user.username : activity.user}
-                                                                    </p>
+                                                                    <h3
+                                                                        className={`text-lg font-semibold transition-colors duration-200 ${darkMode ? 'text-white' : 'text-gray-800'} cursor-pointer hover:text-[var(--primary-color)]`}
+                                                                        onClick={() => handleBlogClick(blog.id)}
+                                                                    >
+                                                                        {blog.title}
+                                                                    </h3>
+                                                                    <div className={`flex justify-between text-sm mt-1 transition-colors duration-200 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                                        <span>By: {Array.isArray(blog.authors) ? blog.authors[0]?.username : typeof blog.author === 'object' ? blog.author.username : blog.author}</span>
+                                                                        <span>{formatDate(blog.published_at)}</span>
+                                                                    </div>
+                                                                    <div className="flex flex-wrap gap-2 mt-3">
+                                                                        <button
+                                                                            className="text-green-500 text-sm flex items-center hover:opacity-80 transition-all duration-200 px-3 py-1 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20"
+                                                                            onClick={() => handleApproveBlog(blog.id)}
+                                                                            style={{ color: darkMode ? '#22c55e' : '#22c55e' }}
+                                                                        >
+                                                                            <i className="fas fa-check mr-1"></i> Approve
+                                                                        </button>
+                                                                        <button
+                                                                            className="text-red-500 text-sm flex items-center hover:opacity-80 transition-all duration-200 px-3 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                                            onClick={() => handleRejectBlog(blog.id)}
+                                                                            style={{ color: darkMode ? '#ef4444' : '#ef4444' }}
+                                                                        >
+                                                                            <i className="fas fa-trash mr-1"></i> Reject
+                                                                        </button>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                            <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                                {formatDate(activity.timestamp)}
-                                                            </span>
+                                                        ))
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    case 'reviewed':
+                                        return (
+                                            <div>
+                                                <h1 
+                                                    className="text-2xl font-bold mb-6 pb-2 border-b-2 inline-block"
+                                                    style={{ borderColor: primaryColor }}
+                                                >
+                                                    <i className="fas fa-check-circle mr-2"></i>Reviewed Blogs
+                                                </h1>
+                                                <div className="space-y-4">
+                                                    {blogs.filter(blog => blog.is_reviewed).length === 0 ? (
+                                                        <div className={`text-center py-10 rounded-xl ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
+                                                            <i className="fas fa-check-circle text-3xl mb-4"></i>
+                                                            <p>No reviewed blogs found</p>
                                                         </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className={`text-center py-6 rounded-xl ${darkMode ? 'bg-gray-750 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
-                                                <i className="fas fa-history text-2xl mb-2"></i>
-                                                <p>No recent activity found</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                    
-                                    {/* Trending Blogs Section */}
-                                    <div className={`rounded-2xl p-6 mb-6 transition-all duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
-                                        <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-                                            <i className="fas fa-fire mr-2" style={{ color: primaryColor }}></i>Trending Blogs
-                                        </h3>
-                                        {trendingBlogs.length > 0 ? (
-                                            <div className="space-y-4">
-                                                {trendingBlogs.map(blog => (
-                                                    <div 
-                                                        key={`trending-${blog.id}`} 
-                                                        className={`p-4 rounded-xl transition-all duration-300 hover:shadow-md cursor-pointer ${darkMode ? 'bg-gray-750 hover:bg-gray-700' : 'bg-gray-50 hover:bg-gray-100'}`}
-                                                        onClick={() => navigate(`/blog/${blog.id}`)}
-                                                    >
-                                                        <h4 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{blog.title}</h4>
-                                                        <div className="flex justify-between items-center mt-2">
-                                                            <div className="flex items-center">
-                                                                <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                                                  by {Array.isArray(blog.authors) ? blog.authors[0]?.username : 
-                                                                     typeof blog.author === 'object' ? blog.author.username : blog.author}
-                                                                </span>
+                                                    ) : (
+                                                        blogs.filter(blog => blog.is_reviewed).map(blog => (
+                                                            <div key={blog.id} className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-4 p-4 rounded-xl transition-all duration-300 hover:shadow-md ${darkMode ? 'bg-gray-800 hover:bg-gray-750' : 'bg-white hover:bg-gray-50'}`}>
+                                                                <div
+                                                                    className="h-24 md:h-full rounded-lg bg-cover bg-center cursor-pointer transition-transform duration-300 hover:scale-105"
+                                                                    style={{ backgroundImage: `url('${blog.thumbnail_url}')`, backgroundColor: darkMode ? '#374151' : '#e5e7eb' }}
+                                                                    onClick={() => handleBlogClick(blog.id)}
+                                                                ></div>
+                                                                <div>
+                                                                    <h3
+                                                                        className={`text-lg font-semibold transition-colors duration-200 ${darkMode ? 'text-white' : 'text-gray-800'} cursor-pointer hover:text-[var(--primary-color)]`}
+                                                                        onClick={() => handleBlogClick(blog.id)}
+                                                                    >
+                                                                        {blog.title}
+                                                                    </h3>
+                                                                    <div className={`flex justify-between text-sm mt-1 transition-colors duration-200 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                                        <span>By: {Array.isArray(blog.authors) ? blog.authors[0]?.username : typeof blog.author === 'object' ? blog.author.username : blog.author}</span>
+                                                                        <span>{formatDate(blog.published_at)}</span>
+                                                                    </div>
+                                                                    <div className="flex flex-wrap gap-2 mt-3">
+                                                                        <span 
+                                                                            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
+                                                                            style={{ 
+                                                                                backgroundColor: darkMode ? 'rgba(34, 197, 94, 0.2)' : 'rgba(34, 197, 94, 0.1)',
+                                                                                color: '#22c55e'
+                                                                            }}
+                                                                        >
+                                                                            <i className="fas fa-check mr-1"></i> Approved
+                                                                        </span>
+                                                                        <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                                            Reviewed by: {blog.reviewed_by}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
                                                             </div>
-                                                            <div className="flex items-center" title={`${blog.upvotes?.length || blog.upvote_count || 0} upvotes`}>
-                                                                <i className="fas fa-arrow-up mr-1 text-green-500"></i>
-                                                                <span className="text-sm font-medium">{blog.upvotes?.length || blog.upvote_count || 0}</span>
+                                                        ))
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    case 'comments':
+                                        return (
+                                            <div>
+                                                <h1 
+                                                    className="text-2xl font-bold mb-6 pb-2 border-b-2 inline-block"
+                                                    style={{ borderColor: primaryColor }}
+                                                >
+                                                    <i className="fas fa-comments mr-2"></i>Comments to Review
+                                                </h1>
+                                                <div className="space-y-4">
+                                                    {commentsToReview.length === 0 ? (
+                                                        <div className={`text-center py-10 rounded-xl ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
+                                                            <i className="fas fa-comments text-3xl mb-4"></i>
+                                                            <p>No comments to review</p>
+                                                        </div>
+                                                    ) : (
+                                                        commentsToReview.map(comment => (
+                                                            <div key={comment.id} className={`p-4 rounded-xl transition-all duration-300 hover:shadow-md ${darkMode ? 'bg-gray-800 hover:bg-gray-750' : 'bg-white hover:bg-gray-50'}`}>
+                                                                <div className="flex items-center mb-2">
+                                                                    <img
+                                                                        src={comment.author_avatar || avatar}
+                                                                        alt={typeof comment.author === 'object' ? comment.author.username : comment.author}
+                                                                        className="w-8 h-8 rounded-full mr-2 object-cover"
+                                                                    />
+                                                                    <div>
+                                                                        <h4 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{typeof comment.author === 'object' ? comment.author.username : comment.author}</h4>
+                                                                        <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{formatDate(comment.created_at)}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <p className={`mb-3 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{comment.content}</p>
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    <button
+                                                                        className="text-green-500 text-sm flex items-center hover:opacity-80 transition-all duration-200 px-3 py-1 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20"
+                                                                        onClick={() => handleApproveComment(comment.id)}
+                                                                        style={{ color: darkMode ? '#22c55e' : '#22c55e' }}
+                                                                    >
+                                                                        <i className="fas fa-check mr-1"></i> Approve
+                                                                    </button>
+                                                                    <button
+                                                                        className="text-red-500 text-sm flex items-center hover:opacity-80 transition-all duration-200 px-3 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                                        onClick={() => handleRejectComment(comment.id)}
+                                                                        style={{ color: darkMode ? '#ef4444' : '#ef4444' }}
+                                                                    >
+                                                                        <i className="fas fa-trash mr-1"></i> Reject
+                                                                    </button>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className={`text-center py-6 rounded-xl ${darkMode ? 'bg-gray-750 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
-                                                <i className="fas fa-book-open text-2xl mb-2"></i>
-                                                <p>No trending blogs found</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Blogs to Review Section */}
-                            {activeSection === 'blogs' && !loading && (
-                                <div>
-                                    <h1 
-                                        className="text-2xl font-bold mb-6 pb-2 border-b-2 inline-block"
-                                        style={{ borderColor: primaryColor }}
-                                    >
-                                        <i className="fas fa-book-open mr-2"></i>Blogs to Review
-                                    </h1>
-                                    <div className="space-y-4">
-                                        {blogs.filter(blog => !blog.is_reviewed).length === 0 ? (
-                                            <div className={`text-center py-10 rounded-xl ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
-                                                <i className="fas fa-book-open text-3xl mb-4"></i>
-                                                <p>No blogs to review</p>
-                                            </div>
-                                        ) : (
-                                            blogs.filter(blog => !blog.is_reviewed).map(blog => (
-                                                <div key={blog.id} className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-4 p-4 rounded-xl transition-all duration-300 hover:shadow-md ${darkMode ? 'bg-gray-800 hover:bg-gray-750' : 'bg-white hover:bg-gray-50'}`}>
-                                                    <div
-                                                        className="h-24 md:h-full rounded-lg bg-cover bg-center cursor-pointer transition-transform duration-300 hover:scale-105"
-                                                        style={{ backgroundImage: `url('${blog.thumbnail_url}')`, backgroundColor: darkMode ? '#374151' : '#e5e7eb' }}
-                                                        onClick={() => handleBlogClick(blog.id)}
-                                                    ></div>
-                                                    <div>
-                                                        <h3
-                                                            className={`text-lg font-semibold transition-colors duration-200 ${darkMode ? 'text-white' : 'text-gray-800'} cursor-pointer hover:text-[var(--primary-color)]`}
-                                                            onClick={() => handleBlogClick(blog.id)}
-                                                        >
-                                                            {blog.title}
-                                                        </h3>
-                                                        <div className={`flex justify-between text-sm mt-1 transition-colors duration-200 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                            <span>By: {Array.isArray(blog.authors) ? blog.authors[0]?.username : typeof blog.author === 'object' ? blog.author.username : blog.author}</span>
-                                                            <span>{formatDate(blog.published_at)}</span>
-                                                        </div>
-                                                        <div className="flex flex-wrap gap-2 mt-3">
-                                                            <button
-                                                                className="text-green-500 text-sm flex items-center hover:opacity-80 transition-all duration-200 px-3 py-1 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20"
-                                                                onClick={() => handleApproveBlog(blog.id)}
-                                                                style={{ color: darkMode ? '#22c55e' : '#22c55e' }}
-                                                            >
-                                                                <i className="fas fa-check mr-1"></i> Approve
-                                                            </button>
-                                                            <button
-                                                                className="text-red-500 text-sm flex items-center hover:opacity-80 transition-all duration-200 px-3 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
-                                                                onClick={() => handleRejectBlog(blog.id)}
-                                                                style={{ color: darkMode ? '#ef4444' : '#ef4444' }}
-                                                            >
-                                                                <i className="fas fa-trash mr-1"></i> Reject
-                                                            </button>
-                                                        </div>
-                                                    </div>
+                                                        ))
+                                                    )}
                                                 </div>
-                                            ))
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Reviewed Blogs Section */}
-                            {activeSection === 'reviewed' && !loading && (
-                                <div>
-                                    <h1 
-                                        className="text-2xl font-bold mb-6 pb-2 border-b-2 inline-block"
-                                        style={{ borderColor: primaryColor }}
-                                    >
-                                        <i className="fas fa-check-circle mr-2"></i>Reviewed Blogs
-                                    </h1>
-                                    <div className="space-y-4">
-                                        {blogs.filter(blog => blog.is_reviewed).length === 0 ? (
-                                            <div className={`text-center py-10 rounded-xl ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
-                                                <i className="fas fa-book-open text-3xl mb-4"></i>
-                                                <p>No reviewed blogs yet</p>
                                             </div>
-                                        ) : (
-                                            blogs.filter(blog => blog.is_reviewed).map(blog => (
-                                                <div key={blog.id} className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-4 p-4 rounded-xl transition-all duration-300 hover:shadow-md ${darkMode ? 'bg-gray-800 hover:bg-gray-750' : 'bg-white hover:bg-gray-50'}`}>
-                                                    <div
-                                                        className="h-24 md:h-full rounded-lg bg-cover bg-center cursor-pointer transition-transform duration-300 hover:scale-105"
-                                                        style={{ backgroundImage: `url('${blog.thumbnail_url}')`, backgroundColor: darkMode ? '#374151' : '#e5e7eb' }}
-                                                        onClick={() => handleBlogClick(blog.id)}
-                                                    ></div>
-                                                    <div>
-                                                        <h3
-                                                            className={`text-lg font-semibold transition-colors duration-200 ${darkMode ? 'text-white' : 'text-gray-800'} cursor-pointer hover:text-[var(--primary-color)]`}
-                                                            onClick={() => handleBlogClick(blog.id)}
-                                                        >
-                                                            {blog.title}
-                                                        </h3>
-                                                        <div className={`flex justify-between text-sm mt-1 transition-colors duration-200 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                            <span>By: {Array.isArray(blog.authors) ? blog.authors[0]?.username : typeof blog.author === 'object' ? blog.author.username : blog.author}</span>
-                                                            <span>{formatDate(blog.published_at)}</span>
+                                        );
+                                    case 'reports':
+                                        return (
+                                            <div>
+                                                <h1 
+                                                    className="text-2xl font-bold mb-6 pb-2 border-b-2 inline-block"
+                                                    style={{ borderColor: primaryColor }}
+                                                >
+                                                    <i className="fas fa-exclamation-triangle mr-2"></i>Reports
+                                                </h1>
+                                                <div className="space-y-4">
+                                                    {reports.length === 0 ? (
+                                                        <div className={`text-center py-10 rounded-xl ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
+                                                            <i className="fas fa-exclamation-triangle text-3xl mb-4"></i>
+                                                            <p>No reports found</p>
                                                         </div>
-                                                        <div className="flex flex-wrap gap-2 mt-3">
-                                                            <span 
-                                                                className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
-                                                                style={{ 
-                                                                    backgroundColor: darkMode ? 'rgba(34, 197, 94, 0.2)' : 'rgba(34, 197, 94, 0.1)',
-                                                                    color: '#22c55e'
-                                                                }}
-                                                            >
-                                                                <i className="fas fa-check mr-1"></i> Approved
-                                                            </span>
-                                                            <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                                Reviewed by: {blog.reviewed_by}
-                                                            </span>
-                                                        </div>
-                                                    </div>
+                                                    ) : (
+                                                        reports.map(report => (
+                                                            <div key={report.id} className={`p-4 rounded-xl transition-all duration-300 hover:shadow-md ${darkMode ? 'bg-gray-800 hover:bg-gray-750' : 'bg-white hover:bg-gray-50'}`}>
+                                                                <div className="flex items-center mb-2">
+                                                                    <img
+                                                                        src={report.reporter_avatar || avatar}
+                                                                        alt={typeof report.reporter === 'object' ? report.reporter.username : report.reporter}
+                                                                        className="w-8 h-8 rounded-full mr-2 object-cover"
+                                                                    />
+                                                                    <div>
+                                                                        <h4 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{typeof report.reporter === 'object' ? report.reporter.username : report.reporter}</h4>
+                                                                        <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{formatDate(report.created_at)}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <p className={`mb-3 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{report.reason}</p>
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    <button
+                                                                        className="text-green-500 text-sm flex items-center hover:opacity-80 transition-all duration-200 px-3 py-1 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20"
+                                                                        onClick={() => handleApproveReport(report.id)}
+                                                                        style={{ color: darkMode ? '#22c55e' : '#22c55e' }}
+                                                                    >
+                                                                        <i className="fas fa-check mr-1"></i> Approve
+                                                                    </button>
+                                                                    <button
+                                                                        className="text-red-500 text-sm flex items-center hover:opacity-80 transition-all duration-200 px-3 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                                        onClick={() => handleRejectReport(report.id)}
+                                                                        style={{ color: darkMode ? '#ef4444' : '#ef4444' }}
+                                                                    >
+                                                                        <i className="fas fa-trash mr-1"></i> Reject
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        ))
+                                                    )}
                                                 </div>
-                                            ))
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Comments to Review Section */}
-                            {activeSection === 'comments' && !loading && (
-                                <div>
-                                    <h1 
-                                        className="text-2xl font-bold mb-6 pb-2 border-b-2 inline-block"
-                                        style={{ borderColor: primaryColor }}
-                                    >
-                                        <i className="fas fa-comments mr-2"></i>Comments to Review
-                                    </h1>
-                                    <div className="space-y-4">
-                                        {comments.filter(comment => !comment.is_reviewed).length === 0 ? (
-                                            <div className={`text-center py-10 rounded-xl ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
-                                                <i className="fas fa-comments text-3xl mb-4"></i>
-                                                <p>No comments to review</p>
                                             </div>
-                                        ) : (
-                                            comments.filter(comment => !comment.is_reviewed).map(comment => (
-                                                <div key={comment.id} className={`p-4 rounded-xl transition-all duration-300 hover:shadow-md ${darkMode ? 'bg-gray-800 hover:bg-gray-750' : 'bg-white hover:bg-gray-50'} mb-4`}>
-                                                    <div className="flex items-center mb-2">
-                                                        <img
-                                                            src={comment.author_avatar || avatar}
-                                                            alt={typeof comment.author === 'object' ? comment.author.username : comment.author}
-                                                            className="w-8 h-8 rounded-full mr-2 object-cover"
-                                                        />
-                                                        <div>
-                                                            <h4 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{typeof comment.author === 'object' ? comment.author.username : comment.author}</h4>
-                                                            <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{formatDate(comment.created_at)}</p>
-                                                        </div>
-                                                    </div>
-                                                    <p className={`mb-3 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{comment.content}</p>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        <button
-                                                            className="text-green-500 text-sm flex items-center hover:opacity-80 transition-all duration-200 px-3 py-1 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20"
-                                                            onClick={() => handleApproveComment(comment.id)}
-                                                            style={{ color: darkMode ? '#22c55e' : '#22c55e' }}
-                                                        >
-                                                            <i className="fas fa-check mr-1"></i> Approve
-                                                        </button>
-                                                        <button
-                                                            className="text-red-500 text-sm flex items-center hover:opacity-80 transition-all duration-200 px-3 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
-                                                            onClick={() => handleRejectComment(comment.id)}
-                                                            style={{ color: darkMode ? '#ef4444' : '#ef4444' }}
-                                                        >
-                                                            <i className="fas fa-trash mr-1"></i> Reject
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ))
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Reports Section */}
-                            {activeSection === 'reports' && !loading && (
-                                <div>
-                                    <h1 
-                                        className="text-2xl font-bold mb-6 pb-2 border-b-2 inline-block"
-                                        style={{ borderColor: primaryColor }}
-                                    >
-                                        <i className="fas fa-exclamation-triangle mr-2"></i>Reports
-                                    </h1>
-                                    <ModeratorReports darkMode={darkMode} primaryColor={primaryColor} />
-                                </div>
-                            )}
-                        </div>
+                                        );
+                                    default:
+                                        return null;
+                                }
+                            }, [activeSection, loading, user, blogs, comments, recentActivity, trendingBlogs, darkMode, primaryColor, primaryDark, primaryLight, chartData, commentsToReview, reports])}
                     </div>
                 </div>
             </div>
-            <Footer />
-            <PopupModal
-                show={showPopup}
-                message={popupData.message}
-                type="confirm"
-                onConfirm={popupData.onConfirm}
-                onCancel={() => setShowPopup(false)}
-                primaryColor={primaryColor}
-                darkMode={darkMode}
-                title="Confirm Action"
-                confirmText="Confirm"
-                cancelText="Cancel"
-            />
         </div>
-    );
+        <Footer />
+    </div>
+);
 };
 
 export default ModeratorDashboard;

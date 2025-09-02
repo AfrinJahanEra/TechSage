@@ -20,7 +20,6 @@ const BlogCardDash = ({
   showPublish = false,
   showRestore = false,
   showPermanentDelete = false,
-  showUpvotes = true,
   showEdit = false,
   showUnsave = false,
   showHistory = false // New prop to control History button visibility

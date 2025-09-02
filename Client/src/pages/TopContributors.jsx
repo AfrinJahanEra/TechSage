@@ -14,6 +14,8 @@ const TopContributors = () => {
   const [contributors, setContributors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
   const { api } = useAuth();
 
   const primaryDark = shadeColor(primaryColor, -20);
@@ -39,11 +41,10 @@ const TopContributors = () => {
     const fetchTopContributors = async () => {
       try {
         setLoading(true);
-        const usersResponse = await api.get('/all-users/');
+        const response = await api.get(`/all-users/?page=${currentPage}&page_size=10`);
         const badgesResponse = await api.get('/badges/');
 
-        const sortedUsers = usersResponse.data.users
-          .sort((a, b) => b.points - a.points || b.published_blogs - a.published_blogs)
+        const sortedUsers = response.data.users
           .map((user, index) => {
             const earnedBadges = badgesResponse.data
               .filter(badge => user.points >= badge.points_required)
@@ -59,9 +60,12 @@ const TopContributors = () => {
               ? earnedBadges.reduce((max, badge) => max.points_required > badge.points_required ? max : badge)
               : null;
 
+            // Calculate global rank (accounting for pagination)
+            const globalRank = (currentPage - 1) * 10 + index + 1;
+
             return {
               ...user,
-              rank: index + 1,
+              rank: globalRank,
               name: user.username,
               image: user.avatar_url || avatar,
               field: user.job_title || 'Researcher',
@@ -72,6 +76,8 @@ const TopContributors = () => {
           });
 
         setContributors(sortedUsers);
+        setTotalPages(response.data.total_pages);
+        setTotalUsers(response.data.total_users);
       } catch (err) {
         setError(err.response?.data?.error || 'Failed to fetch contributors');
       } finally {
@@ -80,10 +86,129 @@ const TopContributors = () => {
     };
 
     fetchTopContributors();
-  }, [api]);
+  }, [api, currentPage]);
 
   const handlePageChange = (page) => {
-    setCurrentPage(page);
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const renderPagination = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    // Adjust startPage if we're near the end
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    // Previous button
+    if (currentPage > 1) {
+      pages.push(
+        <button
+          key="prev"
+          onClick={() => handlePageChange(currentPage - 1)}
+          className={`px-3 py-2 rounded-md ${darkMode ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-300 hover:bg-gray-100'}`}
+        >
+          <i className="fas fa-chevron-left"></i>
+        </button>
+      );
+    }
+    
+    // First page
+    if (startPage > 1) {
+      pages.push(
+        <button
+          key={1}
+          onClick={() => handlePageChange(1)}
+          className={`px-4 py-2 border rounded-md ${currentPage === 1
+            ? 'text-white border-[var(--primary-color)]'
+            : darkMode
+              ? 'border-gray-700 hover:bg-gray-700'
+              : 'border-gray-300 hover:bg-gray-100'
+            }`}
+          style={{
+            backgroundColor: currentPage === 1 ? primaryColor : 'transparent',
+            borderColor: currentPage === 1 ? primaryColor : (darkMode ? 'rgb(55, 65, 81)' : 'rgb(209, 213, 219)')
+          }}
+        >
+          1
+        </button>
+      );
+      
+      if (startPage > 2) {
+        pages.push(<span key="start-ellipsis" className="px-2 py-2">...</span>);
+      }
+    }
+    
+    // Page numbers
+    for (let i = startPage; i <= endPage; i++) {
+      if (i === 1 || i === totalPages) continue; // Skip first and last as they're handled separately
+      
+      pages.push(
+        <button
+          key={i}
+          onClick={() => handlePageChange(i)}
+          className={`px-4 py-2 border rounded-md ${currentPage === i
+            ? 'text-white border-[var(--primary-color)]'
+            : darkMode
+              ? 'border-gray-700 hover:bg-gray-700'
+              : 'border-gray-300 hover:bg-gray-100'
+            }`}
+          style={{
+            backgroundColor: currentPage === i ? primaryColor : 'transparent',
+            borderColor: currentPage === i ? primaryColor : (darkMode ? 'rgb(55, 65, 81)' : 'rgb(209, 213, 219)')
+          }}
+        >
+          {i}
+        </button>
+      );
+    }
+    
+    // Last page
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        pages.push(<span key="end-ellipsis" className="px-2 py-2">...</span>);
+      }
+      
+      pages.push(
+        <button
+          key={totalPages}
+          onClick={() => handlePageChange(totalPages)}
+          className={`px-4 py-2 border rounded-md ${currentPage === totalPages
+            ? 'text-white border-[var(--primary-color)]'
+            : darkMode
+              ? 'border-gray-700 hover:bg-gray-700'
+              : 'border-gray-300 hover:bg-gray-100'
+            }`}
+          style={{
+            backgroundColor: currentPage === totalPages ? primaryColor : 'transparent',
+            borderColor: currentPage === totalPages ? primaryColor : (darkMode ? 'rgb(55, 65, 81)' : 'rgb(209, 213, 219)')
+          }}
+        >
+          {totalPages}
+        </button>
+      );
+    }
+    
+    // Next button
+    if (currentPage < totalPages) {
+      pages.push(
+        <button
+          key="next"
+          onClick={() => handlePageChange(currentPage + 1)}
+          className={`px-3 py-2 rounded-md ${darkMode ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-300 hover:bg-gray-100'}`}
+        >
+          <i className="fas fa-chevron-right"></i>
+        </button>
+      );
+    }
+    
+    return pages;
   };
 
   if (loading) {
@@ -121,15 +246,15 @@ const TopContributors = () => {
       style={themeStyles}
     >
       <Navbar activePage="top-contributors" />
-      <main className="container mx-auto px-4 sm:px-6 lg:px-20 py-8 pt-28">
-        <div className="flex flex-col lg:flex-row gap-8">
+      <main className="container mx-auto px-4 sm:px-6 lg:px-16 py-6 pt-24">
+        <div className="flex flex-col lg:flex-row gap-6">
           <article className="flex-1">
-            <header className={`border-b pb-6 mb-8 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+            <header className={`border-b pb-5 mb-6 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
               <h1 className={`text-3xl md:text-4xl font-bold leading-tight mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                 Top Researchers
               </h1>
               <p className={`text-lg ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                Ranked by their total contribution points
+                Ranked by their total contribution points ({totalUsers} total researchers)
               </p>
             </header>
             <div className="overflow-x-auto">
@@ -150,7 +275,7 @@ const TopContributors = () => {
                     const textColor = darkMode ? '#ffffff' : '#000000'; // Ensure contrast
 
                     return (
-                      <tr key={contributor.id} className={`border-b transition-colors ${darkMode ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-200 hover:bg-[var(--primary-light)]'}`}>
+                      <tr key={contributor.username} className={`border-b transition-colors ${darkMode ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-200 hover:bg-[var(--primary-light)]'}`}>
                         <td className="px-4 py-3">{contributor.rank}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center">
@@ -180,15 +305,23 @@ const TopContributors = () => {
                         <td className="px-4 py-3 font-semibold">{contributor.points}</td>
                         <td className="px-4 py-3">
                           <div className="flex flex-wrap gap-1">
-                            {contributor.badges?.map((badge, idx) => (
-                              <img
-                                key={idx}
-                                src={badge.image_url}
-                                alt={badge.name}
-                                className="w-6 h-6"
-                                title={`${badge.title} (${badge.name})`}
-                              />
-                            ))}
+                            {contributor.highestTitle !== 'None' && contributor.badges?.length > 0 && (
+                              (() => {
+                                // Find the highest badge based on points_required
+                                const highestBadge = contributor.badges.reduce((max, badge) => 
+                                  max.points_required > badge.points_required ? max : badge
+                                );
+                                
+                                return (
+                                  <img
+                                    src={highestBadge.image_url}
+                                    alt={highestBadge.name}
+                                    className="w-6 h-6"
+                                    title={`${highestBadge.title} (${highestBadge.name})`}
+                                  />
+                                );
+                              })()
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -197,36 +330,13 @@ const TopContributors = () => {
                 </tbody>
               </table>
             </div>
-            <div className="flex justify-center mt-8">
+            <div className="flex justify-center mt-6">
               <div className="flex space-x-2">
-                {[1, 2, 3, 4, 5].map(page => (
-                  <button
-                    key={page}
-                    onClick={() => handlePageChange(page)}
-                    className={`px-4 py-2 border rounded-md ${currentPage === page
-                      ? 'text-white border-[var(--primary-color)]'
-                      : darkMode
-                        ? 'border-gray-700 hover:bg-gray-700'
-                        : 'border-gray-300 hover:bg-gray-100'
-                      }`}
-                    style={{
-                      backgroundColor: currentPage === page ? primaryColor : 'transparent',
-                      borderColor: currentPage === page ? primaryColor : (darkMode ? 'rgb(55, 65, 81)' : 'rgb(209, 213, 219)')
-                    }}
-                  >
-                    {page}
-                  </button>
-                ))}
-                <button
-                  className={`px-4 py-2 border rounded-md ${darkMode ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-300 hover:bg-gray-100'}`}
-                  onClick={() => handlePageChange(currentPage + 1)}
-                >
-                  <i className="fas fa-chevron-right"></i>
-                </button>
+                {renderPagination()}
               </div>
             </div>
           </article>
-          <div className="lg:w-80 space-y-8">
+          <div className="lg:w-96 space-y-6">
             <Sidebar />
             <SearchForm />
           </div>

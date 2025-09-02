@@ -90,6 +90,9 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog, on
     }
     if (loadingVote) return;
 
+    // Store previous vote state to determine the action
+    const previousVoteState = votes.userVote;
+    
     setLoadingVote(true);
     try {
       const response = await api.post(`/blogs/vote/${blogId}/`, {
@@ -105,7 +108,27 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog, on
 
       if (onVoteUpdate) onVoteUpdate();
 
-      toast.success(`${type === 'up' ? 'Upvote' : 'Downvote'} recorded!`, {
+      // Determine appropriate toast message based on action
+      let toastMessage = '';
+      if (type === 'up') {
+        if (previousVoteState === 'up') {
+          toastMessage = 'Upvote removed!';
+        } else if (previousVoteState === 'down') {
+          toastMessage = 'Changed to upvote!';
+        } else {
+          toastMessage = 'Upvote recorded!';
+        }
+      } else {
+        if (previousVoteState === 'down') {
+          toastMessage = 'Downvote removed!';
+        } else if (previousVoteState === 'up') {
+          toastMessage = 'Changed to downvote!';
+        } else {
+          toastMessage = 'Upvote recorded!';
+        }
+      }
+
+      toast.success(toastMessage, {
         position: "top-right",
         autoClose: 2000,
         theme: darkMode ? 'dark' : 'light'

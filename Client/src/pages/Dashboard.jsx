@@ -819,33 +819,33 @@ const Dashboard = () => {
                                     {renderSectionTitle(isOwn ? 'My Profile' : `${viewedUser.username}'s Profile`)}
 
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                                        <div className={`lg:col-span-2 rounded-2xl p-6 shadow-lg transition-all duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'} border border-gray-200 dark:border-gray-700`}>
+                                        <div className={`lg:col-span-2 rounded-2xl p-6 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
                                             <div className="flex flex-col md:flex-row items-center mb-6">
                                                 <div className="relative">
                                                     <img
                                                         src={viewedUser?.avatar_url || avatar}
                                                         alt="Profile"
-                                                        className="w-24 h-24 rounded-full object-cover mr-0 md:mr-6 mb-4 md:mb-0 shadow-lg border-4"
+                                                        className="w-24 h-24 rounded-full object-cover mr-0 md:mr-6 mb-4 md:mb-0 border-4"
                                                         style={{ borderColor: primaryColor }}
                                                     />
                                                     {viewedUser?.is_verified && (
-                                                        <div className="absolute bottom-2 right-2 bg-blue-500 rounded-full p-1 shadow-md">
+                                                        <div className="absolute bottom-2 right-2 bg-blue-500 rounded-full p-1">
                                                             <i className="fas fa-check text-white text-xs"></i>
                                                         </div>
                                                     )}
                                                 </div>
                                                 <div className="text-center md:text-left md:ml-6">
-                                                    <h2 className={`text-2xl font-bold transition-colors duration-200 ${darkMode ? 'text-white' : 'text-gray-800'}`}>{viewedUser?.username || 'User'}</h2>
-                                                    <p className={`mb-2 transition-colors duration-200 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{viewedUser?.job_title || 'Member'}</p>
+                                                    <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{viewedUser?.username || 'User'}</h2>
+                                                    <p className={`mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{viewedUser?.job_title || 'Member'}</p>
                                                     <div className="flex flex-wrap justify-center md:justify-start gap-2">
                                                         <span
-                                                            className="px-3 py-1 rounded-full text-xs font-semibold text-white shadow"
+                                                            className="px-3 py-1 rounded-full text-xs font-semibold text-white"
                                                             style={{ backgroundColor: primaryColor }}
                                                         >
                                                             {viewedUser?.university || 'TechSage'} {viewedUser?.role || 'User'}
                                                         </span>
                                                         {viewedUser?.is_verified && (
-                                                            <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow">
+                                                            <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
                                                                 Verified
                                                             </span>
                                                         )}
@@ -854,10 +854,10 @@ const Dashboard = () => {
                                             </div>
 
                                             <div>
-                                                <h3 className={`text-lg font-semibold mb-3 pb-2 border-b transition-colors duration-200 ${darkMode ? 'border-gray-700 text-white' : 'border-gray-200'}`}>
+                                                <h3 className={`text-lg font-semibold mb-3 pb-2 border-b ${darkMode ? 'border-gray-700 text-white' : 'border-gray-200'}`}>
                                                     About
                                                 </h3>
-                                                <p className={`mb-4 transition-colors duration-200 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                                <p className={`mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                                                     {viewedUser?.bio || 'No bio provided yet.'}
                                                 </p>
                                                 {/* Replace Share and Contact buttons with profile links */}
@@ -867,7 +867,7 @@ const Dashboard = () => {
                                                             href={viewedUser.github} 
                                                             target="_blank" 
                                                             rel="noopener noreferrer"
-                                                            className="flex items-center px-3 py-2 rounded-lg transition-all duration-300"
+                                                            className="flex items-center px-3 py-2 rounded-lg"
                                                             style={{ 
                                                                 backgroundColor: darkMode ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.05)',
                                                                 color: '#333'
@@ -881,7 +881,7 @@ const Dashboard = () => {
                                                             href={viewedUser.linkedin} 
                                                             target="_blank" 
                                                             rel="noopener noreferrer"
-                                                            className="flex items-center px-3 py-2 rounded-lg transition-all duration-300"
+                                                            className="flex items-center px-3 py-2 rounded-lg"
                                                             style={{ 
                                                                 backgroundColor: darkMode ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.05)',
                                                                 color: '#0077b5'
@@ -895,7 +895,7 @@ const Dashboard = () => {
                                                             href={viewedUser.twitter} 
                                                             target="_blank" 
                                                             rel="noopener noreferrer"
-                                                            className="flex items-center px-3 py-2 rounded-lg transition-all duration-300"
+                                                            className="flex items-center px-3 py-2 rounded-lg"
                                                             style={{ 
                                                                 backgroundColor: darkMode ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.05)',
                                                                 color: '#1DA1F2'
@@ -909,7 +909,7 @@ const Dashboard = () => {
                                                             href={viewedUser.website} 
                                                             target="_blank" 
                                                             rel="noopener noreferrer"
-                                                            className="flex items-center px-3 py-2 rounded-lg transition-all duration-300"
+                                                            className="flex items-center px-3 py-2 rounded-lg"
                                                             style={{ 
                                                                 backgroundColor: darkMode ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.05)',
                                                                 color: primaryColor
@@ -922,8 +922,9 @@ const Dashboard = () => {
                                             </div>
                                         </div>
 
+                                        {/* Statistics - Plain design instead of cards */}
                                         <div className="space-y-4">
-                                            <div className={`rounded-2xl p-4 shadow-md transition-all duration-300 hover:shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'} border border-gray-200 dark:border-gray-700`}>
+                                            <div className={`p-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
                                                 <div className="flex items-center">
                                                     <div className="flex justify-center mr-3">
                                                         <i className="fas fa-newspaper text-xl" style={{ color: primaryColor }}></i>
@@ -935,13 +936,13 @@ const Dashboard = () => {
                                                         >
                                                             {publishedCount}
                                                         </div>
-                                                        <div className={`text-sm transition-colors duration-200 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Total Publications</div>
+                                                        <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Total Publications</div>
                                                     </div>
                                                 </div>
                                             </div>
                                             {isOwn && (
                                                 <>
-                                                    <div className={`rounded-2xl p-4 shadow-md transition-all duration-300 hover:shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'} border border-gray-200 dark:border-gray-700`}>
+                                                    <div className={`p-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
                                                         <div className="flex items-center">
                                                             <div className="flex justify-center mr-3">
                                                                 <i className="fas fa-file-alt text-xl" style={{ color: primaryColor }}></i>
@@ -953,11 +954,11 @@ const Dashboard = () => {
                                                                 >
                                                                     {draftCount}
                                                                 </div>
-                                                                <div className={`text-sm transition-colors duration-200 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Draft Blogs</div>
+                                                                <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Draft Blogs</div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div className={`rounded-2xl p-4 shadow-md transition-all duration-300 hover:shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'} border border-gray-200 dark:border-gray-700`}>
+                                                    <div className={`p-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
                                                         <div className="flex items-center">
                                                             <div className="flex justify-center mr-3">
                                                                 <i className="fas fa-star text-xl" style={{ color: primaryColor }}></i>
@@ -969,11 +970,11 @@ const Dashboard = () => {
                                                                 >
                                                                     {userPoints}
                                                                 </div>
-                                                                <div className={`text-sm transition-colors duration-200 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Points</div>
+                                                                <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Points</div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div className={`rounded-2xl p-4 shadow-md transition-all duration-300 hover:shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'} border border-gray-200 dark:border-gray-700`}>
+                                                    <div className={`p-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
                                                         <div className="flex items-center">
                                                             <div className="flex justify-center mr-3">
                                                                 <i className="fas fa-award text-xl" style={{ color: primaryColor }}></i>
@@ -985,7 +986,7 @@ const Dashboard = () => {
                                                                 >
                                                                     {highestBadge}
                                                                 </div>
-                                                                <div className={`text-sm transition-colors duration-200 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Highest Badge</div>
+                                                                <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Highest Badge</div>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -994,8 +995,8 @@ const Dashboard = () => {
                                         </div>
                                     </div>
 
-                                    {/* User Activity Charts */}
-                                    <div className={`rounded-2xl p-6 mb-6 h-80 transition-all duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg border border-gray-200 dark:border-gray-700`}>
+                                    {/* User Activity Charts - Plain design instead of card */}
+                                    <div className={`p-6 mb-6 h-80 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
                                         <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
                                             <i className="fas fa-chart-line mr-2" style={{ color: primaryColor }}></i>User Activity
                                         </h3>
@@ -1009,21 +1010,27 @@ const Dashboard = () => {
                                         </div>
                                     </div>
 
-                                    {/* Favorite Category and Recommendations Section */}
-                                    {isOwn && favoriteCategory && (
-                                        <div className={`rounded-2xl p-6 mb-6 transition-all duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg border border-gray-200 dark:border-gray-700`}>
+                                    {/* Favorite Category and Recommendations Section - Plain design instead of card */}
+                                    {isOwn && (
+                                        <div className={`p-6 mb-6 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
                                             <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
                                                 <i className="fas fa-heart mr-2" style={{ color: primaryColor }}></i>Based on Your Interest
                                             </h3>
-                                            <div className="mb-4">
-                                                <span className="text-lg font-medium">Your favorite category:</span>
-                                                <span 
-                                                    className="ml-2 px-3 py-1 rounded-full text-sm font-semibold text-white"
-                                                    style={{ backgroundColor: primaryColor }}
-                                                >
-                                                    {favoriteCategory}
-                                                </span>
-                                            </div>
+                                            {favoriteCategory ? (
+                                                <div className="mb-4">
+                                                    <span className="text-lg font-medium">Your favorite category:</span>
+                                                    <span 
+                                                        className="ml-2 px-3 py-1 rounded-full text-sm font-semibold text-white"
+                                                        style={{ backgroundColor: primaryColor }}
+                                                    >
+                                                        {favoriteCategory}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <div className="mb-4">
+                                                    <span className="text-lg font-medium">Favorite category will appear here once you save some blogs</span>
+                                                </div>
+                                            )}
                                             
                                             <div className="mt-6">
                                                 <h4 className={`text-lg font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
@@ -1038,7 +1045,7 @@ const Dashboard = () => {
                                                         {recommendedBlogs.map((blog) => (
                                                             <div 
                                                                 key={blog.id} 
-                                                                className={`p-4 rounded-xl transition-all duration-300 hover:shadow-md cursor-pointer ${darkMode ? 'bg-gray-750 hover:bg-gray-700' : 'bg-gray-50 hover:bg-gray-100'}`}
+                                                                className={`p-4 rounded-xl ${darkMode ? 'bg-gray-750 hover:bg-gray-700' : 'bg-gray-50 hover:bg-gray-100'}`}
                                                                 onClick={() => navigate(`/blog/${blog.id}`)}
                                                             >
                                                                 <h5 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{blog.title}</h5>
@@ -1062,7 +1069,7 @@ const Dashboard = () => {
                                                 ) : (
                                                     <div className={`text-center py-6 rounded-xl ${darkMode ? 'bg-gray-750 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
                                                         <i className="fas fa-book-open text-2xl mb-2"></i>
-                                                        <p>No recommendations found for this category</p>
+                                                        <p>No recommendations found. Save some blogs to get personalized recommendations.</p>
                                                     </div>
                                                 )}
                                             </div>
@@ -1099,7 +1106,6 @@ const Dashboard = () => {
                                                     primaryDark={primaryDark}
                                                     onDelete={isOwn ? handleDelete : null}
                                                     showDelete={isOwn}
-                                                    showUpvotes={true}
                                                     showHistory={isOwn}
                                                 />
                                             ))}
@@ -1182,7 +1188,6 @@ const Dashboard = () => {
                                                     blog={blog}
                                                     darkMode={darkMode}
                                                     onUnsave={handleUnsave}
-                                                    showUpvotes={true}
                                                     showUnsave={true}
                                                 />
                                             ))}
@@ -1204,7 +1209,6 @@ const Dashboard = () => {
                                                         key={blog.id}
                                                         blog={blog}
                                                         darkMode={darkMode}
-                                                        showUpvotes={true}
                                                     />
                                                 ))}
                                             </div>
@@ -1222,7 +1226,6 @@ const Dashboard = () => {
                                                         key={blog.id}
                                                         blog={blog}
                                                         darkMode={darkMode}
-                                                        showUpvotes={true}
                                                     />
                                                 ))}
                                             </div>

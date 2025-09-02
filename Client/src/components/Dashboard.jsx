@@ -842,7 +842,6 @@ const Dashboard = () => {
                                                     primaryDark={primaryDark}
                                                     onDelete={isOwn ? handleDelete : null}
                                                     showDelete={isOwn}
-                                                    showUpvotes={true}
                                                     showHistory={isOwn} // Pass showHistory only for "My Blogs"
                                                 />
                                             ))}
@@ -928,7 +927,6 @@ const Dashboard = () => {
                                                     primaryDark={primaryDark}
                                                     onUnsave={handleUnsave}
                                                     showUnsave={true}
-                                                    showUpvotes={false}
                                                 />
                                             ))}
                                         </div>
