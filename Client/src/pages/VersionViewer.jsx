@@ -174,15 +174,28 @@ const VersionViewer = () => {
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
                 </div>
               ) : version ? (
-                <div className={`border rounded-lg p-4 shadow-sm transition-shadow duration-500 hover:shadow-md ${darkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-200 bg-gray-50'}`}>
-                  <Tiptap
-                    content={version.content}
-                    setContent={() => {}} // No-op for read-only
-                    primaryColor={primaryColor}
-                    darkMode={darkMode}
-                    readOnly
-                  />
-                </div>
+                <div
+  className="content-box"
+  style={{
+    border: darkMode ? "1px solid #555" : "1px solid #ddd",
+    background: darkMode ? "#1e1e1e" : "#fafafa",
+    padding: "16px",
+    borderRadius: "8px",
+    marginTop: "0px",
+    // 👇 Scrollbar settings
+    maxHeight: "400px",   // you can adjust this
+    overflowY: "auto",
+    overflowX: "hidden",
+  }}
+>
+  <Tiptap
+    content={version.content}
+    readOnly={true}
+    onChange={() => {}}
+    darkMode={darkMode}
+  />
+</div>
+
               ) : (
                 <p className={`text-center text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'} py-8`}>
                   Version not found.
