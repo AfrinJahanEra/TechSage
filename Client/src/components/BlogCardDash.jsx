@@ -5,6 +5,7 @@ import {
   formatDate 
 } from '../utils/blogUtils.js';
 import BlogLink from '../components/BlogLink.jsx';
+import { useNavigate } from 'react-router-dom';
 
 const BlogCardDash = ({ 
   blog, 
@@ -23,6 +24,12 @@ const BlogCardDash = ({
   showEdit = false,
   showUnsave = false
 }) => {
+  const navigate = useNavigate();
+
+  const handleHistoryClick = () => {
+    navigate(`/blogs/${blog.id}/history`);
+  };
+
   return (
     <div className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-4 pb-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
       <BlogLink blog={blog}>
@@ -69,6 +76,16 @@ const BlogCardDash = ({
             </button>
           )}
           
+          {showDelete && (
+            <button 
+              onClick={handleHistoryClick}
+              className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
+              style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
+            >
+              <i className="fas fa-history mr-1"></i> History
+            </button>
+          )}
+          
           {showPublish && (
             <button 
               onClick={() => onPublish(blog.id)}
@@ -100,16 +117,16 @@ const BlogCardDash = ({
           )}
 
           {showEdit && (
-          <button 
-            onClick={() => onEdit(blog)}
-            className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
-            style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
-          >
-            <i className="fas fa-edit mr-1"></i> Edit
-          </button>
-        )}
+            <button 
+              onClick={() => onEdit(blog)}
+              className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
+              style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
+            >
+              <i className="fas fa-edit mr-1"></i> Edit
+            </button>
+          )}
 
-         {showUnsave && (
+          {showUnsave && (
             <button 
               onClick={() => onUnsave(blog.id)}
               className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
