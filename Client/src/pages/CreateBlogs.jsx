@@ -361,7 +361,6 @@ const CreateBlogs = () => {
   };
 
   const publishBlog = async () => {
-    // Validate inputs
     if (!title.trim()) {
       showToast('Please enter a blog title', 'error');
       return;
@@ -381,32 +380,28 @@ const CreateBlogs = () => {
       setIsSubmitting(true);
       let currentBlogId = blogId;
 
-      // If no blogId, create a draft first
       if (!currentBlogId) {
         currentBlogId = await createDraft();
         setBlogId(currentBlogId);
       }
 
-      // Prepare form data
       const formData = new FormData();
       formData.append('title', title);
       formData.append('content', content);
       formData.append('username', user.username);
-      formData.append('is_published', 'true'); // Ensure string 'true' for backend compatibility
+      formData.append('is_published', 'true');
       categories.forEach((cat) => formData.append('categories[]', cat));
       tags.forEach((tag) => formData.append('tags[]', tag));
       if (thumbnailFile) {
         formData.append('thumbnail', thumbnailFile);
       }
 
-      // Decide endpoint and method based on whether it's a new blog or an update
       const endpoint = currentBlogId ? `/blogs/update/${currentBlogId}/` : '/blogs/create/';
       const method = currentBlogId ? api.put : api.post;
       const response = await method(endpoint, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      // Update state based on response
       setStatus('published');
       setLastSaved(response.data.updated_at || response.data.created_at);
       setBlog({
@@ -421,7 +416,6 @@ const CreateBlogs = () => {
         version: response.data.version || blog?.version,
       });
 
-      // Send WebSocket update
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({
           title: response.data.title || title,
@@ -496,39 +490,39 @@ const CreateBlogs = () => {
     <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-50 text-gray-800'}`}>
       <Navbar />
       <ToastContainer />
-      <div className="flex flex-1 pt-16">
-        <main className="flex-1 p-6 overflow-auto">
-          <div className={`max-w-6xl mx-auto rounded-xl shadow-sm overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-            <div className={`px-8 py-6 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-              <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+      <div className="flex flex-col lg:flex-row flex-1 pt-16">
+        <main className="flex-1 p-4 sm:p-6 overflow-auto">
+          <div className={`max-w-full sm:max-w-6xl mx-auto rounded-xl shadow-sm overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            <div className={`px-6 sm:px-8 py-6 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <h1 className={`text-xl sm:text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                 {isEditing ? 'Edit Blog' : 'Create New Blog'}
               </h1>
             </div>
-            <div className="p-8">
-              <div className="mb-8">
+            <div className="p-4 sm:p-8">
+              <div className="mb-6 sm:mb-8">
                 <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   Blog Title *
                 </label>
                 <input
                   type="text"
-                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:!border-[var(--primary-color)] transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300 text-gray-800'}`}
+                  className={`w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:!border-[var(--primary-color)] transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300 text-gray-800'}`}
                   placeholder="Enter your blog title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   required
                 />
               </div>
-              <div className="mb-8">
+              <div className="mb-6 sm:mb-8">
                 <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   Thumbnail Image
                 </label>
                 <div
-                  className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${thumbnail ? (darkMode ? 'border-gray-700' : 'border-gray-200') : (darkMode ? 'border-gray-600 hover:border-[var(--primary-color)]' : 'border-gray-300 hover:border-[var(--primary-color)]')}`}
+                  className={`border-2 border-dashed rounded-lg p-6 sm:p-8 text-center cursor-pointer transition-colors ${thumbnail ? (darkMode ? 'border-gray-700' : 'border-gray-200') : (darkMode ? 'border-gray-600 hover:border-[var(--primary-color)]' : 'border-gray-300 hover:border-[var(--primary-color)]')}`}
                   onClick={() => fileInputRef.current.click()}
                 >
                   {thumbnail ? (
                     <div className="relative">
-                      <img src={thumbnail} alt="Preview" className="max-h-60 mx-auto rounded-md object-cover" />
+                      <img src={thumbnail} alt="Preview" className="max-h-48 sm:max-h-60 mx-auto rounded-md object-cover w-full" />
                       <button
                         type="button"
                         className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
@@ -552,7 +546,7 @@ const CreateBlogs = () => {
                     </div>
                   ) : (
                     <>
-                      <FiUpload className={`mx-auto h-12 w-12 mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                      <FiUpload className={`mx-auto h-10 sm:h-12 w-10 sm:w-12 mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
                       <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Click to upload or drag and drop</p>
                       <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>Recommended size: 1200×630px</p>
                     </>
@@ -566,7 +560,7 @@ const CreateBlogs = () => {
                   />
                 </div>
               </div>
-              <div className="mb-8">
+              <div className="mb-6 sm:mb-8">
                 <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   Categories *
                 </label>
@@ -575,7 +569,7 @@ const CreateBlogs = () => {
                     <button
                       key={cat}
                       type="button"
-                      className={`px-4 py-2 rounded-full border text-sm font-medium flex items-center transition-colors duration-200 ${categories.includes(cat) ? 'bg-[var(--primary-color)] text-white border-[var(--primary-color)]' : (darkMode ? 'bg-gray-700 text-gray-200 border-gray-600' : 'bg-gray-100 text-gray-700 border-gray-300')}`}
+                      className={`px-3 sm:px-4 py-2 rounded-full border text-sm font-medium flex items-center transition-colors duration-200 ${categories.includes(cat) ? 'bg-[var(--primary-color)] text-white border-[var(--primary-color)]' : (darkMode ? 'bg-gray-700 text-gray-200 border-gray-600' : 'bg-gray-100 text-gray-700 border-gray-300')}`}
                       onClick={() => toggleCategory(cat)}
                       onMouseEnter={() => setHoveredIcon(cat)}
                       onMouseLeave={() => setHoveredIcon(null)}
@@ -586,13 +580,13 @@ const CreateBlogs = () => {
                   ))}
                 </div>
               </div>
-              <div className="mb-8">
+              <div className="mb-6 sm:mb-8">
                 <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   Tags
                 </label>
                 <div className="flex flex-wrap gap-2 mb-2">
                   {tags.map((tag) => (
-                    <div key={tag} className={`px-3 py-1 rounded-full text-sm flex items-center ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'}`}>
+                    <div key={tag} className={`px-2 sm:px-3 py-1 rounded-full text-sm flex items-center ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'}`}>
                       {tag}
                       <button type="button" className="ml-1.5 hover:text-red-500 transition-colors" onClick={() => removeTag(tag)}>
                         <FiX size={14} />
@@ -613,14 +607,14 @@ const CreateBlogs = () => {
                   </button>
                 </form>
               </div>
-              <div className="mb-8">
+              <div className="mb-6 sm:mb-8">
                 <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   Blog Content *
                 </label>
                 <Tiptap content={content} setContent={setContent} primaryColor={primaryColor} darkMode={darkMode} />
               </div>
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-8">
-                <div className={`text-sm flex items-center gap-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-6 sm:mt-8">
+                <div className={`text-sm flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   <div className="flex items-center gap-1">
                     <FiInfo className="text-[var(--primary-color)]" />
                     <span>Status: <span className="font-medium text-amber-500 capitalize">{status}</span></span>
@@ -634,7 +628,7 @@ const CreateBlogs = () => {
                   <button
                     type="button"
                     disabled={isSubmitting}
-                    className={`px-6 py-2 border rounded-lg transition-colors w-full sm:w-auto flex items-center justify-center gap-2 ${darkMode ? 'border-gray-600 text-gray-200 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                    className={`px-4 sm:px-6 py-2 border rounded-lg transition-colors w-full sm:w-auto flex items-center justify-center gap-2 ${darkMode ? 'border-gray-600 text-gray-200 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                     onClick={discardBlog}
                   >
                     <FiTrash2 />
@@ -643,7 +637,7 @@ const CreateBlogs = () => {
                   <button
                     type="button"
                     disabled={isSubmitting}
-                    className="px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors w-full sm:w-auto flex items-center justify-center gap-2"
+                    className="px-4 sm:px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors w-full sm:w-auto flex items-center justify-center gap-2"
                     onClick={saveAsDraft}
                   >
                     <FiSave />
@@ -652,7 +646,7 @@ const CreateBlogs = () => {
                   <button
                     type="button"
                     disabled={isSubmitting}
-                    className="px-6 py-2 text-white rounded-lg hover:opacity-90 transition-colors w-full sm:w-auto flex items-center justify-center gap-2"
+                    className="px-4 sm:px-6 py-2 text-white rounded-lg hover:opacity-90 transition-colors w-full sm:w-auto flex items-center justify-center gap-2"
                     style={{ backgroundColor: primaryColor }}
                     onClick={publishBlog}
                   >
@@ -664,9 +658,9 @@ const CreateBlogs = () => {
             </div>
           </div>
         </main>
-        <aside className={`hidden lg:block w-80 border-l p-6 overflow-y-auto ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
-          <div className="mb-8">
-            <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+        <aside className={`lg:block w-full lg:w-80 border-t lg:border-t-0 lg:border-l p-4 sm:p-6 overflow-y-auto ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
+          <div className="mb-6 sm:mb-8">
+            <h3 className={`text-base sm:text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <FiUsers className="text-[var(--primary-color)]" />
               Collaborators
             </h3>
@@ -676,7 +670,7 @@ const CreateBlogs = () => {
                   <img
                     src={user.avatar_url || `https://ui-avatars.com/api/?name=${user.username}&background=random`}
                     alt={user.username}
-                    className="h-10 w-10 rounded-full object-cover mr-3"
+                    className="h-8 sm:h-10 w-8 sm:w-10 rounded-full object-cover mr-3"
                   />
                   <div>
                     <p className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>{user.username} (You)</p>
@@ -689,7 +683,7 @@ const CreateBlogs = () => {
                       <img
                         src={author.avatar_url || `https://ui-avatars.com/api/?name=${author.username}&background=random`}
                         alt={author.username}
-                        className="h-10 w-10 rounded-full object-cover mr-3"
+                        className="h-8 sm:h-10 w-8 sm:w-10 rounded-full object-cover mr-3"
                       />
                       <div>
                         <p className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>{author.username}</p>
@@ -754,7 +748,7 @@ const CreateBlogs = () => {
               </p>
             </div>
           </div>
-          <div className="mb-8">
+          <div className="mb-6 sm:mb-8">
             <button
               type="button"
               disabled={isSubmitting || !blogId}
@@ -767,8 +761,8 @@ const CreateBlogs = () => {
               View History
             </button>
           </div>
-          <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-white'}`}>
-            <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+          <div className={`p-4 sm:p-6 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-white'}`}>
+            <h3 className={`text-base sm:text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <FiInfo className="text-[var(--primary-color)]" />
               Blog Status
             </h3>
