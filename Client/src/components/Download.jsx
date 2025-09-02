@@ -7,9 +7,8 @@ import { getThumbnailUrl, formatDate, calculateReadTime } from '../utils/blogUti
 import { FaDownload } from 'react-icons/fa';
 import 'react-toastify/dist/ReactToastify.css';
 
-const pdf = new jsPDF();
-pdf.addFileToVFS("Times-Italic.ttf", "<base64-of-your-Times-Italic-font>");
-pdf.addFont("Times-Italic.ttf", "Times", "italic");
+// Font definitions removed due to base64 encoding issues
+// Custom fonts should be properly base64 encoded or use default fonts
 
 const Download = ({ blog, onDownload }) => {
   const { primaryColor, darkMode } = useTheme();

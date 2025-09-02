@@ -64,9 +64,9 @@ const BlogCardDash = ({
             <button 
               className={`flex items-center text-sm px-3 py-1 rounded-full transition-all duration-200 ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
               style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
-              title={`Upvotes: ${blog.upvotes?.length || blog.stats?.upvotes || blog.upvote_count || '0'}`}
+              title={`Upvotes: ${blog.upvotes?.length || blog.upvote_count || 0}`}
             >
-              <i className="fas fa-heart mr-1"></i> {blog.upvotes?.length || blog.stats?.upvotes || blog.upvote_count || '0'}
+              <i className="fas fa-heart mr-1"></i> {blog.upvotes?.length || blog.upvote_count || 0}
             </button>
           )}
           

@@ -806,7 +806,7 @@ const ModeratorDashboard = () => {
                                                             {blog.title}
                                                         </h3>
                                                         <div className={`flex justify-between text-sm mt-1 transition-colors duration-200 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                            <span>By: {blog.author}</span>
+                                                            <span>By: {Array.isArray(blog.authors) ? blog.authors[0]?.username : typeof blog.author === 'object' ? blog.author.username : blog.author}</span>
                                                             <span>{formatDate(blog.published_at)}</span>
                                                         </div>
                                                         <div className="flex flex-wrap gap-2 mt-3">
@@ -864,7 +864,7 @@ const ModeratorDashboard = () => {
                                                             {blog.title}
                                                         </h3>
                                                         <div className={`flex justify-between text-sm mt-1 transition-colors duration-200 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                            <span>By: {blog.author}</span>
+                                                            <span>By: {Array.isArray(blog.authors) ? blog.authors[0]?.username : typeof blog.author === 'object' ? blog.author.username : blog.author}</span>
                                                             <span>{formatDate(blog.published_at)}</span>
                                                         </div>
                                                         <div className="flex flex-wrap gap-2 mt-3">
@@ -910,11 +910,11 @@ const ModeratorDashboard = () => {
                                                     <div className="flex items-center mb-2">
                                                         <img
                                                             src={comment.author_avatar || avatar}
-                                                            alt={comment.author}
+                                                            alt={typeof comment.author === 'object' ? comment.author.username : comment.author}
                                                             className="w-8 h-8 rounded-full mr-2 object-cover"
                                                         />
                                                         <div>
-                                                            <h4 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{comment.author}</h4>
+                                                            <h4 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{typeof comment.author === 'object' ? comment.author.username : comment.author}</h4>
                                                             <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{formatDate(comment.created_at)}</p>
                                                         </div>
                                                     </div>
