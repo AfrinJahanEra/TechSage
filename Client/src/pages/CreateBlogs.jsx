@@ -100,7 +100,7 @@ const CreateBlogs = () => {
 
     websocket.onerror = (error) => {
       console.error('WebSocket error:', error);
-      showToast('Real-time collaboration failed to connect', 'error');
+     
     };
 
     setWs(websocket);
@@ -227,7 +227,7 @@ const CreateBlogs = () => {
       setShowSearchResults(true);
     } catch (error) {
       console.error('Error searching users:', error);
-      showToast('Failed to search users', 'error');
+      
     }
   };
 
