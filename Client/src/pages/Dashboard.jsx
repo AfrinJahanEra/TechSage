@@ -792,38 +792,6 @@ const Dashboard = () => {
                                         </div>
                                     </div>
                                 </div>
-
-                                {/* <div>
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h2
-                                            className="text-xl font-bold pb-2 border-b-2 inline-block"
-                                            style={{ borderColor: primaryColor }}
-                                        >
-                                            Recent Blogs
-                                        </h2>
-                                        <button
-                                            onClick={() => setActiveSection('blogs')}
-                                            className="px-4 py-2 rounded-md"
-                                            style={{ backgroundColor: primaryColor, color: 'white' }}
-                                        >
-                                            View All Blogs
-                                        </button>
-                                    </div>
-                                    {blogs && blogs.length > 0 ? (
-                                        <div className="space-y-6">
-                                            {blogs.slice(0, 2).map((blog, index) => (
-                                                <BlogCardDash
-                                                    key={index}
-                                                    blog={blog}
-                                                    darkMode={darkMode}
-                                                    primaryColor={primaryColor}
-                                                    primaryDark={primaryDark}
-                                                    showUpvotes={true}
-                                                />
-                                            ))}
-                                        </div>
-                                    ) : renderEmptyMessage()}
-                                </div> */}
                             </div>
                         )}
 
@@ -855,6 +823,7 @@ const Dashboard = () => {
                                                 onDelete={isOwn ? handleDelete : null}
                                                 showDelete={isOwn}
                                                 showUpvotes={true}
+                                                showHistory={isOwn} // Pass showHistory only for "My Blogs"
                                             />
                                         ))}
                                     </div>
