@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -121,6 +122,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false,
   const fileInputRef = useRef(null);
   const tableButtonRef = useRef(null);
   const tableFormatButtonRefs = useRef({});
+  const editorContainerRef = useRef(null);
   const lastContentRef = useRef(content);
   const isTypingRef = useRef(false);
 
@@ -214,7 +216,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false,
       clearTimeout(window.typingTimeout);
       window.typingTimeout = setTimeout(() => {
         isTypingRef.current = false;
-      }, 500); // Stop considering typing after 500ms of inactivity
+      }, 500);
     };
 
     editor.on('transaction', handleTyping);
@@ -228,16 +230,12 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false,
   useEffect(() => {
     if (!editor || readOnly || content === lastContentRef.current) return;
 
-    // Skip update if user is actively typing
     if (isTypingRef.current) {
       lastContentRef.current = content;
       return;
     }
 
-    // Get current cursor position
     const { from, to } = editor.state.selection;
-
-    // Apply new content while preserving cursor
     editor.commands.setContent(content, false, {
       preserveWhitespace: true,
       selection: { from, to },
@@ -246,6 +244,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false,
     lastContentRef.current = content;
   }, [content, editor, readOnly]);
 
+  // Update table positions
   useEffect(() => {
     if (!editor || readOnly) return;
 
@@ -482,7 +481,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false,
             border-radius: 4px;
           }
           .ProseMirror::-webkit-scrollbar-thumb:hover {
-            background: ${darkMode ? 'color-mix(in srgb, ' + primaryColor + ' 80%, white)' : 'color-mix(in srgb, ' + primaryColor + ' 80%, black)'};
+            background: ${darkMode ? 'color-mix(in srgb, ${primaryColor} 80%, white)' : 'color-mix(in srgb, ${primaryColor} 80%, black)'};
           }
           .ProseMirror p {
             margin-top: 0;
@@ -571,7 +570,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false,
             position: absolute;
             top: 100%;
             right: 0;
-            z-index: 20;
+            z-index: 30;
             display: flex;
             gap: 6px;
             padding: 6px;
@@ -582,112 +581,156 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false,
             margin-top: 6px;
             transition: opacity 0.2s ease;
           }
+          .editor-buttons-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.375rem;
+            padding: 0.5rem;
+          }
+          .dropdown-container {
+            position: relative;
+            display: inline-flex;
+            flex-shrink: 0;
+          }
+          .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            z-index: 30;
+            background: ${darkMode ? '#374151' : 'white'};
+            border: 1px solid ${darkMode ? '#4b5563' : '#d1d5db'};
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            margin-top: 6px;
+            padding: 6px;
+            min-width: 120px;
+          }
+          .table-grid-selector {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            z-index: 30;
+            background: ${darkMode ? '#374151' : 'white'};
+            border: 1px solid ${darkMode ? '#4b5563' : '#d1d5db'};
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            margin-top: 6px;
+            padding: 6px;
+          }
         `}
       </style>
-      <div className={`flex items-center gap-1.5 mb-4 p-3 rounded-lg border ${darkMode ? 'border-gray-600' : 'border-gray-300'} focus-within:!border-[var(--primary-color)] transition-colors duration-200 ${readOnly ? 'hidden' : ''}`}>
-        {buttons.slice(0, -2).map((button) => (
-          <div className="relative" key={button.name}>
-            <button
-              type="button"
-              onClick={button.action}
-              disabled={button.disabled}
-              ref={button.ref}
-              className={`
-                p-2.5 rounded-md border shadow-sm transition-all duration-200 font-bold
-                ${button.active ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
-              `}
-              onMouseEnter={() => {
-                setTooltip(button.name);
-                setHoveredIcon(button.name);
-              }}
-              onMouseLeave={() => {
-                setTooltip('');
-                setHoveredIcon(null);
-              }}
-              style={{
-                backgroundColor: button.active || hoveredIcon === button.name
-                  ? primaryColor
-                  : darkMode
-                    ? '#374151'
-                    : 'white',
-                borderColor: button.active || hoveredIcon === button.name
-                  ? primaryColor
-                  : darkMode
-                    ? '#4b5563'
-                    : '#e5e7eb',
-              }}
-            >
-              {button.icon}
-            </button>
-            {tooltip === button.name && (
-              <div
-                className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
+      <div ref={editorContainerRef} className={`mb-4 p-3 rounded-lg border ${darkMode ? 'border-gray-600' : 'border-gray-300'} focus-within:!border-[${primaryColor}] transition-colors duration-200 ${readOnly ? 'hidden' : ''}`}>
+        <div className="editor-buttons-container">
+          {buttons.slice(0, -2).map((button) => (
+            <div className="relative flex-shrink-0" key={button.name}>
+              <button
+                type="button"
+                onClick={button.action}
+                disabled={button.disabled}
+                ref={button.ref}
+                className={`
+                  p-2.5 rounded-md border shadow-sm transition-all duration-200 font-bold
+                  ${button.active ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
+                `}
+                onMouseEnter={() => {
+                  setTooltip(button.name);
+                  setHoveredIcon(button.name);
+                }}
+                onMouseLeave={() => {
+                  setTooltip('');
+                  setHoveredIcon(null);
+                }}
+                style={{
+                  backgroundColor: button.active || hoveredIcon === button.name
+                    ? primaryColor
+                    : darkMode
+                      ? '#374151'
+                      : 'white',
+                  borderColor: button.active || hoveredIcon === button.name
+                    ? primaryColor
+                    : darkMode
+                      ? '#4b5563'
+                      : '#e5e7eb',
+                }}
               >
-                {button.name}
-                {button.shortcut && (
-                  <span className="ml-2 text-gray-400">{`(${button.shortcut})`}</span>
-                )}
-              </div>
-            )}
+                {button.icon}
+              </button>
+              {tooltip === button.name && (
+                <div
+                  className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
+                >
+                  {button.name}
+                  {button.shortcut && (
+                    <span className="ml-2 text-gray-400">{`(${button.shortcut})`}</span>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+          <div className="dropdown-container">
+            <ListControls editor={editor} primaryColor={primaryColor} darkMode={darkMode} readOnly={readOnly} />
           </div>
-        ))}
-        <ListControls editor={editor} primaryColor={primaryColor} darkMode={darkMode} readOnly={readOnly} />
-        <HeadingControls editor={editor} primaryColor={primaryColor} darkMode={darkMode} readOnly={readOnly} />
-        {buttons.slice(-2).map((button) => (
-          <div className="relative" key={button.name}>
-            <button
-              type="button"
-              onClick={button.action}
-              disabled={button.disabled}
-              ref={button.ref}
-              className={`
-                p-2.5 rounded-md border shadow-sm transition-all duration-200 font-bold
-                ${button.active ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
-              `}
-              onMouseEnter={() => {
-                setTooltip(button.name);
-                setHoveredIcon(button.name);
-              }}
-              onMouseLeave={() => {
-                setTooltip('');
-                setHoveredIcon(null);
-              }}
-              style={{
-                backgroundColor: button.active || hoveredIcon === button.name
-                  ? primaryColor
-                  : darkMode
-                    ? '#374151'
-                    : 'white',
-                borderColor: button.active || hoveredIcon === button.name
-                  ? primaryColor
-                  : darkMode
-                    ? '#4b5563'
-                    : '#e5e7eb',
-              }}
-            >
-              {button.icon}
-            </button>
-            {tooltip === button.name && (
-              <div
-                className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
+          <div className="dropdown-container">
+            <HeadingControls editor={editor} primaryColor={primaryColor} darkMode={darkMode} readOnly={readOnly} />
+          </div>
+          {buttons.slice(-2).map((button) => (
+            <div className="relative flex-shrink-0" key={button.name}>
+              <button
+                type="button"
+                onClick={button.action}
+                disabled={button.disabled}
+                ref={button.ref}
+                className={`
+                  p-2.5 rounded-md border shadow-sm transition-all duration-200 font-bold
+                  ${button.active ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
+                `}
+                onMouseEnter={() => {
+                  setTooltip(button.name);
+                  setHoveredIcon(button.name);
+                }}
+                onMouseLeave={() => {
+                  setTooltip('');
+                  setHoveredIcon(null);
+                }}
+                style={{
+                  backgroundColor: button.active || hoveredIcon === button.name
+                    ? primaryColor
+                    : darkMode
+                      ? '#374151'
+                      : 'white',
+                  borderColor: button.active || hoveredIcon === button.name
+                    ? primaryColor
+                    : darkMode
+                      ? '#4b5563'
+                      : '#e5e7eb',
+                }}
               >
-                {button.name}
-                {button.shortcut && (
-                  <span className="ml-2 text-gray-400">{`(${button.shortcut})`}</span>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
-        {showTableGrid && !readOnly && (
-          <TableGridSelector
-            editor={editor}
-            primaryColor={primaryColor}
-            darkMode={darkMode}
-            onClose={() => setShowTableGrid(false)}
-            tableButtonRef={tableButtonRef}
-          />
-        )}
+                {button.icon}
+              </button>
+              {tooltip === button.name && (
+                <div
+                  className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
+                >
+                  {button.name}
+                  {button.shortcut && (
+                    <span className="ml-2 text-gray-400">{`(${button.shortcut})`}</span>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+          {showTableGrid && !readOnly && (
+            <div className="dropdown-container">
+              <TableGridSelector
+                editor={editor}
+                primaryColor={primaryColor}
+                darkMode={darkMode}
+                onClose={() => setShowTableGrid(false)}
+                tableButtonRef={tableButtonRef}
+              />
+            </div>
+          )}
+        </div>
         <input
           type="file"
           accept="image/*"
@@ -707,7 +750,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false,
                     darkMode
                       ? 'text-gray-200 border-gray-600 bg-gray-800'
                       : 'text-gray-800 border-gray-300 bg-gray-50'
-                  } ${isEditorFocused ? '!border-[var(--primary-color)]' : ''}`
+                  } ${isEditorFocused ? '!border-[${primaryColor}]' : ''}`
             } ${className || ''}`}
           editor={editor}
         />
@@ -734,13 +777,15 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false,
                 <FiMenu />
               </button>
               {showTableDropdown[position.id] && (
-                <TableControls
-                  editor={editor}
-                  primaryColor={primaryColor}
-                  darkMode={darkMode}
-                  onClose={() => toggleTableDropdown(position.id)}
-                  tableFormatButtonRef={tableFormatButtonRefs.current[position.id]}
-                />
+                <div className="dropdown-container">
+                  <TableControls
+                    editor={editor}
+                    primaryColor={primaryColor}
+                    darkMode={darkMode}
+                    onClose={() => toggleTableDropdown(position.id)}
+                    tableFormatButtonRef={tableFormatButtonRefs.current[position.id]}
+                  />
+                </div>
               )}
             </div>
           ))}
