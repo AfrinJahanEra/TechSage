@@ -75,107 +75,105 @@
   }
 
   /* Enhanced syntax highlighting */
-  /* Enhanced syntax highlighting */
-.hljs {
-  color: #f8f8f2;
-  background: transparent;
-}
+  .hljs {
+    color: #f8f8f2;
+    background: transparent;
+  }
 
-/* Comments */
-.hljs-comment,
-.hljs-quote {
-  color: #6272a4;
-  font-style: italic;
-}
+  /* Comments */
+  .hljs-comment,
+  .hljs-quote {
+    color: #6272a4;
+    font-style: italic;
+  }
 
-/* Keywords */
-.hljs-keyword,
-.hljs-selector-tag,
-.hljs-literal,
-.hljs-name {
-  color: #ff79c6;
-  font-weight: 600;
-}
+  /* Keywords */
+  .hljs-keyword,
+  .hljs-selector-tag,
+  .hljs-literal,
+  .hljs-name {
+    color: #ff79c6;
+    font-weight: 600;
+  }
 
-/* Data types and built-ins */
-.hljs-type,
-.hljs-built_in,
-.hljs-builtin-name {
-  color: #8be9fd;
-}
+  /* Data types and built-ins */
+  .hljs-type,
+  .hljs-built_in,
+  .hljs-builtin-name {
+    color: #8be9fd;
+  }
 
-/* Numbers, symbols, and boolean literals */
-.hljs-number,
-.hljs-symbol,
-.hljs-bullet,
-.hljs-boolean,
-.hljs-attr {
-  color: #bd93f9;
-}
+  /* Numbers, symbols, and boolean literals */
+  .hljs-number,
+  .hljs-symbol,
+  .hljs-bullet,
+  .hljs-boolean,
+  .hljs-attr {
+    color: #bd93f9;
+  }
 
-/* Strings and template literals */
-.hljs-string,
-.hljs-regexp,
-.hljs-template-variable,
-.hljs-addition {
-  color: #f1fa8c;
-}
+  /* Strings and template literals */
+  .hljs-string,
+  .hljs-regexp,
+  .hljs-template-variable,
+  .hljs-addition {
+    color: #f1fa8c;
+  }
 
-/* Variables */
-.hljs-variable,
-.hljs-variable.language_ {
-  color: #50fa7b;
-}
+  /* Variables */
+  .hljs-variable,
+  .hljs-variable.language_ {
+    color: #50fa7b;
+  }
 
-/* Function and title identifiers */
-.hljs-title,
-.hljs-title.function_,
-.hljs-function {
-  color: #8be9fd;
-  font-weight: 500;
-}
+  /* Function and title identifiers */
+  .hljs-title,
+  .hljs-title.function_,
+  .hljs-function {
+    color: #8be9fd;
+    font-weight: 500;
+  }
 
-/* Class names and attributes */
-.hljs-class,
-.hljs-title.class_,
-.hljs-selector-class,
-.hljs-attribute {
-  color: #ffb86c;
-}
+  /* Class names and attributes */
+  .hljs-class,
+  .hljs-title.class_,
+  .hljs-selector-class,
+  .hljs-attribute {
+    color: #ffb86c;
+  }
 
-/* HTML/XML tags */
-.hljs-tag,
-.hljs-doctag,
-.hljs-meta {
-  color: #ff5555;
-}
+  /* HTML/XML tags */
+  .hljs-tag,
+  .hljs-doctag,
+  .hljs-meta {
+    color: #ff5555;
+  }
 
-/* Parameters and punctuation */
-.hljs-params,
-.hljs-punctuation {
-  color: #f8f8f2;
-}
+  /* Parameters and punctuation */
+  .hljs-params,
+  .hljs-punctuation {
+    color: #f8f8f2;
+  }
 
-/* Operators */
-.hljs-operator {
-  color: #ff79c6;
-}
+  /* Operators */
+  .hljs-operator {
+    color: #ff79c6;
+  }
 
-/* Link styling */
-.hljs-link {
-  color: #8be9fd;
-  text-decoration: underline;
-}
+  /* Link styling */
+  .hljs-link {
+    color: #8be9fd;
+    text-decoration: underline;
+  }
 
-/* Emphasis and bold */
-.hljs-emphasis {
-  font-style: italic;
-}
+  /* Emphasis and bold */
+  .hljs-emphasis {
+    font-style: italic;
+  }
 
-.hljs-strong {
-  font-weight: 700;
-}
-
+  .hljs-strong {
+    font-weight: 700;
+  }
 
   /* Blockquote styles */
   blockquote {
@@ -203,10 +201,43 @@
     color: var(--primary-color, #3b82f6);
     text-decoration: underline;
     transition: color 0.2s ease;
+    position: relative;
+    padding-left: 1.2em;
+  }
+
+  a::before {
+    content: '\1F517'; /* Unicode for link symbol */
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.8em;
+    color: var(--primary-color, #3b82f6);
+    transition: color 0.2s ease;
   }
 
   a:hover {
     color: color-mix(in srgb, var(--primary-color, #3b82f6) 80%, white);
+  }
+
+  a:hover::before {
+    color: color-mix(in srgb, var(--primary-color, #3b82f6) 80%, white);
+  }
+
+  [data-theme='dark'] a {
+    color: var(--primary-color, #60a5fa);
+  }
+
+  [data-theme='dark'] a::before {
+    color: var(--primary-color, #60a5fa);
+  }
+
+  [data-theme='dark'] a:hover {
+    color: color-mix(in srgb, var(--primary-color, #60a5fa) 80%, white);
+  }
+
+  [data-theme='dark'] a:hover::before {
+    color: color-mix(in srgb, var(--primary-color, #60a5fa) 80%, white);
   }
 
   /* Horizontal rule */

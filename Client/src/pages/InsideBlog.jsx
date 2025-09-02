@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import Navbar from '../components/Navbar.jsx';
@@ -8,6 +8,7 @@ import BlogActions from '../components/BlogActions.jsx';
 import CommentSection from '../components/CommentSection.jsx';
 import SearchForm from '../components/SearchForm.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
+import Tiptap from '../components/CreateBlogComponents/Tiptap';
 import {
   getThumbnailUrl,
   formatDate,
@@ -16,6 +17,7 @@ import {
 } from '../utils/blogUtils.js';
 import BlogLink from '../components/BlogLink';
 import TopContributor from '../components/TopContributor.jsx';
+import 'katex/dist/katex.min.css';
 
 const InsideBlog = () => {
   const { id } = useParams();
@@ -114,7 +116,7 @@ const InsideBlog = () => {
 
   if (loading) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${darkMode ? 'bg-gray-900' : 'bg-white'}`}>
+      <div className={`min-h-screen flex items-center justify-center ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
       </div>
     );
@@ -122,10 +124,10 @@ const InsideBlog = () => {
 
   if (error) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-800'}`}>
-        <div className="text-center p-4">
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">Error loading blog</h2>
-          <p>{error}</p>
+      <div className={`min-h-screen flex items-center justify-center ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-800'}`}>
+        <div className="text-center p-6">
+          <h2 className="text-3xl font-bold mb-4">Error loading blog</h2>
+          <p className="text-lg">{error}</p>
         </div>
       </div>
     );
@@ -133,10 +135,10 @@ const InsideBlog = () => {
 
   if (!blog) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-800'}`}>
-        <div className="text-center p-4">
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">Blog not found</h2>
-          <p>The requested blog could not be found.</p>
+      <div className={`min-h-screen flex items-center justify-center ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-800'}`}>
+        <div className="text-center p-6">
+          <h2 className="text-3xl font-bold mb-4">Blog not found</h2>
+          <p className="text-lg">The requested blog could not be found.</p>
         </div>
       </div>
     );
@@ -144,22 +146,22 @@ const InsideBlog = () => {
 
   return (
     <div
-      className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-800'}`}
+      className={`min-h-screen transition-colors duration-500 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-800'}`}
       style={themeStyles}
     >
       <Navbar activePage="home" />
-      <main className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-8 pt-24">
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-          <article className="flex-1">
-            <header className={`border-b pb-4 mb-6 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold leading-tight mb-3">
+      <main className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-12 pt-28 overflow-visible">
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
+          <article className="flex-1 overflow-visible">
+            <header className={`border-b pb-6 mb-6 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight mb-4">
                 {blog.title}
               </h1>
-              <div className="flex flex-wrap gap-2 mb-2">
+              <div className="flex flex-wrap gap-3 mb-3">
                 {blog.categories?.map((category, index) => (
                   <span
                     key={`cat-${index}`}
-                    className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-full font-medium"
+                    className="px-3 py-1 text-sm rounded-full font-medium transition-colors duration-500"
                     style={{
                       backgroundColor: `${primaryColor}20`,
                       color: primaryColor,
@@ -169,17 +171,17 @@ const InsideBlog = () => {
                   </span>
                 ))}
               </div>
-              <div className="flex flex-wrap gap-2 mb-2">
+              <div className="flex flex-wrap gap-3 mb-3">
                 {blog.tags?.map((tag, index) => (
                   <span
                     key={`tag-${index}`}
-                    className={`px-2 py-1 text-xs rounded-full ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'}`}
+                    className={`px-2 py-1 text-sm rounded-full transition-colors duration-500 ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'}`}
                   >
                     #{tag}
                   </span>
                 ))}
               </div>
-              <div className={`flex flex-wrap gap-3 text-xs sm:text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              <div className={`flex flex-wrap gap-4 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 <span>Published: {formatDate(blog.published_at)}</span>
                 <span>
                   By:{' '}
@@ -188,7 +190,7 @@ const InsideBlog = () => {
                       <a
                         href={`/user/${author.username}`}
                         style={{ color: primaryColor }}
-                        className="hover:underline"
+                        className="hover:underline transition-colors duration-500"
                       >
                         {author.username}
                         {index < blog.authors.length - 1 ? ', ' : ''}
@@ -200,12 +202,20 @@ const InsideBlog = () => {
               </div>
             </header>
 
-            <div className="prose max-w-none">
+            <div className="mb-8 overflow-visible h-auto">
               <div
-                className="float-left mt-2 mr-4 mb-2 w-full sm:w-80 h-48 sm:h-60 bg-cover bg-center rounded-md"
+                className="w-full sm:w-80 h-48 sm:h-60 bg-cover bg-center rounded-lg my-6 mx-auto shadow-md transition-shadow duration-500 hover:shadow-lg"
                 style={{ backgroundImage: `url('${getThumbnailUrl(blog)}')` }}
               ></div>
-              <div dangerouslySetInnerHTML={{ __html: blog.content }} />
+              <div className={`border-b mb-6 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}></div>
+              <Tiptap
+                content={blog.content}
+                setContent={() => {}} // No-op for read-only
+                primaryColor={primaryColor}
+                darkMode={darkMode}
+                readOnly
+                className="overflow-visible max-h-none h-auto"
+              />
             </div>
 
             <BlogActions
@@ -220,7 +230,7 @@ const InsideBlog = () => {
             <CommentSection blogId={id} />
           </article>
 
-          <aside className="lg:w-80 space-y-6">
+          <aside className="lg:w-80 space-y-8">
             <Sidebar />
             <TopContributor />
             <SearchForm />
@@ -228,13 +238,13 @@ const InsideBlog = () => {
         </div>
       </main>
 
-      <section className={`py-12 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+      <section className={`py-16 ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
         <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16">
-          <h2 className={`text-2xl md:text-3xl font-bold mb-4 relative pb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+          <h2 className={`text-3xl md:text-4xl font-bold mb-6 relative pb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
             {blog?.categories?.[0] ? `More in ${blog.categories[0]}` : 'Latest Research'}
-            <span className="absolute bottom-0 left-0 w-16 h-1" style={{ backgroundColor: primaryColor }}></span>
+            <span className="absolute bottom-0 left-0 w-20 h-1" style={{ backgroundColor: primaryColor }}></span>
           </h2>
-          <p className={`text-lg md:text-xl mb-6 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+          <p className={`text-xl mb-8 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
             Explore more research in this category
           </p>
 
@@ -243,20 +253,20 @@ const InsideBlog = () => {
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
             </div>
           ) : relatedBlogs.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
               {relatedBlogs.map((relatedBlog) => {
                 const normalizedBlog = normalizeBlog(relatedBlog);
                 return (
                   <BlogLink key={normalizedBlog.id} blog={normalizedBlog}>
-                    <div className="group relative rounded-lg overflow-hidden h-48">
+                    <div className="group relative rounded-lg overflow-hidden h-48 shadow-md transition-shadow duration-500 hover:shadow-lg">
                       <div
                         className={`w-full h-full bg-cover bg-center ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}
                         style={{ backgroundImage: `url('${getThumbnailUrl(normalizedBlog)}')` }}
                       ></div>
                       <div
-                        className={`absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${darkMode ? 'from-black/90' : 'from-black/80'}`}
+                        className={`absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${darkMode ? 'from-black/80' : 'from-black/70'}`}
                       ></div>
-                      <h3 className="absolute bottom-0 left-0 w-full p-4 text-white text-base sm:text-lg font-semibold translate-y-full group-hover:translate-y-0 transition-transform duration-300 line-clamp-2">
+                      <h3 className="absolute bottom-0 left-0 w-full p-4 text-white text-lg font-semibold translate-y-full group-hover:translate-y-0 transition-transform duration-500 line-clamp-2">
                         {normalizedBlog.title}
                       </h3>
                     </div>
@@ -265,7 +275,7 @@ const InsideBlog = () => {
               })}
             </div>
           ) : (
-            <div className={`text-center py-8 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            <div className={`text-center py-8 text-lg ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               No related blogs found in this category
             </div>
           )}
@@ -273,25 +283,25 @@ const InsideBlog = () => {
       </section>
 
       {showReportModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className={`p-4 sm:p-6 rounded-lg w-full max-w-md relative ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 transition-opacity duration-500">
+          <div className={`p-6 sm:p-8 rounded-xl w-full max-w-md relative shadow-xl ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
             <button
               onClick={() => {
                 setShowReportModal(false);
                 setReportSubmitted(false);
               }}
-              className={`absolute top-4 right-4 text-xl sm:text-2xl ${darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`absolute top-4 right-4 text-2xl ${darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-gray-700'} transition-colors duration-500`}
             >
               &times;
             </button>
 
             {!reportSubmitted ? (
               <>
-                <h3 className="text-lg sm:text-xl font-bold mb-4">Report Content</h3>
-                <p className="mb-4 text-sm sm:text-base">Please select the reason for reporting this academic content:</p>
+                <h3 className="text-xl sm:text-2xl font-bold mb-6">Report Content</h3>
+                <p className="mb-6 text-base">Please select the reason for reporting this academic content:</p>
 
                 <form onSubmit={handleReportSubmit}>
-                  <div className="space-y-3 mb-4">
+                  <div className="space-y-4 mb-6">
                     {[
                       { id: 'reason-inaccurate', value: 'inaccurate', label: 'Inaccurate or misleading research' },
                       { id: 'reason-plagiarism', value: 'plagiarism', label: 'Plagiarism concerns' },
@@ -305,15 +315,15 @@ const InsideBlog = () => {
                           name="report-reason"
                           value={value}
                           onChange={() => setReportReason(value)}
-                          className="mr-2"
+                          className="mr-3 h-5 w-5"
                           style={{ accentColor: primaryColor }}
                         />
-                        <label htmlFor={id} className="text-sm sm:text-base">{label}</label>
+                        <label htmlFor={id} className="text-base">{label}</label>
                       </div>
                     ))}
                   </div>
 
-                  <label htmlFor="report-details" className="block mb-2 text-sm sm:text-base">
+                  <label htmlFor="report-details" className="block mb-3 text-base">
                     Academic justification for report (required):
                   </label>
                   <textarea
@@ -321,7 +331,7 @@ const InsideBlog = () => {
                     value={reportDetails}
                     onChange={(e) => setReportDetails(e.target.value)}
                     placeholder="Please provide academic rationale for your report with references if possible..."
-                    className={`w-full p-3 border rounded-md mb-4 min-h-32 focus:outline-none focus:ring-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:ring-[var(--primary-color)]' : 'bg-white border-gray-300 text-gray-800 focus:ring-[var(--primary-color)]'}`}
+                    className={`w-full p-4 border rounded-lg mb-6 min-h-36 focus:outline-none focus:ring-2 transition-shadow duration-500 ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:ring-[var(--primary-color)]' : 'bg-white border-gray-300 text-gray-800 focus:ring-[var(--primary-color)]'}`}
                     style={{ '--tw-ring-color': primaryColor }}
                     required
                   ></textarea>
@@ -330,14 +340,14 @@ const InsideBlog = () => {
                     <button
                       type="button"
                       onClick={() => setShowReportModal(false)}
-                      className="px-4 sm:px-6 py-2 border rounded-md hover:opacity-90 transition-colors duration-200 text-sm sm:text-base"
+                      className="px-6 py-2 border rounded-lg hover:opacity-90 transition-colors duration-500 text-base"
                       style={{ borderColor: primaryColor, color: primaryColor }}
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="px-4 sm:px-6 py-2 text-white rounded-md hover:opacity-90 transition-colors duration-200 text-sm sm:text-base"
+                      className="px-6 py-2 text-white rounded-lg hover:opacity-90 transition-colors duration-500 text-base"
                       style={{ backgroundColor: primaryColor }}
                     >
                       Submit Report
@@ -346,16 +356,16 @@ const InsideBlog = () => {
                 </form>
               </>
             ) : (
-              <div className="text-center py-6">
-                <div className="text-4xl sm:text-5xl mb-4" style={{ color: primaryColor }}>
+              <div className="text-center py-8">
+                <div className="text-5xl mb-6" style={{ color: primaryColor }}>
                   <i className="fas fa-check-circle"></i>
                 </div>
-                <p className="text-base sm:text-lg mb-6">
+                <p className="text-lg mb-6">
                   Thank you for your academic review. Our editorial board will evaluate this report.
                 </p>
                 <button
                   onClick={() => setShowReportModal(false)}
-                  className="px-4 sm:px-6 py-2 text-white rounded-md hover:opacity-90 transition-colors duration-200 text-sm sm:text-base"
+                  className="px-6 py-2 text-white rounded-lg hover:opacity-90 transition-colors duration-500 text-base"
                   style={{ backgroundColor: primaryColor }}
                 >
                   Close

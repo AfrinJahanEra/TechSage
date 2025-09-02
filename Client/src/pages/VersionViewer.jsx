@@ -14,6 +14,7 @@ const VersionViewer = () => {
   const navigate = useNavigate();
   const { darkMode, primaryColor } = useTheme();
   const [version, setVersion] = useState(null);
+  const [blogStatus, setBlogStatus] = useState(null);
   const [loading, setLoading] = useState(false);
   const [popup, setPopup] = useState({ show: false, message: '', type: 'success' });
   const [confirmModal, setConfirmModal] = useState({ show: false, message: '', versionNumber: null });
@@ -38,18 +39,23 @@ const VersionViewer = () => {
 
   useEffect(() => {
     setLoading(true);
-    api.get(`/blogs/versions/${blogId}`)
-      .then(response => {
-        console.log('API Response:', response.data); // Debug: Log the full API response
-        const selectedVersion = response.data.versions.find(v => v.version === parseInt(versionNumber));
+    Promise.all([
+      api.get(`/blogs/versions/${blogId}`),
+      api.get(`/blogs/${blogId}`)
+    ])
+      .then(([versionsResponse, blogResponse]) => {
+        console.log('API Response (Versions):', versionsResponse.data);
+        console.log('API Response (Blog):', blogResponse.data);
+        const selectedVersion = versionsResponse.data.versions.find(v => v.version === parseInt(versionNumber));
         if (selectedVersion) {
-          console.log('Selected Version:', selectedVersion); // Debug: Log the selected version
+          console.log('Selected Version:', selectedVersion);
           setVersion({
             ...selectedVersion,
             categories: Array.isArray(selectedVersion.categories) ? selectedVersion.categories : selectedVersion.categories ? [selectedVersion.categories] : [],
             tags: Array.isArray(selectedVersion.tags) ? selectedVersion.tags : selectedVersion.tags ? [selectedVersion.tags] : [],
             thumbnail_url: selectedVersion.thumbnail_url || null
           });
+          setBlogStatus(blogResponse.data.status);
         } else {
           showPopup('Version not found', 'error');
         }
@@ -79,7 +85,6 @@ const VersionViewer = () => {
     }
   };
 
-  // Format timestamp in +06 timezone
   const formatTimestamp = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
@@ -87,7 +92,7 @@ const VersionViewer = () => {
   };
 
   return (
-    <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-50 text-gray-800'}`}>
+    <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-50 text-gray-800'} transition-colors duration-500`}>
       <Navbar />
       <PopupModal
         show={popup.show}
@@ -96,6 +101,7 @@ const VersionViewer = () => {
         onClose={() => setPopup({ ...popup, show: false })}
         primaryColor={primaryColor}
         darkMode={darkMode}
+        className="transition-opacity duration-500"
       />
       <PopupModal
         show={confirmModal.show}
@@ -108,71 +114,87 @@ const VersionViewer = () => {
         confirmText="Revert"
         cancelText="Cancel"
         title="Revert Version Confirmation"
+        className="transition-opacity duration-500"
       />
-      <div className="flex flex-1 pt-16">
-        <main className="flex-1 p-6 overflow-auto">
-          <div className={`max-w-5xl mx-auto rounded-xl shadow-sm overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-            <div className={`px-8 py-6 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-              <div className="flex items-center justify-between">
+      <div className="flex flex-1 pt-16 sm:pt-20">
+        <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-auto">
+          <div className={`w-full max-w-7xl mx-auto rounded-xl shadow-md overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'} transition-shadow duration-500`}>
+            <div className={`px-4 sm:px-6 md:px-8 py-6 border-b mb-6 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                  <h1 className={`text-xl sm:text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                     Version {version?.version}: {version?.title || 'Loading...'}
                   </h1>
-                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'} mt-2`}>
                     Updated by {version?.updated_by || 'N/A'} on {formatTimestamp(version?.updated_at)}
                   </p>
-                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>
                     Categories: {version?.categories.length > 0 ? version.categories.join(', ') : 'None'}
                   </p>
-                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>
                     Tags: {version?.tags.length > 0 ? version.tags.join(', ') : 'None'}
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <button
-                    className="p-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+                    className="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors duration-500"
                     onClick={() => navigate(`/blogs/${blogId}/history`)}
                     title="Back to History"
                   >
-                    <FiArrowLeft />
+                    <FiArrowLeft className="text-lg" />
                   </button>
-                  <button
-                    className="p-2 bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors"
-                    onClick={() => showConfirmModal(versionNumber)}
-                    title="Revert to Version"
-                  >
-                    <FiRotateCcw />
-                  </button>
+                  {blogStatus !== 'published' && (
+                    <button
+                      className="px-3 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors duration-500"
+                      onClick={() => showConfirmModal(versionNumber)}
+                      title="Revert to Version"
+                    >
+                      <FiRotateCcw className="text-lg" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
-            <div className="p-8">
+            <div className="px-4 sm:px-6 md:px-8 py-6">
               {version?.thumbnail_url && (
-                <div className="mb-8">
-                  <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                <div className="mb-6">
+                  <label className={`block text-sm font-bold mb-6 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     Thumbnail
                   </label>
                   <img
                     src={version.thumbnail_url}
                     alt="Version Thumbnail"
-                    className="max-h-60 rounded-md object-cover"
+                    className="max-h-60 w-full sm:w-auto rounded-md object-cover my-6 shadow-sm transition-shadow duration-500 hover:shadow-md"
                   />
                 </div>
               )}
               {loading ? (
-                <div className="flex justify-center">
+                <div className="flex justify-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
                 </div>
               ) : version ? (
-                <Tiptap
-                  content={version.content}
-                  setContent={() => {}} // No-op for read-only
-                  primaryColor={primaryColor}
-                  darkMode={darkMode}
-                  readOnly
-                />
+                <div
+                  className="content-box"
+                  style={{
+                    border: darkMode ? "1px solid #555" : "1px solid #ddd",
+                    background: darkMode ? "#1e1e1e" : "#fafafa",
+                    padding: "16px",
+                    borderRadius: "8px",
+                    marginTop: "0px",
+                    maxHeight: "400px",
+                    overflowY: "auto",
+                    overflowX: "hidden",
+                  }}
+                >
+                  <Tiptap
+                    content={version.content}
+                    readOnly={true}
+                    onChange={() => {}}
+                    darkMode={darkMode}
+                  />
+                </div>
               ) : (
-                <p className={`text-center ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                <p className={`text-center text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'} py-8`}>
                   Version not found.
                 </p>
               )}

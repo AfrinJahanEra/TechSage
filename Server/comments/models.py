@@ -1,5 +1,6 @@
 import mongoengine as me
 import datetime
+import pytz
 from users.models import User
 from blogs.models import Blog
 
@@ -26,6 +27,9 @@ class Comment(me.Document):
     }
 
     def to_json(self):
+        dhaka_tz = pytz.timezone('Asia/Dhaka')  # Define Asia/Dhaka timezone
+        created_at_dhaka = self.created_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)  # Convert to Asia/Dhaka
+        updated_at_dhaka = self.updated_at.replace(tzinfo=pytz.utc).astimezone(dhaka_tz)  # Convert to Asia/Dhaka
         return {
             "id": str(self.id),
             "blog": str(self.blog.id),
@@ -35,11 +39,12 @@ class Comment(me.Document):
             },
             "content": self.content,
             "parent": str(self.parent.id) if self.parent else None,
-            "created_at": self.created_at.isoformat(),
-            "updated_at": self.updated_at.isoformat(),
+            "created_at": created_at_dhaka.isoformat(),
+            "updated_at": updated_at_dhaka.isoformat(),
             "likes": len(self.likes),
             "dislikes": len(self.dislikes),
             "is_deleted": self.is_deleted,
             "is_reviewed": self.is_reviewed, 
-            "reviewed_by": self.reviewed_by.username if self.reviewed_by else None  # New field in response
+            "reviewed_by": self.reviewed_by.username if self.reviewed_by else None,
+            "timezone": "Asia/Dhaka (UTC+6)"  # Indicate timezone in response
         }

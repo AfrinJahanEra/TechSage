@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FiType, FiChevronDown } from 'react-icons/fi';
 
-const HeadingControls = ({ editor, primaryColor, darkMode }) => {
+const HeadingControls = ({ editor, primaryColor, darkMode, readOnly }) => {
   const [showHeadingDropdown, setShowHeadingDropdown] = useState(false);
   const [tooltip, setTooltip] = useState('');
   const [hoveredIcon, setHoveredIcon] = useState(null);
@@ -30,10 +30,10 @@ const HeadingControls = ({ editor, primaryColor, darkMode }) => {
       <button
         type="button"
         className={`
-          p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold flex items-center gap-1
+          p-2.5 rounded-md border shadow-sm transition-colors duration-200 font-bold flex items-center gap-1
           ${editor.isActive('heading') ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
         `}
-        onClick={() => setShowHeadingDropdown(!showHeadingDropdown)}
+        onClick={() => !readOnly && setShowHeadingDropdown(!showHeadingDropdown)}
         onMouseEnter={() => {
           setTooltip('Headings');
           setHoveredIcon('heading');
@@ -42,6 +42,7 @@ const HeadingControls = ({ editor, primaryColor, darkMode }) => {
           setTooltip('');
           setHoveredIcon(null);
         }}
+        disabled={readOnly}
         style={{
           backgroundColor: editor.isActive('heading') || hoveredIcon === 'heading'
             ? primaryColor
@@ -60,12 +61,13 @@ const HeadingControls = ({ editor, primaryColor, darkMode }) => {
       </button>
       {tooltip === 'Headings' && (
         <div
-          className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
+          className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
         >
           Headings
+          <span className="ml-2 text-gray-400">{`(Ctrl+Alt+[0-4])`}</span>
         </div>
       )}
-      {showHeadingDropdown && (
+      {showHeadingDropdown && !readOnly && (
         <div
           className={`heading-dropdown absolute z-20 left-0 mt-1 w-44 rounded-md border shadow-md ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}
         >

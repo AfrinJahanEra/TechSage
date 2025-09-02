@@ -4,11 +4,11 @@ import Footer from '../components/Footer.jsx';
 import SearchForm from '../components/SearchForm.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
-import { normalizeBlog, getThumbnailUrl, formatDate, calculateReadTime, getContentPreview, getContentPreviewhome } from '../utils/blogUtils.js';
+import { normalizeBlog, getThumbnailUrl, formatDate, calculateReadTime, getContentPreview } from '../utils/blogUtils.js';
 import BlogLink from '../components/BlogLink.jsx';
 import TopContributor from '../components/TopContributor.jsx';
 import Sidebar from '../components/Sidebar.jsx';
-
+import Tiptap from '../components/CreateBlogComponents/Tiptap.jsx';
 
 const Home = () => {
   const { darkMode, primaryColor, shadeColor } = useTheme();
@@ -154,9 +154,13 @@ const Home = () => {
                 </header>
 
                 <div className="prose max-w-none">
-                  <div 
-                    dangerouslySetInnerHTML={{ __html: getContentPreviewhome(mostPopularBlog.content, '/home') }} 
-                    className={`${darkMode ? 'text-gray-300' : 'text-gray-800'}`}
+                  <Tiptap
+                    content={mostPopularBlog.content}
+                    setContent={() => {}} // No-op for read-only
+                    primaryColor={primaryColor}
+                    darkMode={darkMode}
+                    readOnly
+                    className={`overflow-visible max-h-none h-auto ${darkMode ? 'text-gray-300' : 'text-gray-800'}`}
                   />
                 </div>
 

@@ -107,7 +107,7 @@ const CustomOrderedList = OrderedList.extend({
   },
 });
 
-const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false }) => {
+const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false, className }) => {
   const [tooltip, setTooltip] = useState('');
   const [hoveredIcon, setHoveredIcon] = useState(null);
   const [showLinkModal, setShowLinkModal] = useState(false);
@@ -337,70 +337,76 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
       action: () => editor.chain().focus().toggleBold().run(), 
       disabled: !editor.can().toggleBold() || readOnly, 
       active: editor.isActive('bold'), 
-      name: 'Bold' 
+      name: 'Bold',
+      shortcut: 'Ctrl+B'
     },
     { 
       icon: <FiItalic />, 
       action: () => editor.chain().focus().toggleItalic().run(), 
       disabled: !editor.can().toggleItalic() || readOnly, 
       active: editor.isActive('italic'), 
-      name: 'Italic' 
+      name: 'Italic',
+      shortcut: 'Ctrl+I'
     },
     { 
       icon: <FiUnderline />, 
       action: () => editor.chain().focus().toggleUnderline().run(), 
       disabled: !editor.can().toggleUnderline() || readOnly, 
       active: editor.isActive('underline'), 
-      name: 'Underline' 
+      name: 'Underline',
+      shortcut: 'Ctrl+U'
     },
     { 
       icon: <BiSolidQuoteRight />, 
       action: () => editor.chain().focus().toggleBlockquote().run(), 
       active: editor.isActive('blockquote'), 
       disabled: readOnly,
-      name: 'Blockquote' 
+      name: 'Blockquote',
+      shortcut: 'Ctrl+Shift+B'
     },
     { 
       icon: <FiLink />, 
       action: () => setShowLinkModal(true), 
       active: editor.isActive('link'), 
       disabled: readOnly,
-      name: 'Insert/Edit Link' 
+      name: 'Insert/Edit Link',
+      shortcut: 'Ctrl+K'
     },
     { 
       icon: <FiImage />, 
       action: handleImageUpload, 
       active: false, 
       disabled: readOnly,
-      name: 'Insert Image' 
+      name: 'Insert Image'
     },
     { 
       icon: <FiPieChart />, 
       action: () => setShowDiagramModal(true), 
       active: false, 
       disabled: readOnly,
-      name: 'Insert Diagram' 
+      name: 'Insert Diagram'
     },
     { 
       icon: <FiCode />, 
       action: () => setShowCodeModal(true), 
       active: editor.isActive('codeBlock'), 
       disabled: readOnly,
-      name: 'Insert Code' 
+      name: 'Insert Code'
     },
     { 
       icon: <BiMath />, 
       action: () => setShowLatexModal(true), 
       active: editor.isActive('mathematics'), 
       disabled: readOnly,
-      name: 'Insert LaTeX' 
+      name: 'Insert LaTeX'
     },
     { 
       icon: <FiMinus />, 
       action: () => editor.chain().focus().setHorizontalRule().run(), 
       active: editor.isActive('horizontalRule'), 
       disabled: readOnly,
-      name: 'Horizontal Rule' 
+      name: 'Horizontal Rule',
+      shortcut: '[---] or [___ ]'
     },
     { 
       icon: <FiLayout />, 
@@ -414,13 +420,15 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
       icon: <FiRotateCcw />, 
       action: () => editor.chain().focus().undo().run(), 
       disabled: !editor.can().undo() || readOnly, 
-      name: 'Undo' 
+      name: 'Undo',
+      shortcut: 'Ctrl+Z'
     },
     { 
       icon: <FiRotateCw />, 
       action: () => editor.chain().focus().redo().run(), 
       disabled: !editor.can().redo() || readOnly, 
-      name: 'Redo' 
+      name: 'Redo',
+      shortcut: 'Ctrl+Y'
     },
   ];
 
@@ -445,14 +453,14 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
           }
           .ProseMirror {
             position: relative;
-            min-height: 300px;
-            max-height: 400px;
+            min-height: ${readOnly ? 'auto' : '300px'};
+            max-height: ${readOnly ? 'none' : '400px'};
             padding: 0.75rem 1rem;
             outline: none;
             background: transparent;
             color: inherit;
             line-height: 1.5;
-            overflow-y: auto;
+            overflow-y: ${readOnly ? 'visible' : 'auto'};
             transition: border-color 0.2s ease;
           }
           .ProseMirror-focused {
@@ -462,7 +470,8 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
             cursor: pointer;
           }
           .ProseMirror::-webkit-scrollbar {
-            width: 8px;
+            width: ${readOnly ? '0' : '8px'};
+            display: ${readOnly ? 'none' : 'block'};
           }
           .ProseMirror::-webkit-scrollbar-track {
             background: ${darkMode ? '#1f2937' : '#f9fafb'};
@@ -541,8 +550,8 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
           .table-format-button {
             position: absolute;
             z-index: 20;
-            width: 28px;
-            height: 28px;
+            width: 24px;
+            height: 24px;
             padding: 4px;
             display: flex;
             align-items: center;
@@ -575,8 +584,8 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
           }
         `}
       </style>
-      <div className={`flex items-center gap-1.5 mb-4 p-3 rounded-lg border ${darkMode ? 'border-gray-600' : 'border-gray-300'} focus-within:!border-[var(--primary-color)] transition-colors duration-200 ${readOnly ? 'hidden' : ''}`}>
-        {buttons.map((button) => (
+      <div className={`flex flex-wrap items-center gap-1 sm:gap-1.5 mb-3 sm:mb-4 p-2 sm:p-3 rounded-lg border ${darkMode ? 'border-gray-600' : 'border-gray-300'} focus-within:!border-[var(--primary-color)] transition-colors duration-200 ${readOnly ? 'hidden' : ''}`}>
+        {buttons.slice(0, -2).map((button) => (
           <div className="relative" key={button.name}>
             <button
               type="button"
@@ -584,7 +593,7 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
               disabled={button.disabled}
               ref={button.ref}
               className={`
-                p-2.5 rounded-md border shadow-sm transition-all duration-200 font-bold
+                p-1.5 sm:p-2.5 rounded-md border shadow-sm transition-all duration-200 font-bold
                 ${button.active ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
               `}
               onMouseEnter={() => {
@@ -608,19 +617,68 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
                     : '#e5e7eb',
               }}
             >
-              {button.icon}
+              {React.cloneElement(button.icon, { size: window.innerWidth < 640 ? 16 : 20 })}
             </button>
             {tooltip === button.name && (
               <div
-                className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
+                className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-1 sm:mb-2 px-2 sm:px-2.5 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
               >
                 {button.name}
+                {button.shortcut && (
+                  <span className="ml-2 text-gray-400">{`(${button.shortcut})`}</span>
+                )}
               </div>
             )}
           </div>
         ))}
         <ListControls editor={editor} primaryColor={primaryColor} darkMode={darkMode} readOnly={readOnly} />
         <HeadingControls editor={editor} primaryColor={primaryColor} darkMode={darkMode} readOnly={readOnly} />
+        {buttons.slice(-2).map((button) => (
+          <div className="relative" key={button.name}>
+            <button
+              type="button"
+              onClick={button.action}
+              disabled={button.disabled}
+              ref={button.ref}
+              className={`
+                p-1.5 sm:p-2.5 rounded-md border shadow-sm transition-all duration-200 font-bold
+                ${button.active ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
+              `}
+              onMouseEnter={() => {
+                setTooltip(button.name);
+                setHoveredIcon(button.name);
+              }}
+              onMouseLeave={() => {
+                setTooltip('');
+                setHoveredIcon(null);
+              }}
+              style={{
+                backgroundColor: button.active || hoveredIcon === button.name
+                  ? primaryColor
+                  : darkMode
+                    ? '#374151'
+                    : 'white',
+                borderColor: button.active || hoveredIcon === button.name
+                  ? primaryColor
+                  : darkMode
+                    ? '#4b5563'
+                    : '#e5e7eb',
+              }}
+            >
+              {React.cloneElement(button.icon, { size: window.innerWidth < 640 ? 16 : 20 })}
+            </button>
+            {tooltip === button.name && (
+              <div
+                className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-1 sm:mb-2 px-2 sm:px-2.5 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
+              >
+                {button.name}
+                {button.shortcut && (
+                  <span className="ml-2 text-gray-400">{`(${button.shortcut})`}</span>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
         {showTableGrid && !readOnly && (
           <TableGridSelector
             editor={editor}
@@ -638,43 +696,56 @@ const Tiptap = ({ content, setContent, primaryColor, darkMode, readOnly = false 
           onChange={handleFileChange}
         />
       </div>
-      <div className="editor-container" style={{ position: 'relative' }}>
+
+      <div className={`editor-container ${readOnly ? 'overflow-visible h-auto' : ''}`} style={{ position: 'relative' }}>
         <EditorContent
-          className={`relative min-h-[300px] border rounded-lg prose max-w-none focus:outline-none transition-colors duration-200 ${darkMode ? 'text-gray-200 border-gray-600 bg-gray-800' : 'text-gray-800 border-gray-300 bg-gray-50'} ${isEditorFocused && !readOnly ? '!border-[var(--primary-color)]' : ''}`}
+          className={`relative prose max-w-none focus:outline-none transition-colors duration-200 
+            ${
+              readOnly
+                ? 'min-h-auto max-h-none h-auto overflow-visible'
+                : `min-h-[300px] border rounded-lg ${
+                    darkMode
+                      ? 'text-gray-200 border-gray-600 bg-gray-800'
+                      : 'text-gray-800 border-gray-300 bg-gray-50'
+                  } ${isEditorFocused ? '!border-[var(--primary-color)]' : ''}`
+            } ${className || ''}`}
           editor={editor}
         />
-        {editor && !readOnly && tablePositions.map((position) => (
-          <div
-            key={position.id}
-            className="table-format-button"
-            style={{
-              top: `${position.top}px`,
-              left: `${position.left}px`,
-            }}
-          >
-            <button
-              type="button"
-              ref={(el) => (tableFormatButtonRefs.current[position.id] = el)}
-              onClick={() => toggleTableDropdown(position.id)}
-              className="w-full h-full flex items-center justify-center"
+
+        {editor && !readOnly &&
+          tablePositions.map((position) => (
+            <div
+              key={position.id}
+              className="table-format-button"
               style={{
-                color: darkMode ? '#e5e7eb' : '#1f2937',
+                top: `${position.top}px`,
+                left: `${position.left}px`,
               }}
             >
-              <FiMenu />
-            </button>
-            {showTableDropdown[position.id] && (
-              <TableControls
-                editor={editor}
-                primaryColor={primaryColor}
-                darkMode={darkMode}
-                onClose={() => toggleTableDropdown(position.id)}
-                tableFormatButtonRef={tableFormatButtonRefs.current[position.id]}
-              />
-            )}
-          </div>
-        ))}
+              <button
+                type="button"
+                ref={(el) => (tableFormatButtonRefs.current[position.id] = el)}
+                onClick={() => toggleTableDropdown(position.id)}
+                className="w-full h-full flex items-center justify-center"
+                style={{
+                  color: darkMode ? '#e5e7eb' : '#1f2937',
+                }}
+              >
+                <FiMenu size={window.innerWidth < 640 ? 16 : 20} />
+              </button>
+              {showTableDropdown[position.id] && (
+                <TableControls
+                  editor={editor}
+                  primaryColor={primaryColor}
+                  darkMode={darkMode}
+                  onClose={() => toggleTableDropdown(position.id)}
+                  tableFormatButtonRef={tableFormatButtonRefs.current[position.id]}
+                />
+              )}
+            </div>
+          ))}
       </div>
+
       {!readOnly && (
         <>
           <LinkModal

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { FiList, FiChevronDown } from 'react-icons/fi';
 import { MdFormatListNumbered } from 'react-icons/md';
 
-const ListControls = ({ editor, primaryColor, darkMode }) => {
+const ListControls = ({ editor, primaryColor, darkMode, readOnly }) => {
   const [showBulletDropdown, setShowBulletDropdown] = useState(false);
   const [showNumberDropdown, setShowNumberDropdown] = useState(false);
   const [tooltip, setTooltip] = useState('');
@@ -43,10 +43,10 @@ const ListControls = ({ editor, primaryColor, darkMode }) => {
         <button
           type="button"
           className={`
-            p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold flex items-center gap-1
+            p-2.5 rounded-md border shadow-sm transition-colors duration-200 font-bold flex items-center gap-1
             ${editor.isActive('bulletList') ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
           `}
-          onClick={() => setShowBulletDropdown(!showBulletDropdown)}
+          onClick={() => !readOnly && setShowBulletDropdown(!showBulletDropdown)}
           onMouseEnter={() => {
             setTooltip('Bullet Styles');
             setHoveredIcon('bullet');
@@ -55,6 +55,7 @@ const ListControls = ({ editor, primaryColor, darkMode }) => {
             setTooltip('');
             setHoveredIcon(null);
           }}
+          disabled={readOnly}
           style={{
             backgroundColor: editor.isActive('bulletList') || hoveredIcon === 'bullet'
               ? primaryColor
@@ -73,12 +74,13 @@ const ListControls = ({ editor, primaryColor, darkMode }) => {
         </button>
         {tooltip === 'Bullet Styles' && (
           <div
-            className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
+            className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
           >
-            Bullet Styles
+            Bullet list
+            <span className="ml-2 text-gray-400">{`(Ctrl+Shift+8)`}</span>
           </div>
         )}
-        {showBulletDropdown && (
+        {showBulletDropdown && !readOnly && (
           <div
             className={`bullet-dropdown absolute z-20 left-0 mt-1 w-44 rounded-md border shadow-md ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}
           >
@@ -92,11 +94,7 @@ const ListControls = ({ editor, primaryColor, darkMode }) => {
                   borderColor: editor.isActive('bulletList', { bulletStyle: style.style }) ? primaryColor : 'transparent',
                 }}
                 onClick={() => {
-                  if (editor.isActive('bulletList')) {
-                    editor.chain().focus().setBulletListStyle(style.style).run();
-                  } else {
-                    editor.chain().focus().toggleBulletList().setBulletListStyle(style.style).run();
-                  }
+                  editor.chain().focus().toggleBulletList().setBulletListStyle(style.style).run();
                   setShowBulletDropdown(false);
                 }}
               >
@@ -110,18 +108,19 @@ const ListControls = ({ editor, primaryColor, darkMode }) => {
         <button
           type="button"
           className={`
-            p-2 rounded-md border shadow-sm transition-colors duration-200 font-bold flex items-center gap-1
+            p-2.5 rounded-md border shadow-sm transition-colors duration-200 font-bold flex items-center gap-1
             ${editor.isActive('orderedList') ? 'text-white' : darkMode ? 'text-gray-200 hover:text-white' : 'text-gray-800 hover:text-white'}
           `}
-          onClick={() => setShowNumberDropdown(!showNumberDropdown)}
+          onClick={() => !readOnly && setShowNumberDropdown(!showNumberDropdown)}
           onMouseEnter={() => {
-            setTooltip('Number Styles');
+            setTooltip('Numbered List Styles');
             setHoveredIcon('number');
           }}
           onMouseLeave={() => {
             setTooltip('');
             setHoveredIcon(null);
           }}
+          disabled={readOnly}
           style={{
             backgroundColor: editor.isActive('orderedList') || hoveredIcon === 'number'
               ? primaryColor
@@ -138,14 +137,15 @@ const ListControls = ({ editor, primaryColor, darkMode }) => {
           <MdFormatListNumbered />
           <FiChevronDown />
         </button>
-        {tooltip === 'Number Styles' && (
+        {tooltip === 'Numbered List Styles' && (
           <div
-            className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
+            className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1 text-xs rounded whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-800 text-white'}`}
           >
-            Number Styles
+            Numbered List
+            <span className="ml-2 text-gray-400">{`(Ctrl+Shift+7)`}</span>
           </div>
         )}
-        {showNumberDropdown && (
+        {showNumberDropdown && !readOnly && (
           <div
             className={`number-dropdown absolute z-20 left-0 mt-1 w-44 rounded-md border shadow-md ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}
           >
@@ -159,11 +159,7 @@ const ListControls = ({ editor, primaryColor, darkMode }) => {
                   borderColor: editor.isActive('orderedList', { numberStyle: style.style }) ? primaryColor : 'transparent',
                 }}
                 onClick={() => {
-                  if (editor.isActive('orderedList')) {
-                    editor.chain().focus().setOrderedListStyle(style.style).run();
-                  } else {
-                    editor.chain().focus().toggleOrderedList().setOrderedListStyle(style.style).run();
-                  }
+                  editor.chain().focus().toggleOrderedList().setOrderedListStyle(style.style).run();
                   setShowNumberDropdown(false);
                 }}
               >
