@@ -389,3 +389,73 @@ class SavedBlogsAPI(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class VotedBlogsAPI(APIView):
+    def get(self, request, username):
+        try:
+            user = User.objects(username=username).first()
+            if not user:
+                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            # Fetch full blog details for upvoted blogs
+            upvoted_blogs = []
+            for blog_id in user.upvoted_blogs:
+                try:
+                    blog = Blog.objects(id=ObjectId(blog_id), is_deleted=False).first()
+                    if blog:
+                        upvoted_blogs.append({
+                            "id": str(blog.id),
+                            "title": blog.title,
+                            "content": blog.content,
+                            "thumbnail_url": blog.thumbnail_url,
+                            "authors": [{"username": author.username, "avatar": getattr(author, 'avatar_url', None)}
+                                       for author in blog.authors],
+                            "categories": blog.categories,
+                            "tags": blog.tags,
+                            "created_at": blog.created_at.isoformat(),
+                            "updated_at": blog.updated_at.isoformat(),
+                            "status": "published" if blog.is_published else "draft",
+                            "published_at": blog.published_at.isoformat() if blog.published_at else None,
+                            "upvotes": blog.upvote_count,
+                            "downvotes": blog.downvote_count,
+                            "is_draft": blog.is_draft,
+                            "is_published": blog.is_published
+                        })
+                except Exception:
+                    continue  # Skip invalid or deleted blog IDs
+
+            # Fetch full blog details for downvoted blogs
+            downvoted_blogs = []
+            for blog_id in user.downvoted_blogs:
+                try:
+                    blog = Blog.objects(id=ObjectId(blog_id), is_deleted=False).first()
+                    if blog:
+                        downvoted_blogs.append({
+                            "id": str(blog.id),
+                            "title": blog.title,
+                            "content": blog.content,
+                            "thumbnail_url": blog.thumbnail_url,
+                            "authors": [{"username": author.username, "avatar": getattr(author, 'avatar_url', None)}
+                                       for author in blog.authors],
+                            "categories": blog.categories,
+                            "tags": blog.tags,
+                            "created_at": blog.created_at.isoformat(),
+                            "updated_at": blog.updated_at.isoformat(),
+                            "status": "published" if blog.is_published else "draft",
+                            "published_at": blog.published_at.isoformat() if blog.published_at else None,
+                            "upvotes": blog.upvote_count,
+                            "downvotes": blog.downvote_count,
+                            "is_draft": blog.is_draft,
+                            "is_published": blog.is_published
+                        })
+                except Exception:
+                    continue  # Skip invalid or deleted blog IDs
+
+            return Response({
+                "upvoted": upvoted_blogs,
+                "downvoted": downvoted_blogs
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

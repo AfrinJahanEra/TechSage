@@ -195,6 +195,11 @@ const AllBlogs = () => {
               <span>{formatDate(post.published_at)}</span>
               <span>{calculateReadTime(post.content)}</span>
             </div>
+            {/* Display upvote count */}
+            <div className="flex items-center text-xs sm:text-sm mt-2" style={{ color: 'var(--muted-text)' }} title={`Upvotes: ${post.upvotes?.length || post.upvote_count || 0}`}>
+              <i className="fas fa-arrow-up mr-1"></i>
+              <span>{post.upvotes?.length || post.upvote_count || 0} upvotes</span>
+            </div>
           </div>
         </div>
       </Link>

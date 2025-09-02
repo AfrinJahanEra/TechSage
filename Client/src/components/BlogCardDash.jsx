@@ -62,8 +62,9 @@ const BlogCardDash = ({
             <button 
               className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
               style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
+              title={`Upvotes: ${blog.upvotes?.length || blog.upvote_count || '0'}`}
             >
-              <i className="fas fa-heart mr-1"></i> {blog.upvotes?.length || '0'}
+              <i className="fas fa-heart mr-1"></i> {blog.upvotes?.length || blog.upvote_count || '0'}
             </button>
           )}
           

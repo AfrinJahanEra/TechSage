@@ -40,8 +40,8 @@ const Home = () => {
       let blogs = response.data.blogs.map(blog => normalizeBlog(blog));
       
       blogs.sort((a, b) => {
-        const aUpvotes = a.upvotes?.length || 0;
-        const bUpvotes = b.upvotes?.length || 0;
+        const aUpvotes = a.upvotes?.length || a.upvote_count || 0;
+        const bUpvotes = b.upvotes?.length || b.upvote_count || 0;
         const upvoteDiff = bUpvotes - aUpvotes;
         if (upvoteDiff !== 0) return upvoteDiff;
         return new Date(b.published_at || b.created_at) - new Date(a.published_at || a.created_at);
@@ -146,9 +146,9 @@ const Home = () => {
                       ))}
                     </span>
                     <span>{calculateReadTime(mostPopularBlog.content)}</span>
-                    <span className="flex items-center">
+                    <span className="flex items-center" title={`Upvotes: ${mostPopularBlog.upvotes?.length || mostPopularBlog.upvote_count || 0}`}>
                       <i className="fas fa-arrow-up mr-1"></i>
-                      {mostPopularBlog.upvotes?.length || 0} upvotes
+                      {mostPopularBlog.upvotes?.length || mostPopularBlog.upvote_count || 0} upvotes
                     </span>
                   </div>
                 </header>
@@ -202,16 +202,16 @@ const Home = () => {
       <section className={`py-16 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
         <div className="container mx-auto px-4 md:px-20">
           <h2 className={`text-3xl font-bold mb-4 relative pb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-            Trending Research
+            Most Popular Blogs
             <span className="absolute bottom-0 left-0 w-16 h-1" style={{ backgroundColor: primaryColor }}></span>
           </h2>
           <p className={`text-xl mb-8 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            Explore the most popular academic work this week
+            Explore the 5 most popular academic blogs based on upvotes
           </p>
 
           {featuredBlogs.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-              {featuredBlogs.map((blog) => {
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+              {featuredBlogs.slice(0, 5).map((blog) => {
                 const preview = getContentPreview(blog.content, '/home');
                 return (
                   <BlogLink key={blog.id} blog={blog}>
@@ -231,9 +231,9 @@ const Home = () => {
                         <p className="text-white text-sm mb-2 line-clamp-2">
                           {preview}
                         </p>
-                        <div className="flex items-center text-sm text-white">
+                        <div className="flex items-center text-sm text-white" title={`Upvotes: ${blog.upvotes?.length || blog.upvote_count || 0}`}>
                           <i className="fas fa-arrow-up mr-1"></i>
-                          <span>{blog.upvotes?.length || 0}</span>
+                          <span>{blog.upvotes?.length || blog.upvote_count || 0}</span>
                           <span className="mx-2">•</span>
                           <span>{formatDate(blog.published_at || blog.created_at)}</span>
                         </div>
@@ -245,7 +245,7 @@ const Home = () => {
             </div>
           ) : (
             <div className={`text-center py-8 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              <p>No trending research available</p>
+              <p>No popular blogs available</p>
               <button
                 onClick={fetchPopularBlogs}
                 className="mt-4 px-4 py-2 rounded-md hover:opacity-90 transition-opacity"

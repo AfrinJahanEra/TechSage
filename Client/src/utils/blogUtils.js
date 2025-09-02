@@ -4,12 +4,12 @@ export const normalizeBlog = (blog) => {
   // Handle both array and single author cases
   const authors = Array.isArray(blog.authors) 
       ? blog.authors.map(author => ({
-          username: author.username || 'Unknown',
-          avatar_url: author.avatar || ''
+          username: author.username || author.user?.username || 'Unknown',
+          avatar_url: author.avatar || author.user?.avatar_url || ''
       }))
       : [{
-          username: blog.authors?.username || 'Unknown',
-          avatar_url: blog.authors?.avatar || ''
+          username: blog.authors?.username || blog.authors?.user?.username || 'Unknown',
+          avatar_url: blog.authors?.avatar || blog.authors?.user?.avatar_url || ''
       }];
 
   // Ensure categories is always an array
@@ -24,6 +24,61 @@ export const normalizeBlog = (blog) => {
     tags = Array.isArray(blog.tags) ? blog.tags : [blog.tags];
   }
 
+  // Handle upvotes - check multiple possible data structures
+  let upvotes = [];
+  if (Array.isArray(blog.upvotes)) {
+    // If upvotes is already an array, use it directly
+    upvotes = blog.upvotes;
+  } else if (blog.stats?.upvotes !== undefined) {
+    // If stats.upvotes exists, create an array with that many empty objects
+    upvotes = Array(blog.stats.upvotes).fill({});
+  } else if (blog.upvote_count !== undefined) {
+    // If upvote_count exists, create an array with that many empty objects
+    upvotes = Array(blog.upvote_count).fill({});
+  } else if (typeof blog.upvotes === 'number') {
+    // If upvotes is a number, create an array with that many empty objects
+    upvotes = Array(blog.upvotes).fill({});
+  }
+
+  // Handle downvotes - check multiple possible data structures
+  let downvotes = [];
+  if (Array.isArray(blog.downvotes)) {
+    // If downvotes is already an array, use it directly
+    downvotes = blog.downvotes;
+  } else if (blog.stats?.downvotes !== undefined) {
+    // If stats.downvotes exists, create an array with that many empty objects
+    downvotes = Array(blog.stats.downvotes).fill({});
+  } else if (blog.downvote_count !== undefined) {
+    // If downvote_count exists, create an array with that many empty objects
+    downvotes = Array(blog.downvote_count).fill({});
+  } else if (typeof blog.downvotes === 'number') {
+    // If downvotes is a number, create an array with that many empty objects
+    downvotes = Array(blog.downvotes).fill({});
+  }
+
+  // Calculate upvote_count and downvote_count more reliably
+  let upvote_count = 0;
+  if (blog.upvote_count !== undefined && blog.upvote_count !== null) {
+    upvote_count = blog.upvote_count;
+  } else if (blog.stats?.upvotes !== undefined && blog.stats.upvotes !== null) {
+    upvote_count = blog.stats.upvotes;
+  } else if (Array.isArray(blog.upvotes)) {
+    upvote_count = blog.upvotes.length;
+  } else if (typeof blog.upvotes === 'number') {
+    upvote_count = blog.upvotes;
+  }
+
+  let downvote_count = 0;
+  if (blog.downvote_count !== undefined && blog.downvote_count !== null) {
+    downvote_count = blog.downvote_count;
+  } else if (blog.stats?.downvotes !== undefined && blog.stats.downvotes !== null) {
+    downvote_count = blog.stats.downvotes;
+  } else if (Array.isArray(blog.downvotes)) {
+    downvote_count = blog.downvotes.length;
+  } else if (typeof blog.downvotes === 'number') {
+    downvote_count = blog.downvotes;
+  }
+
   return {
       id: blog.id?.toString() || blog._id?.toString() || '',
       title: blog.title || 'Untitled Blog',
@@ -36,12 +91,14 @@ export const normalizeBlog = (blog) => {
       authors,
       categories,
       tags,
-      upvotes: Array.isArray(blog.upvotes) 
-          ? blog.upvotes 
-          : (blog.stats?.upvotes ? Array(blog.stats.upvotes).fill({}) : []),
-      downvotes: Array.isArray(blog.downvotes) 
-          ? blog.downvotes 
-          : (blog.stats?.downvotes ? Array(blog.stats.downvotes).fill({}) : []),
+      upvotes: upvotes,
+      downvotes: downvotes,
+      upvote_count: upvote_count,
+      downvote_count: downvote_count,
+      // Preserve vote status information
+      has_upvoted: blog.has_upvoted || false,
+      has_downvoted: blog.has_downvoted || false,
+      is_saved: blog.is_saved || false,
       versions: Array.isArray(blog.versions) ? blog.versions : [],
       is_draft: blog.is_draft || blog.status === 'draft',
       is_published: blog.is_published || blog.status === 'published',

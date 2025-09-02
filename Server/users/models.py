@@ -31,6 +31,9 @@ class User(me.Document):
     followers = me.IntField(default=0)
     source = me.StringField()
     saved_blogs = me.ListField(me.StringField())
+    # Add fields to track upvoted and downvoted blogs
+    upvoted_blogs = me.ListField(me.StringField())
+    downvoted_blogs = me.ListField(me.StringField())
     created_at = me.DateTimeField(default=datetime.datetime.now)
     updated_at = me.DateTimeField(default=datetime.datetime.now)
     badges = me.ListField(me.DictField(), default=[])  # Structured badge storage

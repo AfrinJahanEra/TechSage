@@ -21,20 +21,22 @@ const Dashboard = () => {
     const { username: paramUsername } = useParams();
     const { darkMode, primaryColor, shadeColor } = useTheme();
     const [activeSection, setActiveSection] = useState('profile');
+    const [viewedUser, setViewedUser] = useState(null);
     const [blogs, setBlogs] = useState([]);
     const [drafts, setDrafts] = useState([]);
     const [trash, setTrash] = useState([]);
     const [savedBlogs, setSavedBlogs] = useState([]);
-    const [sortOption, setSortOption] = useState('newest');
-    const [loading, setLoading] = useState(false);
+    const [upvotedBlogs, setUpvotedBlogs] = useState([]);
+    const [downvotedBlogs, setDownvotedBlogs] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [sortOption, setSortOption] = useState('popular');
+    const [allBadges, setAllBadges] = useState([]);
+    const [userPoints, setUserPoints] = useState(0);
+    const [highestBadge, setHighestBadge] = useState('No Badge');
     const [publishedCount, setPublishedCount] = useState(0);
     const [draftCount, setDraftCount] = useState(0);
     const [savedCount, setSavedCount] = useState(0);
-    const [userPoints, setUserPoints] = useState(0);
-    const [highestBadge, setHighestBadge] = useState('No Badge');
-    const [viewedUser, setViewedUser] = useState(null);
-    const [allBadges, setAllBadges] = useState([]);
     const [activityData, setActivityData] = useState({
         labels: [],
         posts: [],
@@ -179,6 +181,15 @@ const Dashboard = () => {
                             setSavedBlogs((response.data || []).map(normalizeBlog));
                         }
                         break;
+                    case 'voted':
+                        if (isOwn) {
+                            response = await api.get(`/user/${viewUsername}/voted-blogs/`);
+                            if (response.data) {
+                                setUpvotedBlogs((response.data.upvoted || []).map(normalizeBlog));
+                                setDownvotedBlogs((response.data.downvoted || []).map(normalizeBlog));
+                            }
+                        }
+                        break;
                     case 'profile':
                         response = await api.get(`/published-blogs/?author=${viewUsername}&limit=2`);
                         setBlogs((response.data.blogs || []).map(normalizeBlog));
@@ -197,6 +208,9 @@ const Dashboard = () => {
                     setTrash([]);
                 } else if (activeSection === 'saved') {
                     setSavedBlogs([]);
+                } else if (activeSection === 'voted') {
+                    setUpvotedBlogs([]);
+                    setDownvotedBlogs([]);
                 }
             } finally {
                 setLoading(false);
@@ -459,7 +473,7 @@ const Dashboard = () => {
         return [...blogList].sort((a, b) => {
             switch (sortOption) {
                 case 'popular':
-                    return (b.upvotes || 0) - (a.upvotes || 0);
+                    return (b.upvotes?.length || b.upvote_count || 0) - (a.upvotes?.length || a.upvote_count || 0);
                 case 'newest':
                     return new Date(b.created_at) - new Date(a.created_at);
                 case 'oldest':
@@ -600,7 +614,7 @@ const Dashboard = () => {
         '--primary-light': primaryLight,
     };
 
-    const sections = isOwn ? ['profile', 'blogs', 'drafts', 'trash', 'saved'] : ['profile', 'blogs'];
+    const sections = isOwn ? ['profile', 'blogs', 'drafts', 'trash', 'saved', 'voted'] : ['profile', 'blogs'];
 
     const renderSectionTitle = (title) => (
         <h1
@@ -613,7 +627,7 @@ const Dashboard = () => {
 
     const renderEmptyMessage = () => (
         <p className={`p-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            {loading ? 'Loading...' : `No ${activeSection === 'trash' ? 'items in trash' : activeSection === 'drafts' ? 'draft blogs found' : activeSection === 'saved' ? 'saved blogs found' : 'published blogs yet'}.`}
+            {loading ? 'Loading...' : `No ${activeSection === 'trash' ? 'items in trash' : activeSection === 'drafts' ? 'draft blogs found' : activeSection === 'saved' ? 'saved blogs found' : activeSection === 'voted' ? 'voted blogs found' : 'published blogs yet'}.`}
         </p>
     );
 
@@ -670,7 +684,8 @@ const Dashboard = () => {
                                             className={`fas fa-${section === 'profile' ? 'user' :
                                                 section === 'blogs' ? 'newspaper' :
                                                     section === 'drafts' ? 'file-alt' :
-                                                        section === 'trash' ? 'trash' : 'bookmark'
+                                                        section === 'trash' ? 'trash' : 
+                                                            section === 'voted' ? 'vote-yea' : 'bookmark'
                                             } mr-3`}
                                             style={{ color: activeSection === section ? primaryColor : primaryColor }}
                                         ></i>
@@ -891,28 +906,72 @@ const Dashboard = () => {
                                         value={sortOption}
                                         onChange={(e) => setSortOption(e.target.value)}
                                     >
+                                        <option value="popular">Most Popular</option>
                                         <option value="newest">Newest First</option>
                                         <option value="oldest">Oldest First</option>
-                                        <option value="popular">Most Popular</option>
                                     </select>
                                 </div>
 
-                                {sortedBlogs().length > 0 ? (
+                                {savedBlogs.length > 0 ? (
                                     <div className="space-y-6">
-                                        {sortedBlogs().map((saved, index) => (
+                                        {sortedBlogs().map((blog) => (
                                             <BlogCardDash
-                                                key={index}
-                                                blog={saved}
+                                                key={blog.id}
+                                                blog={blog}
                                                 darkMode={darkMode}
-                                                primaryColor={primaryColor}
-                                                primaryDark={primaryDark}
                                                 onUnsave={handleUnsave}
+                                                showUpvotes={true}
                                                 showUnsave={true}
-                                                showUpvotes={false}
                                             />
                                         ))}
                                     </div>
                                 ) : renderEmptyMessage()}
+                            </div>
+                        )}
+
+                        {!loading && activeSection === 'voted' && isOwn && (
+                            <div>
+                                {renderSectionTitle('Voted Blogs')}
+
+                                <div className="mb-6">
+                                    <h2 className="text-xl font-semibold mb-4">Upvoted Blogs</h2>
+                                    {upvotedBlogs.length > 0 ? (
+                                        <div className="space-y-6">
+                                            {upvotedBlogs.map((blog) => (
+                                                <BlogCardDash
+                                                    key={blog.id}
+                                                    blog={blog}
+                                                    darkMode={darkMode}
+                                                    showUpvotes={true}
+                                                />
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className={`p-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                            No upvoted blogs yet.
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="mb-6">
+                                    <h2 className="text-xl font-semibold mb-4">Downvoted Blogs</h2>
+                                    {downvotedBlogs.length > 0 ? (
+                                        <div className="space-y-6">
+                                            {downvotedBlogs.map((blog) => (
+                                                <BlogCardDash
+                                                    key={blog.id}
+                                                    blog={blog}
+                                                    darkMode={darkMode}
+                                                    showUpvotes={true}
+                                                />
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className={`p-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                            No downvoted blogs yet.
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                         )}
                     </div>

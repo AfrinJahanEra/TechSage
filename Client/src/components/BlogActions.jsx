@@ -11,14 +11,15 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog, on
   const [votes, setVotes] = useState({
     up: upvotes || 0,
     down: downvotes || 0,
-    userVote: null // 'up', 'down', or null
+    userVote: null // Initialize with null to avoid race condition
   });
-  const [isSaved, setIsSaved] = useState(blog.is_saved || false); // Track saved state
+  const [isSaved, setIsSaved] = useState(false); // Initialize with false to avoid race condition
   const [loadingVote, setLoadingVote] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState(false);
   const [plagiarismResult, setPlagiarismResult] = useState(null);
   const [loadingPlagiarism, setLoadingPlagiarism] = useState(false);
   const [error, setError] = useState(null);
+  const [dataLoaded, setDataLoaded] = useState(false); // Track when data is loaded from backend
   const { user, api } = useAuth();
   const { primaryColor, darkMode } = useTheme();
 
@@ -36,10 +37,17 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog, on
           userVote: blogData.has_upvoted ? 'up' : blogData.has_downvoted ? 'down' : null
         });
         setIsSaved(blogData.is_saved); // Update saved state
+        setDataLoaded(true); // Mark data as loaded
       } catch (err) {
         console.error('Error fetching blog data:', err);
-        setVotes({ up: blog.upvotes || 0, down: blog.downvotes || 0, userVote: null });
+        // If we can't fetch the data, try to use the blog prop data
+        setVotes({
+          up: blog.upvotes || blog.upvote_count || 0,
+          down: blog.downvotes || blog.downvote_count || 0,
+          userVote: blog.has_upvoted ? 'up' : blog.has_downvoted ? 'down' : null
+        });
         setIsSaved(blog.is_saved || false);
+        setDataLoaded(true); // Mark data as loaded even if there's an error
       }
     };
     fetchBlogData();
@@ -84,13 +92,6 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog, on
 
     setLoadingVote(true);
     try {
-      setVotes(prev => ({
-        ...prev,
-        up: type === 'up' ? (prev.userVote === 'up' ? prev.up - 1 : prev.up + (prev.userVote === 'down' ? 1 : 0)) : prev.up - (prev.userVote === 'up' ? 1 : 0),
-        down: type === 'down' ? (prev.userVote === 'down' ? prev.down - 1 : prev.down + (prev.userVote === 'up' ? 1 : 0)) : prev.down - (prev.userVote === 'down' ? 1 : 0),
-        userVote: prev.userVote === type ? null : type
-      }));
-
       const response = await api.post(`/blogs/vote/${blogId}/`, {
         username: user.username,
         type
@@ -250,7 +251,7 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog, on
           <button
             onClick={() => handleVote('upvote')}
             disabled={loadingVote}
-            className={`flex items-center justify-center space-x-2 px-2 sm:px-4 py-1 sm:py-2 border rounded-full text-sm sm:text-base font-medium transition-all duration-200 w-10 sm:w-auto h-10 sm:h-auto ${votes.userVote === 'up'
+            className={`flex items-center justify-center space-x-2 px-2 sm:px-4 py-1 sm:py-2 border rounded-full text-sm sm:text-base font-medium transition-all duration-200 w-10 sm:w-auto h-10 sm:h-auto ${(dataLoaded && votes.userVote === 'up')
                 ? `border-green-500 bg-green-500/10 text-green-500 hover:bg-green-500/20`
                 : `${darkMode ? 'border-gray-600 hover:border-green-400 hover:bg-green-400/10' : 'border-gray-300 hover:border-green-400 hover:bg-green-400/10'} hover:text-green-500`
               } ${loadingVote ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -262,7 +263,7 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog, on
           <button
             onClick={() => handleVote('downvote')}
             disabled={loadingVote}
-            className={`flex items-center justify-center space-x-2 px-2 sm:px-4 py-1 sm:py-2 border rounded-full text-sm sm:text-base font-medium transition-all duration-200 w-10 sm:w-auto h-10 sm:h-auto ${votes.userVote === 'down'
+            className={`flex items-center justify-center space-x-2 px-2 sm:px-4 py-1 sm:py-2 border rounded-full text-sm sm:text-base font-medium transition-all duration-200 w-10 sm:w-auto h-10 sm:h-auto ${(dataLoaded && votes.userVote === 'down')
                 ? `border-red-500 bg-red-500/10 text-red-500 hover:bg-red-500/20`
                 : `${darkMode ? 'border-gray-600 hover:border-red-400 hover:bg-red-400/10' : 'border-gray-300 hover:border-red-400 hover:bg-red-400/10'} hover:text-red-500`
               } ${loadingVote ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -276,7 +277,7 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog, on
           <Download blog={blog} />
           <button
             onClick={handleSaveToggle}
-            className={`flex items-center justify-center space-x-2 px-2 sm:px-4 py-1 sm:py-2 border rounded-full text-sm sm:text-base font-medium transition-all duration-200 w-10 sm:w-auto h-10 sm:h-auto ${isSaved
+            className={`flex items-center justify-center space-x-2 px-2 sm:px-4 py-1 sm:py-2 border rounded-full text-sm sm:text-base font-medium transition-all duration-200 w-10 sm:w-auto h-10 sm:h-auto ${(dataLoaded && isSaved)
                 ? `border-yellow-500 bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20`
                 : `${darkMode ? 'border-gray-600 hover:border-yellow-400 hover:bg-yellow-400/10' : 'border-gray-300 hover:border-yellow-400 hover:bg-yellow-400/10'} hover:text-yellow-500`
               }`}
