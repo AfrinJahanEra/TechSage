@@ -22,11 +22,12 @@ const BlogCardDash = ({
   showPermanentDelete = false,
   showUpvotes = true,
   showEdit = false,
-  showUnsave = false
+  showUnsave = false,
+  showHistory = false // New prop to control History button visibility
 }) => {
   const navigate = useNavigate();
 
-  const handleHistoryClick = () => {
+  const handleHistory = () => {
     navigate(`/blogs/${blog.id}/history`);
   };
 
@@ -76,16 +77,6 @@ const BlogCardDash = ({
             </button>
           )}
           
-          {showDelete && (
-            <button 
-              onClick={handleHistoryClick}
-              className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
-              style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
-            >
-              <i className="fas fa-history mr-1"></i> History
-            </button>
-          )}
-          
           {showPublish && (
             <button 
               onClick={() => onPublish(blog.id)}
@@ -93,6 +84,16 @@ const BlogCardDash = ({
               style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
             >
               <i className="fas fa-share mr-1"></i> Publish
+            </button>
+          )}
+          
+          {showHistory && (
+            <button 
+              onClick={handleHistory}
+              className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
+              style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
+            >
+              <i className="fas fa-history mr-1"></i> History
             </button>
           )}
           
