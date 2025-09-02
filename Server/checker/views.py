@@ -1,7 +1,10 @@
 from django.http import JsonResponse
 from blogs.models import Blog
 import requests
+import os
+from django.views.decorators.csrf import csrf_exempt
 
+@csrf_exempt
 def check_plagiarism(request, blog_id):
     try:
 
@@ -13,17 +16,18 @@ def check_plagiarism(request, blog_id):
 
         api_url = "https://api.gowinston.ai/v2/plagiarism"
         headers = {
-            "Authorization": "Bearer QYzfumAWrxP4SYGnSZh8y7hY5HxLpBVIzKXB5Jhbb5b2cee6", 
+            "Authorization": f"Bearer {os.getenv('PLAGIARISM_CHECKER_API_KEY')}",
             "Content-Type": "application/json",
         }
+
         payload = {
             "text": user_text,
             "language": "en",
             "country": "us"
         }
 
-
         resp = requests.post(api_url, json=payload, headers=headers)
+
         
         if resp.status_code == 200:
             data = resp.json()

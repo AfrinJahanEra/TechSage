@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { confirmAlert } from 'react-confirm-alert';
-import 'react-confirm-alert/src/react-confirm-alert.css';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import PopupModal from '../components/PopupModal';
 
 const BadgesSection = ({ badges, fetchBadges }) => {
   const { api, user } = useAuth();
@@ -15,6 +16,8 @@ const BadgesSection = ({ badges, fetchBadges }) => {
     image: null
   });
   const [loading, setLoading] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupData, setPopupData] = useState({ message: '', onConfirm: null });
 
   const handleCreateBadge = async (e) => {
     e.preventDefault();
@@ -54,35 +57,40 @@ const BadgesSection = ({ badges, fetchBadges }) => {
     }
   };
 
-  const handleDeleteBadge = (badgeId) => {
+  const handleDeleteBadge = async (badgeId) => {
     if (!user || user.role !== 'admin') {
-      alert('Only admins can delete badges');
+      toast.error('Only admins can delete badges');
       return;
     }
 
-    confirmAlert({
-      title: 'Confirm Deletion',
-      message: 'Are you sure you want to delete this badge?',
-      buttons: [
-        {
-          label: 'Yes',
-          onClick: async () => {
-            try {
-              await api.delete(`/badges/${badgeId}/`);
-              fetchBadges();
-              alert('Badge deleted successfully');
-            } catch (error) {
-              console.error('Error deleting badge:', error);
-              alert('Failed to delete badge');
-            }
-          }
-        },
-        {
-          label: 'No',
-          onClick: () => {}
-        }
-      ]
+    setPopupData({
+      message: 'Are you sure you want to delete this badge? This action cannot be undone.',
+      onConfirm: () => {
+        setShowPopup(false);
+        performDeleteBadge(badgeId);
+      }
     });
+    setShowPopup(true);
+  };
+
+  const performDeleteBadge = async (badgeId) => {
+    try {
+      await api.delete(`/badges/${badgeId}/`);
+      fetchBadges();
+      toast.success('Badge deleted successfully');
+    } catch (error) {
+      console.error('Error deleting badge:', error);
+      toast.error('Failed to delete badge');
+    }
+    
+    try {
+      await api.delete(`/badges/${badgeId}/`);
+      fetchBadges();
+      toast.success('Badge deleted successfully');
+    } catch (error) {
+      console.error('Error deleting badge:', error);
+      toast.error('Failed to delete badge');
+    }
   };
 
   const handleImageChange = (e) => {
@@ -228,6 +236,18 @@ const BadgesSection = ({ badges, fetchBadges }) => {
           </div>
         </div>
       )}
+      <PopupModal
+        show={showPopup}
+        message={popupData.message}
+        type="confirm"
+        onConfirm={popupData.onConfirm}
+        onCancel={() => setShowPopup(false)}
+        primaryColor="#3b82f6"
+        darkMode={false}
+        title="Confirm Action"
+        confirmText="Confirm"
+        cancelText="Cancel"
+      />
     </div>
   );
 };

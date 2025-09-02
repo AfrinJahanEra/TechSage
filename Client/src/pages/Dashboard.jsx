@@ -10,7 +10,8 @@ import BlogCardDash from '../components/BlogCardDash.jsx';
 import 'chartjs-plugin-annotation';
 import {
     normalizeBlog,
-    getBadge
+    getBadge,
+    formatDate
 } from '../utils/blogUtils.js';
 import avatar from '../../src/assets/user.jpg';
 import 'react-toastify/dist/ReactToastify.css';
@@ -44,11 +45,65 @@ const Dashboard = () => {
         likes: [],
         reports: []
     });
+    // New state variables for favorite category and recommendations
+    const [favoriteCategory, setFavoriteCategory] = useState('');
+    const [recommendedBlogs, setRecommendedBlogs] = useState([]);
+    const [recommendationsLoading, setRecommendationsLoading] = useState(false);
+    
     const barChartRef = useRef(null);
     const pieChartRef = useRef(null);
+    const performanceChartRef = useRef(null);
 
     const primaryDark = shadeColor(primaryColor, -20);
     const primaryLight = shadeColor(primaryColor, 20);
+
+    const themeStyles = {
+        '--primary-color': primaryColor,
+        '--primary-dark': primaryDark,
+        '--primary-light': primaryLight,
+    };
+
+    // Function to determine favorite category based on saved blogs
+    const determineFavoriteCategory = (savedBlogs) => {
+        if (!savedBlogs || savedBlogs.length === 0) return '';
+        
+        // Count categories from saved blogs
+        const categoryCount = {};
+        savedBlogs.forEach(blog => {
+            if (blog.categories && Array.isArray(blog.categories)) {
+                blog.categories.forEach(category => {
+                    categoryCount[category] = (categoryCount[category] || 0) + 1;
+                });
+            }
+        });
+        
+        // Find the category with the highest count
+        let favorite = '';
+        let maxCount = 0;
+        for (const [category, count] of Object.entries(categoryCount)) {
+            if (count > maxCount) {
+                maxCount = count;
+                favorite = category;
+            }
+        }
+        
+        return favorite;
+    };
+
+    // Function to fetch recommended blogs based on category
+    const fetchRecommendedBlogs = async (category) => {
+        if (!category) return;
+        
+        setRecommendationsLoading(true);
+        try {
+            const response = await api.get(`/published-blogs/?category=${category}&limit=3`);
+            setRecommendedBlogs((response.data.blogs || []).map(normalizeBlog));
+        } catch (err) {
+            console.error('Error fetching recommended blogs:', err);
+        } finally {
+            setRecommendationsLoading(false);
+        }
+    };
 
     useEffect(() => {
         const fetchViewedUser = async () => {
@@ -178,7 +233,17 @@ const Dashboard = () => {
                     case 'saved':
                         if (isOwn) {
                             response = await api.get(`/user/${viewUsername}/saved-blogs/`);
-                            setSavedBlogs((response.data || []).map(normalizeBlog));
+                            const normalizedSavedBlogs = (response.data || []).map(normalizeBlog);
+                            setSavedBlogs(normalizedSavedBlogs);
+                            // Update favorite category when saved blogs are fetched
+                            if (normalizedSavedBlogs.length > 0) {
+                                const favCategory = determineFavoriteCategory(normalizedSavedBlogs);
+                                setFavoriteCategory(favCategory);
+                                fetchRecommendedBlogs(favCategory);
+                            } else {
+                                setFavoriteCategory('');
+                                setRecommendedBlogs([]);
+                            }
                         }
                         break;
                     case 'voted':
@@ -208,6 +273,9 @@ const Dashboard = () => {
                     setTrash([]);
                 } else if (activeSection === 'saved') {
                     setSavedBlogs([]);
+                    // Reset favorite category and recommendations on error
+                    setFavoriteCategory('');
+                    setRecommendedBlogs([]);
                 } else if (activeSection === 'voted') {
                     setUpvotedBlogs([]);
                     setDownvotedBlogs([]);
@@ -280,6 +348,36 @@ const Dashboard = () => {
             fetchUserActivity();
         }
     }, [viewedUser, viewUsername, api]);
+
+    // Effect to fetch saved blogs when profile section is active for own profile
+    useEffect(() => {
+        const fetchSavedBlogsForProfile = async () => {
+            if (activeSection === 'profile' && isOwn && viewUsername) {
+                try {
+                    const response = await api.get(`/user/${viewUsername}/saved-blogs/`);
+                    const normalizedSavedBlogs = (response.data || []).map(normalizeBlog);
+                    setSavedBlogs(normalizedSavedBlogs);
+                    
+                    // Update favorite category when saved blogs are fetched
+                    if (normalizedSavedBlogs.length > 0) {
+                        const favCategory = determineFavoriteCategory(normalizedSavedBlogs);
+                        setFavoriteCategory(favCategory);
+                        fetchRecommendedBlogs(favCategory);
+                    } else {
+                        setFavoriteCategory('');
+                        setRecommendedBlogs([]);
+                    }
+                } catch (err) {
+                    console.error('Error fetching saved blogs for profile:', err);
+                    setSavedBlogs([]);
+                    setFavoriteCategory('');
+                    setRecommendedBlogs([]);
+                }
+            }
+        };
+
+        fetchSavedBlogsForProfile();
+    }, [activeSection, isOwn, viewUsername, api]);
 
     useEffect(() => {
         // Bar Chart
@@ -608,10 +706,8 @@ const Dashboard = () => {
         });
     };
 
-    const themeStyles = {
-        '--primary-color': primaryColor,
-        '--primary-dark': primaryDark,
-        '--primary-light': primaryLight,
+    const handleProfileClick = (username) => {
+        navigate(`/dashboard/${username}`);
     };
 
     const sections = isOwn ? ['profile', 'blogs', 'drafts', 'trash', 'saved', 'voted'] : ['profile', 'blogs'];
@@ -625,10 +721,11 @@ const Dashboard = () => {
         </h1>
     );
 
-    const renderEmptyMessage = () => (
-        <p className={`p-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            {loading ? 'Loading...' : `No ${activeSection === 'trash' ? 'items in trash' : activeSection === 'drafts' ? 'draft blogs found' : activeSection === 'saved' ? 'saved blogs found' : activeSection === 'voted' ? 'voted blogs found' : 'published blogs yet'}.`}
-        </p>
+    const renderEmptyMessage = (message) => (
+        <div className={`text-center py-10 rounded-xl ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
+            <i className="fas fa-newspaper text-3xl mb-4"></i>
+            <p>{message || `No ${activeSection === 'trash' ? 'items in trash' : activeSection === 'drafts' ? 'draft blogs found' : activeSection === 'saved' ? 'saved blogs found' : activeSection === 'voted' ? 'voted blogs found' : 'published blogs yet'}.`}</p>
+        </div>
     );
 
     if (loading) {
@@ -653,7 +750,7 @@ const Dashboard = () => {
 
     return (
         <div
-            className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'}`}
+            className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gradient-to-br from-gray-900 to-gray-800 text-gray-100' : 'bg-gradient-to-br from-gray-50 to-gray-100 text-gray-800'}`}
             style={themeStyles}
         >
             <Navbar activePage="dashboard" />
@@ -661,319 +758,481 @@ const Dashboard = () => {
             <div className="pt-20 min-h-screen">
                 <div className="flex flex-col md:flex-row">
                     {/* Sidebar */}
-                    <div className={`w-full md:w-64 border-r p-4 transition-colors duration-300 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-                        <ul className="space-y-1">
-                            {sections.map((section) => (
-                                <li key={section}>
-                                    <button
-                                        onClick={() => setActiveSection(section)}
-                                        className={`w-full text-left px-4 py-3 rounded-lg flex items-center transition-colors duration-200 ${activeSection === section
-                                            ? `${darkMode ? 'bg-gray-700 border-[var(--primary-color)]' : 'bg-[var(--primary-light)] border-[var(--primary-color)]'}`
-                                            : `${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`
-                                        } border-l-4`}
-                                        style={{
-                                            color: activeSection === section
-                                                ? darkMode
+                    <div className={`w-full md:w-64 transition-all duration-300 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-r`}>
+                        <div className="p-4">
+                            <ul className="space-y-2">
+                                {sections.map((section) => (
+                                    <li key={section}>
+                                        <button
+                                            onClick={() => setActiveSection(section)}
+                                            className={`w-full text-left px-4 py-3 rounded-xl flex items-center transition-all duration-300 ${
+                                                activeSection === section 
+                                                    ? 'font-semibold shadow-md'
+                                                    : 'opacity-80 hover:opacity-100'
+                                            }`}
+                                            style={{
+                                                backgroundColor: activeSection === section 
+                                                    ? darkMode ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.05)'
+                                                    : 'transparent',
+                                                color: activeSection === section
                                                     ? primaryColor
-                                                    : primaryDark
-                                                : 'inherit',
-                                            borderColor: activeSection === section ? primaryColor : 'transparent'
-                                        }}
-                                    >
-                                        <i
-                                            className={`fas fa-${section === 'profile' ? 'user' :
-                                                section === 'blogs' ? 'newspaper' :
-                                                    section === 'drafts' ? 'file-alt' :
-                                                        section === 'trash' ? 'trash' : 
-                                                            section === 'voted' ? 'vote-yea' : 'bookmark'
-                                            } mr-3`}
-                                            style={{ color: activeSection === section ? primaryColor : primaryColor }}
-                                        ></i>
-                                        {section === 'profile' ? (isOwn ? 'My Profile' : `${viewedUser.username}'s Profile`) :
-                                            section === 'blogs' ? (isOwn ? 'My Blogs' : `${viewedUser.username}'s Blogs`) :
-                                                section === 'drafts' ? 'Draft Blogs' :
-                                                    section === 'trash' ? 'Trash' : 'Saved Blogs'}
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
+                                                    : darkMode ? '#e2e8f0' : '#4a5568',
+                                            }}
+                                        >
+                                            <i
+                                                className={`fas fa-${section === 'profile' ? 'user' :
+                                                    section === 'blogs' ? 'newspaper' :
+                                                        section === 'drafts' ? 'file-alt' :
+                                                            section === 'trash' ? 'trash' : 
+                                                                section === 'voted' ? 'vote-yea' : 'bookmark'
+                                                } mr-3`}
+                                            ></i>
+                                            {section === 'profile' ? (isOwn ? 'My Profile' : `${viewedUser.username}'s Profile`) :
+                                                section === 'blogs' ? (isOwn ? 'My Blogs' : `${viewedUser.username}'s Blogs`) :
+                                                    section === 'drafts' ? 'Draft Blogs' :
+                                                        section === 'trash' ? 'Trash' : 
+                                                            section === 'saved' ? 'Saved Blogs' : 'Voted Blogs'}
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
                     </div>
 
                     {/* Main Content */}
-                    <div className="flex-1 p-6">
-                        {error && (
-                            <div className={`p-4 mb-4 rounded-lg ${darkMode ? 'bg-red-900 text-red-100' : 'bg-red-100 text-red-800'}`}>
-                                {error}
-                            </div>
-                        )}
+                    <div className={`flex-1 p-6 transition-colors duration-300 ${darkMode ? 'bg-transparent' : 'bg-transparent'}`}>
+                        <div className="max-w-7xl mx-auto">
+                            {error && (
+                                <div className={`p-4 mb-4 rounded-lg ${darkMode ? 'bg-red-900 text-red-100' : 'bg-red-100 text-red-800'}`}>
+                                    {error}
+                                </div>
+                            )}
 
-                        {loading && (
-                            <div className="flex justify-center items-center h-64">
-                                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
-                            </div>
-                        )}
+                            {loading && (
+                                <div className="flex justify-center items-center h-64">
+                                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
+                                </div>
+                            )}
 
-                        {!loading && activeSection === 'profile' && (
-                            <div>
-                                {renderSectionTitle(isOwn ? 'My Profile' : `${viewedUser.username}'s Profile`)}
+                            {!loading && activeSection === 'profile' && (
+                                <div>
+                                    {renderSectionTitle(isOwn ? 'My Profile' : `${viewedUser.username}'s Profile`)}
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                    <div className={`rounded-lg p-6 shadow-sm transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
-                                        <div className="flex flex-col md:flex-row items-center mb-6">
-                                            <img
-                                                src={viewedUser?.avatar_url || avatar}
-                                                alt="Profile"
-                                                className="w-20 h-20 rounded-full border-4 object-cover mr-0 md:mr-6 mb-4 md:mb-0"
-                                                style={{ borderColor: primaryColor }}
-                                            />
-                                            <div className="text-center md:text-left">
-                                                <h2 className="text-xl font-bold">{viewedUser?.username || 'User'}</h2>
-                                                <p className={`mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{viewedUser?.job_title || 'Member'}</p>
-                                                <div className="flex justify-center md:justify-start space-x-2">
-                                                    <span
-                                                        className="px-3 py-1 rounded-full text-xs text-white"
-                                                        style={{ backgroundColor: primaryColor }}
-                                                    >
-                                                        {viewedUser?.university || 'TechSage'} {viewedUser?.role || 'User'}
-                                                    </span>
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                                        <div className={`lg:col-span-2 rounded-2xl p-6 shadow-lg transition-all duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'} border border-gray-200 dark:border-gray-700`}>
+                                            <div className="flex flex-col md:flex-row items-center mb-6">
+                                                <div className="relative">
+                                                    <img
+                                                        src={viewedUser?.avatar_url || avatar}
+                                                        alt="Profile"
+                                                        className="w-24 h-24 rounded-full object-cover mr-0 md:mr-6 mb-4 md:mb-0 shadow-lg border-4"
+                                                        style={{ borderColor: primaryColor }}
+                                                    />
                                                     {viewedUser?.is_verified && (
-                                                        <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs">
-                                                            Verified
+                                                        <div className="absolute bottom-2 right-2 bg-blue-500 rounded-full p-1 shadow-md">
+                                                            <i className="fas fa-check text-white text-xs"></i>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="text-center md:text-left md:ml-6">
+                                                    <h2 className={`text-2xl font-bold transition-colors duration-200 ${darkMode ? 'text-white' : 'text-gray-800'}`}>{viewedUser?.username || 'User'}</h2>
+                                                    <p className={`mb-2 transition-colors duration-200 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{viewedUser?.job_title || 'Member'}</p>
+                                                    <div className="flex flex-wrap justify-center md:justify-start gap-2">
+                                                        <span
+                                                            className="px-3 py-1 rounded-full text-xs font-semibold text-white shadow"
+                                                            style={{ backgroundColor: primaryColor }}
+                                                        >
+                                                            {viewedUser?.university || 'TechSage'} {viewedUser?.role || 'User'}
                                                         </span>
+                                                        {viewedUser?.is_verified && (
+                                                            <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow">
+                                                                Verified
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <h3 className={`text-lg font-semibold mb-3 pb-2 border-b transition-colors duration-200 ${darkMode ? 'border-gray-700 text-white' : 'border-gray-200'}`}>
+                                                    About
+                                                </h3>
+                                                <p className={`mb-4 transition-colors duration-200 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                                    {viewedUser?.bio || 'No bio provided yet.'}
+                                                </p>
+                                                {/* Replace Share and Contact buttons with profile links */}
+                                                <div className="flex flex-wrap gap-3 mt-4">
+                                                    {viewedUser?.github && (
+                                                        <a 
+                                                            href={viewedUser.github} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer"
+                                                            className="flex items-center px-3 py-2 rounded-lg transition-all duration-300"
+                                                            style={{ 
+                                                                backgroundColor: darkMode ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.05)',
+                                                                color: '#333'
+                                                            }}
+                                                        >
+                                                            <i className="fab fa-github mr-2"></i> GitHub
+                                                        </a>
+                                                    )}
+                                                    {viewedUser?.linkedin && (
+                                                        <a 
+                                                            href={viewedUser.linkedin} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer"
+                                                            className="flex items-center px-3 py-2 rounded-lg transition-all duration-300"
+                                                            style={{ 
+                                                                backgroundColor: darkMode ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.05)',
+                                                                color: '#0077b5'
+                                                            }}
+                                                        >
+                                                            <i className="fab fa-linkedin mr-2"></i> LinkedIn
+                                                        </a>
+                                                    )}
+                                                    {viewedUser?.twitter && (
+                                                        <a 
+                                                            href={viewedUser.twitter} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer"
+                                                            className="flex items-center px-3 py-2 rounded-lg transition-all duration-300"
+                                                            style={{ 
+                                                                backgroundColor: darkMode ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.05)',
+                                                                color: '#1DA1F2'
+                                                            }}
+                                                        >
+                                                            <i className="fab fa-twitter mr-2"></i> Twitter
+                                                        </a>
+                                                    )}
+                                                    {viewedUser?.website && (
+                                                        <a 
+                                                            href={viewedUser.website} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer"
+                                                            className="flex items-center px-3 py-2 rounded-lg transition-all duration-300"
+                                                            style={{ 
+                                                                backgroundColor: darkMode ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.05)',
+                                                                color: primaryColor
+                                                            }}
+                                                        >
+                                                            <i className="fas fa-globe mr-2"></i> Website
+                                                        </a>
                                                     )}
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div>
-                                            <h3 className={`text-lg font-semibold mb-3 pb-2 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                                                About
+                                        <div className="space-y-4">
+                                            <div className={`rounded-2xl p-4 shadow-md transition-all duration-300 hover:shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'} border border-gray-200 dark:border-gray-700`}>
+                                                <div className="flex items-center">
+                                                    <div className="flex justify-center mr-3">
+                                                        <i className="fas fa-newspaper text-xl" style={{ color: primaryColor }}></i>
+                                                    </div>
+                                                    <div>
+                                                        <div 
+                                                            className="text-xl font-bold"
+                                                            style={{ color: primaryColor }}
+                                                        >
+                                                            {publishedCount}
+                                                        </div>
+                                                        <div className={`text-sm transition-colors duration-200 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Total Publications</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {isOwn && (
+                                                <>
+                                                    <div className={`rounded-2xl p-4 shadow-md transition-all duration-300 hover:shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'} border border-gray-200 dark:border-gray-700`}>
+                                                        <div className="flex items-center">
+                                                            <div className="flex justify-center mr-3">
+                                                                <i className="fas fa-file-alt text-xl" style={{ color: primaryColor }}></i>
+                                                            </div>
+                                                            <div>
+                                                                <div 
+                                                                    className="text-xl font-bold"
+                                                                    style={{ color: primaryColor }}
+                                                                >
+                                                                    {draftCount}
+                                                                </div>
+                                                                <div className={`text-sm transition-colors duration-200 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Draft Blogs</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className={`rounded-2xl p-4 shadow-md transition-all duration-300 hover:shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'} border border-gray-200 dark:border-gray-700`}>
+                                                        <div className="flex items-center">
+                                                            <div className="flex justify-center mr-3">
+                                                                <i className="fas fa-star text-xl" style={{ color: primaryColor }}></i>
+                                                            </div>
+                                                            <div>
+                                                                <div 
+                                                                    className="text-xl font-bold"
+                                                                    style={{ color: primaryColor }}
+                                                                >
+                                                                    {userPoints}
+                                                                </div>
+                                                                <div className={`text-sm transition-colors duration-200 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Points</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className={`rounded-2xl p-4 shadow-md transition-all duration-300 hover:shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'} border border-gray-200 dark:border-gray-700`}>
+                                                        <div className="flex items-center">
+                                                            <div className="flex justify-center mr-3">
+                                                                <i className="fas fa-award text-xl" style={{ color: primaryColor }}></i>
+                                                            </div>
+                                                            <div>
+                                                                <div 
+                                                                    className="text-xl font-bold"
+                                                                    style={{ color: primaryColor }}
+                                                                >
+                                                                    {highestBadge}
+                                                                </div>
+                                                                <div className={`text-sm transition-colors duration-200 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Highest Badge</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* User Activity Charts */}
+                                    <div className={`rounded-2xl p-6 mb-6 h-80 transition-all duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg border border-gray-200 dark:border-gray-700`}>
+                                        <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                                            <i className="fas fa-chart-line mr-2" style={{ color: primaryColor }}></i>User Activity
+                                        </h3>
+                                        <div className="flex flex-col md:flex-row gap-6">
+                                            <div className="flex-1 h-64">
+                                                <canvas id="performanceBarChart"></canvas>
+                                            </div>
+                                            <div className="flex-1 h-64">
+                                                <canvas id="performancePieChart"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Favorite Category and Recommendations Section */}
+                                    {isOwn && favoriteCategory && (
+                                        <div className={`rounded-2xl p-6 mb-6 transition-all duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg border border-gray-200 dark:border-gray-700`}>
+                                            <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                                                <i className="fas fa-heart mr-2" style={{ color: primaryColor }}></i>Based on Your Interest
                                             </h3>
-                                            <p className={`mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                                {viewedUser?.bio || 'No bio provided yet.'}
-                                            </p>
-                                            <div className="flex space-x-4">
-                                                <button
-                                                    className="flex items-center"
-                                                    style={{ color: primaryColor }}
+                                            <div className="mb-4">
+                                                <span className="text-lg font-medium">Your favorite category:</span>
+                                                <span 
+                                                    className="ml-2 px-3 py-1 rounded-full text-sm font-semibold text-white"
+                                                    style={{ backgroundColor: primaryColor }}
                                                 >
-                                                    <i className="fas fa-envelope mr-1"></i> Contact
-                                                </button>
-                                                <button
-                                                    className="flex items-center"
-                                                    style={{ color: primaryColor }}
-                                                >
-                                                    <i className="fas fa-share-alt mr-1"></i> Share Profile
-                                                </button>
+                                                    {favoriteCategory}
+                                                </span>
+                                            </div>
+                                            
+                                            <div className="mt-6">
+                                                <h4 className={`text-lg font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                                    Recommended for you
+                                                </h4>
+                                                {recommendationsLoading ? (
+                                                    <div className="flex justify-center items-center h-32">
+                                                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
+                                                    </div>
+                                                ) : recommendedBlogs.length > 0 ? (
+                                                    <div className="space-y-4">
+                                                        {recommendedBlogs.map((blog) => (
+                                                            <div 
+                                                                key={blog.id} 
+                                                                className={`p-4 rounded-xl transition-all duration-300 hover:shadow-md cursor-pointer ${darkMode ? 'bg-gray-750 hover:bg-gray-700' : 'bg-gray-50 hover:bg-gray-100'}`}
+                                                                onClick={() => navigate(`/blog/${blog.id}`)}
+                                                            >
+                                                                <h5 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{blog.title}</h5>
+                                                                <div className="flex flex-wrap gap-2 mt-2">
+                                                                    {blog.categories && blog.categories.map((category, index) => (
+                                                                        <span 
+                                                                            key={index}
+                                                                            className="px-2 py-1 rounded-full text-xs"
+                                                                            style={{ 
+                                                                                backgroundColor: darkMode ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.1)',
+                                                                                color: '#3b82f6'
+                                                                            }}
+                                                                        >
+                                                                            {category}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <div className={`text-center py-6 rounded-xl ${darkMode ? 'bg-gray-750 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
+                                                        <i className="fas fa-book-open text-2xl mb-2"></i>
+                                                        <p>No recommendations found for this category</p>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
-                                    </div>
+                                    )}
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        {[
-                                            { value: publishedCount, label: 'Total Publications' },
-                                            ...(isOwn ? [
-                                                { value: draftCount, label: 'Draft Blogs' },
-                                                // { value: savedCount, label: 'Saved Blogs' }
-                                            ] : []),
-                                            { value: userPoints, label: 'Points' },
-                                            { value: highestBadge, label: 'Highest Badge' }
-                                        ].map((item, index) => (
-                                            <div key={index} className={`rounded-lg p-4 shadow-sm text-center transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
-                                                <div
-                                                    className="text-3xl font-bold mb-1"
-                                                    style={{ color: primaryColor }}
-                                                >
-                                                    {item.value}
-                                                </div>
-                                                <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                                                    {item.label}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
                                 </div>
+                            )}
 
-                                <div className={`rounded-lg p-6 shadow-sm mb-6 transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-                                    <h3 className={`text-lg font-semibold mb-4 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-                                        User Activity
-                                    </h3>
-                                    <div className="flex flex-col md:flex-row gap-6">
-                                        <div className="flex-1 h-96">
-                                            <canvas id="performanceBarChart"></canvas>
+                            {!loading && activeSection === 'blogs' && (
+                                <div>
+                                    {renderSectionTitle(isOwn ? 'My Blogs' : `${viewedUser.username}'s Blogs`)}
+
+                                    <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                        <select
+                                            className={`border rounded px-3 py-2 w-full md:w-64 transition-colors duration-300 ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white border-gray-300 text-gray-800'}`}
+                                            value={sortOption}
+                                            onChange={(e) => setSortOption(e.target.value)}
+                                        >
+                                            <option value="newest">Newest First</option>
+                                            <option value="oldest">Oldest First</option>
+                                            <option value="popular">Most Popular</option>
+                                        </select>
+                                    </div>
+
+                                    {sortedBlogs().length > 0 ? (
+                                        <div className="space-y-4">
+                                            {sortedBlogs().map((blog, index) => (
+                                                <BlogCardDash
+                                                    key={index}
+                                                    blog={blog}
+                                                    darkMode={darkMode}
+                                                    primaryColor={primaryColor}
+                                                    primaryDark={primaryDark}
+                                                    onDelete={isOwn ? handleDelete : null}
+                                                    showDelete={isOwn}
+                                                    showUpvotes={true}
+                                                    showHistory={isOwn}
+                                                />
+                                            ))}
                                         </div>
-                                        <div className="flex-1 h-96">
-                                            <canvas id="performancePieChart"></canvas>
+                                    ) : renderEmptyMessage()}
+                                </div>
+                            )}
+
+                            {!loading && activeSection === 'drafts' && isOwn && (
+                                <div>
+                                    {renderSectionTitle('Draft Blogs')}
+
+                                    {drafts && drafts.length > 0 ? (
+                                        <div className="space-y-4">
+                                            {drafts.map((draft, index) => (
+                                                <BlogCardDash
+                                                    key={index}
+                                                    blog={draft}
+                                                    darkMode={darkMode}
+                                                    primaryColor={primaryColor}
+                                                    primaryDark={primaryDark}
+                                                    onDelete={handleDelete}
+                                                    onPublish={handlePublish}
+                                                    onEdit={handleEditDraft}
+                                                    showDelete={true}
+                                                    showPublish={true}
+                                                    showEdit={true}
+                                                />
+                                            ))}
                                         </div>
-                                    </div>
+                                    ) : renderEmptyMessage('No draft blogs found.')}
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {!loading && activeSection === 'blogs' && (
-                            <div>
-                                {renderSectionTitle(isOwn ? 'My Blogs' : `${viewedUser.username}'s Blogs`)}
+                            {!loading && activeSection === 'trash' && isOwn && (
+                                <div>
+                                    {renderSectionTitle('Trash')}
 
-                                <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                                    <select
-                                        className={`border rounded px-3 py-2 w-full md:w-64 transition-colors duration-300 ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white border-gray-300 text-gray-800'}`}
-                                        value={sortOption}
-                                        onChange={(e) => setSortOption(e.target.value)}
-                                    >
-                                        <option value="newest">Newest First</option>
-                                        <option value="oldest">Oldest First</option>
-                                        <option value="popular">Most Popular</option>
-                                    </select>
+                                    {trash && trash.length > 0 ? (
+                                        <div className="space-y-4">
+                                            {trash.map((blog, index) => (
+                                                <BlogCardDash
+                                                    key={index}
+                                                    blog={blog}
+                                                    darkMode={darkMode}
+                                                    primaryColor={primaryColor}
+                                                    primaryDark={primaryDark}
+                                                    onRestore={handleRestore}
+                                                    onPermanentDelete={handlePermanentDelete}
+                                                    showRestore={true}
+                                                    showPermanentDelete={true}
+                                                />
+                                            ))}
+                                        </div>
+                                    ) : renderEmptyMessage('No items in trash.')}
                                 </div>
+                            )}
 
-                                {sortedBlogs().length > 0 ? (
-                                    <div className="space-y-6">
-                                        {sortedBlogs().map((blog, index) => (
-                                            <BlogCardDash
-                                                key={index}
-                                                blog={blog}
-                                                darkMode={darkMode}
-                                                primaryColor={primaryColor}
-                                                primaryDark={primaryDark}
-                                                onDelete={isOwn ? handleDelete : null}
-                                                showDelete={isOwn}
-                                                showUpvotes={true}
-                                                showHistory={isOwn} // Pass showHistory only for "My Blogs"
-                                            />
-                                        ))}
+                            {!loading && activeSection === 'saved' && isOwn && (
+                                <div>
+                                    {renderSectionTitle('Saved Blogs')}
+
+                                    <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                        <select
+                                            className={`border rounded px-3 py-2 w-full md:w-64 transition-colors duration-300 ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white border-gray-300 text-gray-800'}`}
+                                            value={sortOption}
+                                            onChange={(e) => setSortOption(e.target.value)}
+                                        >
+                                            <option value="popular">Most Popular</option>
+                                            <option value="newest">Newest First</option>
+                                            <option value="oldest">Oldest First</option>
+                                        </select>
                                     </div>
-                                ) : renderEmptyMessage()}
-                            </div>
-                        )}
 
-                        {!loading && activeSection === 'drafts' && isOwn && (
-                            <div>
-                                {renderSectionTitle('Draft Blogs')}
-
-                                {drafts && drafts.length > 0 ? (
-                                    <div className="space-y-6">
-                                        {drafts.map((draft, index) => (
-                                            <BlogCardDash
-                                                key={index}
-                                                blog={draft}
-                                                darkMode={darkMode}
-                                                primaryColor={primaryColor}
-                                                primaryDark={primaryDark}
-                                                onDelete={handleDelete}
-                                                onPublish={handlePublish}
-                                                onEdit={handleEditDraft}
-                                                showDelete={true}
-                                                showPublish={true}
-                                                showEdit={true}
-                                            />
-                                        ))}
-                                    </div>
-                                ) : renderEmptyMessage()}
-                            </div>
-                        )}
-
-                        {!loading && activeSection === 'trash' && isOwn && (
-                            <div>
-                                {renderSectionTitle('Trash')}
-
-                                {trash && trash.length > 0 ? (
-                                    <div className="space-y-6">
-                                        {trash.map((blog, index) => (
-                                            <BlogCardDash
-                                                key={index}
-                                                blog={blog}
-                                                darkMode={darkMode}
-                                                primaryColor={primaryColor}
-                                                primaryDark={primaryDark}
-                                                onRestore={handleRestore}
-                                                onPermanentDelete={handlePermanentDelete}
-                                                showRestore={true}
-                                                showPermanentDelete={true}
-                                            />
-                                        ))}
-                                    </div>
-                                ) : renderEmptyMessage()}
-                            </div>
-                        )}
-
-                        {!loading && activeSection === 'saved' && isOwn && (
-                            <div>
-                                {renderSectionTitle('Saved Blogs')}
-
-                                <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                                    <select
-                                        className={`border rounded px-3 py-2 w-full md:w-64 transition-colors duration-300 ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white border-gray-300 text-gray-800'}`}
-                                        value={sortOption}
-                                        onChange={(e) => setSortOption(e.target.value)}
-                                    >
-                                        <option value="popular">Most Popular</option>
-                                        <option value="newest">Newest First</option>
-                                        <option value="oldest">Oldest First</option>
-                                    </select>
-                                </div>
-
-                                {savedBlogs.length > 0 ? (
-                                    <div className="space-y-6">
-                                        {sortedBlogs().map((blog) => (
-                                            <BlogCardDash
-                                                key={blog.id}
-                                                blog={blog}
-                                                darkMode={darkMode}
-                                                onUnsave={handleUnsave}
-                                                showUpvotes={true}
-                                                showUnsave={true}
-                                            />
-                                        ))}
-                                    </div>
-                                ) : renderEmptyMessage()}
-                            </div>
-                        )}
-
-                        {!loading && activeSection === 'voted' && isOwn && (
-                            <div>
-                                {renderSectionTitle('Voted Blogs')}
-
-                                <div className="mb-6">
-                                    <h2 className="text-xl font-semibold mb-4">Upvoted Blogs</h2>
-                                    {upvotedBlogs.length > 0 ? (
-                                        <div className="space-y-6">
-                                            {upvotedBlogs.map((blog) => (
+                                    {savedBlogs.length > 0 ? (
+                                        <div className="space-y-4">
+                                            {sortedBlogs().map((blog) => (
                                                 <BlogCardDash
                                                     key={blog.id}
                                                     blog={blog}
                                                     darkMode={darkMode}
+                                                    onUnsave={handleUnsave}
                                                     showUpvotes={true}
+                                                    showUnsave={true}
                                                 />
                                             ))}
                                         </div>
-                                    ) : (
-                                        <p className={`p-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                            No upvoted blogs yet.
-                                        </p>
-                                    )}
+                                    ) : renderEmptyMessage('No saved blogs found.')}
                                 </div>
+                            )}
 
-                                <div className="mb-6">
-                                    <h2 className="text-xl font-semibold mb-4">Downvoted Blogs</h2>
-                                    {downvotedBlogs.length > 0 ? (
-                                        <div className="space-y-6">
-                                            {downvotedBlogs.map((blog) => (
-                                                <BlogCardDash
-                                                    key={blog.id}
-                                                    blog={blog}
-                                                    darkMode={darkMode}
-                                                    showUpvotes={true}
-                                                />
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <p className={`p-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                            No downvoted blogs yet.
-                                        </p>
-                                    )}
+                            {!loading && activeSection === 'voted' && isOwn && (
+                                <div>
+                                    {renderSectionTitle('Voted Blogs')}
+
+                                    <div className="mb-6">
+                                        <h2 className="text-xl font-semibold mb-4">Upvoted Blogs</h2>
+                                        {upvotedBlogs.length > 0 ? (
+                                            <div className="space-y-4">
+                                                {upvotedBlogs.map((blog) => (
+                                                    <BlogCardDash
+                                                        key={blog.id}
+                                                        blog={blog}
+                                                        darkMode={darkMode}
+                                                        showUpvotes={true}
+                                                    />
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            renderEmptyMessage('No upvoted blogs yet.')
+                                        )}
+                                    </div>
+
+                                    <div className="mb-6">
+                                        <h2 className="text-xl font-semibold mb-4">Downvoted Blogs</h2>
+                                        {downvotedBlogs.length > 0 ? (
+                                            <div className="space-y-4">
+                                                {downvotedBlogs.map((blog) => (
+                                                    <BlogCardDash
+                                                        key={blog.id}
+                                                        blog={blog}
+                                                        darkMode={darkMode}
+                                                        showUpvotes={true}
+                                                    />
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            renderEmptyMessage('No downvoted blogs yet.')
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

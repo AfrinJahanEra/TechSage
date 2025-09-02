@@ -284,7 +284,7 @@ const InsideBlog = () => {
 
       {showReportModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 transition-opacity duration-500">
-          <div className={`p-6 sm:p-8 rounded-xl w-full max-w-md relative shadow-xl ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
+          <div className={`p-6 sm:p-8 rounded-xl w-full max-w-md relative shadow-xl ${darkMode ? 'bg-gray-800/90 text-white' : 'bg-white/90 text-gray-800'}`}>
             <button
               onClick={() => {
                 setShowReportModal(false);
@@ -331,7 +331,7 @@ const InsideBlog = () => {
                     value={reportDetails}
                     onChange={(e) => setReportDetails(e.target.value)}
                     placeholder="Please provide academic rationale for your report with references if possible..."
-                    className={`w-full p-4 border rounded-lg mb-6 min-h-36 focus:outline-none focus:ring-2 transition-shadow duration-500 ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:ring-[var(--primary-color)]' : 'bg-white border-gray-300 text-gray-800 focus:ring-[var(--primary-color)]'}`}
+                    className={`w-full p-4 border rounded-lg mb-6 min-h-36 focus:outline-none focus:ring-2 transition-shadow duration-500 ${darkMode ? 'bg-gray-700/80 border-gray-600 text-white focus:ring-[var(--primary-color)]' : 'bg-white/80 border-gray-300 text-gray-800 focus:ring-[var(--primary-color)]'}`}
                     style={{ '--tw-ring-color': primaryColor }}
                     required
                   ></textarea>

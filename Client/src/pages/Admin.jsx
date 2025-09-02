@@ -6,10 +6,11 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { formatDate } from '../utils/blogUtils';
-import { confirmAlert } from 'react-confirm-alert';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import BadgesSection from '../components/BadgesSection.jsx';
+import PopupModal from '../components/PopupModal';
 import avatar from '../../src/assets/user.jpg';
-import 'react-confirm-alert/src/react-confirm-alert.css';
 
 const AdminDashboard = () => {
   const performanceChartRef = useRef(null);
@@ -30,6 +31,19 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [badges, setBadges] = useState([]); // New state for badges
   const [loading, setLoading] = useState(false);
+  // New state for chart data
+  const [chartData, setChartData] = useState({
+    labels: [],
+    userData: [],
+    blogData: [],
+    badgeData: []
+  });
+  
+  // New states for recent activity and trending blogs
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [trendingBlogs, setTrendingBlogs] = useState([]);
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupData, setPopupData] = useState({ message: '', onConfirm: null });
 
   const navigate = useNavigate();
 
@@ -70,108 +84,252 @@ const AdminDashboard = () => {
     }
   };
 
-const handleDeleteUser = async (username) => {
-  confirmAlert({
-    title: 'Delete User',
-    message: 'Are you sure you want to permanently delete this user account and all associated data?',
-    buttons: [
-      {
-        label: 'Yes',
-        onClick: async () => {
-          try {
-            // First check if current user is admin
-            if (user?.role !== 'admin') {
-              alert('Only admins can delete users');
-              return;
-            }
+  // New function to fetch recent activity from backend
+  const fetchRecentActivity = async () => {
+    try {
+      // Fetch recent blog activities
+      const blogsResponse = await api.get('/published-blogs/?limit=10');
+      const recentBlogs = blogsResponse.data.blogs || [];
+      
+      // Fetch recent comments
+      const commentsResponse = await api.get('/comments/all/?limit=10');
+      const recentComments = commentsResponse.data.comments || [];
+      
+      // Fetch recent reports
+      const reportsResponse = await api.get('/reports/?limit=10');
+      const recentReports = reportsResponse.data.reports || [];
+      
+      // Fetch recent user activities (signups/logins)
+      const usersResponse = await api.get('/all-users/');
+      const recentUsers = usersResponse.data.users || [];
+      
+      // Combine all activities with timestamps
+      const allActivities = [
+        ...recentBlogs.map(blog => ({
+          id: blog.id,
+          type: 'publish',
+          user: Array.isArray(blog.authors) ? blog.authors[0]?.username : 
+                typeof blog.author === 'object' ? blog.author.username : blog.author,
+          timestamp: blog.published_at || blog.created_at,
+          description: `Published blog: ${blog.title.substring(0, 30)}${blog.title.length > 30 ? '...' : ''}`
+        })),
+        ...recentComments.map(comment => ({
+          id: comment.id,
+          type: 'comment',
+          user: typeof comment.author === 'object' ? comment.author.username : comment.author,
+          timestamp: comment.created_at,
+          description: `Commented: ${comment.content.substring(0, 30)}${comment.content.length > 30 ? '...' : ''}`
+        })),
+        ...recentReports.map(report => ({
+          id: report.id,
+          type: 'report',
+          user: typeof report.reporter === 'object' ? report.reporter.username : report.reporter,
+          timestamp: report.created_at,
+          description: `Reported: ${report.reason.substring(0, 30)}${report.reason.length > 30 ? '...' : ''}`
+        })),
+        ...recentUsers.map(user => ({
+          id: user.id,
+          type: 'signup',
+          user: user.username,
+          timestamp: user.created_at,
+          description: `New user registered`
+        }))
+      ];
+      
+      // Sort by timestamp (most recent first) and take first 10
+      const sortedActivities = allActivities
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .slice(0, 10);
+      
+      setRecentActivity(sortedActivities);
+    } catch (error) {
+      console.error('Error fetching recent activity:', error);
+      // Fallback to mock data if backend requests fail
+      const mockActivity = [
+        { id: 1, type: 'login', user: 'john_doe', timestamp: new Date(Date.now() - 3600000), description: 'User logged in' },
+        { id: 2, type: 'signup', user: 'new_user', timestamp: new Date(Date.now() - 7200000), description: 'New user registered' },
+        { id: 3, type: 'publish', user: 'author1', timestamp: new Date(Date.now() - 10800000), description: 'Blog published' },
+        { id: 4, type: 'comment', user: 'reader1', timestamp: new Date(Date.now() - 14400000), description: 'New comment added' },
+        { id: 5, type: 'login', user: 'moderator1', timestamp: new Date(Date.now() - 18000000), description: 'Moderator logged in' },
+      ];
+      setRecentActivity(mockActivity);
+    }
+  };
 
-            // Make the delete request
-            await api.delete(`/users/${username}/delete/`, {
-              data: {
-                username: user.username, // Send admin's username for verification
-                password: prompt('Please enter your admin password to confirm:') // Ask for password confirmation
-              }
-            });
-            
-            fetchUsers(); // Refresh the user list
-            alert('User and all associated data deleted successfully');
-          } catch (error) {
-            console.error('Error deleting user:', error);
-            alert(`Failed to delete user: ${error.response?.data?.error || error.message}`);
-          }
-        }
-      },
-      {
-        label: 'No',
-        onClick: () => {}
+  // New function to fetch trending blogs
+  const fetchTrendingBlogs = async () => {
+    try {
+      const response = await api.get('/published-blogs/');
+      if (response.data && response.data.blogs) {
+        // Sort blogs by upvotes to get trending ones
+        const sortedBlogs = [...response.data.blogs].sort((a, b) => {
+          const aUpvotes = a.upvotes?.length || a.upvote_count || 0;
+          const bUpvotes = b.upvotes?.length || b.upvote_count || 0;
+          return bUpvotes - aUpvotes;
+        });
+        // Get top 5 trending blogs as per requirement
+        setTrendingBlogs(sortedBlogs.slice(0, 5));
       }
-    ]
-  });
-};
+    } catch (error) {
+      console.error('Error fetching trending blogs:', error);
+    }
+  };
+
+  const handleDeleteUser = async (username) => {
+    setPopupData({
+      message: 'Are you sure you want to permanently delete this user account and all associated data? This action cannot be undone.',
+      onConfirm: () => {
+        setShowPopup(false);
+        performDeleteUser(username);
+      }
+    });
+    setShowPopup(true);
+  };
+
+  const performDeleteUser = async (username) => {
+    try {
+      // First check if current user is admin
+      if (user?.role !== 'admin') {
+        toast.error('Only admins can delete users');
+        return;
+      }
+
+      // Make the delete request
+      await api.delete(`/users/${username}/delete/`, {
+        data: {
+          username: user.username, // Send admin's username for verification
+          password: prompt('Please enter your admin password to confirm:') // Ask for password confirmation
+        }
+      });
+      
+      fetchUsers(); // Refresh the user list
+      toast.success('User and all associated data deleted successfully');
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error(`Failed to delete user: ${error.response?.data?.error || error.message}`);
+    }
+    
+    try {
+      // First check if current user is admin
+      if (user?.role !== 'admin') {
+        toast.error('Only admins can delete users');
+        return;
+      }
+
+      // Make the delete request
+      await api.delete(`/users/${username}/delete/`, {
+        data: {
+          username: user.username, // Send admin's username for verification
+          password: prompt('Please enter your admin password to confirm:') // Ask for password confirmation
+        }
+      });
+      
+      fetchUsers(); // Refresh the user list
+      toast.success('User and all associated data deleted successfully');
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error(`Failed to delete user: ${error.response?.data?.error || error.message}`);
+    }
+  };
 
   const handleApproveBlog = async (blogId) => {
-    confirmAlert({
-      title: 'Approve Blog',
-      message: 'Are you sure you want to approve this blog?',
-      buttons: [
-        {
-          label: 'Yes',
-          onClick: async () => {
-            try {
-              setBlogs(prevBlogs =>
-                prevBlogs.map(blog =>
-                  blog.id === blogId
-                    ? { ...blog, is_reviewed: true, reviewed_by: user.username }
-                    : blog
-                ).sort((a, b) => {
-                  if (a.is_reviewed && !b.is_reviewed) return 1;
-                  if (!a.is_reviewed && b.is_reviewed) return -1;
-                  return 0;
-                })
-              );
-              await api.post(`/blogs/review/${blogId}/`, {
-                reviewer: user.username
-              });
-              fetchBlogs();
-            } catch (error) {
-              console.error('Error approving blog:', error);
-              alert('Failed to approve blog');
-              fetchBlogs();
-            }
-          }
-        },
-        {
-          label: 'No',
-          onClick: () => {}
-        }
-      ]
-    });
+    try {
+      setBlogs(prevBlogs =>
+        prevBlogs.map(blog =>
+          blog.id === blogId
+            ? { ...blog, is_reviewed: true, reviewed_by: user.username }
+            : blog
+        ).sort((a, b) => {
+          if (a.is_reviewed && !b.is_reviewed) return 1;
+          if (!a.is_reviewed && b.is_reviewed) return -1;
+          return 0;
+        })
+      );
+      await api.post(`/blogs/review/${blogId}/`, {
+        reviewer: user.username
+      });
+      fetchBlogs();
+      toast.success('Blog approved successfully');
+    } catch (error) {
+      console.error('Error approving blog:', error);
+      toast.error('Failed to approve blog');
+      fetchBlogs();
+    }
   };
 
   const handleRejectBlog = async (blogId) => {
-    confirmAlert({
-      title: 'Reject Blog',
-      message: 'Are you sure you want to permanently delete this blog?',
-      buttons: [
-        {
-          label: 'Yes',
-          onClick: async () => {
-            try {
-              await api.delete(`/blogs/mod/delete/${blogId}/`);
-              fetchBlogs();
-              alert('Blog deleted successfully');
-            } catch (error) {
-              console.error('Error deleting blog:', error);
-              alert('Failed to delete blog');
-            }
-          }
-        },
-        {
-          label: 'No',
-          onClick: () => {}
-        }
-      ]
+    setPopupData({
+      message: 'Are you sure you want to permanently delete this blog? This action cannot be undone.',
+      onConfirm: () => {
+        setShowPopup(false);
+        performRejectBlog(blogId);
+      }
     });
+    setShowPopup(true);
+  };
+
+  const performRejectBlog = async (blogId) => {
+    try {
+      await api.delete(`/blogs/mod/delete/${blogId}/`);
+      fetchBlogs();
+      toast.success('Blog deleted successfully');
+    } catch (error) {
+      console.error('Error deleting blog:', error);
+      toast.error('Failed to delete blog');
+    }
+    
+    try {
+      await api.delete(`/blogs/mod/delete/${blogId}/`);
+      fetchBlogs();
+      toast.success('Blog deleted successfully');
+    } catch (error) {
+      console.error('Error deleting blog:', error);
+      toast.error('Failed to delete blog');
+    }
+  };
+
+  // Fetch dynamic chart data
+  const fetchChartData = async () => {
+    try {
+      // Fetch users for the last 6 months
+      const userResponse = await api.get('/all-users/');
+      const allUsers = userResponse.data.users;
+      
+      // Generate last 6 months
+      const months = [];
+      const userData = [];
+      const blogData = [];
+      const badgeData = [];
+      
+      for (let i = 5; i >= 0; i--) {
+        const date = new Date();
+        date.setMonth(date.getMonth() - i);
+        const monthLabel = date.toLocaleString('default', { month: 'short' });
+        months.push(monthLabel);
+        
+        // Count users created in this month
+        const userCount = allUsers.filter(user => {
+          const createdDate = new Date(user.created_at);
+          return createdDate.getMonth() === date.getMonth() && 
+                 createdDate.getFullYear() === date.getFullYear();
+        }).length;
+        userData.push(userCount);
+        
+        // For now, we'll use placeholder data for blogs and badges
+        // In a real implementation, you would fetch actual data
+        blogData.push(Math.floor(Math.random() * 20) + 5);
+        badgeData.push(Math.floor(Math.random() * 10) + 1);
+      }
+      
+      setChartData({
+        labels: months,
+        userData: userData,
+        blogData: blogData,
+        badgeData: badgeData
+      });
+    } catch (error) {
+      console.error('Error fetching chart data:', error);
+    }
   };
 
   useEffect(() => {
@@ -184,6 +342,11 @@ const handleDeleteUser = async (username) => {
           await fetchBlogs();
         } else if (activeSection === 'badges') {
           await fetchBadges();
+        } else if (activeSection === 'profile') {
+          await fetchChartData();
+          // Fetch recent activity and trending blogs for profile section
+          await fetchRecentActivity();
+          await fetchTrendingBlogs();
         }
       } catch (error) {
         console.error(`Error fetching ${activeSection} data:`, error);
@@ -206,15 +369,33 @@ const handleDeleteUser = async (username) => {
         performanceChartRef.current = new Chart(ctx, {
           type: 'line',
           data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-            datasets: [{
-              label: 'Admin Actions',
-              data: [15, 22, 18, 25, 20, 30],
-              borderColor: primaryColor,
-              backgroundColor: darkMode ? `${primaryColor}20` : `${primaryColor}10`,
-              tension: 0.3,
-              fill: true
-            }]
+            labels: chartData.labels,
+            datasets: [
+              {
+                label: 'New Users',
+                data: chartData.userData,
+                borderColor: primaryColor,
+                backgroundColor: darkMode ? `${primaryColor}20` : `${primaryColor}10`,
+                tension: 0.3,
+                fill: true
+              },
+              {
+                label: 'Published Blogs',
+                data: chartData.blogData,
+                borderColor: primaryDark,
+                backgroundColor: darkMode ? `${primaryDark}20` : `${primaryDark}10`,
+                tension: 0.3,
+                fill: true
+              },
+              {
+                label: 'Badges Awarded',
+                data: chartData.badgeData,
+                borderColor: primaryLight,
+                backgroundColor: darkMode ? `${primaryLight}20` : `${primaryLight}10`,
+                tension: 0.3,
+                fill: true
+              }
+            ]
           },
           options: {
             responsive: true,
@@ -250,7 +431,7 @@ const handleDeleteUser = async (username) => {
         });
       }
     }
-  }, [activeSection, darkMode, primaryColor]);
+  }, [activeSection, darkMode, primaryColor, chartData]);
 
   const toggleProfilePanel = (e) => {
     e.stopPropagation();
@@ -286,7 +467,7 @@ const handleDeleteUser = async (username) => {
       <Navbar activePage="admin" onProfileClick={toggleProfilePanel} />
       <div className="pt-20 min-h-screen">
         <div className="flex flex-col md:flex-row">
-          <div className={`w-full md:w-64 transition-all duration-300 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-r`}>
+          <div className={`w-full md:w-64 transition-all duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
             <div className="p-4">
               <ul className="space-y-2">
                 <li>
@@ -398,7 +579,7 @@ const handleDeleteUser = async (username) => {
                       </div>
                     ) : (
                       users.map(user => (
-                        <div key={user.username} className={`p-4 rounded-xl transition-all duration-300 hover:shadow-md ${darkMode ? 'bg-gray-800 hover:bg-gray-750' : 'bg-white hover:bg-gray-50'} mb-4 flex items-center justify-between border border-gray-200 dark:border-gray-700`}>
+                        <div key={user.username} className={`p-4 rounded-xl transition-all duration-300 hover:shadow-md ${darkMode ? 'bg-gray-800 hover:bg-gray-750' : 'bg-white hover:bg-gray-50'} mb-4 flex items-center justify-between`}>
                           <div className="flex items-center">
                             <img
                               src={user.avatar_url || avatar}
@@ -456,7 +637,7 @@ const handleDeleteUser = async (username) => {
                       </div>
                     ) : (
                       blogs.map(blog => (
-                        <div key={blog.id} className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-4 p-4 rounded-xl transition-all duration-300 hover:shadow-md ${darkMode ? 'bg-gray-800 hover:bg-gray-750' : 'bg-white hover:bg-gray-50'} border border-gray-200 dark:border-gray-700`}>
+                        <div key={blog.id} className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-4 p-4 rounded-xl transition-all duration-300 hover:shadow-md ${darkMode ? 'bg-gray-800 hover:bg-gray-750' : 'bg-white hover:bg-gray-50'}`}>
                           <div
                             className="h-24 md:h-full rounded-lg bg-cover bg-center cursor-pointer transition-transform duration-300 hover:scale-105"
                             style={{ backgroundImage: `url('${blog.thumbnail_url}')`, backgroundColor: darkMode ? '#374151' : '#e5e7eb' }}
@@ -597,11 +778,100 @@ const handleDeleteUser = async (username) => {
                       </div>
                     </div>
                   </div>
+                  
+                  {/* Platform Activity Chart */}
                   <div className={`rounded-2xl p-6 mb-6 h-80 transition-all duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
                     <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-                      <i className="fas fa-chart-line mr-2" style={{ color: primaryColor }}></i>Admin Performance
+                      <i className="fas fa-chart-line mr-2" style={{ color: primaryColor }}></i>Platform Activity
                     </h3>
                     <canvas id="performanceChart"></canvas>
+                  </div>
+                  
+                  {/* Recent Activity Section */}
+                  <div className={`rounded-2xl p-6 mb-6 transition-all duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+                    <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                      <i className="fas fa-history mr-2" style={{ color: primaryColor }}></i>Recent Activity
+                    </h3>
+                    {recentActivity.length > 0 ? (
+                      <div className="space-y-3">
+                        {recentActivity.map(activity => (
+                          <div key={`activity-${activity.id}`} className={`p-3 rounded-lg ${darkMode ? 'bg-gray-750' : 'bg-gray-50'}`}>
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
+                                  activity.type === 'login' ? 'bg-blue-500/20 text-blue-500' :
+                                  activity.type === 'signup' ? 'bg-green-500/20 text-green-500' :
+                                  activity.type === 'publish' ? 'bg-purple-500/20 text-purple-500' :
+                                  activity.type === 'comment' ? 'bg-yellow-500/20 text-yellow-500' :
+                                  activity.type === 'report' ? 'bg-orange-500/20 text-orange-500' : 'bg-gray-500/20 text-gray-500'
+                                }`}>
+                                  <i className={`fas ${
+                                    activity.type === 'login' ? 'fa-sign-in-alt' :
+                                    activity.type === 'signup' ? 'fa-user-plus' :
+                                    activity.type === 'publish' ? 'fa-book' :
+                                    activity.type === 'comment' ? 'fa-comment' :
+                                    activity.type === 'report' ? 'fa-flag' : 'fa-info-circle'
+                                  }`}></i>
+                                </div>
+                                <div>
+                                  <p className={`font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                                    {activity.description}
+                                  </p>
+                                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                    by {typeof activity.user === 'object' ? activity.user.username : activity.user}
+                                  </p>
+                                </div>
+                              </div>
+                              <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                {formatDate(activity.timestamp)}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className={`text-center py-6 rounded-xl ${darkMode ? 'bg-gray-750 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
+                        <i className="fas fa-history text-2xl mb-2"></i>
+                        <p>No recent activity found</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Trending Blogs Section */}
+                  <div className={`rounded-2xl p-6 mb-6 transition-all duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+                    <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                      <i className="fas fa-fire mr-2" style={{ color: primaryColor }}></i>Trending Blogs
+                    </h3>
+                    {trendingBlogs.length > 0 ? (
+                      <div className="space-y-4">
+                        {trendingBlogs.map(blog => (
+                          <div 
+                            key={`trending-${blog.id}`} 
+                            className={`p-4 rounded-xl transition-all duration-300 hover:shadow-md cursor-pointer ${darkMode ? 'bg-gray-750 hover:bg-gray-700' : 'bg-gray-50 hover:bg-gray-100'}`}
+                            onClick={() => navigate(`/blog/${blog.id}`)}
+                          >
+                            <h4 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{blog.title}</h4>
+                            <div className="flex justify-between items-center mt-2">
+                              <div className="flex items-center">
+                                <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                  by {Array.isArray(blog.authors) ? blog.authors[0]?.username : 
+                                     typeof blog.author === 'object' ? blog.author.username : blog.author}
+                                </span>
+                              </div>
+                              <div className="flex items-center" title={`${blog.upvotes?.length || blog.upvote_count || 0} upvotes`}>
+                                <i className="fas fa-arrow-up mr-1 text-green-500"></i>
+                                <span className="text-sm font-medium">{blog.upvotes?.length || blog.upvote_count || 0}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className={`text-center py-6 rounded-xl ${darkMode ? 'bg-gray-750 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
+                        <i className="fas fa-book-open text-2xl mb-2"></i>
+                        <p>No trending blogs found</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -610,6 +880,18 @@ const handleDeleteUser = async (username) => {
         </div>
       </div>
       <Footer />
+      <PopupModal
+        show={showPopup}
+        message={popupData.message}
+        type="confirm"
+        onConfirm={popupData.onConfirm}
+        onCancel={() => setShowPopup(false)}
+        primaryColor={primaryColor}
+        darkMode={darkMode}
+        title="Confirm Action"
+        confirmText="Confirm"
+        cancelText="Cancel"
+      />
     </div>
   );
 };

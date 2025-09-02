@@ -273,7 +273,8 @@ class UserProfile(APIView):
                 if not user.upload_avatar(request.FILES['avatar']):
                     return Response({"error": "Failed to upload avatar"}, status=400)
 
-            update_fields = ['bio', 'job_title', 'university']
+            # Update fields including social profile fields
+            update_fields = ['bio', 'job_title', 'university', 'github', 'linkedin', 'twitter', 'website']
             for field in update_fields:
                 if field in request.data:
                     setattr(user, field, request.data[field])

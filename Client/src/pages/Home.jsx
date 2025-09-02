@@ -133,16 +133,15 @@ const Home = () => {
                     <span>Published: {formatDate(mostPopularBlog.published_at)}</span>
                     <span>
                       By: {mostPopularBlog.authors?.map((author, index) => (
-                        <BlogLink key={index} blog={mostPopularBlog}>
-                          <a
-                            href={`/user/${author.username}`}
-                            style={{ color: primaryColor }}
-                            className="hover:underline"
-                          >
-                            {author.username}
-                            {index < mostPopularBlog.authors.length - 1 ? ', ' : ''}
-                          </a>
-                        </BlogLink>
+                        <a
+                          key={index}
+                          href={`/user/${author.username}`}
+                          style={{ color: primaryColor }}
+                          className="hover:underline"
+                        >
+                          {author.username}
+                          {index < mostPopularBlog.authors.length - 1 ? ', ' : ''}
+                        </a>
                       ))}
                     </span>
                     <span>{calculateReadTime(mostPopularBlog.content)}</span>

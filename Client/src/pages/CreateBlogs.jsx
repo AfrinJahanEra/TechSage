@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import Tiptap from '../components/CreateBlogComponents/Tiptap';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
-import { toast, ToastContainer } from 'react-toastify';
+import { toast } from 'react-toastify';
 import avatar from '../../src/assets/user.jpg';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -490,7 +490,6 @@ const CreateBlogs = () => {
   return (
     <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-50 text-gray-800'}`}>
       <Navbar />
-      <ToastContainer />
       <div className="flex flex-col lg:flex-row flex-1 pt-16">
         <main className="flex-1 p-4 sm:p-6 overflow-auto">
           <div className={`max-w-full sm:max-w-6xl mx-auto rounded-xl shadow-sm overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>

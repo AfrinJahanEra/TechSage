@@ -3,7 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { toast } from 'react-hot-toast';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import avatar from '../../src/assets/user.jpg';
 
 const Settings = () => {
@@ -26,7 +27,12 @@ const Settings = () => {
     university: '',
     job_title: '',
     bio: '',
-    avatar_url: ''
+    avatar_url: '',
+    // Add social profile fields
+    github: '',
+    linkedin: '',
+    twitter: '',
+    website: ''
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -55,7 +61,12 @@ const Settings = () => {
         university: user.university || '',
         job_title: user.job_title || 'User',
         bio: user.bio || '',
-        avatar_url: user.avatar_url || ''
+        avatar_url: user.avatar_url || '',
+        // Add social profile fields
+        github: user.github || '',
+        linkedin: user.linkedin || '',
+        twitter: user.twitter || '',
+        website: user.website || ''
       });
       setAvatarPreview(user.avatar_url || null);
     }
@@ -157,7 +168,12 @@ const Settings = () => {
     try {
       const response = await api.put(`/user/${user.username}/`, {
         job_title: profileData.job_title,
-        bio: profileData.bio
+        bio: profileData.bio,
+        // Add social profile fields
+        github: profileData.github,
+        linkedin: profileData.linkedin,
+        twitter: profileData.twitter,
+        website: profileData.website
       });
 
       const updatedUser = response.data;
@@ -419,6 +435,71 @@ const Settings = () => {
                     className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${darkMode ? 'bg-gray-800 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-700'}`}
                     style={{ '--tw-ring-color': primaryColor }}
                   ></textarea>
+                </div>
+
+                {/* Social Profiles Section */}
+                <div className="mb-6">
+                  <h3 className={`text-lg font-medium mb-4 ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>Social Profiles</h3>
+                  
+                  {/* GitHub */}
+                  <div className="mb-4">
+                    <label className={`block mb-2 font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      <i className="fab fa-github mr-2"></i> GitHub Profile
+                    </label>
+                    <input
+                      type="url"
+                      value={profileData.github}
+                      onChange={(e) => setProfileData({ ...profileData, github: e.target.value })}
+                      placeholder="https://github.com/username"
+                      className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${darkMode ? 'bg-gray-800 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-700'}`}
+                      style={{ '--tw-ring-color': primaryColor }}
+                    />
+                  </div>
+
+                  {/* LinkedIn */}
+                  <div className="mb-4">
+                    <label className={`block mb-2 font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      <i className="fab fa-linkedin mr-2"></i> LinkedIn Profile
+                    </label>
+                    <input
+                      type="url"
+                      value={profileData.linkedin}
+                      onChange={(e) => setProfileData({ ...profileData, linkedin: e.target.value })}
+                      placeholder="https://linkedin.com/in/username"
+                      className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${darkMode ? 'bg-gray-800 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-700'}`}
+                      style={{ '--tw-ring-color': primaryColor }}
+                    />
+                  </div>
+
+                  {/* Twitter */}
+                  <div className="mb-4">
+                    <label className={`block mb-2 font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      <i className="fab fa-twitter mr-2"></i> Twitter Profile
+                    </label>
+                    <input
+                      type="url"
+                      value={profileData.twitter}
+                      onChange={(e) => setProfileData({ ...profileData, twitter: e.target.value })}
+                      placeholder="https://twitter.com/username"
+                      className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${darkMode ? 'bg-gray-800 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-700'}`}
+                      style={{ '--tw-ring-color': primaryColor }}
+                    />
+                  </div>
+
+                  {/* Website */}
+                  <div className="mb-4">
+                    <label className={`block mb-2 font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      <i className="fas fa-globe mr-2"></i> Personal Website
+                    </label>
+                    <input
+                      type="url"
+                      value={profileData.website}
+                      onChange={(e) => setProfileData({ ...profileData, website: e.target.value })}
+                      placeholder="https://yourwebsite.com"
+                      className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${darkMode ? 'bg-gray-800 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-700'}`}
+                      style={{ '--tw-ring-color': primaryColor }}
+                    />
+                  </div>
                 </div>
 
                 {/* Password Change Button */}
