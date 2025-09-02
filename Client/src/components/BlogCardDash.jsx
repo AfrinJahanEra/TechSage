@@ -32,10 +32,10 @@ const BlogCardDash = ({
   };
 
   return (
-    <div className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-4 pb-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+    <div className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-4 p-4 rounded-xl border transition-all duration-300 hover:shadow-md ${darkMode ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-200 hover:bg-gray-50'}`}>
       <BlogLink blog={blog}>
         <div
-          className="h-24 md:h-full bg-gray-200 rounded-md bg-cover bg-center cursor-pointer"
+          className="h-24 md:h-full rounded-lg bg-gray-200 bg-cover bg-center cursor-pointer transition-transform duration-300 hover:scale-105"
           style={{ backgroundImage: `url('${getThumbnailUrl(blog)}')` }}
         ></div>
       </BlogLink>
@@ -57,10 +57,10 @@ const BlogCardDash = ({
           </span>
           <span>{calculateReadTime(blog.content)}</span>
         </div>
-        <div className="flex space-x-4 mt-2">
+        <div className="flex flex-wrap gap-2 mt-3">
           {showUpvotes && (
             <button 
-              className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
+              className={`flex items-center text-sm px-2 py-1 rounded-lg transition-all duration-200 ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
               style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
               title={`Upvotes: ${blog.upvotes?.length || blog.upvote_count || '0'}`}
             >
@@ -71,7 +71,7 @@ const BlogCardDash = ({
           {showDelete && (
             <button 
               onClick={() => onDelete(blog.id)}
-              className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
+              className={`flex items-center text-sm px-2 py-1 rounded-lg transition-all duration-200 ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
               style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
             >
               <i className="fas fa-trash mr-1"></i> Delete
@@ -81,7 +81,7 @@ const BlogCardDash = ({
           {showPublish && (
             <button 
               onClick={() => onPublish(blog.id)}
-              className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
+              className={`flex items-center text-sm px-2 py-1 rounded-lg transition-all duration-200 ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
               style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
             >
               <i className="fas fa-share mr-1"></i> Publish
@@ -91,7 +91,7 @@ const BlogCardDash = ({
           {showHistory && (
             <button 
               onClick={handleHistory}
-              className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
+              className={`flex items-center text-sm px-2 py-1 rounded-lg transition-all duration-200 ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
               style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
             >
               <i className="fas fa-history mr-1"></i> History
@@ -101,7 +101,7 @@ const BlogCardDash = ({
           {showRestore && (
             <button 
               onClick={() => onRestore(blog.id)}
-              className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
+              className={`flex items-center text-sm px-2 py-1 rounded-lg transition-all duration-200 ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
               style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
             >
               <i className="fas fa-undo mr-1"></i> Restore
@@ -111,7 +111,7 @@ const BlogCardDash = ({
           {showPermanentDelete && (
             <button 
               onClick={() => onPermanentDelete(blog.id)}
-              className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
+              className={`flex items-center text-sm px-2 py-1 rounded-lg transition-all duration-200 ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
               style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
             >
               <i className="fas fa-trash-alt mr-1"></i> Delete Permanently
@@ -121,7 +121,7 @@ const BlogCardDash = ({
           {showEdit && (
             <button 
               onClick={() => onEdit(blog)}
-              className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
+              className={`flex items-center text-sm px-2 py-1 rounded-lg transition-all duration-200 ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
               style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
             >
               <i className="fas fa-edit mr-1"></i> Edit
@@ -131,7 +131,7 @@ const BlogCardDash = ({
           {showUnsave && (
             <button 
               onClick={() => onUnsave(blog.id)}
-              className={`flex items-center text-sm ${darkMode ? 'hover:text-[var(--primary-color)]' : 'hover:text-[var(--primary-dark)]'}`}
+              className={`flex items-center text-sm px-2 py-1 rounded-lg transition-all duration-200 ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
               style={{ color: darkMode ? '#e2e8f0' : '#4a5568' }}
             >
               <i className="fas fa-bookmark mr-1"></i> Unsave
