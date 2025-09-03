@@ -40,8 +40,8 @@ const Home = () => {
       let blogs = response.data.blogs.map(blog => normalizeBlog(blog));
       
       blogs.sort((a, b) => {
-        const aUpvotes = a.upvotes?.length || 0;
-        const bUpvotes = b.upvotes?.length || 0;
+        const aUpvotes = a.upvotes?.length || a.upvote_count || 0;
+        const bUpvotes = b.upvotes?.length || b.upvote_count || 0;
         const upvoteDiff = bUpvotes - aUpvotes;
         if (upvoteDiff !== 0) return upvoteDiff;
         return new Date(b.published_at || b.created_at) - new Date(a.published_at || a.created_at);
@@ -95,13 +95,13 @@ const Home = () => {
     >
       <Navbar activePage="home" />
       
-      <main className="container mx-auto px-4 md:px-20 py-10 pt-28">
-        <div className="flex flex-col lg:flex-row gap-8">
+      <main className="container mx-auto px-4 md:px-16 py-2 pt-24">
+        <div className="flex flex-col lg:flex-row gap-6">
           {/* Main Content */}
           <article className="flex-1">
             {mostPopularBlog ? (
               <>
-                <header className={`border-b pb-10 mb-10 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                <header className={`border-b pb-8 mb-8 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                   <h1 className="text-3xl md:text-4xl font-bold leading-tight mb-3">
                     {mostPopularBlog.title}
                   </h1>
@@ -133,22 +133,21 @@ const Home = () => {
                     <span>Published: {formatDate(mostPopularBlog.published_at)}</span>
                     <span>
                       By: {mostPopularBlog.authors?.map((author, index) => (
-                        <BlogLink key={index} blog={mostPopularBlog}>
-                          <a
-                            href={`/user/${author.username}`}
-                            style={{ color: primaryColor }}
-                            className="hover:underline"
-                          >
-                            {author.username}
-                            {index < mostPopularBlog.authors.length - 1 ? ', ' : ''}
-                          </a>
-                        </BlogLink>
+                        <a
+                          key={index}
+                          href={`/user/${author.username}`}
+                          style={{ color: primaryColor }}
+                          className="hover:underline"
+                        >
+                          {author.username}
+                          {index < mostPopularBlog.authors.length - 1 ? ', ' : ''}
+                        </a>
                       ))}
                     </span>
                     <span>{calculateReadTime(mostPopularBlog.content)}</span>
-                    <span className="flex items-center">
+                    <span className="flex items-center" title={`Upvotes: ${mostPopularBlog.upvotes?.length || mostPopularBlog.upvote_count || 0}`}>
                       <i className="fas fa-arrow-up mr-1"></i>
-                      {mostPopularBlog.upvotes?.length || 0} upvotes
+                      {mostPopularBlog.upvotes?.length || mostPopularBlog.upvote_count || 0} upvotes
                     </span>
                   </div>
                 </header>
@@ -164,7 +163,7 @@ const Home = () => {
                   />
                 </div>
 
-                <div className="mt-8">
+                <div className="mt-6">
                   <BlogLink blog={mostPopularBlog}>
                     <a 
                       className="font-semibold hover:underline"
@@ -176,7 +175,7 @@ const Home = () => {
                 </div>
               </>
             ) : (
-              <div className={`text-center py-8 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              <div className={`text-center py-6 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 <p>No popular blogs available</p>
                 <button
                   onClick={fetchPopularBlogs}
@@ -190,7 +189,7 @@ const Home = () => {
           </article>
 
           {/* Sidebar */}
-          <div className="lg:w-80 space-y-8">
+          <div className="lg:w-96 space-y-6">
             <Sidebar />
             <TopContributor/>
             <SearchForm />
@@ -199,19 +198,19 @@ const Home = () => {
       </main>
 
       {/* Featured Research Section */}
-      <section className={`py-16 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
-        <div className="container mx-auto px-4 md:px-20">
+      <section className={`py-12 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+        <div className="container mx-auto px-4 md:px-16">
           <h2 className={`text-3xl font-bold mb-4 relative pb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-            Trending Research
+            Most Popular Blogs
             <span className="absolute bottom-0 left-0 w-16 h-1" style={{ backgroundColor: primaryColor }}></span>
           </h2>
-          <p className={`text-xl mb-8 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            Explore the most popular academic work this week
+          <p className={`text-xl mb-6 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            Explore the 5 most popular academic blogs based on upvotes
           </p>
 
           {featuredBlogs.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-              {featuredBlogs.map((blog) => {
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {featuredBlogs.slice(0, 5).map((blog) => {
                 const preview = getContentPreview(blog.content, '/home');
                 return (
                   <BlogLink key={blog.id} blog={blog}>
@@ -224,16 +223,16 @@ const Home = () => {
                         aria-label={blog.title || 'Blog thumbnail'}
                       />
                       <div className={`absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${darkMode ? 'from-black/90' : 'from-black/80'}`} />
-                      <div className="absolute bottom-0 left-0 w-full p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                      <div className="absolute bottom-0 left-0 w-full p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
                         <h3 className="text-white text-lg font-semibold mb-1 line-clamp-2">
                           {blog.title || 'Untitled Blog'}
                         </h3>
                         <p className="text-white text-sm mb-2 line-clamp-2">
                           {preview}
                         </p>
-                        <div className="flex items-center text-sm text-white">
+                        <div className="flex items-center text-sm text-white" title={`Upvotes: ${blog.upvotes?.length || blog.upvote_count || 0}`}>
                           <i className="fas fa-arrow-up mr-1"></i>
-                          <span>{blog.upvotes?.length || 0}</span>
+                          <span>{blog.upvotes?.length || blog.upvote_count || 0}</span>
                           <span className="mx-2">•</span>
                           <span>{formatDate(blog.published_at || blog.created_at)}</span>
                         </div>
@@ -244,8 +243,8 @@ const Home = () => {
               })}
             </div>
           ) : (
-            <div className={`text-center py-8 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              <p>No trending research available</p>
+            <div className={`text-center py-6 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              <p>No popular blogs available</p>
               <button
                 onClick={fetchPopularBlogs}
                 className="mt-4 px-4 py-2 rounded-md hover:opacity-90 transition-opacity"

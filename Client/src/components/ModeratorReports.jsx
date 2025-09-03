@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { formatDate } from '../utils/blogUtils';
-import { confirmAlert } from 'react-confirm-alert';
-import 'react-confirm-alert/src/react-confirm-alert.css';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import PopupModal from '../components/PopupModal';
 
 const ModeratorReports = () => {
   const { api, user } = useAuth();
@@ -11,6 +12,8 @@ const ModeratorReports = () => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('pending');
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupData, setPopupData] = useState({ message: '', onConfirm: null });
 
   const fetchReports = async () => {
     try {
@@ -30,66 +33,80 @@ const ModeratorReports = () => {
 
   const handleViewBlog = (blogId) => {
     if (!blogId) {
-      alert('This blog has been deleted');
+      toast.error('This blog has been deleted');
       return;
     }
     navigate(`/blog/${blogId}`);
   };
 
   const handleRejectReport = async (reportId) => {
-    confirmAlert({
-      title: 'Confirm Approval',
-      message: 'Are you sure you want to accept this report?',
-      buttons: [
-        {
-          label: 'Yes',
-          onClick: async () => {
-            try {
-              await api.post(`/reports/${reportId}/approve/`, {
-                reviewer_id: user.id
-              });
-              fetchReports();
-              alert('Report accepted successfully');
-            } catch (error) {
-              console.error('Error approving report:', error);
-              alert('Failed to accept report');
-            }
-          }
-        },
-        {
-          label: 'No',
-          onClick: () => {}
-        }
-      ]
+    setPopupData({
+      message: 'Are you sure you want to accept this report? This will mark the content as inappropriate.',
+      onConfirm: () => {
+        setShowPopup(false);
+        performRejectReport(reportId);
+      }
     });
+    setShowPopup(true);
+  };
+
+  const performRejectReport = async (reportId) => {
+    try {
+      await api.post(`/reports/${reportId}/approve/`, {
+        reviewer_id: user.id
+      });
+      fetchReports();
+      toast.success('Report accepted successfully');
+    } catch (error) {
+      console.error('Error approving report:', error);
+      toast.error('Failed to accept report');
+    }
+    
+    try {
+      await api.post(`/reports/${reportId}/approve/`, {
+        reviewer_id: user.id
+      });
+      fetchReports();
+      toast.success('Report accepted successfully');
+    } catch (error) {
+      console.error('Error approving report:', error);
+      toast.error('Failed to accept report');
+    }
   };
 
   const handleApproveReport = async (reportId, blogId) => {
-    confirmAlert({
-      title: 'Confirm Rejection',
-      message: 'Are you sure you want to reject this report and delete the blog?',
-      buttons: [
-        {
-          label: 'Yes, Reject',
-          onClick: async () => {
-            try {
-              await api.post(`/reports/${reportId}/reject/`, {
-                reviewer_id: user.id
-              });
-              fetchReports();
-              alert('Report rejected and blog deleted');
-            } catch (error) {
-              console.error('Error rejecting report:', error);
-              alert('Failed to reject report');
-            }
-          }
-        },
-        {
-          label: 'Cancel',
-          onClick: () => {}
-        }
-      ]
+    setPopupData({
+      message: 'Are you sure you want to reject this report and delete the blog? This action cannot be undone.',
+      onConfirm: () => {
+        setShowPopup(false);
+        performApproveReport(reportId, blogId);
+      }
     });
+    setShowPopup(true);
+  };
+
+  const performApproveReport = async (reportId, blogId) => {
+    try {
+      await api.post(`/reports/${reportId}/reject/`, {
+        reviewer_id: user.id
+      });
+      fetchReports();
+      toast.success('Report rejected and blog deleted');
+    } catch (error) {
+      console.error('Error rejecting report:', error);
+      toast.error('Failed to reject report');
+    }
+    
+    try {
+      await api.post(`/reports/${reportId}/reject/`, {
+        reviewer_id: user.id
+      });
+      fetchReports();
+      toast.success('Report rejected and blog deleted');
+    } catch (error) {
+      console.error('Error rejecting report:', error);
+      toast.error('Failed to reject report');
+    }
   };
 
   if (loading) {
@@ -184,6 +201,18 @@ const ModeratorReports = () => {
           </div>
         ))
       )}
+      <PopupModal
+        show={showPopup}
+        message={popupData.message}
+        type="confirm"
+        onConfirm={popupData.onConfirm}
+        onCancel={() => setShowPopup(false)}
+        primaryColor="#3b82f6"
+        darkMode={false}
+        title="Confirm Action"
+        confirmText="Confirm"
+        cancelText="Cancel"
+      />
     </div>
   );
 };

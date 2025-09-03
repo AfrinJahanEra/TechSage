@@ -6,7 +6,8 @@ import { useAuth } from '../context/AuthContext';
 import Tiptap from '../components/CreateBlogComponents/Tiptap';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
-import { toast, ToastContainer } from 'react-toastify';
+import { toast } from 'react-toastify';
+import avatar from '../../src/assets/user.jpg';
 import 'react-toastify/dist/ReactToastify.css';
 
 const CreateBlogs = () => {
@@ -489,7 +490,6 @@ const CreateBlogs = () => {
   return (
     <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-50 text-gray-800'}`}>
       <Navbar />
-      <ToastContainer />
       <div className="flex flex-col lg:flex-row flex-1 pt-16">
         <main className="flex-1 p-4 sm:p-6 overflow-auto">
           <div className={`max-w-full sm:max-w-6xl mx-auto rounded-xl shadow-sm overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
@@ -668,7 +668,7 @@ const CreateBlogs = () => {
               <div className="space-y-3">
                 <div className={`flex items-center p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-white'}`}>
                   <img
-                    src={user.avatar_url || `https://ui-avatars.com/api/?name=${user.username}&background=random`}
+                    src={user.avatar_url || avatar}
                     alt={user.username}
                     className="h-8 sm:h-10 w-8 sm:w-10 rounded-full object-cover mr-3"
                   />
@@ -681,7 +681,7 @@ const CreateBlogs = () => {
                   <div key={author.username} className={`flex justify-between items-center p-3 rounded-lg ${darkMode ? 'bg-gray-700 hover:shadow-md' : 'bg-white hover:shadow-sm'}`}>
                     <div className="flex items-center">
                       <img
-                        src={author.avatar_url || `https://ui-avatars.com/api/?name=${author.username}&background=random`}
+                        src={author.avatar_url || avatar}
                         alt={author.username}
                         className="h-8 sm:h-10 w-8 sm:w-10 rounded-full object-cover mr-3"
                       />
@@ -725,7 +725,7 @@ const CreateBlogs = () => {
                     <div key={user._id} className={`px-4 py-2 text-sm cursor-pointer flex items-center justify-between ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-100'}`}>
                       <div className="flex items-center">
                         <img
-                          src={user.avatar_url || `https://ui-avatars.com/api/?name=${user.username}&background=random`}
+                          src={user.avatar_url || avatar}
                           alt={user.username}
                           className="h-8 w-8 rounded-full object-cover mr-3"
                         />

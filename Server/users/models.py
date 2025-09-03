@@ -31,9 +31,17 @@ class User(me.Document):
     followers = me.IntField(default=0)
     source = me.StringField()
     saved_blogs = me.ListField(me.StringField())
+    # Add fields to track upvoted and downvoted blogs
+    upvoted_blogs = me.ListField(me.StringField())
+    downvoted_blogs = me.ListField(me.StringField())
+    # Add social profile fields
+    github = me.StringField()
+    linkedin = me.StringField()
+    twitter = me.StringField()
+    website = me.StringField()
     created_at = me.DateTimeField(default=datetime.datetime.now)
     updated_at = me.DateTimeField(default=datetime.datetime.now)
-    badges = me.ListField(me.DictField(), default=[])  # Structured badge storage
+    badges = me.ListField(me.DictField(), default=[])
     
 
     meta = {
@@ -178,5 +186,9 @@ class User(me.Document):
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
             "badges": self.badges,
-            "blog_count": self.calculate_publications()
+            "blog_count": self.calculate_publications(),
+            "github": self.github,
+            "linkedin": self.linkedin,
+            "twitter": self.twitter,
+            "website": self.website
         }

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import ContributorCard from './ContributorCard';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import avatar from '../../src/assets/default-avatar.png';
+import avatar from '../../src/assets/user.jpg';
 
 const TopContributor = ({ type = 'default', currentBlogId = null }) => {
   const { primaryColor, darkMode } = useTheme();

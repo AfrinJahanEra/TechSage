@@ -195,6 +195,11 @@ const AllBlogs = () => {
               <span>{formatDate(post.published_at)}</span>
               <span>{calculateReadTime(post.content)}</span>
             </div>
+            {/* Display upvote count */}
+            <div className="flex items-center text-xs sm:text-sm mt-2" style={{ color: 'var(--muted-text)' }} title={`Upvotes: ${post.upvotes?.length || post.upvote_count || 0}`}>
+              <i className="fas fa-arrow-up mr-1"></i>
+              <span>{post.upvotes?.length || post.upvote_count || 0} upvotes</span>
+            </div>
           </div>
         </div>
       </Link>
@@ -216,11 +221,11 @@ const AllBlogs = () => {
     >
       <Navbar activePage="all-blogs" />
 
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 pt-24 sm:pt-28">
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+      <main className="container mx-auto px-4 sm:px-6 lg:px-16 py-6 sm:py-8 pt-20 sm:pt-24">
+        <div className="flex flex-col lg:flex-row gap-6">
           {/* Main Content */}
           <div className="flex-1">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-5">
               <h1 className="text-xl sm:text-2xl font-bold">
                 {currentView === 'community' ? 'Community Updates' : 'Recommended Research'}
               </h1>
@@ -255,7 +260,7 @@ const AllBlogs = () => {
             </div>
 
             {/* Search Bar */}
-            <div className="relative mb-6">
+            <div className="relative mb-5">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <i className="fas fa-search text-sm" style={{ color: 'var(--muted-text)' }}></i>
               </div>
@@ -276,7 +281,7 @@ const AllBlogs = () => {
 
             {/* Filters - only for community */}
             {currentView === 'community' && (
-              <div className="flex flex-wrap gap-2 mb-6 overflow-x-auto pb-2">
+              <div className="flex flex-wrap gap-2 mb-5 overflow-x-auto pb-2">
                 {['all', ...availableCategories].map(category => (
                   <button
                     key={category}
@@ -297,13 +302,13 @@ const AllBlogs = () => {
             )}
 
             {/* Content Display */}
-            <div className="space-y-6 sm:space-y-8 mb-6 sm:mb-8">
+            <div className="space-y-5 sm:space-y-6 mb-5 sm:mb-6">
               {loading ? (
-                <div className="flex justify-center py-8">
+                <div className="flex justify-center py-6">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
                 </div>
               ) : error ? (
-                <div className="text-center py-8">
+                <div className="text-center py-6">
                   <p className="text-sm sm:text-base">{error}</p>
                   <button
                     onClick={() => fetchBlogs(currentView, pagination.current_page, searchQuery, activeCategory)}
@@ -359,7 +364,7 @@ const AllBlogs = () => {
           </div>
 
           {/* Sidebar - hidden on small screens */}
-          <div className="hidden lg:block lg:w-80 space-y-8">
+          <div className="hidden lg:block lg:w-96 space-y-6">
             <Sidebar />
             <TopContributor />
             <SearchForm />

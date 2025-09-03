@@ -3,6 +3,7 @@ import { AuthContext } from '../context/AuthContext.jsx';
 import { useTheme } from '../context/ThemeContext';
 import { formatDistanceToNow } from 'date-fns';
 import { FaThumbsUp, FaReply, FaTrash, FaSpinner } from 'react-icons/fa';
+import avatar from '../../src/assets/user.jpg';
 
 const CommentSection = ({ blogId }) => {
   const [comment, setComment] = useState('');
@@ -534,7 +535,7 @@ const CommentSection = ({ blogId }) => {
             <div key={comment.key || comment.id} className={`pb-6 sm:pb-8 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
               <div className="flex items-start gap-3 sm:gap-4 mb-4">
                 <img 
-                  src={comment.author.avatar_url || 'https://randomuser.me/api/portraits/women/44.jpg'} 
+                  src={comment.author.avatar_url || avatar} 
                   alt={comment.author.username} 
                   className="w-8 sm:w-10 h-8 sm:h-10 rounded-full object-cover flex-shrink-0" 
                 />
@@ -637,7 +638,7 @@ const CommentSection = ({ blogId }) => {
                     <div key={reply.key || reply.id} className={`py-3 sm:py-4 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
                       <div className="flex items-start gap-3 sm:gap-4 mb-2">
                         <img 
-                          src={reply.author.avatar_url || 'https://randomuser.me/api/portraits/women/44.jpg'} 
+                          src={reply.author.avatar_url || avatar} 
                           alt={reply.author.username} 
                           className="w-6 sm:w-8 h-6 sm:h-8 rounded-full object-cover flex-shrink-0" 
                         />

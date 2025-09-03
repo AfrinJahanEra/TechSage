@@ -2,17 +2,8 @@ from django.urls import path, include
 from django.urls import path
 from django.contrib import admin
 from django.urls import path, include
-from users.views import AllUsersView, LoginUser, UserProfile, UserSearch, SavedBlogsAPI
-from users.views import (
-    RegisterUser,
-    LoginUser,
-    UserProfile,
-    UserSearch,
-    SavedBlogsAPI,
-    UserListByRole,
-    DeleteUserAccount
+from users.views import AllUsersView, LoginUser, UserProfile, UserSearch, SavedBlogsAPI, VotedBlogsAPI, UserListByRole, DeleteUserAccount, RegisterUser
 
-)
 from blogs.views import (
     CreateBlog, ListBlogs, GetBlog, 
     UpdateBlog, GetBlogVersions, 
@@ -35,6 +26,7 @@ urlpatterns = [
     path('login/', LoginUser.as_view(), name='login'),
     path('user/<str:username>/', UserProfile.as_view(), name='user-profile'),
     path('user/<str:username>/saved-blogs/', SavedBlogsAPI.as_view(), name='saved-blogs'),
+    path('user/<str:username>/voted-blogs/', VotedBlogsAPI.as_view(), name='voted-blogs'),
     path('users/<str:username>/delete/', DeleteUserAccount.as_view(), name='delete-user'),
     path('search/', UserSearch.as_view(), name='user-search'),
 

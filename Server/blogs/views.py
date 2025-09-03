@@ -344,16 +344,11 @@ class DeleteBlog(APIView):
                 return Response({"error": "You can only delete your own blogs"}, 
                                status=status.HTTP_403_FORBIDDEN)
             
-            Comment.objects(blog=blog).delete()
-            
-            BlogReport.objects(blog=blog).delete()
-            
-            blog.delete()
+            # Use soft delete instead of hard delete
+            blog.soft_delete(username)
 
             return Response({
-                "message": "Blog and all associated comments and reports deleted successfully",
-                "deleted_comments": Comment.objects(blog=blog).count(),
-                "deleted_reports": BlogReport.objects(blog=blog).count()
+                "message": "Blog moved to trash successfully"
             }, status=200)
             
         except DoesNotExist:
@@ -692,6 +687,8 @@ class PublishedBlogs(APIView):
                     "updated_at": updated_at_dhaka.isoformat(),
                     "is_reviewed": blog.is_reviewed,
                     "reviewed_by": blog.reviewed_by.username if blog.reviewed_by else None,
+                    "upvote_count": blog.upvote_count,
+                    "downvote_count": blog.downvote_count,
                     "stats": {
                         "upvotes": len(blog.upvotes),
                         "downvotes": len(blog.downvotes)
@@ -841,10 +838,10 @@ class GetBlog(APIView):
             if username:
                 user = User.objects(username=username).first()
                 if user:
-                    vote = Vote.objects(blog=blog, user=user).first()
-                    if vote:
-                        has_upvoted = vote.vote_type == 'upvote'
-                        has_downvoted = vote.vote_type == 'downvote'
+                    # Check if user has voted on this blog
+                    has_upvoted = str(blog.id) in user.upvoted_blogs
+                    has_downvoted = str(blog.id) in user.downvoted_blogs
+                    # Check if blog is saved
                     is_saved = str(blog.id) in user.saved_blogs
             
             dhaka_tz = pytz.timezone('Asia/Dhaka')  # Define Asia/Dhaka timezone
@@ -895,37 +892,73 @@ class VoteBlog(APIView):
             with mongoengine.get_connection().start_session() as session:
                 with session.start_transaction():
                     existing_vote = Vote.objects(blog=blog, user=user).first()
+                    has_upvoted = False
+                    has_downvoted = False
+                    
                     if existing_vote:
                         if existing_vote.vote_type == vote_type:
+                            # User is removing their existing vote
                             existing_vote.delete()
                             if vote_type == 'upvote':
                                 blog.upvote_count -= 1
+                                # Remove from user's upvoted blogs
+                                if str(blog.id) in user.upvoted_blogs:
+                                    user.upvoted_blogs.remove(str(blog.id))
                             else:
                                 blog.downvote_count -= 1
+                                # Remove from user's downvoted blogs
+                                if str(blog.id) in user.downvoted_blogs:
+                                    user.downvoted_blogs.remove(str(blog.id))
                         else:
+                            # User is changing their vote
+                            old_vote_type = existing_vote.vote_type
                             existing_vote.vote_type = vote_type
                             existing_vote.created_at = timezone.now()
                             existing_vote.save()
                             if vote_type == 'upvote':
                                 blog.upvote_count += 1
                                 blog.downvote_count -= 1
+                                # Move from downvoted to upvoted
+                                if str(blog.id) in user.downvoted_blogs:
+                                    user.downvoted_blogs.remove(str(blog.id))
+                                if str(blog.id) not in user.upvoted_blogs:
+                                    user.upvoted_blogs.append(str(blog.id))
                             else:
                                 blog.downvote_count += 1
                                 blog.upvote_count -= 1
+                                # Move from upvoted to downvoted
+                                if str(blog.id) in user.upvoted_blogs:
+                                    user.upvoted_blogs.remove(str(blog.id))
+                                if str(blog.id) not in user.downvoted_blogs:
+                                    user.downvoted_blogs.append(str(blog.id))
                     else:
+                        # User is adding a new vote
                         Vote(blog=blog, user=user, vote_type=vote_type).save()
                         if vote_type == 'upvote':
                             blog.upvote_count += 1
+                            # Add to user's upvoted blogs
+                            if str(blog.id) not in user.upvoted_blogs:
+                                user.upvoted_blogs.append(str(blog.id))
                         else:
                             blog.downvote_count += 1
+                            # Add to user's downvoted blogs
+                            if str(blog.id) not in user.downvoted_blogs:
+                                user.downvoted_blogs.append(str(blog.id))
 
                     blog.save()
+                    user.save()
+
+            # After all operations, check what the user's current vote status is
+            current_vote = Vote.objects(blog=blog, user=user).first()
+            if current_vote:
+                has_upvoted = current_vote.vote_type == 'upvote'
+                has_downvoted = current_vote.vote_type == 'downvote'
 
             return Response({
                 "upvotes": blog.upvote_count,
                 "downvotes": blog.downvote_count,
-                "has_upvoted": vote_type == 'upvote' and not existing_vote or (existing_vote and existing_vote.vote_type == 'upvote'),
-                "has_downvoted": vote_type == 'downvote' and not existing_vote or (existing_vote and existing_vote.vote_type == 'downvote')
+                "has_upvoted": has_upvoted,
+                "has_downvoted": has_downvoted
             })
             
         except Blog.DoesNotExist:
