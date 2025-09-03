@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
@@ -8,22 +8,35 @@ import Sidebar from '../components/Sidebar';
 import BlogCardDash from '../components/BlogCardDash';
 import { Chart } from 'chart.js/auto';
 import 'chartjs-plugin-annotation';
-import { normalizeBlog } from '../utils/blogUtils';
+import { 
+  normalizeBlog,
+  getBadge,
+  formatDate
+} from '../utils/blogUtils';
 import avatar from '../../src/assets/user.jpg';
 import 'react-toastify/dist/ReactToastify.css';
 import TopContributor from '../components/TopContributor';
+import { toast } from 'react-toastify';
 
 const OtherDashboard = () => {
   const { username } = useParams();
+  const navigate = useNavigate();
   const { primaryColor, darkMode, shadeColor } = useTheme();
-  const { api } = useAuth();
+  const { api, user } = useAuth();
   const [activeSection, setActiveSection] = useState('profile');
   const [userData, setUserData] = useState(null);
   const [blogs, setBlogs] = useState([]);
-  const [sortOption, setSortOption] = useState('newest');
+  const [drafts, setDrafts] = useState([]);
+  const [trash, setTrash] = useState([]);
+  const [savedBlogs, setSavedBlogs] = useState([]);
+  const [upvotedBlogs, setUpvotedBlogs] = useState([]);
+  const [downvotedBlogs, setDownvotedBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sortOption, setSortOption] = useState('newest');
   const [publishedCount, setPublishedCount] = useState(0);
+  const [draftCount, setDraftCount] = useState(0);
+  const [savedCount, setSavedCount] = useState(0);
   const [userPoints, setUserPoints] = useState(0);
   const [highestBadge, setHighestBadge] = useState('No Badge');
   const [allBadges, setAllBadges] = useState([]);
@@ -34,6 +47,11 @@ const OtherDashboard = () => {
     likes: [],
     reports: []
   });
+  // New state variables for favorite category and recommendations
+  const [favoriteCategory, setFavoriteCategory] = useState('');
+  const [recommendedBlogs, setRecommendedBlogs] = useState([]);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(false);
+  
   const barChartRef = useRef(null);
   const pieChartRef = useRef(null);
 
@@ -44,6 +62,48 @@ const OtherDashboard = () => {
     '--primary-color': primaryColor,
     '--primary-dark': primaryDark,
     '--primary-light': primaryLight,
+  };
+
+  // Function to determine favorite category based on saved blogs
+  const determineFavoriteCategory = (savedBlogs) => {
+    if (!savedBlogs || savedBlogs.length === 0) return '';
+    
+    // Count categories from saved blogs
+    const categoryCount = {};
+    savedBlogs.forEach(blog => {
+      if (blog.categories && Array.isArray(blog.categories)) {
+        blog.categories.forEach(category => {
+          categoryCount[category] = (categoryCount[category] || 0) + 1;
+        });
+      }
+    });
+    
+    // Find the category with the highest count
+    let favorite = '';
+    let maxCount = 0;
+    for (const [category, count] of Object.entries(categoryCount)) {
+      if (count > maxCount) {
+        maxCount = count;
+        favorite = category;
+      }
+    }
+    
+    return favorite;
+  };
+
+  // Function to fetch recommended blogs based on category
+  const fetchRecommendedBlogs = async (category) => {
+    if (!category) return;
+    
+    setRecommendationsLoading(true);
+    try {
+      const response = await api.get(`/published-blogs/?category=${category}&limit=3`);
+      setRecommendedBlogs((response.data.blogs || []).map(normalizeBlog));
+    } catch (err) {
+      console.error('Error fetching recommended blogs:', err);
+    } finally {
+      setRecommendationsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -108,29 +168,66 @@ const OtherDashboard = () => {
   }, [allBadges, userPoints]);
 
   useEffect(() => {
+    const fetchCounts = async () => {
+      // For other users, we only fetch published count
+      try {
+        const response = await api.get(`/blogs/?author=${username}&status=published`);
+        setPublishedCount(response.data.count || 0);
+      } catch (err) {
+        console.error('Fetch counts error:', err);
+      }
+    };
+
+    if (username) {
+      fetchCounts();
+    }
+  }, [username, api]);
+
+  useEffect(() => {
     const fetchBlogs = async () => {
       if (!username) return;
       setLoading(true);
       setError(null);
       try {
         let response;
-        if (activeSection === 'profile') {
-          response = await api.get(`/published-blogs/?author=${username}&limit=2`);
-          const fetchedBlogs = (response.data.blogs || []).map(normalizeBlog);
-          setBlogs(fetchedBlogs);
-          if (fetchedBlogs.length < 2 && response.data.count > fetchedBlogs.length) {
-            const additionalResponse = await api.get(`/published-blogs/?author=${username}&limit=${2 - fetchedBlogs.length}&offset=${fetchedBlogs.length}`);
-            const additionalBlogs = (additionalResponse.data.blogs || []).map(normalizeBlog);
-            setBlogs([...fetchedBlogs, ...additionalBlogs]);
-          }
-        } else if (activeSection === 'blogs') {
-          response = await api.get(`/blogs/?author=${username}&status=published`);
-          setBlogs((response.data.results || []).map(normalizeBlog));
+        switch (activeSection) {
+          case 'blogs':
+            response = await api.get(`/blogs/?author=${username}&status=published`);
+            setBlogs((response.data.results || []).map(normalizeBlog));
+            break;
+          case 'profile':
+            response = await api.get(`/published-blogs/?author=${username}&limit=2`);
+            setBlogs((response.data.blogs || []).map(normalizeBlog));
+            // Fetch saved blogs for profile section to determine favorite category
+            try {
+              const savedResponse = await api.get(`/user/${username}/saved-blogs/`);
+              const normalizedSavedBlogs = (savedResponse.data || []).map(normalizeBlog);
+              setSavedBlogs(normalizedSavedBlogs);
+              // Update favorite category when saved blogs are fetched
+              if (normalizedSavedBlogs.length > 0) {
+                const favCategory = determineFavoriteCategory(normalizedSavedBlogs);
+                setFavoriteCategory(favCategory);
+                fetchRecommendedBlogs(favCategory);
+              } else {
+                setFavoriteCategory('');
+                setRecommendedBlogs([]);
+              }
+            } catch (savedErr) {
+              console.error('Error fetching saved blogs:', savedErr);
+              setSavedBlogs([]);
+              setFavoriteCategory('');
+              setRecommendedBlogs([]);
+            }
+            break;
+          default:
+            break;
         }
       } catch (err) {
         console.error('Fetch blogs error:', err);
         setError(err.response?.data?.error || 'Failed to fetch blogs');
-        setBlogs([]);
+        if (activeSection === 'blogs' || activeSection === 'profile') {
+          setBlogs([]);
+        }
       } finally {
         setLoading(false);
       }
@@ -381,11 +478,13 @@ const OtherDashboard = () => {
   }, [activityData, darkMode, primaryColor, primaryDark, primaryLight]);
 
   const sortedBlogs = () => {
-    if (!blogs || blogs.length === 0) return [];
-    return [...blogs].sort((a, b) => {
+    const blogList = activeSection === 'saved' ? savedBlogs : blogs;
+    if (!blogList || blogList.length === 0) return [];
+
+    return [...blogList].sort((a, b) => {
       switch (sortOption) {
         case 'popular':
-          return (b.upvotes || 0) - (a.upvotes || 0);
+          return (b.upvotes?.length || b.upvote_count || 0) - (a.upvotes?.length || a.upvote_count || 0);
         case 'newest':
           return new Date(b.created_at) - new Date(a.created_at);
         case 'oldest':
@@ -411,7 +510,7 @@ const OtherDashboard = () => {
     </p>
   );
 
-  if (loading) {
+  if (loading && activeSection === 'profile') {
     return (
       <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'}`} style={themeStyles}>
         <Navbar activePage="dashboard" />
@@ -481,90 +580,95 @@ const OtherDashboard = () => {
                 </div>
               )}
 
-              {loading && (
-                <div className="flex justify-center items-center h-64">
-                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
-                </div>
-              )}
-
               {!loading && activeSection === 'profile' && (
                 <div>
                   {renderSectionTitle(`${userData.username}'s Profile`)}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div className={`rounded-lg p-6 shadow-sm transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
-                      <div className="flex flex-col md:flex-row items-center mb-6">
-                        <img
-                          src={userData.avatar_url || avatar}
-                          alt="Profile"
-                          className="w-20 h-20 rounded-full border-4 object-cover mr-0 md:mr-6 mb-4 md:mb-0"
-                          style={{ borderColor: primaryColor }}
-                        />
-                        <div className="text-center md:text-left">
-                          <h2 className="text-xl font-bold">{userData.username}</h2>
-                          <p className={`mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{userData.job_title || 'Member'}</p>
-                          <div className="flex justify-center md:justify-start space-x-2">
-                            <span
-                              className="px-3 py-1 rounded-full text-xs text-white"
-                              style={{ backgroundColor: primaryColor }}
-                            >
-                              {userData.university || 'TechSage'} {userData.role || 'User'}
+                  {/* Profile Information Section */}
+                  <div className={`rounded-2xl p-6 shadow-sm transition-colors duration-300 mb-6 ${
+                    darkMode ? 'bg-gray-800' : 'bg-white'
+                  }`}>
+                    <div className="flex flex-col md:flex-row items-center mb-6">
+                      <img
+                        src={userData.avatar_url || avatar}
+                        alt="Profile"
+                        className="w-20 h-20 rounded-full border-4 object-cover mr-0 md:mr-6 mb-4 md:mb-0"
+                        style={{ borderColor: primaryColor }}
+                      />
+                      <div className="text-center md:text-left">
+                        <h2 className="text-xl font-bold">{userData.username}</h2>
+                        <p className={`mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{userData.job_title || 'Member'}</p>
+                        <div className="flex justify-center md:justify-start space-x-2">
+                          <span
+                            className="px-3 py-1 rounded-full text-xs text-white"
+                            style={{ backgroundColor: primaryColor }}
+                          >
+                            {userData.university || 'TechSage'} {userData.role || 'User'}
+                          </span>
+                          {userData.is_verified && (
+                            <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs">
+                              Verified
                             </span>
-                            {userData.is_verified && (
-                              <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs">
-                                Verified
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <h3 className={`text-lg font-semibold mb-3 pb-2 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                          About
-                        </h3>
-                        <p className={`mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                          {userData.bio || 'No bio provided yet.'}
-                        </p>
-                        <div className="flex space-x-4">
-                          <button
-                            className="flex items-center"
-                            style={{ color: primaryColor }}
-                          >
-                            <i className="fas fa-envelope mr-1"></i> Contact
-                          </button>
-                          <button
-                            className="flex items-center"
-                            style={{ color: primaryColor }}
-                          >
-                            <i className="fas fa-share-alt mr-1"></i> Share Profile
-                          </button>
+                          )}
                         </div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {[
-                        { value: publishedCount, label: 'Total Publications' },
-                        { value: userPoints, label: 'Points' },
-                        { value: highestBadge, label: 'Highest Badge' }
-                      ].map((item, index) => (
-                        <div key={index} className={`rounded-lg p-4 shadow-sm text-center transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
-                          <div
-                            className="text-3xl font-bold mb-1"
-                            style={{ color: primaryColor }}
-                          >
-                            {item.value}
-                          </div>
-                          <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                            {item.label}
-                          </div>
-                        </div>
-                      ))}
+                    <div>
+                      <h3 className={`text-lg font-semibold mb-3 pb-2 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                        About
+                      </h3>
+                      <p className={`mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        {userData.bio || 'No bio provided yet.'}
+                      </p>
+                      <div className="flex space-x-4">
+                        <button
+                          className="flex items-center"
+                          style={{ color: primaryColor }}
+                        >
+                          <i className="fas fa-envelope mr-1"></i> Contact
+                        </button>
+                        <button
+                          className="flex items-center"
+                          style={{ color: primaryColor }}
+                        >
+                          <i className="fas fa-share-alt mr-1"></i> Share Profile
+                        </button>
+                      </div>
                     </div>
                   </div>
 
-                  <div className={`rounded-lg p-6 shadow-sm mb-6 transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                  {/* Stats Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    {[
+                      { value: publishedCount, label: 'Total Publications' },
+                      { value: userPoints, label: 'Points' },
+                      { value: highestBadge, label: 'Highest Badge' },
+                      { value: savedBlogs.length, label: 'Saved Blogs' }
+                    ].map((item, index) => (
+                      <div 
+                        key={index} 
+                        className={`rounded-xl p-4 shadow-sm text-center transition-colors duration-300 ${
+                          darkMode ? 'bg-gray-800' : 'bg-white'
+                        }`}
+                      >
+                        <div
+                          className="text-2xl font-bold mb-1"
+                          style={{ color: primaryColor }}
+                        >
+                          {item.value}
+                        </div>
+                        <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                          {item.label}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* User Activity Charts */}
+                  <div className={`rounded-2xl p-6 shadow-sm mb-6 transition-colors duration-300 ${
+                    darkMode ? 'bg-gray-800' : 'bg-white'
+                  }`}>
                     <h3 className={`text-lg font-semibold mb-4 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
                       User Activity
                     </h3>
@@ -578,7 +682,36 @@ const OtherDashboard = () => {
                     </div>
                   </div>
 
-                  <div>
+                  {/* Favorite Category and Recommendations */}
+                  {favoriteCategory && (
+                    <div className={`rounded-2xl p-6 shadow-sm mb-6 transition-colors duration-300 ${
+                      darkMode ? 'bg-gray-800' : 'bg-white'
+                    }`}>
+                      <h3 className={`text-lg font-semibold mb-4 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                        Based on your interest in <span style={{ color: primaryColor }}>{favoriteCategory}</span>, you might like:
+                      </h3>
+                      {recommendationsLoading ? (
+                        <div className="flex justify-center items-center h-32">
+                          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2" style={{ borderColor: primaryColor }}></div>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {recommendedBlogs.map((blog, index) => (
+                            <BlogCardDash
+                              key={index}
+                              blog={blog}
+                              darkMode={darkMode}
+                              primaryColor={primaryColor}
+                              primaryDark={primaryDark}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Recent Blogs */}
+                  {/* <div>
                     <div className="flex justify-between items-center mb-4">
                       <h2
                         className="text-xl font-bold pb-2 border-b-2 inline-block"
@@ -607,7 +740,7 @@ const OtherDashboard = () => {
                         ))}
                       </div>
                     ) : renderEmptyMessage()}
-                  </div>
+                  </div> */}
                 </div>
               )}
 
@@ -644,7 +777,7 @@ const OtherDashboard = () => {
               )}
             </div>
 
-            <div className="lg:w-80">
+            <div className="lg:w-96">
               <Sidebar />
               <TopContributor/>
             </div>
