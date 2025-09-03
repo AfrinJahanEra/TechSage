@@ -24,6 +24,7 @@ const ModeratorDashboard = () => {
     const [showProfilePanel, setShowProfilePanel] = useState(false);
     const [blogs, setBlogs] = useState([]);
     const [comments, setComments] = useState([]);
+    const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(false);
     // New state for chart data
     const [chartData, setChartData] = useState({
@@ -69,6 +70,19 @@ const ModeratorDashboard = () => {
             setComments(response.data.comments);
         } catch (error) {
             console.error('Error fetching comments:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchReports = async () => {
+        setLoading(true);
+        try {
+            const response = await api.get('/reports/');
+            setReports(response.data.reports || []);
+        } catch (error) {
+            console.error('Error fetching reports:', error);
+            setReports([]);
         } finally {
             setLoading(false);
         }
@@ -207,7 +221,7 @@ const ModeratorDashboard = () => {
         } else if (activeSection === 'comments') {
             fetchComments();
         } else if (activeSection === 'reports') {
-            // Reports data would be fetched here
+            fetchReports();
         } else if (activeSection === 'profile') {
             fetchChartData();
             // Fetch recent activity and trending blogs for profile section
@@ -256,15 +270,6 @@ const ModeratorDashboard = () => {
     };
 
     const performRejectBlog = async (blogId) => {
-        try {
-            await api.delete(`/blogs/mod/delete/${blogId}/`);
-            fetchBlogs();
-            toast.success('Blog deleted successfully');
-        } catch (error) {
-            console.error('Error deleting blog:', error);
-            toast.error('Failed to delete blog');
-        }
-        
         try {
             await api.delete(`/blogs/mod/delete/${blogId}/`);
             fetchBlogs();
@@ -328,34 +333,39 @@ const ModeratorDashboard = () => {
                 'Failed to delete comment';
             toast.error(errorMsg);
         }
-        
+    };
+
+    const handleApproveReport = async (reportId) => {
         try {
-            // Optimistic update
-            setComments(prevComments =>
-                prevComments.filter(comment => comment.id !== commentId)
-            );
-
-            // Send delete request with username in body
-            await api.delete(`/comments/${commentId}/delete/`, {
-                data: { username: user.username }
+            // Remove the report from the list
+            setReports(prevReports => prevReports.filter(report => report.id !== reportId));
+            
+            // Send approval request
+            await api.post(`/reports/${reportId}/approve/`, {
+                moderator: user.username
             });
-
-            // Show success message
-            toast.success('Comment deleted successfully');
-
-            // Optional: Refresh comments list
-            fetchComments();
+            
+            toast.success('Report approved successfully');
         } catch (error) {
-            console.error('Error deleting comment:', error);
+            console.error('Error approving report:', error);
+            toast.error('Failed to approve report');
+        }
+    };
 
-            // Revert optimistic update on error
-            fetchComments();
-
-            // Show error message
-            const errorMsg = error.response?.data?.error ||
-                error.message ||
-                'Failed to delete comment';
-            toast.error(errorMsg);
+    const handleRejectReport = async (reportId) => {
+        try {
+            // Remove the report from the list
+            setReports(prevReports => prevReports.filter(report => report.id !== reportId));
+            
+            // Send rejection request
+            await api.post(`/reports/${reportId}/reject/`, {
+                moderator: user.username
+            });
+            
+            toast.success('Report rejected successfully');
+        } catch (error) {
+            console.error('Error rejecting report:', error);
+            toast.error('Failed to reject report');
         }
     };
 
@@ -903,13 +913,13 @@ const ModeratorDashboard = () => {
                                                     <i className="fas fa-comments mr-2"></i>Comments to Review
                                                 </h1>
                                                 <div className="space-y-4">
-                                                    {commentsToReview.length === 0 ? (
+                                                    {comments.filter(comment => !comment.is_reviewed).length === 0 ? (
                                                         <div className={`text-center py-10 rounded-xl ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
                                                             <i className="fas fa-comments text-3xl mb-4"></i>
                                                             <p>No comments to review</p>
                                                         </div>
                                                     ) : (
-                                                        commentsToReview.map(comment => (
+                                                        comments.filter(comment => !comment.is_reviewed).map(comment => (
                                                             <div key={comment.id} className={`p-4 rounded-xl transition-all duration-300 hover:shadow-md ${darkMode ? 'bg-gray-800 hover:bg-gray-750' : 'bg-white hover:bg-gray-50'}`}>
                                                                 <div className="flex items-center mb-2">
                                                                     <img
@@ -1000,14 +1010,20 @@ const ModeratorDashboard = () => {
                                     default:
                                         return null;
                                 }
-                            }, [activeSection, loading, user, blogs, comments, recentActivity, trendingBlogs, darkMode, primaryColor, primaryDark, primaryLight, chartData, commentsToReview, reports])}
+                            }, [activeSection, loading, user, blogs, comments, recentActivity, trendingBlogs, darkMode, primaryColor, primaryDark, primaryLight, chartData, reports])}
+                        </div>
                     </div>
                 </div>
             </div>
+            <Footer />
+            <PopupModal 
+                show={showPopup}
+                message={popupData.message}
+                onConfirm={popupData.onConfirm}
+                onCancel={() => setShowPopup(false)}
+            />
         </div>
-        <Footer />
-    </div>
-);
+    );
 };
 
 export default ModeratorDashboard;
