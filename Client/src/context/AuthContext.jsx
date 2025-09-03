@@ -10,20 +10,7 @@ export const AuthProvider = ({ children }) => {
 
   const api = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
-    withCredentials: true, // Add this to send cookies/credentials
   });
-
-  // Add a request interceptor to include credentials
-  api.interceptors.request.use(
-    (config) => {
-      // Ensure credentials are sent with each request
-      config.withCredentials = true;
-      return config;
-    },
-    (error) => {
-      return Promise.reject(error);
-    }
-  );
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
