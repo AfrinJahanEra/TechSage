@@ -11,17 +11,21 @@ const ModeratorReports = () => {
   const navigate = useNavigate();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('pending');
+  const [filter, setFilter] = useState('all'); // Changed default to 'all'
   const [showPopup, setShowPopup] = useState(false);
   const [popupData, setPopupData] = useState({ message: '', onConfirm: null });
 
   const fetchReports = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/reports/?status=${filter}`);
+      // Fetch reports based on filter, 'all' will fetch all reports
+      const response = filter === 'all' 
+        ? await api.get(`/reports/`)
+        : await api.get(`/reports/?status=${filter}`);
       setReports(response.data);
     } catch (error) {
       console.error('Error fetching reports:', error);
+      toast.error('Failed to fetch reports');
     } finally {
       setLoading(false);
     }
@@ -41,7 +45,7 @@ const ModeratorReports = () => {
 
   const handleRejectReport = async (reportId) => {
     setPopupData({
-      message: 'Are you sure you want to accept this report? This will mark the content as inappropriate.',
+      message: 'Are you sure you want to reject this report? This will mark the report as invalid and keep the content.',
       onConfirm: () => {
         setShowPopup(false);
         performRejectReport(reportId);
@@ -52,60 +56,38 @@ const ModeratorReports = () => {
 
   const performRejectReport = async (reportId) => {
     try {
-      await api.post(`/reports/${reportId}/approve/`, {
+      await api.post(`/reports/${reportId}/reject/`, {
         reviewer_id: user.id
       });
       fetchReports();
-      toast.success('Report accepted successfully');
+      toast.success('Report rejected successfully');
     } catch (error) {
-      console.error('Error approving report:', error);
-      toast.error('Failed to accept report');
-    }
-    
-    try {
-      await api.post(`/reports/${reportId}/approve/`, {
-        reviewer_id: user.id
-      });
-      fetchReports();
-      toast.success('Report accepted successfully');
-    } catch (error) {
-      console.error('Error approving report:', error);
-      toast.error('Failed to accept report');
+      console.error('Error rejecting report:', error);
+      toast.error('Failed to reject report');
     }
   };
 
-  const handleApproveReport = async (reportId, blogId) => {
+  const handleApproveReport = async (reportId) => {
     setPopupData({
-      message: 'Are you sure you want to reject this report and delete the blog? This action cannot be undone.',
+      message: 'Are you sure you want to accept this report? This will mark the content as inappropriate and delete it.',
       onConfirm: () => {
         setShowPopup(false);
-        performApproveReport(reportId, blogId);
+        performApproveReport(reportId);
       }
     });
     setShowPopup(true);
   };
 
-  const performApproveReport = async (reportId, blogId) => {
+  const performApproveReport = async (reportId) => {
     try {
-      await api.post(`/reports/${reportId}/reject/`, {
+      await api.post(`/reports/${reportId}/approve/`, {
         reviewer_id: user.id
       });
       fetchReports();
-      toast.success('Report rejected and blog deleted');
+      toast.success('Report accepted and content removed successfully');
     } catch (error) {
-      console.error('Error rejecting report:', error);
-      toast.error('Failed to reject report');
-    }
-    
-    try {
-      await api.post(`/reports/${reportId}/reject/`, {
-        reviewer_id: user.id
-      });
-      fetchReports();
-      toast.success('Report rejected and blog deleted');
-    } catch (error) {
-      console.error('Error rejecting report:', error);
-      toast.error('Failed to reject report');
+      console.error('Error accepting report:', error);
+      toast.error('Failed to accept report');
     }
   };
 
@@ -126,6 +108,7 @@ const ModeratorReports = () => {
           onChange={(e) => setFilter(e.target.value)}
           className="border rounded px-3 py-2"
         >
+          <option value="all">All Reports</option>
           <option value="pending">Pending</option>
           <option value="accepted">Accepted</option>
           <option value="rejected">Rejected</option>
@@ -134,7 +117,7 @@ const ModeratorReports = () => {
 
       {reports.length === 0 ? (
         <div className="text-center py-10 text-gray-500">
-          No {filter} reports found
+          No {filter === 'all' ? '' : filter} reports found
         </div>
       ) : (
         reports.map((report) => (
@@ -174,7 +157,7 @@ const ModeratorReports = () => {
               </p>
             )}
 
-            {filter === 'pending' && (
+            {report.status === 'pending' && (
               <div className="flex space-x-4 mt-4">
                 <button
                   onClick={() => handleApproveReport(report.id)}
@@ -183,7 +166,7 @@ const ModeratorReports = () => {
                   Accept
                 </button>
                 <button
-                  onClick={() => handleRejectReport(report.id, report.blog?.id)}
+                  onClick={() => handleRejectReport(report.id)}
                   className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
                 >
                   Reject

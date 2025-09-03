@@ -40,8 +40,10 @@ class ReportBlog(View):
 class GetReports(View):
     def get(self, request):
         try:
-            status_filter = request.GET.get('status', 'pending')
+            # Get the status filter from query parameters
+            status_filter = request.GET.get('status')
             
+            # Fetch reports based on the filter
             if status_filter == 'pending':
                 reports = BlogReport.objects(is_reviewed=False, status='pending')
             elif status_filter == 'accepted':
@@ -49,6 +51,7 @@ class GetReports(View):
             elif status_filter == 'rejected':
                 reports = BlogReport.objects(status='rejected')
             else:
+                # If no status filter is provided or status is 'all', return all reports
                 reports = BlogReport.objects()
             
             # Filter out reports with invalid references
@@ -85,11 +88,9 @@ class ApproveReport(View):
             report.reviewed_at = datetime.datetime.utcnow()
             report.save()
             
-            # Update the blog's reviewed status
+            # Delete the reported blog
             blog = report.blog
-            blog.is_reviewed = True
-            blog.reviewed_by = reviewer
-            blog.save()
+            blog.delete()
             
             return JsonResponse(report.to_json())
         except DoesNotExist as e:
@@ -115,10 +116,6 @@ class RejectReport(View):
             report.reviewed_by = reviewer
             report.reviewed_at = datetime.datetime.utcnow()
             report.save()
-            
-            # Delete the reported blog
-            blog = report.blog
-            blog.delete()
             
             return JsonResponse(report.to_json())
         except DoesNotExist as e:

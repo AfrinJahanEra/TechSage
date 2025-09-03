@@ -35,7 +35,7 @@ const AllBlogs = () => {
     has_previous: false,
   });
   const [recPage, setRecPage] = useState(1);
-  const recPerPage = 1000; // High per_page to fetch all for client-side handling
+  const recPerPage = 100000; // High per_page to fetch all for client-side handling
 
   const primaryDark = shadeColor(primaryColor, -20);
   const primaryLight = shadeColor(primaryColor, 20);

@@ -22,6 +22,9 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog, on
   const [dataLoaded, setDataLoaded] = useState(false); // Track when data is loaded from backend
   const { user, api } = useAuth();
   const { primaryColor, darkMode } = useTheme();
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportDetails, setReportDetails] = useState('');
 
   useEffect(() => {
     const fetchBlogData = async () => {
@@ -267,6 +270,35 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog, on
     );
   };
 
+  const handleReport = async () => {
+    if (!user) {
+      showLoginToast();
+      return;
+    }
+    
+    if (!reportReason || !reportDetails) {
+      toast.error('Please provide both reason and details for the report');
+      return;
+    }
+    
+    try {
+      await api.post('/reports/', {
+        blog_id: blogId,
+        user_id: user.id,
+        reason: reportReason,
+        details: reportDetails
+      });
+      
+      toast.success('Report submitted successfully');
+      setShowReportModal(false);
+      setReportReason('');
+      setReportDetails('');
+    } catch (error) {
+      console.error('Error submitting report:', error);
+      toast.error('Failed to submit report. Please try again.');
+    }
+  };
+
   return (
     <div className={`border-t border-b py-4 sm:py-6 my-6 sm:my-8 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
       <div className="flex flex-row sm:flex-row justify-between items-center gap-3 sm:gap-6">
@@ -368,7 +400,8 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog, on
                 showLoginToast();
                 return;
               }
-              onReport();
+              // Remove the onReport() call and use the modal instead
+              setShowReportModal(true);
             }}
             className="flex items-center justify-center space-x-2 px-2 sm:px-4 py-1 sm:py-2 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors text-sm sm:text-base w-10 sm:w-auto h-10 sm:h-auto"
             title="Report"
@@ -376,6 +409,53 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog, on
             <FaFlag className="text-base sm:text-lg" />
             <span className="hidden sm:inline">Report</span>
           </button>
+          
+          {/* Report Modal */}
+          {showReportModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className={`rounded-lg p-6 w-full max-w-md ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                <h3 className="text-xl font-bold mb-4">Report Content</h3>
+                <div className="mb-4">
+                  <label className="block mb-2 font-medium">Reason for Report</label>
+                  <select
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                    className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                  >
+                    <option value="">Select a reason</option>
+                    <option value="inaccurate">Inaccurate Information</option>
+                    <option value="plagiarism">Plagiarism</option>
+                    <option value="methodological">Methodological Issues</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div className="mb-4">
+                  <label className="block mb-2 font-medium">Details</label>
+                  <textarea
+                    value={reportDetails}
+                    onChange={(e) => setReportDetails(e.target.value)}
+                    rows={4}
+                    className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                    placeholder="Please provide detailed information about your report..."
+                  />
+                </div>
+                <div className="flex justify-end space-x-3">
+                  <button
+                    onClick={() => setShowReportModal(false)}
+                    className={`px-4 py-2 rounded ${darkMode ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'}`}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleReport}
+                    className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                  >
+                    Submit Report
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       {(user?.role === 'moderator' || user?.role === 'admin') && (
