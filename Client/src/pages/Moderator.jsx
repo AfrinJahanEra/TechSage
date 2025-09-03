@@ -39,6 +39,11 @@ const ModeratorDashboard = () => {
     const [trendingBlogs, setTrendingBlogs] = useState([]);
     const [showPopup, setShowPopup] = useState(false);
     const [popupData, setPopupData] = useState({ message: '', onConfirm: null });
+    
+    // Pagination states for comments
+    const [commentPage, setCommentPage] = useState(1);
+    const [totalCommentPages, setTotalCommentPages] = useState(1);
+    const [commentLoading, setCommentLoading] = useState(false);
 
     const navigate = useNavigate();
 
@@ -63,23 +68,27 @@ const ModeratorDashboard = () => {
         }
     };
 
-    const fetchComments = async () => {
-        setLoading(true);
+    const fetchComments = async (page = 1) => {
+        setCommentLoading(true);
         try {
-            const response = await api.get('/comments/all/');
+            // Fetch all comments (both reviewed and unreviewed)
+            const response = await api.get(`/comments/all/?page=${page}&per_page=50`);
             setComments(response.data.comments);
+            setTotalCommentPages(response.data.pagination.total_pages);
+            setCommentPage(page);
         } catch (error) {
             console.error('Error fetching comments:', error);
         } finally {
-            setLoading(false);
+            setCommentLoading(false);
         }
     };
 
     const fetchReports = async () => {
         setLoading(true);
         try {
+            // Fetch all reports without any status filter
             const response = await api.get('/reports/');
-            setReports(response.data.reports || []);
+            setReports(response.data);
         } catch (error) {
             console.error('Error fetching reports:', error);
             setReports([]);
@@ -285,7 +294,16 @@ const ModeratorDashboard = () => {
             await api.post(`/comments/${commentId}/review/`, {
                 reviewer: user.username
             });
-            fetchComments();
+            
+            // Update the comment locally instead of refetching all comments
+            setComments(prevComments =>
+                prevComments.map(comment =>
+                    comment.id === commentId
+                        ? { ...comment, is_reviewed: true, reviewed_by: user.username }
+                        : comment
+                )
+            );
+            
             toast.success('Comment approved successfully');
         } catch (error) {
             console.error('Error approving comment:', error);
@@ -306,7 +324,7 @@ const ModeratorDashboard = () => {
 
     const performRejectComment = async (commentId) => {
         try {
-            // Optimistic update
+            // Optimistic update - remove the comment immediately
             setComments(prevComments =>
                 prevComments.filter(comment => comment.id !== commentId)
             );
@@ -318,13 +336,10 @@ const ModeratorDashboard = () => {
 
             // Show success message
             toast.success('Comment deleted successfully');
-
-            // Optional: Refresh comments list
-            fetchComments();
         } catch (error) {
             console.error('Error deleting comment:', error);
 
-            // Revert optimistic update on error
+            // Revert optimistic update on error by refetching comments
             fetchComments();
 
             // Show error message
@@ -337,14 +352,13 @@ const ModeratorDashboard = () => {
 
     const handleApproveReport = async (reportId) => {
         try {
-            // Remove the report from the list
-            setReports(prevReports => prevReports.filter(report => report.id !== reportId));
-            
             // Send approval request
             await api.post(`/reports/${reportId}/approve/`, {
-                moderator: user.username
+                reviewer_id: user.id  // Changed from moderator to reviewer_id to match backend
             });
             
+            // Refresh the reports list
+            fetchReports();
             toast.success('Report approved successfully');
         } catch (error) {
             console.error('Error approving report:', error);
@@ -354,14 +368,13 @@ const ModeratorDashboard = () => {
 
     const handleRejectReport = async (reportId) => {
         try {
-            // Remove the report from the list
-            setReports(prevReports => prevReports.filter(report => report.id !== reportId));
-            
             // Send rejection request
             await api.post(`/reports/${reportId}/reject/`, {
-                moderator: user.username
+                reviewer_id: user.id  // Changed from moderator to reviewer_id to match backend
             });
             
+            // Refresh the reports list
+            fetchReports();
             toast.success('Report rejected successfully');
         } catch (error) {
             console.error('Error rejecting report:', error);
@@ -910,49 +923,97 @@ const ModeratorDashboard = () => {
                                                     className="text-2xl font-bold mb-6 pb-2 border-b-2 inline-block"
                                                     style={{ borderColor: primaryColor }}
                                                 >
-                                                    <i className="fas fa-comments mr-2"></i>Comments to Review
+                                                    <i className="fas fa-comments mr-2"></i>All Comments
                                                 </h1>
-                                                <div className="space-y-4">
-                                                    {comments.filter(comment => !comment.is_reviewed).length === 0 ? (
-                                                        <div className={`text-center py-10 rounded-xl ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
-                                                            <i className="fas fa-comments text-3xl mb-4"></i>
-                                                            <p>No comments to review</p>
-                                                        </div>
-                                                    ) : (
-                                                        comments.filter(comment => !comment.is_reviewed).map(comment => (
-                                                            <div key={comment.id} className={`p-4 rounded-xl transition-all duration-300 hover:shadow-md ${darkMode ? 'bg-gray-800 hover:bg-gray-750' : 'bg-white hover:bg-gray-50'}`}>
-                                                                <div className="flex items-center mb-2">
-                                                                    <img
-                                                                        src={comment.author_avatar || avatar}
-                                                                        alt={typeof comment.author === 'object' ? comment.author.username : comment.author}
-                                                                        className="w-8 h-8 rounded-full mr-2 object-cover"
-                                                                    />
-                                                                    <div>
-                                                                        <h4 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{typeof comment.author === 'object' ? comment.author.username : comment.author}</h4>
-                                                                        <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{formatDate(comment.created_at)}</p>
+                                                {commentLoading ? (
+                                                    <div className={`text-center py-10 rounded-xl ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
+                                                        <i className="fas fa-spinner fa-spin text-3xl mb-4"></i>
+                                                        <p>Loading comments...</p>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <div className="space-y-4">
+                                                            {comments.length === 0 ? (
+                                                                <div className={`text-center py-10 rounded-xl ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
+                                                                    <i className="fas fa-comments text-3xl mb-4"></i>
+                                                                    <p>No comments found</p>
+                                                                </div>
+                                                            ) : (
+                                                                comments.map(comment => (
+                                                                    <div key={comment.id} className={`p-4 rounded-xl transition-all duration-300 hover:shadow-md ${darkMode ? 'bg-gray-800 hover:bg-gray-750' : 'bg-white hover:bg-gray-50'}`}>
+                                                                        <div className="flex items-center mb-2">
+                                                                            <img
+                                                                                src={comment.author_avatar || avatar}
+                                                                                alt={typeof comment.author === 'object' ? comment.author.username : comment.author}
+                                                                                className="w-8 h-8 rounded-full mr-2 object-cover"
+                                                                            />
+                                                                            <div>
+                                                                                <h4 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{typeof comment.author === 'object' ? comment.author.username : comment.author}</h4>
+                                                                                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{formatDate(comment.created_at)}</p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <p className={`mb-3 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{comment.content}</p>
+                                                                        <div className="flex flex-wrap gap-2">
+                                                                            {comment.is_reviewed ? (
+                                                                                <span 
+                                                                                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
+                                                                                    style={{ 
+                                                                                        backgroundColor: darkMode ? 'rgba(34, 197, 94, 0.2)' : 'rgba(34, 197, 94, 0.1)',
+                                                                                        color: '#22c55e'
+                                                                                    }}
+                                                                                >
+                                                                                    <i className="fas fa-check mr-1"></i> Accepted
+                                                                                </span>
+                                                                            ) : (
+                                                                                <>
+                                                                                    <button
+                                                                                        className="text-green-500 text-sm flex items-center hover:opacity-80 transition-all duration-200 px-3 py-1 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20"
+                                                                                        onClick={() => handleApproveComment(comment.id)}
+                                                                                        style={{ color: darkMode ? '#22c55e' : '#22c55e' }}
+                                                                                    >
+                                                                                        <i className="fas fa-check mr-1"></i> Accept
+                                                                                    </button>
+                                                                                    <button
+                                                                                        className="text-red-500 text-sm flex items-center hover:opacity-80 transition-all duration-200 px-3 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                                                        onClick={() => handleRejectComment(comment.id)}
+                                                                                        style={{ color: darkMode ? '#ef4444' : '#ef4444' }}
+                                                                                    >
+                                                                                        <i className="fas fa-trash mr-1"></i> Reject
+                                                                                    </button>
+                                                                                </>
+                                                                            )}
+                                                                            {comment.is_reviewed && comment.reviewed_by && (
+                                                                                <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                                                    Reviewed by: {comment.reviewed_by}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
                                                                     </div>
-                                                                </div>
-                                                                <p className={`mb-3 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{comment.content}</p>
-                                                                <div className="flex flex-wrap gap-2">
+                                                                ))
+                                                            )}
+                                                        </div>
+                                                        {/* Pagination controls */}
+                                                        {totalCommentPages > 1 && (
+                                                            <div className="flex justify-center mt-6 space-x-2">
+                                                                {[...Array(totalCommentPages)].map((_, i) => (
                                                                     <button
-                                                                        className="text-green-500 text-sm flex items-center hover:opacity-80 transition-all duration-200 px-3 py-1 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20"
-                                                                        onClick={() => handleApproveComment(comment.id)}
-                                                                        style={{ color: darkMode ? '#22c55e' : '#22c55e' }}
+                                                                        key={i + 1}
+                                                                        onClick={() => fetchComments(i + 1)}
+                                                                        className={`px-4 py-2 rounded-lg transition-colors ${
+                                                                            commentPage === i + 1
+                                                                                ? 'bg-blue-500 text-white'
+                                                                                : darkMode
+                                                                                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                                                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                                        }`}
                                                                     >
-                                                                        <i className="fas fa-check mr-1"></i> Approve
+                                                                        {i + 1}
                                                                     </button>
-                                                                    <button
-                                                                        className="text-red-500 text-sm flex items-center hover:opacity-80 transition-all duration-200 px-3 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
-                                                                        onClick={() => handleRejectComment(comment.id)}
-                                                                        style={{ color: darkMode ? '#ef4444' : '#ef4444' }}
-                                                                    >
-                                                                        <i className="fas fa-trash mr-1"></i> Reject
-                                                                    </button>
-                                                                </div>
+                                                                ))}
                                                             </div>
-                                                        ))
-                                                    )}
-                                                </div>
+                                                        )}
+                                                    </>
+                                                )}
                                             </div>
                                         );
                                     case 'reports':
@@ -973,34 +1034,68 @@ const ModeratorDashboard = () => {
                                                     ) : (
                                                         reports.map(report => (
                                                             <div key={report.id} className={`p-4 rounded-xl transition-all duration-300 hover:shadow-md ${darkMode ? 'bg-gray-800 hover:bg-gray-750' : 'bg-white hover:bg-gray-50'}`}>
-                                                                <div className="flex items-center mb-2">
-                                                                    <img
-                                                                        src={report.reporter_avatar || avatar}
-                                                                        alt={typeof report.reporter === 'object' ? report.reporter.username : report.reporter}
-                                                                        className="w-8 h-8 rounded-full mr-2 object-cover"
-                                                                    />
-                                                                    <div>
-                                                                        <h4 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{typeof report.reporter === 'object' ? report.reporter.username : report.reporter}</h4>
-                                                                        <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{formatDate(report.created_at)}</p>
-                                                                    </div>
+                                                                <div className="flex justify-between items-start mb-3">
+                                                                  <div>
+                                                                    <h3 
+                                                                      className={`font-bold text-lg cursor-pointer hover:text-teal-600 ${
+                                                                        !report.blog ? 'text-gray-500' : ''
+                                                                      }`}
+                                                                      onClick={() => report.blog ? handleBlogClick(report.blog.id) : null}
+                                                                    >
+                                                                      {report.blog?.title || 'Deleted Blog'}
+                                                                    </h3>
+                                                                    <p className="text-sm text-gray-500">
+                                                                      Reported by {report.reported_by?.username || 'Unknown'} on {formatDate(report.created_at)}
+                                                                    </p>
+                                                                  </div>
+                                                                  <span className={`px-2 py-1 text-xs rounded-full ${
+                                                                    report.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                                    report.status === 'accepted' ? 'bg-green-100 text-green-800' :
+                                                                    'bg-red-100 text-red-800'
+                                                                  }`}>
+                                                                    {report.status === 'pending' ? 'Pending' : 
+                                                                     report.status === 'accepted' ? 'Accepted' : 'Rejected'}
+                                                                  </span>
                                                                 </div>
-                                                                <p className={`mb-3 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{report.reason}</p>
-                                                                <div className="flex flex-wrap gap-2">
+                                                                
+                                                                <div className="mb-3">
+                                                                  <p className="font-medium">Reason: {report.reason}</p>
+                                                                  <p className="text-gray-700">{report.details}</p>
+                                                                </div>
+                                                                
+                                                                {report.reviewed_by && (
+                                                                  <p className="text-sm text-gray-500">
+                                                                    {report.status} by {report.reviewed_by.username} on {formatDate(report.reviewed_at)}
+                                                                  </p>
+                                                                )}
+                                                                
+                                                                {report.status === 'pending' && (
+                                                                  <div className="flex space-x-4 mt-4">
                                                                     <button
                                                                         className="text-green-500 text-sm flex items-center hover:opacity-80 transition-all duration-200 px-3 py-1 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20"
                                                                         onClick={() => handleApproveReport(report.id)}
                                                                         style={{ color: darkMode ? '#22c55e' : '#22c55e' }}
                                                                     >
-                                                                        <i className="fas fa-check mr-1"></i> Approve
+                                                                        <i className="fas fa-check mr-1"></i> Accept
                                                                     </button>
                                                                     <button
                                                                         className="text-red-500 text-sm flex items-center hover:opacity-80 transition-all duration-200 px-3 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
                                                                         onClick={() => handleRejectReport(report.id)}
                                                                         style={{ color: darkMode ? '#ef4444' : '#ef4444' }}
                                                                     >
-                                                                        <i className="fas fa-trash mr-1"></i> Reject
+                                                                        <i className="fas fa-times mr-1"></i> Reject
                                                                     </button>
-                                                                </div>
+                                                                    {report.blog && (
+                                                                      <button
+                                                                          className="text-blue-500 text-sm flex items-center hover:opacity-80 transition-all duration-200 px-3 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                                                          onClick={() => handleBlogClick(report.blog.id)}
+                                                                          style={{ color: darkMode ? '#3b82f6' : '#3b82f6' }}
+                                                                      >
+                                                                          <i className="fas fa-eye mr-1"></i> View Blog
+                                                                      </button>
+                                                                    )}
+                                                                  </div>
+                                                                )}
                                                             </div>
                                                         ))
                                                     )}
