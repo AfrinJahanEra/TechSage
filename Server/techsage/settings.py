@@ -126,7 +126,28 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',  
 ]
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins (for development)
 
+# Allow specific headers
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'cache-control',  # Added this for Cache-Control header
+]
+
+# Add CSRF trusted origins to match CORS settings
+CSRF_TRUSTED_ORIGINS = [
+    'https://tech-sage-5poh.vercel.app',
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+]
 
 cloudinary.config(
     cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
