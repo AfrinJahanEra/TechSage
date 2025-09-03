@@ -584,36 +584,52 @@ const Settings = () => {
                     <div className="space-y-4">
                       {collaborationRequests.map((request) => (
                         <div
-                          key={request.request_id || request.id} // Handle both field names
-                          className={`p-4 rounded-lg border ${darkMode ? 'border-gray-700 bg-gray-750' : 'border-gray-200 bg-gray-50'}`}
+                          key={request.request_id || request.id}
+                          className={`p-5 rounded-xl border transition-all duration-300 hover:shadow-md ${darkMode ? 'border-gray-700 bg-gray-750 hover:bg-gray-700' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
                         >
-                          <div className="flex justify-between items-start mb-3">
-                            <div>
-                              <h3 className={`font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                                {request.blog_title || request.blog?.title}
+                          <div className="flex flex-col md:flex-row md:items-center justify-between mb-4">
+                            <div className="flex-1 mb-3 md:mb-0">
+                              <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                                <i className="fas fa-book mr-2" style={{ color: primaryColor }}></i>
+                                {request.blog_title || (request.blog && request.blog.title) || `Blog #${request.blog_id || (request.blog && request.blog.id) || 'Unknown'}`}
                               </h3>
-                              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                Requested by {request.requesting_author || request.requesting_author?.username}
+                              <p className={`mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                <i className="fas fa-user mr-2"></i>
+                                Requested by: <span className="font-medium">{request.requesting_author || (request.requesting_author && request.requesting_author.username) || 'Unknown User'}</span>
+                              </p>
+                              <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                                <i className="far fa-clock mr-1"></i>
+                                {new Date(request.created_at).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
                               </p>
                             </div>
-                            <span className={`text-xs px-2 py-1 rounded ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
-                              {new Date(request.created_at).toLocaleDateString()}
-                            </span>
+                            <div className="flex space-x-3">
+                              <button
+                                onClick={() => respondToRequest(request.request_id || request.id, true)}
+                                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center"
+                              >
+                                <i className="fas fa-check mr-2"></i> Accept
+                              </button>
+                              <button
+                                onClick={() => respondToRequest(request.request_id || request.id, false)}
+                                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center"
+                              >
+                                <i className="fas fa-times mr-2"></i> Reject
+                              </button>
+                            </div>
                           </div>
-
-                          <div className="flex space-x-3">
-                            <button
-                              onClick={() => respondToRequest(request.request_id || request.id, true)}
-                              className="flex-1 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
-                            >
-                              Accept
-                            </button>
-                            <button
-                              onClick={() => respondToRequest(request.request_id || request.id, false)}
-                              className="flex-1 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
-                            >
-                              Reject
-                            </button>
+                          
+                          {/* Additional info section */}
+                          <div className={`pt-3 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                              <i className="fas fa-info-circle mr-2"></i>
+                              You've been invited to collaborate on this blog
+                            </p>
                           </div>
                         </div>
                       ))}
