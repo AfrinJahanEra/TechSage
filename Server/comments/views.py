@@ -60,6 +60,7 @@ class LikeComment(View):
         return JsonResponse(comment.to_json())
 
 
+# ... (keep all your other view classes as they are)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class DeleteComment(View):
