@@ -390,26 +390,24 @@ Check port conflicts
 > - Run `Daphne` behind an HTTPS reverse proxy (like `Nginx`)
 
 
-<h1>$\large\textnormal{\color{#EE4B2B}{‼ External Dependencies}}$</h1>
+<h1>$\large\textnormal{\color{#2196F3}{External Dependencies}}$</h1>
+
 
 Below is a list of key dependencies used in the frontend, along with references to their official documentation for installation, usage, and examples:
 
 
 | Library/Tool            | Purpose                              | Official Documentation/Reference                              |
 |--------------------------|--------------------------------------|--------------------------------------------------------------|
-| **Tiptap**              | Rich text editor for collaborative editing and testing. | [Tiptap Documentation](https://tiptap.dev/docs/editor/getting-started/install/react) - Install via `npm install @tiptap/react @tiptap/starter-kit`. |
-| **KaTeX**               | Rendering LaTeX equations and mathematical notations. | [KaTeX Documentation](https://katex.org/docs/getting_started.html) - Integrate with React using `react-katex` or directly in components. |
-| **Mermaid.js**          | Generating diagrams and flowcharts from text.          | [Mermaid Documentation](https://mermaid.js.org/intro/getting-started.html) - Diagram and chart library. Use `mermaid` package in React for rendering. |
-| **React Toast (react-toastify)** | Displaying popup notifications and toasts. | [react-toastify Documentation](https://fkhadra.github.io/react-toastify/introduction/) - Install via `npm install react-toastify`. |
-| **React Chart (react-chartjs-2)** | Creating graphs and charts for dashboards and metrics. | [react-chartjs-2 Documentation](https://react-chartjs-2.js.org/) - Install via `npm install react-chartjs-2 chart.js`. |
+| **Tiptap**              | Rich text editor. | [Tiptap Documentation](https://tiptap.dev/docs/editor/getting-started/install/react) - Install via `npm install @tiptap/react @tiptap/starter-kit`. |
+| **KaTeX**               | Rendering LaTeX equations. | [KaTeX Documentation](https://katex.org/docs/getting_started.html) - Integrate with React using `react-katex` or directly in components. |
+| **Mermaid.js**          | Generating diagrams.       | [Mermaid Documentation](https://mermaid.js.org/intro/getting-started.html) - Diagram and chart library. Use `mermaid` package in React for rendering. |
+| **React Toast (react-toastify)** | Displaying popup notifications. | [react-toastify Documentation](https://fkhadra.github.io/react-toastify/introduction/) - Install via `npm install react-toastify`. |
+| **React Chart (react-chartjs-2)** | Creating graphs and charts. | [react-chartjs-2 Documentation](https://react-chartjs-2.js.org/) - Install via `npm install react-chartjs-2 chart.js`. |
 | **jsPDF**               | Exporting content to PDF format.                     | [jsPDF Documentation](https://parall.ax/products/jspdf) - Install via `npm install jspdf`. |
 
+> [!NOTE]  
+> SMTP for email OTP/verification is handled on the backend (e.g., via Django's email backend or libraries like `smtplib`). Refer to [Django Email Documentation](https://docs.djangoproject.com/en/5.1/topics/email/) for setup.
 
-Note: SMTP for email OTP/verification is handled on the backend (e.g., via Django's email backend or libraries like `smtplib`). Refer to [Django Email Documentation](https://docs.djangoproject.com/en/5.1/topics/email/) for setup.
-
-These libraries were selected based on the project report's requirements for multi-format editing, real-time interactions, and user engagement features. Ensure to check `package.json` for exact versions used in the project.
-
-Make sure none of these ports are already in use.
 
 
 <h1>$\large\textnormal{\color{#2196F3}{Team Members}}$</h1>
