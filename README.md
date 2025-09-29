@@ -384,6 +384,12 @@ Check port conflicts
 </div>
 
 
+> [!WARNING]  
+> Browsers block WebSocket connections on `HTTP` if the main site is `HTTPS`.
+> - Use WSS (`wss://`) with SSL in production
+> - Run `Daphne` behind an HTTPS reverse proxy (like `Nginx`)
+
+
 <h1>$\large\textnormal{\color{#EE4B2B}{‼ External Dependencies}}$</h1>
 
 Below is a list of key dependencies used in the frontend, along with references to their official documentation for installation, usage, and examples:
@@ -398,18 +404,13 @@ Below is a list of key dependencies used in the frontend, along with references 
 | **React Chart (react-chartjs-2)** | Creating graphs and charts for dashboards and metrics. | [react-chartjs-2 Documentation](https://react-chartjs-2.js.org/) - Install via `npm install react-chartjs-2 chart.js`. |
 | **jsPDF**               | Exporting content to PDF format.                     | [jsPDF Documentation](https://parall.ax/products/jspdf) - Install via `npm install jspdf`. |
 
+
 Note: SMTP for email OTP/verification is handled on the backend (e.g., via Django's email backend or libraries like `smtplib`). Refer to [Django Email Documentation](https://docs.djangoproject.com/en/5.1/topics/email/) for setup.
 
 These libraries were selected based on the project report's requirements for multi-format editing, real-time interactions, and user engagement features. Ensure to check `package.json` for exact versions used in the project.
 
 Make sure none of these ports are already in use.
 
-
-
-> [!WARNING]  
-> Browsers block WebSocket connections on `HTTP` if the main site is `HTTPS`.
-> - Use WSS (`wss://`) with SSL in production
-> - Run `Daphne` behind an HTTPS reverse proxy (like `Nginx`)
 
 <h1>$\large\textnormal{\color{#2196F3}{Team Members}}$</h1>
 
