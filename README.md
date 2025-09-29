@@ -140,44 +140,43 @@ https://github.com/AfrinJahanEra/TechSage.git
 ```
 Or download the `zip` file, then extract it in a folder.
 
-<h1>$\large\textnormal{\color{#2196F3}{How To Run}}$</h1>
+# How To Run
 
-<h2>$\large\textnormal{\color{#2196F3}{Prerequisites}}$</h2>
+## Prerequisites
 
 - Install `Python` and `React.js` and `Mongodb`(optional).
 - Open an account at [`MongoDB Atlas`](https://www.mongodb.com/products/platform/atlas-database) and collect the credentials.
 - Open account in [`Cloudinary`](https://cloudinary.com/) and collect credentials from there.
-- Then download Redis from [`redis-release`](https://github.com/tporadowski/redis/releases) (use the latest zip version). Extract the files from `redis-release` zip file. Then click on `redis-server.exe`. To check the server is running or not
+- Then download Redis from [`redis-release`](https://github.com/tporadowski/redis/releases) (use the latest zip version). Extract the files from `redis-release` zip file. Then click on `redis-server.exe`. To check the server is running or not:
 
-Open the command prompt, write
-```console
-cd "path\to\extracted folder"
-redis-cli
-ping
-```
+  Open the command prompt, write:
+  ```console
+  cd "path\to\extracted folder"
+  redis-cli
+  ping
+  ```
+  Or directly open `redis-cli.exe`. Then write `ping`. If it results in `PONG`, then the Redis server is connected successfully.
 
-Or directly open `redis-cli.exe`. Then write `ping`. If it result's `PONG`, then the redis server is connected successfully.
+  Successful connection example:
+  ```console
+  127.0.0.1:6379> ping
+  PONG
+  127.0.0.1:6379>
+  ```
+  <img src="https://github.com/user-attachments/assets/46b4e6f2-4a4d-4d82-927f-116c85f78511" width=100px align="right">
 
-Successful connection example :
-```console
-127.0.0.1:6379> ping
-PONG
-127.0.0.1:6379>
-```
-<img src="https://github.com/user-attachments/assets/46b4e6f2-4a4d-4d82-927f-116c85f78511" width=100px align="right">
+  > [!TIP]  
+  > If the `redis-server.exe` isn't running, go to Task Manager (Run as administrator).
+  > - Search for something like `redis`.
+  > - If it's on, click on `end task`.
 
-> [!TIP]  
-> If the `redis-server.exe` isn't running then go to task manager (Run as administrator).
-> - Search for something like `redis`.
-> - If it's on, click on `end task`.
-
-If it still doesn't work, try checking that `port 6379` is already running or not :
-- Open command prompt.
-- run
-```console
-netstat -aon | findstr :6379
-```
-If you see something like this, means this port is already in use.
+  If it still doesn't work, try checking that port `6379` is already running or not:
+  - Open command prompt.
+  - Run:
+    ```console
+    netstat -aon | findstr :6379
+    ```
+    If you see something like this, means this port is already in use.
 
   <div align="center"> 
 
@@ -187,61 +186,58 @@ If you see something like this, means this port is already in use.
   | TCP  |  [::]:6379       |       [::]:0         |        LISTENING   |    14220  |
   
   </div>
+    - Kill this port (change the PID according to the output):
+      ```console
+      taskkill /PID 14220 /F
+      ```
+    - Then try refreshing the PC and run the `redis-server.exe` again.
 
-- Kill this port. run (Change the PID according to)
-```console
-taskkill /PID 14220 /F
-```
-- Then try refreshing the pc and run the `redis-server.exe` again.
+## Server Directory
 
-<h2>$\large\textnormal{\color{#2196F3}{Server Directory}}$</h2>
-
-Then go to the directory path(where the code is)
+Then go to the directory path (where the code is):
 ```console
 cd "path\to\directory"
 ```
-Then open right-click and click `open in Terminal`. Then in terminal run
+Then open right-click and click `open in Terminal`. Then in terminal run:
 ```console
 code .
 ```
-This will directly take you to the VS Code interface. In `Server` directory, Open terminal and run
+This will directly take you to the VS Code interface. In `Server` directory, open terminal and run:
 
-For `Linux/MacOS`
+For `Linux/MacOS`:
 ```console
 python -m venv env
 source env/bin/activate
 ```
-For `Windows`
+For `Windows`:
 ```console
 python -m venv env
 .\\env\\Scripts\\activate
 ```
 
-Which will create the environment. Inside this, install the dependencies.
-
+Which will create the environment. Inside this, install the dependencies:
 ```console
 pip install -r requirements.txt
 ```
-This will install all the `pip` dependencies required to run this code. If it doesn't work, run this in `Command Prompt` or in  `VS Code Terminal`
-
+This will install all the `pip` dependencies required to run this code. If it doesn't work, run this in `Command Prompt` or in `VS Code Terminal`:
 ```console
 pip install Django python-dotenv djangorestframework django-cors-headers channels pytz pymongo dnspython certify daphne cloudinary requests pytest pytest-django
 ```
 
-Then run in `Server` directory
+Then run in `Server` directory:
 ```console
 daphne techsage.asgi:application
 ```
 
-If it's missing the `static directory` it will give this error
+If it's missing the `static directory` it will give this error:
 ```python
 django.core.exceptions.ImproperlyConfigured: 
 You're using the staticfiles app without having set the required STATIC_URL setting.
 ```
 
 This happens when:
-- `django.contrib.staticfiles` is in INSTALLED_APPS
-- But forgot to define `STATIC_URL` (and optionally STATICFILES_DIRS)
+- `django.contrib.staticfiles` is in `INSTALLED_APPS`
+- But forgot to define `STATIC_URL` (and optionally `STATICFILES_DIRS`)
 
 Add this to `settings.py`:
 ```python
@@ -264,10 +260,10 @@ Create the static directory (if needed):
 mkdir static
 ```
 
-<h2>$\large\textnormal{\color{#2196F3}{Client Directory}}$</h2>
+## Client Directory
 
-In `Client` directory, Open terminal and run
- ```console
+In `Client` directory, open terminal and run:
+```console
 npm install
 npm run dev
 ```
@@ -284,7 +280,7 @@ It means `Vite` is present. If it's missing, install it:
 npm install vite --save-dev
 ```
 > [!TIP]
-> To fix vulnerabilities, run this :
+> To fix vulnerabilities, run this:
 > ```console
 > npm audit fix
 > ```
@@ -295,7 +291,7 @@ npm audit fix --force
 ```
 
 > [!CAUTION] 
-> Be cautious with `--force`. It may upgrade packages that break project.
+> Be cautious with `--force`. It may upgrade packages that break the project.
 
 and serve it with Django or a production web server. Don’t deploy with `npm run build`.
 
@@ -306,6 +302,8 @@ and serve it with Django or a production web server. Don’t deploy with `npm ru
 > [!NOTE]  
 > The app runs on `http://localhost:8000` by default. If port is taken, use `daphne -b 127.0.0.1 -p 8080 techsage.asgi:application`.
 
+You can change the port (-p) or host (-b) as needed.
+
 $${\color{#2196F3}You \space can \space change \space the \space port \space (-p) \space or \space host \space (-b) \space as \space needed.}$$
 
 <h1>$\large\textnormal{\color{#EE4B2B}{‼ Things To Consider}}$</h1>
@@ -313,11 +311,21 @@ $${\color{#2196F3}You \space can \space change \space the \space port \space (-p
 List this in `.env.example` file do not commit this `.env` in github
 
 ```console
-SECRET_KEY=your-django-secret
-DEBUG=True
-MONGO_URL=mongodb://localhost:27017/techsage
-REDIS_URL=redis://localhost:6379
-ALLOWED_HOSTS=127.0.0.1,localhost
+MONGO_DB_NAME=techsage_db
+MONGO_URI=mongodb+srv://username:password@c
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+SECRET_KEY=
+PLAGIARISM_CHECKER_API_KEY=
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=a
+EMAIL_HOST_PASSWORD=
+DEFAULT_FROM_EMAIL=
+OTP_VALIDITY_MINUTES=2
+ALLOWED_HOSTS=localhost,127.0.0.1
 ```
 
 > Commit a `.env.example` file instead, which shows others what keys they need to set (but with no real values)
