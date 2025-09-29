@@ -179,7 +179,7 @@ https://github.com/AfrinJahanEra/TechSage.git
 ```
 Or download the `zip` file, then extract it in a folder.
 
-# How To Run
+<h1>$\large\textnormal{\color{#2196F3}{How To Run}}$</h1><br>
 
 ## Prerequisites
 
@@ -231,7 +231,7 @@ Or download the `zip` file, then extract it in a folder.
       ```
     - Then try refreshing the PC and run the `redis-server.exe` again.
 
-## Server Directory
+<h1>$\large\textnormal{\color{#2196F3}{Server Directory}}$</h1><br>
 
 Then go to the directory path (where the code is):
 ```console
@@ -299,7 +299,7 @@ Create the static directory (if needed):
 mkdir static
 ```
 
-## Client Directory
+<h1>$\large\textnormal{\color{#2196F3}{Client Directory}}$</h1><br>
 
 In `Client` directory, open terminal and run:
 ```console
