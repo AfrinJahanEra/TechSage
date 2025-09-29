@@ -312,18 +312,18 @@ List this in `.env.example` file do not commit this `.env` in github
 
 ```console
 MONGO_DB_NAME=techsage_db
-MONGO_URI=mongodb+srv://username:password@c
-CLOUDINARY_CLOUD_NAME=
-CLOUDINARY_API_KEY=
-CLOUDINARY_API_SECRET=
-SECRET_KEY=
-PLAGIARISM_CHECKER_API_KEY=
+MONGO_URI=mongodb+srv://username:password@cluster0.mongodb.net/techsage_db
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+SECRET_KEY=your_django_secret_key
+PLAGIARISM_CHECKER_API_KEY=your_plagiarism_api_key
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USE_TLS=True
-EMAIL_HOST_USER=a
-EMAIL_HOST_PASSWORD=
-DEFAULT_FROM_EMAIL=
+EMAIL_HOST_USER=your_email@gmail.com
+EMAIL_HOST_PASSWORD=your_email_password
+DEFAULT_FROM_EMAIL=your_email@gmail.com
 OTP_VALIDITY_MINUTES=2
 ALLOWED_HOSTS=localhost,127.0.0.1
 ```
