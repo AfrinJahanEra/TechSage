@@ -120,15 +120,54 @@ $${\color{lightblue}Create, \space \color{#5EEAD4}manage \space \color{#FBF3D4}a
   
   ```console
 techsage/
-├── backend/
-│   ├── manage.py
-│   └── ...
 ├── frontend/
 │   ├── index.html
-│   └── ...
+│   ├── node_modules/
+│   ├── public/
+│   ├── src/
+│   │   ├── assets/
+│   │   ├── components/
+│   │   ├── context/
+│   │   ├── pages/
+│   │   ├── utils/
+│   │   ├── App.jsx
+│   │   ├── constants.js
+│   │   ├── firebase.js
+│   │   ├── index.css
+│   │   ├── index.jsx
+│   │   ├── main.jsx
+│   │   ├── styles.css
+│   │   └── .env.local
+│   ├── .eslintrc.js
+│   ├── .gitignore
+│   ├── index.html
+│   ├── package-lock.json
+│   └── vite.config.js
+├── backend/
+│   ├── manage.py
+│   ├── .env
+│   ├── .gitignore
+│   ├── auth/
+│   ├── auth.log
+│   ├── badges/
+│   ├── blogs/
+│   ├── checker/
+│   ├── collab/
+│   ├── comments/
+│   ├── reports/
+│   ├── techsage/
+│   ├── templates/
+│   ├── users/
+│   ├── version_control/
+│   ├── db.sqlite3
+│   ├── debug.log
+│   ├── manage.py
+│   ├── pytest.ini
+│   ├── requirements.txt
+│   └── secret_key.py
 ├── .gitignore
 ├── README.md
-└── requirements.txt 
+└── requirements.txt
 ```
 </details>
 
