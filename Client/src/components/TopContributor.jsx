@@ -5,7 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import avatar from '../../src/assets/user.jpg';
 
-const TopContributor = ({ type = 'default', currentBlogId = null }) => {
+const TopContributor = () => {
   const { primaryColor, darkMode } = useTheme();
   const { api } = useAuth();
   const [topContributors, setTopContributors] = useState([]);
@@ -16,22 +16,19 @@ const TopContributor = ({ type = 'default', currentBlogId = null }) => {
     const fetchTopContributors = async () => {
       try {
         setLoading(true);
-        const response = await api.get('/all-users/');
+        // Fetch users sorted by points in descending order from the backend
+        const response = await api.get('/all-users/?page=1&page_size=3');
         
         if (response.data?.users) {
-
-          const sorted = response.data.users
-            .sort((a, b) => b.points - a.points)
-            .slice(0, 3)
-            .map(user => ({
-              id: user._id || user.id,
-              image: user.avatar_url || avatar,
-              name: user.username,
-              blogs: `${user.published_blogs || 0} research blogs`,
-              points: user.points || 0
-            }));
+          const mapped = response.data.users.map(user => ({
+            id: user._id || user.id,
+            image: user.avatar_url || avatar,
+            name: user.username,
+            blogs: `${user.published_blogs || 0} research blogs`,
+            points: user.points || 0
+          }));
           
-          setTopContributors(sorted);
+          setTopContributors(mapped);
         }
       } catch (err) {
         setError(err.response?.data?.error || 'Failed to fetch top contributors');

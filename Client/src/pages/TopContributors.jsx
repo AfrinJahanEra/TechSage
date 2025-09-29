@@ -44,6 +44,7 @@ const TopContributors = () => {
         const response = await api.get(`/all-users/?page=${currentPage}&page_size=10`);
         const badgesResponse = await api.get('/badges/');
 
+        // The users are already sorted by points in descending order from the backend
         const sortedUsers = response.data.users
           .map((user, index) => {
             const earnedBadges = badgesResponse.data
@@ -259,7 +260,7 @@ const TopContributors = () => {
             </header>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="text-white" style={{ backgroundColor: primaryColor }}>
+                <thead className="text-black ">
                   <tr>
                     <th className="px-4 py-3 text-left">Rank</th>
                     <th className="px-4 py-3 text-left">Researcher</th>

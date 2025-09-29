@@ -25,11 +25,7 @@ const BlogCard = ({ blog }) => {
             <span>{formatDate(blog.published_at || blog.created_at)}</span>
             <span>{calculateReadTime(blog.content)}</span>
           </div>
-          {/* Display upvote count */}
-          <div className="flex items-center text-xs mt-2" style={{ color: darkMode ? '#9ca3af' : '#6b7280' }} title={`Upvotes: ${blog.upvotes?.length || blog.upvote_count || 0}`}>
-            <i className="fas fa-arrow-up mr-1"></i>
-            <span>{blog.upvotes?.length || blog.upvote_count || 0} upvotes</span>
-          </div>
+          {/* Removed upvote count display as requested */}
         </div>
       </div>
     </Link>

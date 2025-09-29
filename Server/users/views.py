@@ -117,6 +117,14 @@ class DeleteUserAccount(APIView):
 class AllUsersView(APIView):
     def get(self, request):
         try:
+            # Get pagination parameters
+            page = int(request.GET.get('page', 1))
+            page_size = int(request.GET.get('page_size', 10))
+            
+            # Calculate offset and limit
+            offset = (page - 1) * page_size
+            limit = page_size
+            
             users = User.objects.all()
             user_data = []
             for user in users:
@@ -185,7 +193,24 @@ class AllUsersView(APIView):
                     "likes": blog_likes,
                     "reports": blog_reports
                 })
-            return Response({"users": user_data}, status=200)
+                
+            # Sort users by points in descending order
+            user_data.sort(key=lambda x: x['points'], reverse=True)
+            
+            # Apply pagination
+            total_users = len(user_data)
+            paginated_users = user_data[offset:offset + limit]
+            
+            # Calculate total pages
+            total_pages = (total_users + page_size - 1) // page_size
+            
+            return Response({
+                "users": paginated_users,
+                "total_users": total_users,
+                "current_page": page,
+                "total_pages": total_pages,
+                "page_size": page_size
+            }, status=200)
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 

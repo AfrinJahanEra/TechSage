@@ -282,7 +282,7 @@ const BlogActions = ({ upvotes, downvotes, onReport, blogId, blogTitle, blog, on
     }
     
     try {
-      await api.post('/reports/', {
+      await api.post('/reports/submit/', {
         blog_id: blogId,
         user_id: user.id,
         reason: reportReason,

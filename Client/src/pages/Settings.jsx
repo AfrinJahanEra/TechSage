@@ -74,20 +74,26 @@ const Settings = () => {
 
   // Fetch collaboration requests
   useEffect(() => {
-    if (activeSection === 'collaboration-request') {
+    if (activeSection === 'collaboration-request' && user) {
       fetchCollaborationRequests();
     }
-  }, [activeSection]);
+  }, [activeSection, user]);
 
   // Update the fetchCollaborationRequests function
   const fetchCollaborationRequests = async () => {
+    if (!user) return;
+    
     try {
       setLoadingRequests(true);
       const response = await api.get(`/collaboration-request/author-requests/${user.username}/`);
-      setCollaborationRequests(response.data.requests || response.data); // Handle both response formats
+      // Handle both possible response formats
+      const requestsData = response.data.requests || response.data || [];
+      const finalRequests = Array.isArray(requestsData) ? requestsData : [];
+      setCollaborationRequests(finalRequests);
     } catch (error) {
       console.error('Failed to fetch requests:', error);
       toast.error('Failed to load collaboration requests');
+      setCollaborationRequests([]); // Set to empty array on error
     } finally {
       setLoadingRequests(false);
     }
@@ -101,13 +107,9 @@ const Settings = () => {
         response: accept ? 'accept' : 'reject'
       });
 
-      fetchCollaborationRequests(); // Refresh the list
+      // Refresh the list after responding
+      await fetchCollaborationRequests();
       toast.success(`Request ${accept ? 'accepted' : 'rejected'}`);
-
-      // If accepted, update the user's blogs list or other relevant state
-      if (accept && response.data.blog) {
-        // You might want to update your global state or navigation here
-      }
     } catch (error) {
       console.error('Failed to respond:', error);
       toast.error(error.response?.data?.error || 'Failed to respond');
@@ -561,19 +563,27 @@ const Settings = () => {
               {/* Collaboration Request Section */}
               {activeSection === 'collaboration-request' && user?.role === 'user' && (
                 <div className={`p-6 rounded-2xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-                  <h1
-                    className="text-2xl font-bold mb-6 pb-2 border-b-2 inline-block"
-                    style={{ borderColor: primaryColor }}
-                  >
-                    Collaboration Requests
-                  </h1>
+                  <div className="flex justify-between items-center mb-6">
+                    <h1
+                      className="text-2xl font-bold pb-2 border-b-2 inline-block"
+                      style={{ borderColor: primaryColor }}
+                    >
+                      Collaboration Requests
+                    </h1>
+                    <button
+                      onClick={fetchCollaborationRequests}
+                      className={`px-4 py-2 rounded-md flex items-center ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'}`}
+                    >
+                      <i className="fas fa-sync-alt mr-2"></i> Refresh
+                    </button>
+                  </div>
 
                   {loadingRequests ? (
                     <div className="flex justify-center py-8">
                       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2"
                         style={{ borderColor: primaryColor }}></div>
                     </div>
-                  ) : collaborationRequests.length === 0 ? (
+                  ) : !collaborationRequests || collaborationRequests.length === 0 ? (
                     <div className={`p-8 text-center rounded-xl ${darkMode ? 'bg-gray-750 text-gray-400' : 'bg-gray-50 text-gray-500'}`}>
                       <i className={`fas fa-handshake text-5xl mb-4 ${darkMode ? 'text-gray-600' : 'text-gray-300'}`}></i>
                       <p>
@@ -582,57 +592,67 @@ const Settings = () => {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {collaborationRequests.map((request) => (
-                        <div
-                          key={request.request_id || request.id}
-                          className={`p-5 rounded-xl border transition-all duration-300 hover:shadow-md ${darkMode ? 'border-gray-700 bg-gray-750 hover:bg-gray-700' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
-                        >
-                          <div className="flex flex-col md:flex-row md:items-center justify-between mb-4">
-                            <div className="flex-1 mb-3 md:mb-0">
-                              <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                                <i className="fas fa-book mr-2" style={{ color: primaryColor }}></i>
-                                {request.blog_title || (request.blog && request.blog.title) || `Blog #${request.blog_id || (request.blog && request.blog.id) || 'Unknown'}`}
-                              </h3>
-                              <p className={`mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                <i className="fas fa-user mr-2"></i>
-                                Requested by: <span className="font-medium">{request.requesting_author || (request.requesting_author && request.requesting_author.username) || 'Unknown User'}</span>
-                              </p>
-                              <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                                <i className="far fa-clock mr-1"></i>
-                                {new Date(request.created_at).toLocaleDateString('en-US', {
-                                  year: 'numeric',
-                                  month: 'short',
-                                  day: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
+                      {collaborationRequests.map((request) => {
+                        // Ensure request object has required properties
+                        const requestId = request.request_id || request.id || 'unknown';
+                        const blogTitle = request.blog_title || 'Untitled Blog';
+                        const requestingAuthor = request.requesting_author || 'Unknown User';
+                        const createdAt = request.created_at || null;
+                        
+                        return (
+                          <div
+                            key={requestId}
+                            className={`p-5 rounded-xl border transition-all duration-300 hover:shadow-md ${darkMode ? 'border-gray-700 bg-gray-750 hover:bg-gray-700' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
+                          >
+                            <div className="flex flex-col md:flex-row md:items-center justify-between mb-4">
+                              <div className="flex-1 mb-3 md:mb-0">
+                                <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                                  <i className="fas fa-book mr-2" style={{ color: primaryColor }}></i>
+                                  {blogTitle}
+                                </h3>
+                                <p className={`mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                  <i className="fas fa-user mr-2"></i>
+                                  Requested by: <span className="font-medium">{requestingAuthor}</span>
+                                </p>
+                                {createdAt && (
+                                  <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                                    <i className="far fa-clock mr-1"></i>
+                                    {new Date(createdAt).toLocaleDateString('en-US', {
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="flex space-x-3">
+                                <button
+                                  onClick={() => respondToRequest(requestId, true)}
+                                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center"
+                                >
+                                  <i className="fas fa-check mr-2"></i> Accept
+                                </button>
+                                <button
+                                  onClick={() => respondToRequest(requestId, false)}
+                                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center"
+                                >
+                                  <i className="fas fa-times mr-2"></i> Reject
+                                </button>
+                              </div>
+                            </div>
+                            
+                            {/* Additional info section */}
+                            <div className={`pt-3 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                <i className="fas fa-info-circle mr-2"></i>
+                                You've been invited to collaborate on this blog
                               </p>
                             </div>
-                            <div className="flex space-x-3">
-                              <button
-                                onClick={() => respondToRequest(request.request_id || request.id, true)}
-                                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center"
-                              >
-                                <i className="fas fa-check mr-2"></i> Accept
-                              </button>
-                              <button
-                                onClick={() => respondToRequest(request.request_id || request.id, false)}
-                                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center"
-                              >
-                                <i className="fas fa-times mr-2"></i> Reject
-                              </button>
-                            </div>
                           </div>
-                          
-                          {/* Additional info section */}
-                          <div className={`pt-3 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                              <i className="fas fa-info-circle mr-2"></i>
-                              You've been invited to collaborate on this blog
-                            </p>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
