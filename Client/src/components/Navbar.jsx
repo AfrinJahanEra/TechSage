@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTheme } from '../context/ThemeContext';
@@ -6,17 +6,8 @@ import avatar from '../../src/assets/user.jpg';
 
 const Navbar = ({ activePage }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
   const { user, logout } = useAuth();
-  const { primaryColor, darkMode } = useTheme();
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const { primaryColor, darkMode, shadeColor } = useTheme();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -34,8 +25,11 @@ const Navbar = ({ activePage }) => {
     return 'Dashboard';
   };
 
+  // Create a darker version of the primary color for the TechSage text
+  const darkPrimaryColor = shadeColor(primaryColor, -30); // Darken by 30%
+
   const navbarStyle = {
-    backgroundColor: isScrolled ? primaryColor : `${primaryColor}cc`,
+    backgroundColor: primaryColor, // Always use scrolled color
   };
 
   const mobileMenuStyle = {
@@ -48,24 +42,24 @@ const Navbar = ({ activePage }) => {
 
   return (
     <nav 
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'h-16 shadow-md' : 'h-20 shadow-lg'}`}
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 h-16 shadow-md`} // Fixed height and shadow
       style={navbarStyle}
     >
-      <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 h-full flex justify-between items-center">
+      <div className="w-full px-1 sm:px-2 md:px-4 lg:px-6 xl:px-8 h-full flex justify-between items-center">
         <Link
           to={user ? "/home" : "/"}
           className="text-white font-bold text-xl sm:text-2xl md:text-3xl font-orbitron tracking-wider"
         >
-          <span className="text-white">Tech</span>Sage
+          TechSage
         </Link>
 
-        <div className="hidden md:flex items-center space-x-4 lg:space-x-6">
+        <div className="hidden md:flex items-center">
           {user ? (
             <>
               {user.role === 'user' && (
                 <Link
                   to="/home"
-                  className={`text-white text-base sm:text-lg font-medium hover:underline ${activePage === 'home' ? 'font-bold' : ''}`}
+                  className={`text-white text-base sm:text-lg font-medium hover:underline ml-4 ${activePage === 'home' ? 'font-bold' : ''}`}
                 >
                   Home
                 </Link>
@@ -74,7 +68,7 @@ const Navbar = ({ activePage }) => {
               {user.role === 'user' && (
                 <Link
                   to="/create-blog"
-                  className={`text-white text-base sm:text-lg font-medium hover:underline ${activePage === 'create-blog' ? 'font-bold' : ''}`}
+                  className={`text-white text-base sm:text-lg font-medium hover:underline ml-4 ${activePage === 'create-blog' ? 'font-bold' : ''}`}
                 >
                   Create Blog
                 </Link>
@@ -82,12 +76,12 @@ const Navbar = ({ activePage }) => {
 
               <Link
                 to={getDashboardLink()}
-                className={`text-white text-base sm:text-lg font-medium hover:underline ${activePage === 'dashboard' ? 'font-bold' : ''}`}
+                className={`text-white text-base sm:text-lg font-medium hover:underline ml-4 ${activePage === 'dashboard' ? 'font-bold' : ''}`}
               >
                 {getDashboardText()}
               </Link>
 
-              <div className="relative group">
+              <div className="relative group ml-4">
                 <Link
                   to="/settings"
                   className="w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-white flex items-center justify-center font-bold overflow-hidden border-2 border-white hover:scale-105 transition-transform"
@@ -109,13 +103,13 @@ const Navbar = ({ activePage }) => {
             <>
               <Link
                 to="/signup"
-                className="text-white text-base sm:text-lg font-medium hover:underline"
+                className="text-white text-base sm:text-lg font-medium hover:underline ml-4"
               >
                 Create Account
               </Link>
               <Link
                 to="/login"
-                className="px-3 sm:px-4 py-1 sm:py-2 bg-white rounded-full hover:bg-gray-100 transition-colors text-sm sm:text-base"
+                className="px-3 sm:px-4 py-1 sm:py-2 bg-white rounded-full hover:bg-gray-100 transition-colors text-sm sm:text-base ml-4"
                 style={loginButtonStyle}
               >
                 Login
@@ -139,7 +133,7 @@ const Navbar = ({ activePage }) => {
       </div>
 
       <div 
-        className={`md:hidden fixed top-20 left-0 w-full transition-all duration-300 ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'} pt-4 pb-8 shadow-lg`}
+        className={`md:hidden fixed top-16 left-0 w-full transition-all duration-300 ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'} pt-4 pb-8 shadow-lg`}
         style={mobileMenuStyle}
       >
         <div className="flex flex-col items-center space-y-4 text-white text-base sm:text-lg">
